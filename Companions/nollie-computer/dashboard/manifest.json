@@ -1,0 +1,11 @@
+{
+  "name": "nollie-computer",
+  "label": "Computer",
+  "description": "Computer previews, take over and hand back, and helpers' own computers for Nollie.",
+  "version": "0.5.0",
+  "tab": {
+    "hidden": true
+  },
+  "entry": "index.js",
+  "api": "plugin_api.py"
+}

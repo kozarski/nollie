@@ -1,0 +1,38 @@
+{
+  "Version": "1.76.6-t3f0b5a1e2-g7d2c1b9a4",
+  "TUN": true,
+  "BackendState": "Running",
+  "HaveNodeKey": true,
+  "AuthURL": "",
+  "TailscaleIPs": ["100.101.102.103", "fd7a:115c:a1e0::1234:5678"],
+  "Self": {
+    "ID": "nTEST1CNTRL",
+    "PublicKey": "nodekey:0000000000000000000000000000000000000000000000000000000000000001",
+    "HostName": "Studio",
+    "DNSName": "studio.tail1234.ts.net.",
+    "OS": "macOS",
+    "UserID": 1,
+    "TailscaleIPs": ["100.101.102.103", "fd7a:115c:a1e0::1234:5678"],
+    "AllowedIPs": ["100.101.102.103/32", "fd7a:115c:a1e0::1234:5678/128"],
+    "Online": true,
+    "ExitNode": false,
+    "ExitNodeOption": false,
+    "Active": true
+  },
+  "Health": [],
+  "MagicDNSSuffix": "tail1234.ts.net",
+  "CurrentTailnet": {"Name": "example@example.com", "MagicDNSSuffix": "tail1234.ts.net", "MagicDNSEnabled": true},
+  "CertDomains": ["studio.tail1234.ts.net"],
+  "Peer": {
+    "nodekey:0000000000000000000000000000000000000000000000000000000000000002": {
+      "ID": "nTEST2CNTRL",
+      "HostName": "iPhone",
+      "DNSName": "iphone.tail1234.ts.net.",
+      "OS": "iOS",
+      "TailscaleIPs": ["100.88.77.66", "fd7a:115c:a1e0::aaaa:bbbb"],
+      "Online": true,
+      "ExitNode": false
+    }
+  },
+  "User": {"1": {"ID": 1, "LoginName": "example@example.com", "DisplayName": "Example"}}
+}

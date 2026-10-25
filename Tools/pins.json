@@ -1,0 +1,137 @@
+{
+  "schema": 1,
+  "about": "Every third-party component Nollie installs or builds, pinned by version and checksum. Change a pin here first, then run python3 Tools/dev/check-latest.py --local to find each place that has to follow. python3 Tools/dev/check-latest.py reports which pins are behind upstream; it never changes anything.",
+  "components": [
+    {
+      "id": "uv",
+      "name": "uv by Astral",
+      "role": "Download manager for the Mac setup",
+      "version": "0.13.4",
+      "license": "MIT or Apache-2.0",
+      "source": "https://github.com/astral-sh/uv",
+      "upstream": {"kind": "github-release", "repo": "astral-sh/uv"},
+      "artifact": {
+        "url": "https://github.com/astral-sh/uv/releases/download/0.13.4/uv-aarch64-apple-darwin.tar.gz",
+        "bytes": 14326193,
+        "sha256": "e0b1d4743ce64c55d9f0f4a444afa6b81125680070ee04e853fcd0f6c1ebf8f1"
+      },
+      "notes": "Notarized by Astral (team 2DC432GLL2, identifier sh.astral.uv). A firewall that allows apps by signing identity sees it as new: 0.13.1 was uv-12607afb3fd970b7.",
+      "pinnedIn": ["Apps/Nollie/Connect/NativeDependencyInstaller.swift"]
+    },
+    {
+      "id": "python",
+      "name": "Python (python-build-standalone)",
+      "role": "Nollie's own Python, separate from any Python on the Mac",
+      "version": "3.14.8",
+      "key": "cpython-3.14.8-macos-aarch64-none",
+      "license": "PSF-2.0 and bundled licences",
+      "source": "https://github.com/astral-sh/python-build-standalone",
+      "upstream": {"kind": "uv-python", "series": "3.14"},
+      "artifact": {
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8%2B20261013-aarch64-apple-darwin-install_only_stripped.tar.gz",
+        "bytes": 26678949,
+        "sha256": "994adadc202c5df0b4570192cc9a70e3f2c131e512f4a125c56efa8562f44b28"
+      },
+      "notes": "uv installs it and checks it against the checksum built into uv, so this pin moves with uv. The artifact here is for reference and the dry run; it matches the release's SHA256SUMS.",
+      "pinnedIn": ["Apps/Nollie/Connect/NativeDependencyInstaller.swift"]
+    },
+    {
+      "id": "hermes",
+      "name": "Hermes Agent by Nous Research",
+      "role": "The engine behind the assistant",
+      "version": "0.22.2",
+      "tag": "v0.22.2",
+      "commit": "d923a5eb487a17c0a68801bba9ef0f56c81040a8",
+      "tree": "5a064077e8d1de9fc7a4b27efc04f0caa2cb06c0",
+      "license": "MIT",
+      "source": "https://github.com/NousResearch/hermes-agent",
+      "upstream": {"kind": "github-release", "repo": "NousResearch/hermes-agent"},
+      "artifact": {
+        "url": "https://codeload.github.com/NousResearch/hermes-agent/tar.gz/d923a5eb487a17c0a68801bba9ef0f56c81040a8",
+        "bytes": 81466389,
+        "sha256": "616649f8ac7e3bb186999d000d77511e733b3930bd2b5921be4a85673320ef8b"
+      },
+      "notes": "The v0.22.2 tag's commit has the release/0.22.1 tree (4ccc5806) with v0.22.1 recorded as a second parent. v0.22.1 itself was built from main by mistake and is skipped.",
+      "pinnedIn": ["Apps/Nollie/Connect/NativeDependencyInstaller.swift", "Services/Runtime/runtime_entry.py", "Services/Runtime/HermesOverlay/overlay.json"]
+    },
+    {
+      "id": "hermes-packages",
+      "name": "Hermes's Python packages",
+      "role": "The libraries Hermes needs, from Hermes's own lockfile",
+      "version": "uv.lock at v0.22.2",
+      "lockSha256": "16300cf807347b7fcfa3c19963f5fe950913fdb3e41e3c649ea724bc7dc997da",
+      "license": "Mostly MIT, BSD and Apache-2.0",
+      "source": "https://pypi.org",
+      "upstream": {"kind": "follows", "component": "hermes"},
+      "notes": "Installed with uv sync --frozen --no-build: every wheel is checked against the hash in the lockfile, which is inside the pinned Hermes archive.",
+      "pinnedIn": []
+    },
+    {
+      "id": "reader-packages",
+      "name": "Trafilatura, pypdf and their dependencies",
+      "role": "The page reader's own environment",
+      "version": "requirements.txt",
+      "lock": "Companions/nollie-reader/requirements.txt",
+      "license": "Apache-2.0, BSD, MIT, MPL",
+      "source": "https://pypi.org",
+      "upstream": {"kind": "pypi-lock", "input": "Companions/nollie-reader/requirements.in"},
+      "notes": "Hash-locked for macOS on Apple silicon and Python 3.14; installed with --require-hashes and wheels only.",
+      "pinnedIn": ["Companions/nollie-reader/requirements.txt"]
+    },
+    {
+      "id": "cua-driver",
+      "name": "Cua Driver by Cua AI, built as Nollie Computer",
+      "role": "Lets a bot use approved apps on this Mac (Direct edition)",
+      "version": "0.36.0",
+      "tag": "cua-driver-rs-v0.36.0",
+      "commit": "6d6c734c127025fb39ad5d585a10382808b39dc1",
+      "license": "MIT",
+      "source": "https://github.com/trycua/cua",
+      "upstream": {"kind": "github-release", "repo": "trycua/cua", "tagPrefix": "cua-driver-rs-v"},
+      "notes": "Built from source by Tools/computer-helper/build-driver.sh; the tree ids, Cargo.lock and binary checksums live in pin.env.",
+      "pinnedIn": ["Tools/computer-helper/pin.env"]
+    },
+    {
+      "id": "rust",
+      "name": "Rust toolchain",
+      "role": "Builds Nollie Computer (developer machines only)",
+      "version": "1.97.1",
+      "license": "MIT or Apache-2.0",
+      "source": "https://static.rust-lang.org",
+      "upstream": {"kind": "follows", "component": "cua-driver"},
+      "artifact": {
+        "url": "https://static.rust-lang.org/dist/2026-07-16/rust-1.97.1-aarch64-apple-darwin.tar.xz",
+        "sha256": "c9748cc86107734a2a024069908a895de7caa2d37062fb641eef9f756938ace2"
+      },
+      "notes": "Whatever the pinned Cua Driver's rust-toolchain.toml names.",
+      "pinnedIn": ["Tools/computer-helper/pin.env"]
+    },
+    {
+      "id": "sparkle",
+      "name": "Sparkle",
+      "role": "Updates the Direct Mac edition by itself",
+      "version": "2.10.0",
+      "license": "MIT (with a few BSD-style and zlib-style notices for bundled parts)",
+      "source": "https://github.com/sparkle-project/Sparkle",
+      "upstream": {"kind": "github-release", "repo": "sparkle-project/Sparkle"},
+      "artifact": {
+        "url": "https://github.com/sparkle-project/Sparkle/releases/download/2.10.0/Sparkle-for-Swift-Package-Manager.zip",
+        "bytes": 10193895,
+        "sha256": "17e28312b8e18ab7cdbbe09a6fb28cc55a5479ec6c371dbc07cdecd2a14fd959"
+      },
+      "notes": "The release file Sparkle's own Swift package points at (its Package.swift carries this checksum). Only the Direct Mac edition links and embeds it, so it is fetched and checked by Tools/sparkle/fetch-sparkle.sh and linked by build settings rather than as a package product, which would link into the App Store edition too. It also holds the key, signing and appcast tools the release uses.",
+      "pinnedIn": ["Tools/sparkle/pin.env", "Nollie.xcodeproj/project.pbxproj", "LICENSE", "Docs/legal/notices.md"]
+    }
+  ],
+  "addons": {
+    "about": "Nollie's own Hermes add-ons. A managed setup installs those marked managed, enabled, without asking again.",
+    "items": [
+      {"name": "nollie-workflow", "managed": true, "why": "Board follow-through, Papertrail and the Night shift recorder"},
+      {"name": "nollie-crew", "managed": true, "why": "Nollie adds and retires its own helper bots"},
+      {"name": "nollie-reader", "managed": true, "why": "The polite page reader and free reference lookups"},
+      {"name": "nollie-computer", "managed": true, "why": "Read-only previews of a bot's own computer"},
+      {"name": "nollie-mac", "managed": false, "why": "Nollie Computer accepts it only from the main Hermes setup in ~/.hermes, run by macOS's own Python; the managed setup can't use it yet"},
+      {"name": "nollie-pairing", "managed": false, "why": "A managed setup links the iPhone through the Nollie Link door instead"}
+    ]
+  }
+}

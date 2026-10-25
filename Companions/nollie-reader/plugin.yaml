@@ -1,0 +1,6 @@
+name: nollie-reader
+version: "0.1.0"
+description: "Nollie's polite page reader, shared limits for free search services and free reference sources."
+provides_web_providers: [nollie-reader]
+provides_tools: [reference_lookup]
+provides_hooks: [pre_tool_call]

@@ -1,0 +1,3057 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		C0FFEE0A11D7A5E7C0000001 /* NollieComputer */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = C0FFEE0A11D7A5E7C0000002 /* Build configuration list for PBXAggregateTarget "NollieComputer" */;
+			buildPhases = (
+				C0FFEE0A11D7A5E7C0000007 /* Build Nollie Computer */,
+			);
+			dependencies = (
+			);
+			name = NollieComputer;
+			productName = NollieComputer;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		03A43A5EC025690E3CB85612 /* CloudAlertHelperState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FD584D48230B32C382F2E9 /* CloudAlertHelperState.swift */; };
+		0ACD3BF99A9B1B177397B17B /* NollieAlertHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66ABCB2D8244FA073C0FD75D /* NollieAlertHelper.swift */; };
+		18102E6D87981B5CB3E4BA38 /* NativeDependencyInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = E326383A643DF56F11A87482 /* NativeDependencyInstaller.swift */; };
+		5E7A11C0DE5E7A11C0DE0001 /* NativeSetupKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7A11C0DE5E7A11C0DE0002 /* NativeSetupKit.swift */; };
+		1B5B06379A9478E456AD3B93 /* RuntimeContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2EA7B9E76774ED44587C3F4 /* RuntimeContract.swift */; };
+		2F5A9BD32E03F468CA5F3695 /* RuntimeIPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D276FD283EF81B4AA946628 /* RuntimeIPC.swift */; };
+		32A8305FE5A20DBF5E2B210D /* CloudAlertEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FF2B80186B8AF3286AAEB8 /* CloudAlertEvent.swift */; };
+		38FA383E2A255C5A0334ECF4 /* CloudAlertStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0CF42341BEA1DE9D41DF8E9 /* CloudAlertStore.swift */; };
+		3D1F0DA63248EFE613A7C893 /* runtime_entry.py in Resources */ = {isa = PBXBuildFile; fileRef = F7ACFB3218C7FDA18BAA318F /* runtime_entry.py */; };
+		D4DCD8E95A8E4A8FBFD62C33 /* managed_addons.py in Resources */ = {isa = PBXBuildFile; fileRef = C8D18C250E624E61B9E1DD4D /* managed_addons.py */; };
+		3F371615ACCF387FC61F7272 /* CloudAlertHelperObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00F63656CCCFD8D3361D574 /* CloudAlertHelperObserver.swift */; };
+		48CEA2EC6EEB231DA2EC205B /* NollieCore in Frameworks */ = {isa = PBXBuildFile; productRef = C3CA63868020C3FC4C338542 /* NollieCore */; };
+		4D0865143AF7C762FB4FF901 /* RuntimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA022678FE0E4901BF5A9327 /* RuntimeService.swift */; };
+		59FCCB956F2F766B20B75613 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000700 /* LICENSE */; };
+		747ECF64D9FCC821920892B4 /* RuntimeSupervisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF9EB215A6E13067308C5591 /* RuntimeSupervisor.swift */; };
+		7DE4C00DF69CAB07D12AAC2D /* ScopedHermesImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 161184EAE5DA40AAD9CA6D03 /* ScopedHermesImport.swift */; };
+		232C8943A20C1D7F00E4BAA2 /* LiveRelayIPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E20C7404C17A085BB6E7F1 /* LiveRelayIPC.swift */; };
+		BB2D81607900AD0A0E36AB81 /* LiveRelayIPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E20C7404C17A085BB6E7F1 /* LiveRelayIPC.swift */; };
+		4C9AB1568B23FBE94B6CB677 /* LiveRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D7CF79C2B363DC77232F32 /* LiveRelay.swift */; };
+		81B0AAC07C29B71289FE7E3D /* RuntimeHelperMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9FF74456F3EAE4C78244A85 /* RuntimeHelperMain.swift */; };
+		8489C95FE3C24030B38FFBD8 /* CloudAlertEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FF2B80186B8AF3286AAEB8 /* CloudAlertEvent.swift */; };
+		8FAE161B958449F8BFB369ED /* CloudAlertNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76900B466C4741F8B212C2D9 /* CloudAlertNotification.swift */; };
+		91AAFA07C72C26ACB94423CC /* RuntimeContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2EA7B9E76774ED44587C3F4 /* RuntimeContract.swift */; };
+		A2C0E011C2D1BFB669CC80DD /* RuntimeIPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D276FD283EF81B4AA946628 /* RuntimeIPC.swift */; };
+		A838F134510C45A7833FA655 /* CloudAlertNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76900B466C4741F8B212C2D9 /* CloudAlertNotification.swift */; };
+		AA000000000000000000C3 /* NollieCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA000000000000000000C1 /* NollieCore */; };
+		AA000000000000000000C4 /* NollieCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA000000000000000000C2 /* NollieCore */; };
+		AA00000000000000000100 /* NollieNotificationService.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA00000000000000000101 /* NollieNotificationService.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA00000000000000000102 /* NollieCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000103 /* NollieCore */; };
+		AA00000000000000000120 /* NollieNotificationContent.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA00000000000000000121 /* NollieNotificationContent.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA0000000000000000012E /* NollieCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000129 /* NollieCore */; };
+		AA00000000000000000203 /* NollieCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000201 /* NollieCore */; };
+		AA00000000000000000303 /* NollieCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000301 /* NollieCore */; };
+		AA00000000000000000310 /* NollieMacNotificationService.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA00000000000000000321 /* NollieMacNotificationService.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AA00000000000000000501 /* NollieCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000502 /* NollieCore */; };
+		AA00000000000000000701 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000700 /* LICENSE */; };
+		AA00000000000000000705 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000700 /* LICENSE */; };
+		AA00000000000000000706 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000700 /* LICENSE */; };
+		AA00000000000000000707 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000700 /* LICENSE */; };
+		AA00000000000000000708 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000700 /* LICENSE */; };
+		C2AC5E5E9DE2402EA23978BA /* CloudAlertStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0CF42341BEA1DE9D41DF8E9 /* CloudAlertStore.swift */; };
+		C37B2B33D35740DB9331AA0B /* CloudAlertEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FF2B80186B8AF3286AAEB8 /* CloudAlertEvent.swift */; };
+		CEAC9CD5948D4B9F938D4762 /* CloudAlertStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0CF42341BEA1DE9D41DF8E9 /* CloudAlertStore.swift */; };
+		D8F239F6E15A4D2C9A42D003 /* StarterAssistantDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8F239F6E15A4D2C9A42D001 /* StarterAssistantDefaults.swift */; };
+		D8F239F6E15A4D2C9A42D004 /* nollie-starter.json in Resources */ = {isa = PBXBuildFile; fileRef = D8F239F6E15A4D2C9A42D002 /* nollie-starter.json */; };
+		EF99443C8E3E6C6260E8E4F7 /* NativeRuntimeBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F626A67818516062C182F43 /* NativeRuntimeBackend.swift */; };
+		FE08EFB720A8F3FFBE0627B6 /* ConfigurationBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684992DBB3E7B0B225FDCE16 /* ConfigurationBackup.swift */; };
+		EF0FA75B48F0A7748A52D617 /* ExitRelayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */; };
+		1C0C79082145CBC879F72805 /* ExitRelayWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889B81D60373AF624F558E3A /* ExitRelayWire.swift */; };
+		0E3D2AE48501B25482C67A0C /* ExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 367508B5D4564F9258B282A8 /* ExitRelay.swift */; };
+		751B408A45B39444B72C7014 /* RuntimeExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */; };
+		E7FCDD3328BD0DC4C31111E8 /* ExitRelayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */; };
+		455138A18822DFB757E68A14 /* ExitRelayWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889B81D60373AF624F558E3A /* ExitRelayWire.swift */; };
+		8C6A0EB43E1B44A69D8A6058 /* ExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 367508B5D4564F9258B282A8 /* ExitRelay.swift */; };
+		B9F9C77C6EBA771563889EAC /* LinkDoorHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */; };
+		EE575C4EAF1C9AC63BFC11A5 /* LinkDoorHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */; };
+		706E39E291585EB001EECCEC /* LinkDoorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */; };
+		B312589BDB9B24F9F3C87A06 /* LinkDoorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */; };
+		A30280DA4FC0AE856D769B82 /* LinkDoorDevices.swift in Sources */ = {isa = PBXBuildFile; fileRef = C458E817E144131FF84F5DE6 /* LinkDoorDevices.swift */; };
+		E103AFED34EB03E3DDE9D478 /* LinkDoorDevices.swift in Sources */ = {isa = PBXBuildFile; fileRef = C458E817E144131FF84F5DE6 /* LinkDoorDevices.swift */; };
+		35A8180D88664A1206247406 /* LinkDoorIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD18F8AA46EBEC4E1F4BD9A /* LinkDoorIdentity.swift */; };
+		6B53B0521C10A7B3FC716678 /* LinkDoorIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD18F8AA46EBEC4E1F4BD9A /* LinkDoorIdentity.swift */; };
+		C1807AFB61CFA12CE919D728 /* LinkDoor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E93A00DD2487995D90F16EAD /* LinkDoor.swift */; };
+		672C528FA8BA3D8D6B7CB43B /* LinkDoor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E93A00DD2487995D90F16EAD /* LinkDoor.swift */; };
+		A9B7E2C15D3F4A6B8C9D0E12 /* AppPresence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B7E2C15D3F4A6B8C9D0E11 /* AppPresence.swift */; };
+		A9B7E2C15D3F4A6B8C9D0E13 /* AppPresence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B7E2C15D3F4A6B8C9D0E11 /* AppPresence.swift */; };
+		A9B7E2C15D3F4A6B8C9D0E14 /* AppPresence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B7E2C15D3F4A6B8C9D0E11 /* AppPresence.swift */; };
+		B1066ED106A1F0000000 /* NollieLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1066ED006A1F0000000 /* NollieLog.swift */; };
+		B1066ED106A2F0000000 /* LogFileWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1066ED006A2F0000000 /* LogFileWriter.swift */; };
+		B1066ED106A3F0000000 /* NollieLogFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1066ED006A3F0000000 /* NollieLogFiles.swift */; };
+		B1066ED106A4F0000000 /* HermesLogLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1066ED006A4F0000000 /* HermesLogLink.swift */; };
+		A9B7E2C15D3F4A6B8C9D0E22 /* NolliePaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B7E2C15D3F4A6B8C9D0E21 /* NolliePaths.swift */; };
+		A7A7E5F00D1F4E6B9C0A0002 /* NollieLinkAway.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A7E5F00D1F4E6B9C0A0001 /* NollieLinkAway.swift */; };
+		17685224DA26375D1EBE25B6 /* CuaInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB886EDEC7CB8A8A831774D3 /* CuaInstaller.swift */; };
+		1C5B7D5D9CA7688E148A135D /* RuntimeLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFBBCEDE3B8879AB48BC6EEF /* RuntimeLink.swift */; };
+		D9C254CE360538157EFD83D7 /* LinkDoorWebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE2BAA70CA95419C1FD0919 /* LinkDoorWebSocket.swift */; };
+		CCBAA2C4E2478185CD2E5331 /* LinkDoorWebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE2BAA70CA95419C1FD0919 /* LinkDoorWebSocket.swift */; };
+		F5D2FD20FC5B288F072660D4 /* LinkDoorLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CD79C89A908EFF055C475E /* LinkDoorLive.swift */; };
+		5534592A0A87F5733A649E93 /* LinkDoorLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CD79C89A908EFF055C475E /* LinkDoorLive.swift */; };
+		CC0471000000000000000002 /* NollieControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CC0471000000000000000001 /* NollieControls.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C0FFEE0A11D7A5E7C000000A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0FFEE0A11D7A5E7C0000001;
+			remoteInfo = NollieComputer;
+		};
+		03E7AE596E53C8FC9840B69A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 476AC16C30D2BDF64FB3A13D;
+			remoteInfo = NollieNotifications;
+		};
+		AA00000000000000000031 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA00000000000000000040;
+			remoteInfo = Nollie;
+		};
+		AA00000000000000000032 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA00000000000000000040;
+			remoteInfo = Nollie;
+		};
+		AA00000000000000000104 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA00000000000000000110;
+			remoteInfo = NollieNotificationService;
+		};
+		AA00000000000000000122 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA00000000000000000125;
+			remoteInfo = NollieNotificationContent;
+		};
+		AA00000000000000000304 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA00000000000000000340;
+			remoteInfo = NollieMacNotificationService;
+		};
+		AA00000000000000000503 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA00000000000000000240;
+			remoteInfo = NollieMac;
+		};
+		EC07022CA450C71EC475DA6D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1DD31D14442C5500AFF04161;
+			remoteInfo = NollieRuntimeHelper;
+		};
+		CC0471000000000000000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CC047100000000000000000A;
+			remoteInfo = NollieControls;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AA00000000000000000050 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AA00000000000000000100 /* NollieNotificationService.appex in Embed Foundation Extensions */,
+				AA00000000000000000120 /* NollieNotificationContent.appex in Embed Foundation Extensions */,
+				CC0471000000000000000002 /* NollieControls.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000350 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AA00000000000000000310 /* NollieMacNotificationService.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		161184EAE5DA40AAD9CA6D03 /* ScopedHermesImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScopedHermesImport.swift; path = Apps/Nollie/Connect/ScopedHermesImport.swift; sourceTree = SOURCE_ROOT; };
+		66ABCB2D8244FA073C0FD75D /* NollieAlertHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NollieAlertHelper.swift; path = Services/Notifications/NollieAlertHelper.swift; sourceTree = SOURCE_ROOT; };
+		684992DBB3E7B0B225FDCE16 /* ConfigurationBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConfigurationBackup.swift; path = Apps/Nollie/Connect/ConfigurationBackup.swift; sourceTree = SOURCE_ROOT; };
+		6C5F91D2ECCA45E6EC359DC9 /* Nollie Runtime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Nollie Runtime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6D276FD283EF81B4AA946628 /* RuntimeIPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeIPC.swift; path = Services/Runtime/RuntimeIPC.swift; sourceTree = SOURCE_ROOT; };
+		6F626A67818516062C182F43 /* NativeRuntimeBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NativeRuntimeBackend.swift; path = Services/Runtime/NativeRuntimeBackend.swift; sourceTree = SOURCE_ROOT; };
+		76900B466C4741F8B212C2D9 /* CloudAlertNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CloudAlertNotification.swift; path = Apps/Nollie/Push/CloudAlertNotification.swift; sourceTree = SOURCE_ROOT; };
+		AA00000000000000000020 /* Nollie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nollie.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000000000000000022 /* NollieTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NollieTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000000000000000023 /* NollieUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NollieUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000000000000000101 /* NollieNotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieNotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000000000000000121 /* NollieNotificationContent.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieNotificationContent.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000000000000000220 /* Nollie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nollie.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000000000000000321 /* NollieMacNotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieMacNotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000000000000000520 /* NollieMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NollieMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000000000000000700 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = SOURCE_ROOT; };
+		C8FD584D48230B32C382F2E9 /* CloudAlertHelperState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CloudAlertHelperState.swift; path = Apps/Nollie/Push/CloudAlertHelperState.swift; sourceTree = SOURCE_ROOT; };
+		D8F239F6E15A4D2C9A42D001 /* StarterAssistantDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StarterAssistantDefaults.swift; path = Apps/Nollie/Connect/StarterAssistantDefaults.swift; sourceTree = SOURCE_ROOT; };
+		D8F239F6E15A4D2C9A42D002 /* nollie-starter.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "nollie-starter.json"; path = "Apps/Nollie/Resources/nollie-starter.json"; sourceTree = SOURCE_ROOT; };
+		D9FF74456F3EAE4C78244A85 /* RuntimeHelperMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeHelperMain.swift; path = Services/Runtime/RuntimeHelperMain.swift; sourceTree = SOURCE_ROOT; };
+		DF9EB215A6E13067308C5591 /* RuntimeSupervisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeSupervisor.swift; path = Services/Runtime/RuntimeSupervisor.swift; sourceTree = SOURCE_ROOT; };
+		E0CF42341BEA1DE9D41DF8E9 /* CloudAlertStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CloudAlertStore.swift; path = Apps/Nollie/Push/CloudAlertStore.swift; sourceTree = SOURCE_ROOT; };
+		E326383A643DF56F11A87482 /* NativeDependencyInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NativeDependencyInstaller.swift; path = Apps/Nollie/Connect/NativeDependencyInstaller.swift; sourceTree = SOURCE_ROOT; };
+		5E7A11C0DE5E7A11C0DE0002 /* NativeSetupKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NativeSetupKit.swift; path = Apps/Nollie/Connect/NativeSetupKit.swift; sourceTree = SOURCE_ROOT; };
+		F00F63656CCCFD8D3361D574 /* CloudAlertHelperObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CloudAlertHelperObserver.swift; path = Apps/Nollie/Push/CloudAlertHelperObserver.swift; sourceTree = SOURCE_ROOT; };
+		F2EA7B9E76774ED44587C3F4 /* RuntimeContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeContract.swift; path = Services/Runtime/RuntimeContract.swift; sourceTree = SOURCE_ROOT; };
+		F2FF2B80186B8AF3286AAEB8 /* CloudAlertEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CloudAlertEvent.swift; path = Apps/Nollie/Push/CloudAlertEvent.swift; sourceTree = SOURCE_ROOT; };
+		F7ACFB3218C7FDA18BAA318F /* runtime_entry.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; name = runtime_entry.py; path = Services/Runtime/runtime_entry.py; sourceTree = SOURCE_ROOT; };
+		C8D18C250E624E61B9E1DD4D /* managed_addons.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; name = managed_addons.py; path = Services/Runtime/managed_addons.py; sourceTree = SOURCE_ROOT; };
+		FA022678FE0E4901BF5A9327 /* RuntimeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeService.swift; path = Services/Runtime/RuntimeService.swift; sourceTree = SOURCE_ROOT; };
+		FAAAF1FBB30980155DC7AAF0 /* Nollie Notifications.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Nollie Notifications.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelayPolicy.swift; path = Services/Runtime/ExitRelayPolicy.swift; sourceTree = SOURCE_ROOT; };
+		889B81D60373AF624F558E3A /* ExitRelayWire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelayWire.swift; path = Services/Runtime/ExitRelayWire.swift; sourceTree = SOURCE_ROOT; };
+		367508B5D4564F9258B282A8 /* ExitRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelay.swift; path = Services/Runtime/ExitRelay.swift; sourceTree = SOURCE_ROOT; };
+		A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeExitRelay.swift; path = Services/Runtime/RuntimeExitRelay.swift; sourceTree = SOURCE_ROOT; };
+		5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorHTTP.swift; path = Services/Runtime/LinkDoorHTTP.swift; sourceTree = SOURCE_ROOT; };
+		38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorPolicy.swift; path = Services/Runtime/LinkDoorPolicy.swift; sourceTree = SOURCE_ROOT; };
+		C458E817E144131FF84F5DE6 /* LinkDoorDevices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorDevices.swift; path = Services/Runtime/LinkDoorDevices.swift; sourceTree = SOURCE_ROOT; };
+		9BD18F8AA46EBEC4E1F4BD9A /* LinkDoorIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorIdentity.swift; path = Services/Runtime/LinkDoorIdentity.swift; sourceTree = SOURCE_ROOT; };
+		E93A00DD2487995D90F16EAD /* LinkDoor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoor.swift; path = Services/Runtime/LinkDoor.swift; sourceTree = SOURCE_ROOT; };
+		A9B7E2C15D3F4A6B8C9D0E11 /* AppPresence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppPresence.swift; path = Services/Runtime/AppPresence.swift; sourceTree = SOURCE_ROOT; };
+		B1066ED006A1F0000000 /* NollieLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NollieLog.swift; path = Packages/NollieCore/Sources/NollieCore/Logging/NollieLog.swift; sourceTree = SOURCE_ROOT; };
+		B1066ED006A2F0000000 /* LogFileWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LogFileWriter.swift; path = Packages/NollieCore/Sources/NollieCore/Logging/LogFileWriter.swift; sourceTree = SOURCE_ROOT; };
+		B1066ED006A3F0000000 /* NollieLogFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NollieLogFiles.swift; path = Packages/NollieCore/Sources/NollieCore/Logging/NollieLogFiles.swift; sourceTree = SOURCE_ROOT; };
+		B1066ED006A4F0000000 /* HermesLogLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HermesLogLink.swift; path = Packages/NollieCore/Sources/NollieCore/Logging/HermesLogLink.swift; sourceTree = SOURCE_ROOT; };
+		A9B7E2C15D3F4A6B8C9D0E21 /* NolliePaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NolliePaths.swift; path = Packages/NollieCore/Sources/NollieCore/Storage/NolliePaths.swift; sourceTree = SOURCE_ROOT; };
+		A7A7E5F00D1F4E6B9C0A0001 /* NollieLinkAway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NollieLinkAway.swift; path = Packages/NollieCore/Sources/NollieCore/Link/NollieLinkAway.swift; sourceTree = SOURCE_ROOT; };
+		FB886EDEC7CB8A8A831774D3 /* CuaInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CuaInstaller.swift; path = Services/Runtime/CuaInstaller.swift; sourceTree = SOURCE_ROOT; };
+		CFBBCEDE3B8879AB48BC6EEF /* RuntimeLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeLink.swift; path = Services/Runtime/RuntimeLink.swift; sourceTree = SOURCE_ROOT; };
+		42E20C7404C17A085BB6E7F1 /* LiveRelayIPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LiveRelayIPC.swift; path = Services/Runtime/LiveRelayIPC.swift; sourceTree = SOURCE_ROOT; };
+		B4D7CF79C2B363DC77232F32 /* LiveRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LiveRelay.swift; path = Services/Runtime/LiveRelay.swift; sourceTree = SOURCE_ROOT; };
+		C9CD79C89A908EFF055C475E /* LinkDoorLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorLive.swift; path = Services/Runtime/LinkDoorLive.swift; sourceTree = SOURCE_ROOT; };
+		AFE2BAA70CA95419C1FD0919 /* LinkDoorWebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorWebSocket.swift; path = Services/Runtime/LinkDoorWebSocket.swift; sourceTree = SOURCE_ROOT; };
+		CC0471000000000000000001 /* NollieControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA00000000000000000064 /* Exceptions for "Nollie" folder in "Nollie" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA00000000000000000040 /* Nollie */;
+		};
+		AA00000000000000000105 /* Exceptions for "NotificationService" folder in "NollieNotificationService" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA00000000000000000110 /* NollieNotificationService */;
+		};
+		AA00000000000000000123 /* Exceptions for "NotificationContent" folder in "NollieNotificationContent" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA00000000000000000125 /* NollieNotificationContent */;
+		};
+		AA0000000000000000012F /* Exceptions for "Shared" folder in "NollieNotificationService" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppIcon.icon,
+				Characters.xcassets,
+				AskNollie.swift,
+				HelperAtWork.swift,
+				StopMac.swift,
+			);
+			target = AA00000000000000000110 /* NollieNotificationService */;
+		};
+		AA00000000000000000130 /* Exceptions for "Shared" folder in "NollieNotificationContent" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppIcon.icon,
+				Characters.xcassets,
+				AskNollie.swift,
+				HelperAtWork.swift,
+				StopMac.swift,
+			);
+			target = AA00000000000000000125 /* NollieNotificationContent */;
+		};
+		AA00000000000000000264 /* Exceptions for "Mac" folder in "NollieMac" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA00000000000000000240 /* NollieMac */;
+		};
+		AA00000000000000000266 /* Exceptions for "Nollie" folder in "NollieMac" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/BotMotionSource.swift,
+				App/BotTurnReporter.swift,
+				App/NollieApp.swift,
+				App/TabPageModifiers.swift,
+				App/RootView.swift,
+				Info.plist,
+			);
+			target = AA00000000000000000240 /* NollieMac */;
+		};
+		AA00000000000000000364 /* Exceptions for "MacNotificationService" folder in "NollieMacNotificationService" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA00000000000000000340 /* NollieMacNotificationService */;
+		};
+		AA00000000000000000365 /* Exceptions for "Shared" folder in "NollieMacNotificationService" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppIcon.icon,
+				Characters.xcassets,
+				AskNollie.swift,
+				HelperAtWork.swift,
+				StopMac.swift,
+			);
+			target = AA00000000000000000340 /* NollieMacNotificationService */;
+		};
+		AA00000000000000000366 /* Exceptions for "NotificationService" folder in "NollieMacNotificationService" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA00000000000000000340 /* NollieMacNotificationService */;
+		};
+		CC0471000000000000000006 /* Exceptions for "Controls" folder in "NollieControls" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CC047100000000000000000A /* NollieControls */;
+		};
+		CC0471000000000000000007 /* Exceptions for "Shared" folder in "NollieControls" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AskNollie.swift,
+				CharacterAvatars.xcassets,
+				HelperAtWork.swift,
+				StopMac.swift,
+			);
+			target = CC047100000000000000000A /* NollieControls */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		0582B04F21DF19436BF7A94C /* Docs */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Docs;
+			sourceTree = "<group>";
+		};
+		2275A8E55941B1A306E085C7 /* Tools */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		2ADE4BBE23B87F38411E1B3D /* Packages */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Packages;
+			sourceTree = "<group>";
+		};
+		536DB9C00B9A9F351B6146AC /* Companions */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Companions;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000060 /* Nollie */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA00000000000000000064 /* Exceptions for "Nollie" folder in "Nollie" target */,
+				AA00000000000000000266 /* Exceptions for "Nollie" folder in "NollieMac" target */,
+			);
+			name = Nollie;
+			path = Apps/Nollie;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000061 /* Unit */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = Unit;
+			path = Tests/Unit;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000063 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA0000000000000000012F /* Exceptions for "Shared" folder in "NollieNotificationService" target */,
+				AA00000000000000000130 /* Exceptions for "Shared" folder in "NollieNotificationContent" target */,
+				AA00000000000000000365 /* Exceptions for "Shared" folder in "NollieMacNotificationService" target */,
+				CC0471000000000000000007 /* Exceptions for "Shared" folder in "NollieControls" target */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000066 /* UI */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = UI;
+			path = Tests/UI;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000106 /* NotificationService */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA00000000000000000105 /* Exceptions for "NotificationService" folder in "NollieNotificationService" target */,
+				AA00000000000000000366 /* Exceptions for "NotificationService" folder in "NollieMacNotificationService" target */,
+			);
+			name = NotificationService;
+			path = Extensions/NotificationService;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000124 /* NotificationContent */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA00000000000000000123 /* Exceptions for "NotificationContent" folder in "NollieNotificationContent" target */,
+			);
+			name = NotificationContent;
+			path = Extensions/NotificationContent;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000260 /* Mac */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA00000000000000000264 /* Exceptions for "Mac" folder in "NollieMac" target */,
+			);
+			name = Mac;
+			path = Apps/Mac;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000360 /* MacNotificationService */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA00000000000000000364 /* Exceptions for "MacNotificationService" folder in "NollieMacNotificationService" target */,
+			);
+			name = MacNotificationService;
+			path = Extensions/MacNotificationService;
+			sourceTree = "<group>";
+		};
+		CC0471000000000000000005 /* Controls */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CC0471000000000000000006 /* Exceptions for "Controls" folder in "NollieControls" target */,
+			);
+			name = Controls;
+			path = Extensions/Controls;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		89174DC5DB4A591CCC2479D8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				48CEA2EC6EEB231DA2EC205B /* NollieCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000091 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000000000000000000C3 /* NollieCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000097 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000000000000000000C4 /* NollieCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000000009A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000107 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000102 /* NollieCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000127 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000000012E /* NollieCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000291 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000203 /* NollieCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000391 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000303 /* NollieCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000597 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000501 /* NollieCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF61BEC315823FCF86E3327F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CC047100000000000000000C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		04AA5B015A39D31B398EF03D /* Shared app sources */ = {
+			isa = PBXGroup;
+			children = (
+				D8F239F6E15A4D2C9A42D002 /* nollie-starter.json */,
+				C8FD584D48230B32C382F2E9 /* CloudAlertHelperState.swift */,
+				E326383A643DF56F11A87482 /* NativeDependencyInstaller.swift */,
+				5E7A11C0DE5E7A11C0DE0002 /* NativeSetupKit.swift */,
+				684992DBB3E7B0B225FDCE16 /* ConfigurationBackup.swift */,
+				161184EAE5DA40AAD9CA6D03 /* ScopedHermesImport.swift */,
+				F00F63656CCCFD8D3361D574 /* CloudAlertHelperObserver.swift */,
+				D8F239F6E15A4D2C9A42D001 /* StarterAssistantDefaults.swift */,
+				F2FF2B80186B8AF3286AAEB8 /* CloudAlertEvent.swift */,
+				E0CF42341BEA1DE9D41DF8E9 /* CloudAlertStore.swift */,
+				76900B466C4741F8B212C2D9 /* CloudAlertNotification.swift */,
+			);
+			name = "Shared app sources";
+			sourceTree = "<group>";
+		};
+		0DFE4440EE18F17493EE27A1 /* Apps */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000000000000000060 /* Nollie */,
+				AA00000000000000000260 /* Mac */,
+			);
+			name = Apps;
+			sourceTree = "<group>";
+		};
+		1780AD8A80E1CF23B5BDD461 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				66ABCB2D8244FA073C0FD75D /* NollieAlertHelper.swift */,
+			);
+			name = Notifications;
+			sourceTree = "<group>";
+		};
+		3710446FE40C284FCB1D78BE /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000000000000000061 /* Unit */,
+				AA00000000000000000066 /* UI */,
+			);
+			name = Tests;
+			sourceTree = "<group>";
+		};
+		835C688C37EA94DC9EC5BC6D /* Runtime */ = {
+			isa = PBXGroup;
+			children = (
+				AFE2BAA70CA95419C1FD0919 /* LinkDoorWebSocket.swift */,
+				C9CD79C89A908EFF055C475E /* LinkDoorLive.swift */,
+				B4D7CF79C2B363DC77232F32 /* LiveRelay.swift */,
+				42E20C7404C17A085BB6E7F1 /* LiveRelayIPC.swift */,
+				CFBBCEDE3B8879AB48BC6EEF /* RuntimeLink.swift */,
+				FB886EDEC7CB8A8A831774D3 /* CuaInstaller.swift */,
+				A9B7E2C15D3F4A6B8C9D0E11 /* AppPresence.swift */,
+				B1066ED006A1F0000000 /* NollieLog.swift */,
+				B1066ED006A2F0000000 /* LogFileWriter.swift */,
+				B1066ED006A3F0000000 /* NollieLogFiles.swift */,
+				B1066ED006A4F0000000 /* HermesLogLink.swift */,
+				A9B7E2C15D3F4A6B8C9D0E21 /* NolliePaths.swift */,
+				A7A7E5F00D1F4E6B9C0A0001 /* NollieLinkAway.swift */,
+				E93A00DD2487995D90F16EAD /* LinkDoor.swift */,
+				9BD18F8AA46EBEC4E1F4BD9A /* LinkDoorIdentity.swift */,
+				C458E817E144131FF84F5DE6 /* LinkDoorDevices.swift */,
+				38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */,
+				5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */,
+				51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */,
+				889B81D60373AF624F558E3A /* ExitRelayWire.swift */,
+				367508B5D4564F9258B282A8 /* ExitRelay.swift */,
+				A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */,
+				D9FF74456F3EAE4C78244A85 /* RuntimeHelperMain.swift */,
+				FA022678FE0E4901BF5A9327 /* RuntimeService.swift */,
+				F2EA7B9E76774ED44587C3F4 /* RuntimeContract.swift */,
+				6F626A67818516062C182F43 /* NativeRuntimeBackend.swift */,
+				F7ACFB3218C7FDA18BAA318F /* runtime_entry.py */,
+				C8D18C250E624E61B9E1DD4D /* managed_addons.py */,
+				DF9EB215A6E13067308C5591 /* RuntimeSupervisor.swift */,
+				6D276FD283EF81B4AA946628 /* RuntimeIPC.swift */,
+			);
+			name = Runtime;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000070 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FAAAF1FBB30980155DC7AAF0 /* Nollie Notifications.app */,
+				6C5F91D2ECCA45E6EC359DC9 /* Nollie Runtime.app */,
+				AA00000000000000000020 /* Nollie.app */,
+				AA00000000000000000101 /* NollieNotificationService.appex */,
+				AA00000000000000000121 /* NollieNotificationContent.appex */,
+				CC0471000000000000000001 /* NollieControls.appex */,
+				AA00000000000000000220 /* Nollie.app */,
+				AA00000000000000000321 /* NollieMacNotificationService.appex */,
+				AA00000000000000000022 /* NollieTests.xctest */,
+				AA00000000000000000520 /* NollieMacTests.xctest */,
+				AA00000000000000000023 /* NollieUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000071 = {
+			isa = PBXGroup;
+			children = (
+				0DFE4440EE18F17493EE27A1 /* Apps */,
+				BA41E6C4AACC9C3EE3F7682E /* Extensions */,
+				EBDC9744158FEF1BF6D76A99 /* Services */,
+				3710446FE40C284FCB1D78BE /* Tests */,
+				AA00000000000000000063 /* Shared */,
+				2ADE4BBE23B87F38411E1B3D /* Packages */,
+				536DB9C00B9A9F351B6146AC /* Companions */,
+				2275A8E55941B1A306E085C7 /* Tools */,
+				0582B04F21DF19436BF7A94C /* Docs */,
+				AA00000000000000000700 /* LICENSE */,
+				AA00000000000000000070 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BA41E6C4AACC9C3EE3F7682E /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				AA00000000000000000124 /* NotificationContent */,
+				AA00000000000000000106 /* NotificationService */,
+				AA00000000000000000360 /* MacNotificationService */,
+				CC0471000000000000000005 /* Controls */,
+			);
+			name = Extensions;
+			sourceTree = "<group>";
+		};
+		EBDC9744158FEF1BF6D76A99 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				835C688C37EA94DC9EC5BC6D /* Runtime */,
+				1780AD8A80E1CF23B5BDD461 /* Notifications */,
+				04AA5B015A39D31B398EF03D /* Shared app sources */,
+			);
+			name = Services;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1DD31D14442C5500AFF04161 /* NollieRuntimeHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3AA41437324808E3B432F199 /* Build configuration list for PBXNativeTarget "NollieRuntimeHelper" */;
+			buildPhases = (
+				D35F989CE7D3C7E235A34A0D /* Sources */,
+				FF61BEC315823FCF86E3327F /* Frameworks */,
+				15830ED126ABD8BD76E8BD27 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NollieRuntimeHelper;
+			productName = "Nollie Runtime";
+			productReference = 6C5F91D2ECCA45E6EC359DC9 /* Nollie Runtime.app */;
+			productType = "com.apple.product-type.application";
+		};
+		476AC16C30D2BDF64FB3A13D /* NollieNotifications */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D76595087B067C67FC6000F8 /* Build configuration list for PBXNativeTarget "NollieNotifications" */;
+			buildPhases = (
+				52640ED27B1237A9B9E9370B /* Sources */,
+				89174DC5DB4A591CCC2479D8 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NollieNotifications;
+			packageProductDependencies = (
+				C3CA63868020C3FC4C338542 /* NollieCore */,
+			);
+			productName = "Nollie Notifications";
+			productReference = FAAAF1FBB30980155DC7AAF0 /* Nollie Notifications.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AA00000000000000000040 /* Nollie */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000000000000000080 /* Build configuration list for PBXNativeTarget "Nollie" */;
+			buildPhases = (
+				AA00000000000000000090 /* Sources */,
+				AA00000000000000000091 /* Frameworks */,
+				AA00000000000000000092 /* Resources */,
+				AA00000000000000000050 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA00000000000000000111 /* PBXTargetDependency */,
+				AA0000000000000000012A /* PBXTargetDependency */,
+				CC0471000000000000000004 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AA00000000000000000060 /* Nollie */,
+				AA00000000000000000063 /* Shared */,
+			);
+			name = Nollie;
+			packageProductDependencies = (
+				AA000000000000000000C1 /* NollieCore */,
+			);
+			productName = Nollie;
+			productReference = AA00000000000000000020 /* Nollie.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AA00000000000000000042 /* NollieTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000000000000000083 /* Build configuration list for PBXNativeTarget "NollieTests" */;
+			buildPhases = (
+				AA00000000000000000096 /* Sources */,
+				AA00000000000000000097 /* Frameworks */,
+				AA00000000000000000098 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA000000000000000000A1 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AA00000000000000000061 /* Unit */,
+			);
+			name = NollieTests;
+			packageProductDependencies = (
+				AA000000000000000000C2 /* NollieCore */,
+			);
+			productName = NollieTests;
+			productReference = AA00000000000000000022 /* NollieTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		AA00000000000000000043 /* NollieUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000000000000000084 /* Build configuration list for PBXNativeTarget "NollieUITests" */;
+			buildPhases = (
+				AA00000000000000000099 /* Sources */,
+				AA0000000000000000009A /* Frameworks */,
+				AA0000000000000000009B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA000000000000000000A2 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AA00000000000000000066 /* UI */,
+			);
+			name = NollieUITests;
+			packageProductDependencies = (
+			);
+			productName = NollieUITests;
+			productReference = AA00000000000000000023 /* NollieUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		AA00000000000000000110 /* NollieNotificationService */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000000000000000112 /* Build configuration list for PBXNativeTarget "NollieNotificationService" */;
+			buildPhases = (
+				AA00000000000000000108 /* Sources */,
+				AA00000000000000000107 /* Frameworks */,
+				AA00000000000000000109 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AA00000000000000000063 /* Shared */,
+				AA00000000000000000106 /* NotificationService */,
+			);
+			name = NollieNotificationService;
+			packageProductDependencies = (
+				AA00000000000000000103 /* NollieCore */,
+			);
+			productName = NollieNotificationService;
+			productReference = AA00000000000000000101 /* NollieNotificationService.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		AA00000000000000000125 /* NollieNotificationContent */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000000000000000012B /* Build configuration list for PBXNativeTarget "NollieNotificationContent" */;
+			buildPhases = (
+				AA00000000000000000126 /* Sources */,
+				AA00000000000000000127 /* Frameworks */,
+				AA00000000000000000128 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AA00000000000000000063 /* Shared */,
+				AA00000000000000000124 /* NotificationContent */,
+			);
+			name = NollieNotificationContent;
+			packageProductDependencies = (
+				AA00000000000000000129 /* NollieCore */,
+			);
+			productName = NollieNotificationContent;
+			productReference = AA00000000000000000121 /* NollieNotificationContent.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		AA00000000000000000240 /* NollieMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000000000000000280 /* Build configuration list for PBXNativeTarget "NollieMac" */;
+			buildPhases = (
+				5A2C0DE1F0000000000000A1 /* Fetch Sparkle */,
+				AA00000000000000000290 /* Sources */,
+				AA00000000000000000291 /* Frameworks */,
+				AA00000000000000000292 /* Resources */,
+				AA00000000000000000350 /* Embed Foundation Extensions */,
+				F99D35F1DBDC2746BD36513E /* ShellScript */,
+				97B911FBB5F4B2415C1B0812 /* ShellScript */,
+				C0FFEE0A11D7A5E7C0000008 /* Embed Nollie Computer */,
+				5A2C0DE1F0000000000000A2 /* Embed Sparkle */,
+				5E7A11C0DE5E7A11C0DE0003 /* Embed Setup Kit */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				64ECF1EF78922A57DD922289 /* PBXTargetDependency */,
+				98B4DB15596270BD1A755F89 /* PBXTargetDependency */,
+				C0FFEE0A11D7A5E7C0000009 /* PBXTargetDependency */,
+				AA00000000000000000311 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AA00000000000000000060 /* Nollie */,
+				AA00000000000000000063 /* Shared */,
+				AA00000000000000000260 /* Mac */,
+			);
+			name = NollieMac;
+			packageProductDependencies = (
+				AA00000000000000000201 /* NollieCore */,
+			);
+			productName = NollieMac;
+			productReference = AA00000000000000000220 /* Nollie.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AA00000000000000000340 /* NollieMacNotificationService */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000000000000000380 /* Build configuration list for PBXNativeTarget "NollieMacNotificationService" */;
+			buildPhases = (
+				AA00000000000000000390 /* Sources */,
+				AA00000000000000000391 /* Frameworks */,
+				AA00000000000000000392 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AA00000000000000000063 /* Shared */,
+				AA00000000000000000106 /* NotificationService */,
+				AA00000000000000000360 /* MacNotificationService */,
+			);
+			name = NollieMacNotificationService;
+			packageProductDependencies = (
+				AA00000000000000000301 /* NollieCore */,
+			);
+			productName = NollieMacNotificationService;
+			productReference = AA00000000000000000321 /* NollieMacNotificationService.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		AA00000000000000000540 /* NollieMacTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000000000000000583 /* Build configuration list for PBXNativeTarget "NollieMacTests" */;
+			buildPhases = (
+				AA00000000000000000596 /* Sources */,
+				AA00000000000000000597 /* Frameworks */,
+				AA00000000000000000598 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA000000000000000005A1 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AA00000000000000000061 /* Unit */,
+			);
+			name = NollieMacTests;
+			packageProductDependencies = (
+				AA00000000000000000502 /* NollieCore */,
+			);
+			productName = NollieMacTests;
+			productReference = AA00000000000000000520 /* NollieMacTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CC047100000000000000000A /* NollieControls */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CC047100000000000000000E /* Build configuration list for PBXNativeTarget "NollieControls" */;
+			buildPhases = (
+				CC047100000000000000000B /* Sources */,
+				CC047100000000000000000C /* Frameworks */,
+				CC047100000000000000000D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CC0471000000000000000005 /* Controls */,
+			);
+			name = NollieControls;
+			productName = NollieControls;
+			productReference = CC0471000000000000000001 /* NollieControls.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA00000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					AA00000000000000000042 = {
+						TestTargetID = AA00000000000000000040;
+					};
+					AA00000000000000000043 = {
+						TestTargetID = AA00000000000000000040;
+					};
+					AA00000000000000000540 = {
+						TestTargetID = AA00000000000000000240;
+					};
+				};
+			};
+			buildConfigurationList = AA00000000000000000081 /* Build configuration list for PBXProject "Nollie" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA00000000000000000071;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AA000000000000000000C0 /* XCLocalSwiftPackageReference "Packages/NollieCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = AA00000000000000000070 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1DD31D14442C5500AFF04161 /* NollieRuntimeHelper */,
+				476AC16C30D2BDF64FB3A13D /* NollieNotifications */,
+				C0FFEE0A11D7A5E7C0000001 /* NollieComputer */,
+				AA00000000000000000040 /* Nollie */,
+				AA00000000000000000110 /* NollieNotificationService */,
+				AA00000000000000000125 /* NollieNotificationContent */,
+				CC047100000000000000000A /* NollieControls */,
+				AA00000000000000000240 /* NollieMac */,
+				AA00000000000000000340 /* NollieMacNotificationService */,
+				AA00000000000000000042 /* NollieTests */,
+				AA00000000000000000043 /* NollieUITests */,
+				AA00000000000000000540 /* NollieMacTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		15830ED126ABD8BD76E8BD27 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3D1F0DA63248EFE613A7C893 /* runtime_entry.py in Resources */,
+				D4DCD8E95A8E4A8FBFD62C33 /* managed_addons.py in Resources */,
+				D8F239F6E15A4D2C9A42D004 /* nollie-starter.json in Resources */,
+				59FCCB956F2F766B20B75613 /* LICENSE in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000092 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000701 /* LICENSE in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000098 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000000009B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000109 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000705 /* LICENSE in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000128 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000706 /* LICENSE in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000292 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000707 /* LICENSE in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000392 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000708 /* LICENSE in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000598 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CC047100000000000000000D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C0FFEE0A11D7A5E7C0000007 /* Build Nollie Computer */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Tools/computer-helper/pin.env",
+				"$(SRCROOT)/Tools/computer-helper/build-driver.sh",
+			);
+			name = "Build Nollie Computer";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# The pinned Cua Driver build for the Direct Mac edition; cached, so usually instant.\ncase \"$CONFIGURATION\" in\n  DirectRelease) exec \"$SRCROOT/Tools/computer-helper/build-driver.sh\" ;;\n  DirectDebug) \"$SRCROOT/Tools/computer-helper/build-driver.sh\" || echo \"warning: Nollie Computer could not be built; this build can't use the Mac.\" ;;\nesac\n";
+		};
+		C0FFEE0A11D7A5E7C0000008 /* Embed Nollie Computer */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Tools/computer-helper/embed-computer-helper.sh",
+				"$(SRCROOT)/Tools/computer-helper/NollieComputer.entitlements",
+				"$(SRCROOT)/Tools/computer-helper/NOTICE.txt",
+				"$(SRCROOT)/Tools/runtime-helper/embedding-paths.sh",
+			);
+			name = "Embed Nollie Computer";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/Nollie Computer",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Notices/Nollie Computer",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"$SRCROOT/Tools/computer-helper/embed-computer-helper.sh\"\n";
+		};
+		97B911FBB5F4B2415C1B0812 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/Nollie Runtime.app/Contents/_CodeSignature/CodeResources",
+				"$(SRCROOT)/Services/Runtime/com.coreykozarski.nollie.runtime.plist.template",
+				"$(SRCROOT)/Services/Runtime/runtime_entry.py",
+				"$(SRCROOT)/Services/Runtime/managed_addons.py",
+				"$(SRCROOT)/Tools/runtime-helper/embed-runtime-helper.sh",
+				"$(SRCROOT)/Tools/runtime-helper/embedding-paths.sh",
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers",
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Library/LaunchAgents",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"$SRCROOT/Tools/runtime-helper/embed-runtime-helper.sh\"\n";
+		};
+		F99D35F1DBDC2746BD36513E /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/Nollie Notifications.app/Contents/_CodeSignature/CodeResources",
+				"$(SRCROOT)/Tools/runtime-helper/embed-notification-helper.sh",
+				"$(SRCROOT)/Tools/runtime-helper/embedding-paths.sh",
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Library/LoginItems",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"$SRCROOT/Tools/runtime-helper/embed-notification-helper.sh\"\n";
+		};
+		5E7A11C0DE5E7A11C0DE0003 /* Embed Setup Kit */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Tools/runtime-helper/embed-setup-kit.sh",
+				"$(SRCROOT)/Tools/runtime-helper/embedding-paths.sh",
+				"$(SRCROOT)/Tools/dev/setup-kit.py",
+				"$(SRCROOT)/Tools/pins.json",
+				"$(SRCROOT)/Services/Runtime/managed_addons.py",
+				"$(SRCROOT)/Services/Runtime/HermesOverlay/overlay.json",
+			);
+			name = "Embed Setup Kit";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Resources/Setup Kit",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"$SRCROOT/Tools/runtime-helper/embed-setup-kit.sh\"\n";
+		};
+		5A2C0DE1F0000000000000A1 /* Fetch Sparkle */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Tools/sparkle/pin.env",
+				"$(SRCROOT)/Tools/sparkle/fetch-sparkle.sh",
+				"$(SRCROOT)/Tools/sparkle/fetch-phase.sh",
+			);
+			name = "Fetch Sparkle";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# The pinned Sparkle for the Direct Mac edition, checked by size and SHA-256; cached, so usually instant.\n/bin/sh \"$SRCROOT/Tools/sparkle/fetch-phase.sh\"\n";
+		};
+		5A2C0DE1F0000000000000A2 /* Embed Sparkle */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Tools/sparkle/pin.env",
+				"$(SRCROOT)/Tools/sparkle/update-feed.env",
+				"$(SRCROOT)/Tools/sparkle/embed-sparkle.sh",
+				"$(SRCROOT)/Tools/runtime-helper/embedding-paths.sh",
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Embed Sparkle";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)/Sparkle.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"$SRCROOT/Tools/sparkle/embed-sparkle.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		52640ED27B1237A9B9E9370B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0ACD3BF99A9B1B177397B17B /* NollieAlertHelper.swift in Sources */,
+				A9B7E2C15D3F4A6B8C9D0E13 /* AppPresence.swift in Sources */,
+				03A43A5EC025690E3CB85612 /* CloudAlertHelperState.swift in Sources */,
+				3F371615ACCF387FC61F7272 /* CloudAlertHelperObserver.swift in Sources */,
+				32A8305FE5A20DBF5E2B210D /* CloudAlertEvent.swift in Sources */,
+				38FA383E2A255C5A0334ECF4 /* CloudAlertStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000090 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000096 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000099 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000108 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8489C95FE3C24030B38FFBD8 /* CloudAlertEvent.swift in Sources */,
+				CEAC9CD5948D4B9F938D4762 /* CloudAlertStore.swift in Sources */,
+				A838F134510C45A7833FA655 /* CloudAlertNotification.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000126 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000290 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				91AAFA07C72C26ACB94423CC /* RuntimeContract.swift in Sources */,
+				2F5A9BD32E03F468CA5F3695 /* RuntimeIPC.swift in Sources */,
+				232C8943A20C1D7F00E4BAA2 /* LiveRelayIPC.swift in Sources */,
+				A9B7E2C15D3F4A6B8C9D0E14 /* AppPresence.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000390 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C37B2B33D35740DB9331AA0B /* CloudAlertEvent.swift in Sources */,
+				C2AC5E5E9DE2402EA23978BA /* CloudAlertStore.swift in Sources */,
+				8FAE161B958449F8BFB369ED /* CloudAlertNotification.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000596 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CCBAA2C4E2478185CD2E5331 /* LinkDoorWebSocket.swift in Sources */,
+				5534592A0A87F5733A649E93 /* LinkDoorLive.swift in Sources */,
+				672C528FA8BA3D8D6B7CB43B /* LinkDoor.swift in Sources */,
+				6B53B0521C10A7B3FC716678 /* LinkDoorIdentity.swift in Sources */,
+				E103AFED34EB03E3DDE9D478 /* LinkDoorDevices.swift in Sources */,
+				B312589BDB9B24F9F3C87A06 /* LinkDoorPolicy.swift in Sources */,
+				EE575C4EAF1C9AC63BFC11A5 /* LinkDoorHTTP.swift in Sources */,
+				E7FCDD3328BD0DC4C31111E8 /* ExitRelayPolicy.swift in Sources */,
+				455138A18822DFB757E68A14 /* ExitRelayWire.swift in Sources */,
+				8C6A0EB43E1B44A69D8A6058 /* ExitRelay.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D35F989CE7D3C7E235A34A0D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D9C254CE360538157EFD83D7 /* LinkDoorWebSocket.swift in Sources */,
+				F5D2FD20FC5B288F072660D4 /* LinkDoorLive.swift in Sources */,
+				1C5B7D5D9CA7688E148A135D /* RuntimeLink.swift in Sources */,
+				17685224DA26375D1EBE25B6 /* CuaInstaller.swift in Sources */,
+				A9B7E2C15D3F4A6B8C9D0E12 /* AppPresence.swift in Sources */,
+				B1066ED106A1F0000000 /* NollieLog.swift in Sources */,
+				B1066ED106A2F0000000 /* LogFileWriter.swift in Sources */,
+				B1066ED106A3F0000000 /* NollieLogFiles.swift in Sources */,
+				B1066ED106A4F0000000 /* HermesLogLink.swift in Sources */,
+				A9B7E2C15D3F4A6B8C9D0E22 /* NolliePaths.swift in Sources */,
+				A7A7E5F00D1F4E6B9C0A0002 /* NollieLinkAway.swift in Sources */,
+				C1807AFB61CFA12CE919D728 /* LinkDoor.swift in Sources */,
+				35A8180D88664A1206247406 /* LinkDoorIdentity.swift in Sources */,
+				A30280DA4FC0AE856D769B82 /* LinkDoorDevices.swift in Sources */,
+				706E39E291585EB001EECCEC /* LinkDoorPolicy.swift in Sources */,
+				B9F9C77C6EBA771563889EAC /* LinkDoorHTTP.swift in Sources */,
+				EF0FA75B48F0A7748A52D617 /* ExitRelayPolicy.swift in Sources */,
+				1C0C79082145CBC879F72805 /* ExitRelayWire.swift in Sources */,
+				0E3D2AE48501B25482C67A0C /* ExitRelay.swift in Sources */,
+				751B408A45B39444B72C7014 /* RuntimeExitRelay.swift in Sources */,
+				1B5B06379A9478E456AD3B93 /* RuntimeContract.swift in Sources */,
+				747ECF64D9FCC821920892B4 /* RuntimeSupervisor.swift in Sources */,
+				EF99443C8E3E6C6260E8E4F7 /* NativeRuntimeBackend.swift in Sources */,
+				A2C0E011C2D1BFB669CC80DD /* RuntimeIPC.swift in Sources */,
+				BB2D81607900AD0A0E36AB81 /* LiveRelayIPC.swift in Sources */,
+				4C9AB1568B23FBE94B6CB677 /* LiveRelay.swift in Sources */,
+				4D0865143AF7C762FB4FF901 /* RuntimeService.swift in Sources */,
+				81B0AAC07C29B71289FE7E3D /* RuntimeHelperMain.swift in Sources */,
+				FE08EFB720A8F3FFBE0627B6 /* ConfigurationBackup.swift in Sources */,
+				7DE4C00DF69CAB07D12AAC2D /* ScopedHermesImport.swift in Sources */,
+				D8F239F6E15A4D2C9A42D003 /* StarterAssistantDefaults.swift in Sources */,
+				18102E6D87981B5CB3E4BA38 /* NativeDependencyInstaller.swift in Sources */,
+				5E7A11C0DE5E7A11C0DE0001 /* NativeSetupKit.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CC047100000000000000000B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C0FFEE0A11D7A5E7C0000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0FFEE0A11D7A5E7C0000001 /* NollieComputer */;
+			targetProxy = C0FFEE0A11D7A5E7C000000A /* PBXContainerItemProxy */;
+		};
+		64ECF1EF78922A57DD922289 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 476AC16C30D2BDF64FB3A13D /* NollieNotifications */;
+			targetProxy = 03E7AE596E53C8FC9840B69A /* PBXContainerItemProxy */;
+		};
+		98B4DB15596270BD1A755F89 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1DD31D14442C5500AFF04161 /* NollieRuntimeHelper */;
+			targetProxy = EC07022CA450C71EC475DA6D /* PBXContainerItemProxy */;
+		};
+		AA000000000000000000A1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA00000000000000000040 /* Nollie */;
+			targetProxy = AA00000000000000000031 /* PBXContainerItemProxy */;
+		};
+		AA000000000000000000A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA00000000000000000040 /* Nollie */;
+			targetProxy = AA00000000000000000032 /* PBXContainerItemProxy */;
+		};
+		AA00000000000000000111 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA00000000000000000110 /* NollieNotificationService */;
+			targetProxy = AA00000000000000000104 /* PBXContainerItemProxy */;
+		};
+		AA0000000000000000012A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA00000000000000000125 /* NollieNotificationContent */;
+			targetProxy = AA00000000000000000122 /* PBXContainerItemProxy */;
+		};
+		AA00000000000000000311 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA00000000000000000340 /* NollieMacNotificationService */;
+			targetProxy = AA00000000000000000304 /* PBXContainerItemProxy */;
+		};
+		AA000000000000000005A1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA00000000000000000240 /* NollieMac */;
+			targetProxy = AA00000000000000000503 /* PBXContainerItemProxy */;
+		};
+		CC0471000000000000000004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CC047100000000000000000A /* NollieControls */;
+			targetProxy = CC0471000000000000000003 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		C0FFEE0A11D7A5E7C0000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+			};
+			name = Debug;
+		};
+		C0FFEE0A11D7A5E7C0000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+			};
+			name = Release;
+		};
+		C0FFEE0A11D7A5E7C0000005 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+			};
+			name = DirectDebug;
+		};
+		C0FFEE0A11D7A5E7C0000006 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+			};
+			name = DirectRelease;
+		};
+		0601416EAF1954210385BE3B /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				NOLLIE_BUNDLE_IDENTIFIER = com.coreykozarski.nollie;
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = DirectRelease;
+		};
+		0C7F1459796DBDD035BC6B87 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nollie.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nollie";
+			};
+			name = DirectRelease;
+		};
+		23A6E844AFE05D931D59A06B /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Nollie/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = DirectDebug;
+		};
+		300080F0F45F12C24564C0CE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/Notifications/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
+				PRODUCT_NAME = "Nollie Notifications";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		3E83D23A4DCFFEE882C38E00 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/NotificationService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = DirectDebug;
+		};
+		4307F40F05858B3AA2A03B31 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				NOLLIE_BUNDLE_IDENTIFIER = com.coreykozarski.nollie;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = DirectDebug;
+		};
+		4357943C72A095260CFD1EC9 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/NotificationService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = DirectRelease;
+		};
+		47CFDAB4DA8DE63223F60FCA /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Apps/Mac/NollieMacDirect.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(HOME)/Library/Caches/Nollie/sparkle/$(NOLLIE_SPARKLE_VERSION)/Sparkle.xcframework/macos-arm64_x86_64",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Mac/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				NOLLIE_SPARKLE_VERSION = 2.10.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Sparkle,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
+				PRODUCT_MODULE_NAME = Nollie;
+				PRODUCT_NAME = Nollie;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOLLIE_DIRECT";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = DirectDebug;
+		};
+		4D72CC2BE254059F18D0DCA2 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/Notifications/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
+				PRODUCT_NAME = "Nollie Notifications";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = DirectRelease;
+		};
+		5711DC91D9AA5998634092C2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/Runtime/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
+				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
+				PRODUCT_NAME = "Nollie Runtime";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		5BC46D591AD807CC61B86D20 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/Runtime/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
+				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
+				PRODUCT_NAME = "Nollie Runtime";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOLLIE_DIRECT";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+			};
+			name = DirectDebug;
+		};
+		645D1328FB87368679D27D51 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Nollie/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = DirectRelease;
+		};
+		7343735974D6BF2C19F77344 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/MacNotificationService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = DirectRelease;
+		};
+		8124389B55BFED4F237A2343 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Nollie;
+			};
+			name = DirectDebug;
+		};
+		8A91DFD534EBF1FE8FE00F55 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/Notifications/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
+				PRODUCT_NAME = "Nollie Notifications";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = DirectDebug;
+		};
+		8B0FE1AC61874CC59B40E383 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Nollie;
+			};
+			name = DirectRelease;
+		};
+		937F11F4E37B2D92A90281E8 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nollie.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nollie";
+			};
+			name = DirectDebug;
+		};
+		94537CB150CA2E453C34B6B7 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/NotificationContent/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					UserNotifications,
+					"-framework",
+					UserNotificationsUI,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notificationcontent";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = DirectRelease;
+		};
+		9F7C1C5217AE83C3A382B9A2 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/MacNotificationService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = DirectDebug;
+		};
+		AA000000000000000000B0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				NOLLIE_BUNDLE_IDENTIFIER = com.coreykozarski.nollie;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		AA000000000000000000B1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				NOLLIE_BUNDLE_IDENTIFIER = com.coreykozarski.nollie;
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AA000000000000000000B2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Nollie/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA000000000000000000B3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Nollie/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AA000000000000000000B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nollie.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nollie";
+			};
+			name = Debug;
+		};
+		AA000000000000000000B7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nollie.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nollie";
+			};
+			name = Release;
+		};
+		AA000000000000000000B8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Nollie;
+			};
+			name = Debug;
+		};
+		AA000000000000000000B9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Nollie;
+			};
+			name = Release;
+		};
+		AA00000000000000000113 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/NotificationService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA00000000000000000114 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/NotificationService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AA0000000000000000012C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/NotificationContent/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					UserNotifications,
+					"-framework",
+					UserNotificationsUI,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notificationcontent";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA0000000000000000012D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/NotificationContent/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					UserNotifications,
+					"-framework",
+					UserNotificationsUI,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notificationcontent";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AA000000000000000002B2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Apps/Mac/NollieMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Mac/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
+				PRODUCT_MODULE_NAME = Nollie;
+				PRODUCT_NAME = Nollie;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		AA000000000000000002B3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Apps/Mac/NollieMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Mac/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
+				PRODUCT_MODULE_NAME = Nollie;
+				PRODUCT_NAME = Nollie;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		AA000000000000000003B2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/MacNotificationService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		AA000000000000000003B3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/MacNotificationService/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		AA000000000000000005B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nollie.app/Contents/MacOS/Nollie";
+			};
+			name = Debug;
+		};
+		AA000000000000000005B7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nollie.app/Contents/MacOS/Nollie";
+			};
+			name = Release;
+		};
+		ADAC6244101ACE18420E14D2 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(HOME)/Library/Caches/Nollie/sparkle/$(NOLLIE_SPARKLE_VERSION)/Sparkle.xcframework/macos-arm64_x86_64",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				NOLLIE_SPARKLE_VERSION = 2.10.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOLLIE_DIRECT";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nollie.app/Contents/MacOS/Nollie";
+			};
+			name = DirectDebug;
+		};
+		AF4E609197EB438244D8D6C7 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Apps/Mac/NollieMacDirect.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(HOME)/Library/Caches/Nollie/sparkle/$(NOLLIE_SPARKLE_VERSION)/Sparkle.xcframework/macos-arm64_x86_64",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Mac/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				NOLLIE_SPARKLE_VERSION = 2.10.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Sparkle,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
+				PRODUCT_MODULE_NAME = Nollie;
+				PRODUCT_NAME = Nollie;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOLLIE_DIRECT";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = DirectRelease;
+		};
+		BEC511680F39DA944AF2224F /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/Runtime/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
+				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
+				PRODUCT_NAME = "Nollie Runtime";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOLLIE_DIRECT";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+			};
+			name = DirectRelease;
+		};
+		CD9504660D9B2B211DA48557 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/Runtime/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
+				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
+				PRODUCT_NAME = "Nollie Runtime";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		D093E315EC2FCBC0F13F2E9A /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(HOME)/Library/Caches/Nollie/sparkle/$(NOLLIE_SPARKLE_VERSION)/Sparkle.xcframework/macos-arm64_x86_64",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				NOLLIE_SPARKLE_VERSION = 2.10.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOLLIE_DIRECT";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nollie.app/Contents/MacOS/Nollie";
+			};
+			name = DirectRelease;
+		};
+		EA5FC5D25D6FC733822E5FD9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/Notifications/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
+				PRODUCT_NAME = "Nollie Notifications";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		F339797C3CD5CDF63CE415DB /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/NotificationContent/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					UserNotifications,
+					"-framework",
+					UserNotificationsUI,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notificationcontent";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = DirectDebug;
+		};
+		CC0471000000000000000014 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CC0471000000000000000015 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = DirectDebug;
+		};
+		CC0471000000000000000016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		CC0471000000000000000017 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = DirectRelease;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C0FFEE0A11D7A5E7C0000002 /* Build configuration list for PBXAggregateTarget "NollieComputer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0FFEE0A11D7A5E7C0000003 /* Debug */,
+				C0FFEE0A11D7A5E7C0000004 /* Release */,
+				C0FFEE0A11D7A5E7C0000005 /* DirectDebug */,
+				C0FFEE0A11D7A5E7C0000006 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3AA41437324808E3B432F199 /* Build configuration list for PBXNativeTarget "NollieRuntimeHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5711DC91D9AA5998634092C2 /* Debug */,
+				CD9504660D9B2B211DA48557 /* Release */,
+				5BC46D591AD807CC61B86D20 /* DirectDebug */,
+				BEC511680F39DA944AF2224F /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000000000000000080 /* Build configuration list for PBXNativeTarget "Nollie" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000000B2 /* Debug */,
+				23A6E844AFE05D931D59A06B /* DirectDebug */,
+				AA000000000000000000B3 /* Release */,
+				645D1328FB87368679D27D51 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000000000000000081 /* Build configuration list for PBXProject "Nollie" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000000B0 /* Debug */,
+				4307F40F05858B3AA2A03B31 /* DirectDebug */,
+				AA000000000000000000B1 /* Release */,
+				0601416EAF1954210385BE3B /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000000000000000083 /* Build configuration list for PBXNativeTarget "NollieTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000000B6 /* Debug */,
+				937F11F4E37B2D92A90281E8 /* DirectDebug */,
+				AA000000000000000000B7 /* Release */,
+				0C7F1459796DBDD035BC6B87 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000000000000000084 /* Build configuration list for PBXNativeTarget "NollieUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000000B8 /* Debug */,
+				8124389B55BFED4F237A2343 /* DirectDebug */,
+				AA000000000000000000B9 /* Release */,
+				8B0FE1AC61874CC59B40E383 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000000000000000112 /* Build configuration list for PBXNativeTarget "NollieNotificationService" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA00000000000000000113 /* Debug */,
+				3E83D23A4DCFFEE882C38E00 /* DirectDebug */,
+				AA00000000000000000114 /* Release */,
+				4357943C72A095260CFD1EC9 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA0000000000000000012B /* Build configuration list for PBXNativeTarget "NollieNotificationContent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000012C /* Debug */,
+				F339797C3CD5CDF63CE415DB /* DirectDebug */,
+				AA0000000000000000012D /* Release */,
+				94537CB150CA2E453C34B6B7 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000000000000000280 /* Build configuration list for PBXNativeTarget "NollieMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000002B2 /* Debug */,
+				47CFDAB4DA8DE63223F60FCA /* DirectDebug */,
+				AA000000000000000002B3 /* Release */,
+				AF4E609197EB438244D8D6C7 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000000000000000380 /* Build configuration list for PBXNativeTarget "NollieMacNotificationService" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000003B2 /* Debug */,
+				9F7C1C5217AE83C3A382B9A2 /* DirectDebug */,
+				AA000000000000000003B3 /* Release */,
+				7343735974D6BF2C19F77344 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000000000000000583 /* Build configuration list for PBXNativeTarget "NollieMacTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000005B6 /* Debug */,
+				ADAC6244101ACE18420E14D2 /* DirectDebug */,
+				AA000000000000000005B7 /* Release */,
+				D093E315EC2FCBC0F13F2E9A /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D76595087B067C67FC6000F8 /* Build configuration list for PBXNativeTarget "NollieNotifications" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				300080F0F45F12C24564C0CE /* Debug */,
+				EA5FC5D25D6FC733822E5FD9 /* Release */,
+				8A91DFD534EBF1FE8FE00F55 /* DirectDebug */,
+				4D72CC2BE254059F18D0DCA2 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CC047100000000000000000E /* Build configuration list for PBXNativeTarget "NollieControls" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CC0471000000000000000014 /* Debug */,
+				CC0471000000000000000015 /* DirectDebug */,
+				CC0471000000000000000016 /* Release */,
+				CC0471000000000000000017 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		AA000000000000000000C0 /* XCLocalSwiftPackageReference "Packages/NollieCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/NollieCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA000000000000000000C1 /* NollieCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NollieCore;
+		};
+		AA000000000000000000C2 /* NollieCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NollieCore;
+		};
+		AA00000000000000000103 /* NollieCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NollieCore;
+		};
+		AA00000000000000000129 /* NollieCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NollieCore;
+		};
+		AA00000000000000000201 /* NollieCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NollieCore;
+		};
+		AA00000000000000000301 /* NollieCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NollieCore;
+		};
+		AA00000000000000000502 /* NollieCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NollieCore;
+		};
+		C3CA63868020C3FC4C338542 /* NollieCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NollieCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = AA00000000000000000001 /* Project object */;
+}

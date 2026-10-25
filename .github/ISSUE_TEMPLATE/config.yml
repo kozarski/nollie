@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem privately
+    url: https://github.com/kozarski/nollie/security/policy
+    about: Never in a public issue. SECURITY.md says how.
+  - name: Help with Nollie
+    url: https://nollie.app
+    about: Setup help, downloads and the answers to common questions.

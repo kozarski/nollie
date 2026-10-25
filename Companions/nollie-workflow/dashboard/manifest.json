@@ -1,0 +1,9 @@
+{
+  "name": "nollie-workflow",
+  "label": "Board follow-through",
+  "description": "Private-filtered Board outcomes and delivery status.",
+  "version": "0.1.0",
+  "tab": { "hidden": true },
+  "entry": "index.js",
+  "api": "plugin_api.py"
+}

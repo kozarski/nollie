@@ -1,0 +1,102 @@
+{
+  "fill": {
+    "linear-gradient": [
+      "srgb:0.847,0.914,0.984,1",
+      "srgb:0.561,0.745,0.941,1"
+    ]
+  },
+  "fill-specializations": [
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.102,0.161,0.251,1",
+          "srgb:0.051,0.090,0.149,1"
+        ]
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "Face",
+      "layers": [
+        {
+          "name": "Idle face",
+          "image-name": "Face.svg",
+          "glass": false,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 1
+      },
+      "specular": false
+    },
+    {
+      "name": "Nollie",
+      "layers": [
+        {
+          "name": "Body",
+          "image-name": "Body.png",
+          "glass": false,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 1
+      },
+      "specular": false
+    },
+    {
+      "name": "Floor",
+      "layers": [
+        {
+          "name": "Shadow",
+          "image-name": "Shadow.png",
+          "glass": false,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 1
+      },
+      "specular": false
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

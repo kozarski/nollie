@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 Corey Kozarski</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(NOLLIE_BUNDLE_IDENTIFIER).links</string>
+			<key>CFBundleURLSchemes</key>
+			<!-- The second scheme accepts links created before the identity migration. -->
+			<array><string>nollie</string></array>
+		</dict>
+	</array>
+	<key>AppIdentifierPrefix</key>
+	<string>$(AppIdentifierPrefix)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Nollie</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Nollie</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>INSendMessageIntent</string>
+		<string>$(NOLLIE_BUNDLE_IDENTIFIER).chat</string>
+	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- The gateway URL is user supplied. Plain http:// is allowed so LAN
+		     installs (http://host:9119) work; the Connect form warns when the
+		     scheme is http and the host is not on a private network. -->
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<!-- Nothing else in this dictionary: NSAllowsLocalNetworking (or the media and web
+		     content keys) beside NSAllowsArbitraryLoads makes the system ignore the latter, and
+		     plain http to a Tailscale or LAN host was refused on the Mac (ATS error -1022). -->
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo to attach to a chat with your Hermes agent.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_nollie._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Let your iPhone find this Mac on your Wi-Fi, and connect to a Hermes dashboard on your local network.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Dictate a message, or record a voice memo to attach.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Turn what you dictate into words on this Mac.</string>
+</dict>
+</plist>

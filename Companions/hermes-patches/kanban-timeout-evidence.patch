@@ -1,0 +1,22 @@
+--- a/tui_gateway/session_notifications.py
++++ b/tui_gateway/session_notifications.py
+@@ -336,9 +336,16 @@
+ 
+ 
+ def _kb_timed_out(task, payload: dict, title: str) -> str:
+-    with contextlib.suppress(TypeError, ValueError):
+-        return f" timed out (max_runtime={int(payload.get('limit_seconds') or 0)}s); will retry"
+-    return " timed out (max_runtime=0s); will retry"
++    # The event is historical evidence; a task's current settings may have changed.
++    raw = payload.get("limit_seconds")
++    if isinstance(raw, (int, str)) and not isinstance(raw, bool):
++        with contextlib.suppress(TypeError, ValueError):
++            limit = int(raw)
++            if limit > 0:
++                return (f" reached its recorded runtime limit ({limit}s); "
++                        "check current task state before retrying")
++    return (" reported a timeout without a recorded positive runtime limit; "
++            "check the run details before retrying")
+ 
+ 
+ # kind -> (glyph, suffix after "Kanban <id>"); silent kinds (archived/unblocked) are absent → None.

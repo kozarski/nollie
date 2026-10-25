@@ -1,0 +1,61 @@
+DEFINE SCHEMA
+
+    RECORD TYPE Users (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        roles           LIST<INT64>,
+        GRANT WRITE TO "_creator",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE NollieAlertEventV1 (
+        "___createTime" TIMESTAMP,
+        "___createdBy" REFERENCE,
+        "___etag" STRING,
+        "___modTime" TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID" REFERENCE QUERYABLE,
+        version INT64 QUERYABLE,
+        source STRING QUERYABLE,
+        kind STRING,
+        target STRING,
+        previewTitle STRING,
+        previewBody STRING,
+        createdAt TIMESTAMP,
+        expiresAt TIMESTAMP QUERYABLE,
+        GRANT CREATE TO "_icloud",
+        GRANT READ, WRITE TO "_creator"
+    );
+
+    RECORD TYPE NollieAlertPreferencesV1 (
+        "___createTime" TIMESTAMP,
+        "___createdBy" REFERENCE,
+        "___etag" STRING,
+        "___modTime" TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID" REFERENCE QUERYABLE,
+        version INT64,
+        enabled INT64,
+        GRANT CREATE TO "_icloud",
+        GRANT READ, WRITE TO "_creator"
+    );
+
+    RECORD TYPE NollieAlertReceiptV1 (
+        "___createTime" TIMESTAMP,
+        "___createdBy" REFERENCE,
+        "___etag" STRING,
+        "___modTime" TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID" REFERENCE QUERYABLE,
+        version INT64,
+        source STRING QUERYABLE,
+        expiresAt TIMESTAMP QUERYABLE,
+        receivedAt TIMESTAMP,
+        openedAt TIMESTAMP,
+        GRANT CREATE TO "_icloud",
+        GRANT READ, WRITE TO "_creator"
+    );

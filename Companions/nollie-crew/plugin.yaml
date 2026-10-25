@@ -1,0 +1,5 @@
+name: nollie-crew
+version: "0.1.0"
+description: "Nollie runs the crew: adds, changes, pauses and retires its own helper bots."
+provides_hooks: [pre_tool_call, post_approval_response]
+provides_tools: [crew_add, crew_list, crew_update, crew_pause, crew_resume, crew_retire, crew_undo, crew_not_now]

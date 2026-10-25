@@ -1,0 +1,16 @@
+name: Idea
+description: Something Nollie could do, or do better.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What you would like Nollie to do, and what it would let you do that you can't today.
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Your Mac and your phone
+      description: Optional, when the idea depends on them.

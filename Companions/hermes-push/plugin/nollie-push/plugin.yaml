@@ -1,0 +1,4 @@
+name: nollie-push
+version: "1.0.42"
+description: "Alerts for the Nollie apps when they are in the background. It follows this gateway's sessions and sends approvals, questions, finished turns and errors to your phone, encrypted, through the Nollie push relay or straight to APNs with your own key. Nollie sets it up under Settings > Notifications."
+hooks: []

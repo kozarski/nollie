@@ -1,0 +1,5 @@
+name: nollie-pairing
+version: "0.1.0"
+description: "One-time iPhone pairing for an authenticated HTTPS Hermes dashboard."
+kind: backend
+hooks: []

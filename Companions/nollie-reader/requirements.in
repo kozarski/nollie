@@ -1,0 +1,7 @@
+# The page reader's own environment: what it imports. requirements.txt is the locked, hashed result.
+# Regenerate with uv (pinned in Tools/pins.json), wheels only, for Nollie's Python on Apple silicon:
+#   uv pip compile requirements.in --python-version 3.14 --python-platform aarch64-apple-darwin \
+#     --only-binary :all: --generate-hashes --no-header --no-annotate -o requirements.txt
+# then put the licence note back at the top. Never installed into Hermes's own environment.
+trafilatura
+pypdf

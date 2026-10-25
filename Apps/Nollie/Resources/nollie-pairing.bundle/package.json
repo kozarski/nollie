@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "plugin": "nollie-pairing",
+  "version": "0.1.0",
+  "files": [
+    {
+      "path": "__init__.py",
+      "bytes": 880,
+      "sha256": "933857c77fc2d50c6e09d455cb58e88b632c3450d66fb6575ad17e9f9c2413d4"
+    },
+    {
+      "path": "provider.py",
+      "bytes": 13943,
+      "sha256": "54c8d76e2789f1f970e3423b1bf2cac04e14e7f79a1d634eccb98f00a56bf8d9"
+    },
+    {
+      "path": "plugin.yaml",
+      "bytes": 145,
+      "sha256": "5c0c33d12a77e54778b92b64947ec5f785a1aa4ffa4d53db028662d5b0bd505b"
+    },
+    {
+      "path": "dashboard/manifest.json",
+      "bytes": 184,
+      "sha256": "f6ecd9cdfaf41d1435dc70fbaf75ec9b2573e6b4db207a090d400765a5e072f8"
+    },
+    {
+      "path": "dashboard/plugin_api.py",
+      "bytes": 4293,
+      "sha256": "e5dcd283db530652cf68e14a48f715850b0eb170076eecc501c2d395b895af3a"
+    },
+    {
+      "path": "dashboard/index.js",
+      "bytes": 19,
+      "sha256": "450f0af4f4c1ecc4c7180f2e364c8a59bfed69dd350fb6b47bce8641c2a37786"
+    }
+  ]
+}

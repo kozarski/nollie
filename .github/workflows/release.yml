@@ -1,0 +1,150 @@
+# Releases of Nollie. Nobody's signing identity lives in GitHub, so this workflow does not build, sign
+# or notarize anything. Corey makes the signed files on his own Mac (Docs/releasing.md). This workflow
+# does the two jobs that need no secret:
+#
+# - Draft: pushing a tag v<version> (or running this by hand with action "draft" and the tag) checks the
+#   tag against the app's version number and starts a DRAFT GitHub Release from
+#   Docs/release-notes-template.md. It never publishes; Corey edits the notes, adds the files and
+#   presses Publish.
+# - Check: after Corey has uploaded Nollie.dmg, Nollie.zip, their .sha256 files and appcast.xml to the draft,
+#   running this by hand with action "check" and the same tag downloads them and checks that each checksum
+#   file matches, that the disk image's notarization ticket is stapled, that Gatekeeper accepts the app
+#   inside, and that appcast.xml (what installed copies of Nollie read to update themselves) names this
+#   tag's zip, with its exact length and a signature. It writes the checksums into the run's summary,
+#   ready to paste into the notes. Nothing is changed. (The Gatekeeper steps have not been run on a
+#   hosted runner yet; if one misbehaves there, check the same things on a Mac as Docs/releasing.md says.)
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      action:
+        description: draft starts the draft release; check verifies the files Corey uploaded to it
+        type: choice
+        options: [draft, check]
+        default: check
+      tag:
+        description: The release tag, such as v0.1.0 (it must already exist for draft)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+# One run per tag at a time.
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  draft:
+    name: Start the draft release
+    if: github.event_name == 'push' || inputs.action == 'draft'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # to create the draft release
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          persist-credentials: false
+
+      # Nollie for Mac and for iPhone share one version number, so every MARKETING_VERSION in the
+      # project must be the same, and the tag must be v plus that number.
+      - name: Check the tag against the app's version
+        id: version
+        run: |
+          versions="$(grep -h 'MARKETING_VERSION = ' Nollie.xcodeproj/project.pbxproj | sed 's/.*= *//; s/;.*//' | sort -u)"
+          if [ "$(printf '%s\n' "$versions" | wc -l | tr -d ' ')" != 1 ]; then
+            echo "::error::The project has more than one version number: $(echo $versions). The Mac and iPhone apps share one."
+            exit 1
+          fi
+          if [ "$TAG" != "v$versions" ]; then
+            echo "::error::The tag is $TAG, but the app's version is $versions. Tag it v$versions, or change the version first."
+            exit 1
+          fi
+          echo "version=$versions" >> "$GITHUB_OUTPUT"
+
+      - name: Create the draft release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "A release for $TAG already exists, so nothing was changed."
+            exit 0
+          fi
+          sed "s/{version}/$VERSION/g" Docs/release-notes-template.md > "$RUNNER_TEMP/notes.md"
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+            --title "Nollie $VERSION" --notes-file "$RUNNER_TEMP/notes.md"
+          {
+            echo "Draft release $TAG created from the notes template."
+            echo
+            echo "Next: edit the notes, upload Nollie.dmg, Nollie.zip, their .sha256 files and appcast.xml, run this"
+            echo "workflow with action check, then publish. Docs/releasing.md has the steps."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  check:
+    name: Check the uploaded files
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'check'
+    runs-on: macos-26
+    timeout-minutes: 20
+    permissions:
+      contents: write # a draft release is only visible to a token that can write
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          persist-credentials: false
+
+      - name: Download the release's files
+        run: |
+          mkdir -p "$RUNNER_TEMP/release"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/release" \
+            --pattern 'Nollie.dmg' --pattern 'Nollie.dmg.sha256' --pattern 'Nollie.zip' --pattern 'Nollie.zip.sha256' \
+            --pattern 'appcast.xml'
+          ls -l "$RUNNER_TEMP/release"
+
+      - name: Check every checksum file
+        run: |
+          cd "$RUNNER_TEMP/release"
+          for file in Nollie.dmg Nollie.zip; do
+            [ -f "$file" ] && [ -f "$file.sha256" ] || { echo "::error::$file or $file.sha256 is missing from the release."; exit 1; }
+            shasum -a 256 -c "$file.sha256"
+          done
+          {
+            echo "Checksums for $TAG, ready to paste into the notes:"
+            echo
+            echo "SHA-256 of Nollie.dmg: $(shasum -a 256 Nollie.dmg | awk '{print $1}') · of Nollie.zip: $(shasum -a 256 Nollie.zip | awk '{print $1}')"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the appcast that installed copies update from
+        run: |
+          [ -f "$RUNNER_TEMP/release/appcast.xml" ] || { echo "::error::appcast.xml is missing from the release. Run Tools/release/sparkle-appcast.sh and upload it."; exit 1; }
+          python3 -I Tools/release/check_appcast.py "$RUNNER_TEMP/release/appcast.xml" --tag "$TAG" --zip "$RUNNER_TEMP/release/Nollie.zip"
+
+      - name: Check the disk image's notarization ticket
+        run: xcrun stapler validate "$RUNNER_TEMP/release/Nollie.dmg"
+
+      - name: Check that Gatekeeper accepts the app inside
+        run: |
+          mount="$RUNNER_TEMP/dmg"
+          mkdir -p "$mount"
+          hdiutil attach "$RUNNER_TEMP/release/Nollie.dmg" -mountpoint "$mount" -nobrowse -readonly -quiet
+          trap 'hdiutil detach "$mount" -quiet || true' EXIT
+          codesign --verify --deep --strict "$mount/Nollie.app"
+          xcrun stapler validate "$mount/Nollie.app"
+          spctl -a -vvv -t exec "$mount/Nollie.app" 2>&1 | tee "$RUNNER_TEMP/gatekeeper.txt"
+          grep -q 'source=Notarized Developer ID' "$RUNNER_TEMP/gatekeeper.txt"

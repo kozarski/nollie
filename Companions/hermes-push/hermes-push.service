@@ -1,0 +1,19 @@
+# systemd user service for the hermes-push companion. To install it:
+#   mkdir -p ~/.config/systemd/user && cp hermes-push.service ~/.config/systemd/user/
+#   cp hermes-push.env.example ~/.config/hermes-push.env    # then edit the copy
+#   systemctl --user daemon-reload && systemctl --user enable --now hermes-push
+#   loginctl enable-linger $USER    # lets it run while you are logged out
+[Unit]
+Description=hermes-push: APNs relay for the Nollie apps
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/hermes-push.env
+ExecStart=%h/.hermes/hermes-agent/venv/bin/python %h/.hermes/hermes-push/hermes_push.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

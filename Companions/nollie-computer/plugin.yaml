@@ -1,0 +1,5 @@
+name: nollie-computer
+version: "0.5.0"
+description: "Computer previews and helpers' own computers for Nollie, and a pause for Cua computer tools while a person has taken over."
+provides_hooks:
+  - pre_tool_call

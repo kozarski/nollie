@@ -1,0 +1,23 @@
+{
+  "Version": "1.76.6-t3f0b5a1e2-g7d2c1b9a4",
+  "TUN": true,
+  "BackendState": "NeedsLogin",
+  "HaveNodeKey": false,
+  "AuthURL": "",
+  "TailscaleIPs": null,
+  "Self": {
+    "ID": "",
+    "HostName": "Studio",
+    "DNSName": "",
+    "OS": "macOS",
+    "TailscaleIPs": null,
+    "Online": false
+  },
+  "Health": [
+    "You are logged out."
+  ],
+  "MagicDNSSuffix": "",
+  "CurrentTailnet": null,
+  "Peer": null,
+  "User": null
+}

@@ -1,0 +1,5 @@
+name: nollie-mac
+version: "0.1.0"
+description: "Lets a bot use apps on this Mac only after the person approves them in Nollie."
+hooks:
+  - pre_tool_call

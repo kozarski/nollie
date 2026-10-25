@@ -1,0 +1,11 @@
+--- a/tui_gateway/session_notifications.py
++++ b/tui_gateway/session_notifications.py
+@@ -476,7 +476,7 @@
+         session["_kanban_pending"] = [text for text in pending if split and isinstance(text, DiagnosticText) != diagnostic]
+     with contextlib.suppress(Exception):
+         _notif_submit(f"__notif__{int(time.time() * 1000)}", sid, session, "\n".join(batch),
+-                      "kanban notification dispatch failed",
++                      "kanban notification dispatch failed", display_kind="internal_notification",
+                       **({"display_metadata": {"notification_category": "diagnostic"}} if diagnostic else {}))
+ 
+ 

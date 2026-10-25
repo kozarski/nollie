@@ -1,0 +1,15 @@
+xcuserdata/
+DerivedData/
+*.xcuserstate
+.DS_Store
+build/
+__pycache__/
+*.pyc
+*.profraw
+Tools/release/.env
+.dev.vars
+Companions/push-relay/node_modules/
+
+# local tooling and notes
+Docs/agent-memory/
+.build/

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(NOLLIE_BUNDLE_IDENTIFIER).links</string>
+			<key>CFBundleURLSchemes</key>
+			<!-- The second scheme accepts links created before the identity migration. -->
+			<array><string>nollie</string></array>
+		</dict>
+	</array>
+	<key>AppIdentifierPrefix</key>
+	<string>$(AppIdentifierPrefix)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Nollie</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Nollie</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>INSendMessageIntent</string>
+		<string>$(NOLLIE_BUNDLE_IDENTIFIER).chat</string>
+	</array>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- The gateway URL is user supplied. Plain http:// is allowed so LAN,
+		     Tailscale and other private installs (http://host:9119) work; the
+		     Connect form warns when the scheme is http and the host is public.
+		     Only this key: with NSAllowsLocalNetworking beside it iOS ignores
+		     NSAllowsArbitraryLoads and refuses http to anything but the LAN,
+		     which is what testers on Tailscale hit in 1.1 (17). -->
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Scan your Mac's pairing code or take a photo to attach to a chat.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Unlock the app and your saved gateway credentials.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_nollie._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Find and connect to Nollie on your Mac, or to a Hermes dashboard on your local network.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save a picture from a chat to your Photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Dictate a message, or record a voice memo to attach.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Turn what you dictate into words on this device.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<!-- One window on the iPad. Every window shares the one app model, so a
+		     second one mirrored the first and a single tap could start two chats.
+		     Off until windows keep their own state. -->
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIUserNotificationCenterActionableCategories</key>
+	<array/>
+</dict>
+</plist>

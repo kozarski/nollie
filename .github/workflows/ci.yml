@@ -1,0 +1,179 @@
+# CI for Nollie: on pushes and pull requests to main, and by hand (Actions > CI > Run workflow).
+#
+# What runs here, with nothing signed and no secret used:
+#   - the iPhone app, built for the simulator without signing
+#   - the sandboxed Mac client, built without signing
+#   - the Python suites (the same list as Tools/dev/verify.py), against Hermes Agent v0.22.2
+#   - the app unit tests on a simulator, as a hint only (see the last job)
+#
+# What cannot run on a hosted runner, and still runs on Corey's Mac with Tools/dev/verify.py:
+#   - the signed builds, and with them the full Mac app (NollieMacDirect). Keychain, helper and Login Item
+#     checks need Corey's team (5985LRZFZS) and its profiles, so the Mac client here is built unsigned and
+#     proves only that the code compiles.
+#   - the Mac unit tests (NollieMacTests). They need the signed Direct build.
+#   - the golden UI flows. They drive a demo copy against the mock gateway in one booted simulator, which
+#     is too slow and too fragile on a shared runner.
+#   - the tests that need Hermes's own Python environment (NOLLIE_HERMES_PYTHON). They skip, as they do
+#     in verify.py when it is not set.
+#   - releases. Tools/release/direct-release.sh needs Corey's Developer ID and notary login. Docs/releasing.md
+#     says how a release is made.
+#
+# Runner: Nollie is built with Xcode 27. In October 2026 the only GitHub-hosted image with Xcode 27 is
+# `xcode-27` (a public preview; macos-26 and macos-latest stop at Xcode 26.6 and cannot build Nollie).
+# To use another image, set the repository variable NOLLIE_RUNNER (Settings > Secrets and variables >
+# Actions > Variables) instead of editing this file.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+# A newer push to the same pull request or branch cancels the run still going for the older one.
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UNSIGNED: CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=
+
+jobs:
+  iphone:
+    name: iPhone app builds
+    runs-on: ${{ vars.NOLLIE_RUNNER || 'xcode-27' }}
+    timeout-minutes: 40
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Show the toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      # arm64 only: the generic simulator destination would also build for Intel Macs' simulators,
+      # twice the work, and no source depends on the architecture.
+      - name: Build Nollie for the simulator (Debug, not signed)
+        run: |
+          xcodebuild -project Nollie.xcodeproj -scheme Nollie -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/dd-ios" $UNSIGNED ARCHS=arm64 build
+
+  mac:
+    name: Mac client builds
+    runs-on: ${{ vars.NOLLIE_RUNNER || 'xcode-27' }}
+    timeout-minutes: 40
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Show the toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      # The sandboxed Mac client. It compiles without signing; macOS would refuse to run it unsigned.
+      - name: Build the Mac client (NollieMac, Debug, not signed)
+        run: |
+          xcodebuild -project Nollie.xcodeproj -scheme NollieMac -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/dd-mac" $UNSIGNED build
+
+      # Not here: the full Mac app (scheme NollieMacDirect, with Nollie Runtime and its helpers). Its
+      # helpers carry entitlements that need Corey's development certificate and profiles, and its
+      # embed scripts refuse a helper that has no signature, so an unsigned or ad hoc build stops with
+      # "has entitlements that require signing with a development certificate". It is built and tested
+      # on Corey's Mac by Tools/dev/verify.py.
+
+  python:
+    name: Python suites
+    runs-on: ${{ vars.NOLLIE_RUNNER || 'xcode-27' }}
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The suites are run with Python 3.12 on the development Macs. The runner's own newer Python
+      # changed subprocess and timing behaviour under test, so CI uses the same version.
+      - name: Use Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      # Some suites import Hermes Agent's own source, read-only, at the version Nollie pins
+      # (Tools/pins.json). They refuse a checkout that is not that exact commit.
+      - name: Get Hermes Agent v0.22.2
+        run: |
+          git clone --quiet --depth 1 --branch v0.22.2 https://github.com/NousResearch/hermes-agent "$RUNNER_TEMP/hermes-v0.22.2"
+          pinned="$(python3 -I -c "import json; print(next(c['commit'] for c in json.load(open('Tools/pins.json'))['components'] if c['id'] == 'hermes'))")"
+          actual="$(git -C "$RUNNER_TEMP/hermes-v0.22.2" rev-parse HEAD)"
+          if [ "$pinned" != "$actual" ]; then
+            echo "::error::Hermes v0.22.2 is at $actual, but Tools/pins.json pins $pinned."
+            exit 1
+          fi
+          echo "NOLLIE_HERMES_SOURCE=$RUNNER_TEMP/hermes-v0.22.2" >> "$GITHUB_ENV"
+
+      # verify.py makes a virtual environment under build/verify and runs every suite it lists,
+      # so CI and a local check never drift apart. It exits non-zero if any suite fails.
+      - name: Run the Python suites
+        run: python3 Tools/dev/verify.py python
+
+      - name: Keep the logs when a suite fails
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-logs
+          path: build/verify/logs
+          retention-days: 14
+          if-no-files-found: ignore
+
+  unit:
+    name: App unit tests (a hint, not a gate)
+    runs-on: ${{ vars.NOLLIE_RUNNER || 'xcode-27' }}
+    timeout-minutes: 45
+    # Not a gate yet. Some of these tests use the keychain, and a simulator build needs a signature for
+    # that. Here it is signed ad hoc, which may not be enough, and nobody has seen this job pass on a
+    # hosted runner. Once it has, remove the next line so a failure blocks a merge.
+    continue-on-error: true
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Pick an iPhone simulator
+        run: |
+          udid="$(xcrun simctl list devices available -j | python3 -I -c "
+          import json, sys
+          found = []
+          for runtime, devices in sorted(json.load(sys.stdin)['devices'].items(), reverse=True):
+              for device in devices:
+                  if 'iOS' in runtime and 'iPhone' in device['name']:
+                      found.append((not device['name'].endswith('Pro'), device['udid']))
+          print(sorted(found)[0][1] if found else '')
+          ")"
+          if [ -z "$udid" ]; then echo "::error::This runner has no iPhone simulator."; exit 1; fi
+          echo "SIMULATOR_UDID=$udid" >> "$GITHUB_ENV"
+
+      - name: Run NollieTests (ad hoc signed)
+        run: |
+          xcodebuild -project Nollie.xcodeproj -scheme Nollie -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+            -derivedDataPath "$RUNNER_TEMP/dd-unit" -parallel-testing-enabled NO \
+            -resultBundlePath "$RUNNER_TEMP/unit.xcresult" \
+            CODE_SIGN_IDENTITY=- \
+            test -only-testing:NollieTests

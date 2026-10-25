@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- launchd agent for macOS hosts.
+     cp com.coreykozarski.nollie.push.plist ~/Library/LaunchAgents/
+     edit the two paths and the env values below, then:
+     launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.coreykozarski.nollie.push.plist -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.coreykozarski.nollie.push</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/YOU/.hermes/hermes-agent/venv/bin/python</string>
+        <string>/Users/YOU/.hermes/hermes-push/hermes_push.py</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HERMES_PUSH_GATEWAY_URL</key><string>http://127.0.0.1:9119</string>
+        <key>HERMES_PUSH_GATEWAY_TOKEN</key><string>REPLACE_WITH_HERMES_DASHBOARD_SESSION_TOKEN</string>
+        <key>HERMES_PUSH_APNS_KEY_FILE</key><string>/Users/YOU/.appstoreconnect/AuthKey_XXXXXXXXXX.p8</string>
+        <key>HERMES_PUSH_APNS_KEY_ID</key><string>XXXXXXXXXX</string>
+        <key>HERMES_PUSH_APNS_TEAM_ID</key><string>YYYYYYYYYY</string>
+    </dict>
+    <key>RunAtLoad</key><true/>
+    <key>KeepAlive</key><true/>
+    <key>StandardOutPath</key><string>/tmp/hermes-push.log</string>
+    <key>StandardErrorPath</key><string>/tmp/hermes-push.log</string>
+</dict>
+</plist>

@@ -1,0 +1,65 @@
+name: Bug report
+description: Something in Nollie doesn't work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        A security problem? Please don't report it here. SECURITY.md in this repository says how to
+        report it privately. Setting Nollie up? The guides in Docs may already have the answer.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what Nollie did instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen again
+      placeholder: |
+        1.
+        2.
+        3.
+  - type: input
+    id: mac
+    attributes:
+      label: Your Mac and its macOS
+      placeholder: MacBook Air (M3), macOS 26.1
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Nollie's version
+      description: Settings › About shows it at the top, such as "Version 0.1 (12)". Say which app it is, Mac or iPhone.
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Your iPhone or iPad and its iOS
+      description: Only if the problem is on your phone.
+      placeholder: iPhone 17 Pro, iOS 26.1
+  - type: dropdown
+    id: model
+    attributes:
+      label: Where the helper was thinking
+      options:
+        - A model on my Mac
+        - My ChatGPT plan
+        - My Claude plan
+        - An API key I added
+        - I don't know
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics file
+      description: >-
+        Optional, and very helpful. In Nollie, open Settings › About › Diagnostics and press Share
+        diagnostics. It leaves out private details, but it is still public here. Read it first, and
+        attach it by dragging it into this box.
+      placeholder: Drag the file here.

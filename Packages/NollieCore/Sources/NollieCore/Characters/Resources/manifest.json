@@ -1,0 +1,1239 @@
+{
+ "format": "nollie-characters",
+ "version": 1,
+ "default_look": "nollie",
+ "coordinates": "face anchors and boxes are fractions of the square frame (0..1, y down); every body and front image of a look shares that frame",
+ "tiers_pt": [
+  28,
+  52,
+  124
+ ],
+ "scales": [
+  1,
+  2,
+  3
+ ],
+ "master_px": 1024,
+ "draw_order": [
+  "body",
+  "face (live vectors)",
+  "front",
+  "badge"
+ ],
+ "colours": {
+  "ink": "#16171A",
+  "glint": "#F7F7F5",
+  "tongue": "#FF7391",
+  "alert": "#E04E16",
+  "alert_ink": "#FFFFFF"
+ },
+ "themes": {
+  "light": {
+   "bg": "#F6FAFE",
+   "fg": "#15171C",
+   "muted": "#7D828D"
+  },
+  "dark": {
+   "bg": "#0D1726",
+   "fg": "#F2F3F5",
+   "muted": "#9096A1"
+  }
+ },
+ "states": {
+  "idle": {
+   "label": "Idle",
+   "caption": "Hanging out",
+   "face": {
+    "gaze": "wander",
+    "eye_scale": 1.0,
+    "open": 1.0,
+    "brow_raise": 0.0,
+    "blink": true
+   },
+   "body": {
+    "bob": [
+     0.015,
+     2.4
+    ],
+    "breath": [
+     0.014,
+     3.8
+    ]
+   }
+  },
+  "listening": {
+   "label": "Listening",
+   "caption": "Listening",
+   "face": {
+    "gaze": "user",
+    "eye_scale": 1.16,
+    "open": 1.05,
+    "brow_raise": 0.25,
+    "blink": true
+   },
+   "body": {
+    "lift": 0.015,
+    "grow": 1.045,
+    "bob": [
+     0.006,
+     2.4
+    ],
+    "breath": [
+     0.014,
+     3.8
+    ],
+    "nod": [
+     0.015,
+     1.5
+    ]
+   },
+   "hair": {
+    "stretch": 1.08
+   }
+  },
+  "thinking": {
+   "label": "Thinking",
+   "caption": "Thinking it over",
+   "face": {
+    "gaze": [
+     0.62,
+     -0.78
+    ],
+    "eye_scale": 0.98,
+    "open": 1.0,
+    "brow_raise": 0.15,
+    "blink": true,
+    "brows_if_none": "cocky"
+   },
+   "body": {
+    "rock": [
+     5.0,
+     5.0
+    ],
+    "sway_x": [
+     0.015,
+     5.0
+    ],
+    "bob": [
+     0.009,
+     3.3
+    ],
+    "breath": [
+     0.014,
+     3.8
+    ]
+   },
+   "badge": {
+    "kind": "dots",
+    "anchor": "thought",
+    "animate": "pulse"
+   }
+  },
+  "working": {
+   "label": "Working",
+   "caption": "Working on it",
+   "face": {
+    "gaze": {
+     "scan": {
+      "x": [
+       -0.6,
+       0.62
+      ],
+      "y": 0.45,
+      "period": 1.25,
+      "sweep": 0.84
+     }
+    },
+    "eye_scale": 0.96,
+    "open": 0.7,
+    "brow_raise": 0.0,
+    "blink": true,
+    "brows_if_none": "focus",
+    "mouth_cycle": {
+     "period": 3.4,
+     "frames": [
+      [
+       0.0,
+       "v_m"
+      ],
+      [
+       2.7,
+       "v_tongue"
+      ]
+     ]
+    }
+   },
+   "body": {
+    "tilt": 3.0,
+    "lift": 0.018,
+    "grow": 0.985,
+    "bob": [
+     0.0067,
+     0.32
+    ],
+    "breath": [
+     0.01,
+     3.8
+    ]
+   },
+   "hair": {
+    "jitter": 1.6
+   },
+   "badge": {
+    "kind": "ticks",
+    "anchor": "side",
+    "animate": "hop"
+   }
+  },
+  "using_tool": {
+   "label": "Using a tool",
+   "caption": "Using a tool",
+   "face": {
+    "gaze": {
+     "jiggle": {
+      "x": [
+       -0.2,
+       0.2
+      ],
+      "y": 0.8,
+      "period": 0.9
+     }
+    },
+    "eye_scale": 1.0,
+    "open": 0.8,
+    "brow_raise": 0.0,
+    "blink": true,
+    "brows_if_none": "focus",
+    "mouth_cycle": {
+     "period": 2.0,
+     "frames": [
+      [
+       0.0,
+       "v_tongue"
+      ]
+     ]
+    }
+   },
+   "body": {
+    "tilt": -4.0,
+    "lift": 0.006,
+    "taps": {
+     "period": 0.6,
+     "squash": [
+      1.03,
+      0.97
+     ]
+    },
+    "breath": [
+     0.01,
+     3.8
+    ]
+   },
+   "badge": {
+    "kind": "tool",
+    "anchor": "corner",
+    "animate": "wiggle"
+   }
+  },
+  "speaking": {
+   "label": "Speaking",
+   "caption": "Talking",
+   "face": {
+    "gaze": "user",
+    "eye_scale": 1.0,
+    "open": 1.0,
+    "brow_raise": 0.1,
+    "blink": true,
+    "talk": {
+     "shapes": [
+      "v_a",
+      "v_e",
+      "v_o",
+      "v_m",
+      "v_a",
+      "v_u",
+      "v_e"
+     ],
+     "step": [
+      0.085,
+      0.15
+     ],
+     "burst": [
+      0.6,
+      1.7
+     ],
+     "pause": [
+      0.25,
+      0.6
+     ]
+    }
+   },
+   "body": {
+    "bob": [
+     0.009,
+     2.4
+    ],
+    "breath": [
+     0.014,
+     3.8
+    ],
+    "nod_on": "v_a"
+   }
+  },
+  "needs_you": {
+   "label": "Needs you",
+   "caption": "Needs your OK",
+   "face": {
+    "gaze": [
+     0.0,
+     -0.02
+    ],
+    "eye_scale": 1.26,
+    "open": 1.05,
+    "brow_raise": 0.35,
+    "blink": true,
+    "eyes_if_lidded": "glint"
+   },
+   "body": {
+    "hops": {
+     "period": 2.8,
+     "at": [
+      [
+       0.0,
+       0.5,
+       0.06
+      ],
+      [
+       0.5,
+       0.5,
+       0.048
+      ]
+     ]
+    },
+    "bob": [
+     0.006,
+     2.4
+    ],
+    "breath": [
+     0.014,
+     3.8
+    ]
+   },
+   "hair": {
+    "stretch": 1.08
+   },
+   "badge": {
+    "kind": "alert",
+    "anchor": "corner",
+    "animate": "pulse_ring"
+   },
+   "unmistakable": "shape badge (exclamation mark on a ringed disc) + a calm double hop + big eyes looking straight at you; never shown by colour alone, and the app pairs it with its own text"
+  },
+  "done": {
+   "label": "Done",
+   "caption": "All done",
+   "one_shot": 1.6,
+   "face": {
+    "eyes": "happy",
+    "mouth_map": {
+     "smile": "grin",
+     "o": "grin"
+    },
+    "brow_raise": 0.2,
+    "blink": false
+   },
+   "body": {
+    "hops": {
+     "period": null,
+     "at": [
+      [
+       0.0,
+       1.0,
+       0.17
+      ]
+     ]
+    }
+   },
+   "then": "idle"
+  },
+  "error": {
+   "label": "Error",
+   "caption": "That did not work",
+   "face": {
+    "gaze": [
+     -0.12,
+     0.85
+    ],
+    "eye_scale": 0.94,
+    "open": 1.0,
+    "brows": "worried",
+    "mouth": "wobble",
+    "eyes_if_lidded": "dot",
+    "blink": true
+   },
+   "body": {
+    "tilt": -6.0,
+    "shake": {
+     "period": 2.6,
+     "length": 0.55,
+     "amp": 0.021,
+     "freq": 7.3
+    },
+    "bob": [
+     0.0045,
+     3.3
+    ],
+    "breath": [
+     0.014,
+     3.8
+    ]
+   },
+   "hair": {
+    "stretch": 0.86,
+    "tilt": -8.0
+   }
+  },
+  "asleep": {
+   "label": "Asleep",
+   "caption": "Resting",
+   "face": {
+    "eyes": "sleepy",
+    "mouth": "v_u",
+    "gaze": [
+     0.0,
+     0.25
+    ],
+    "brows_map": {
+     "angry": "none"
+    },
+    "blink": false
+   },
+   "body": {
+    "tilt": 4.0,
+    "lift": -0.02,
+    "breath": [
+     0.032,
+     9.0
+    ]
+   },
+   "hair": {
+    "stretch": 0.88,
+    "tilt": 9.0
+   },
+   "badge": {
+    "kind": "z",
+    "anchor": "thought",
+    "animate": "drift"
+   }
+  }
+ },
+ "hop_curve": {
+  "columns": [
+   "phase",
+   "lift",
+   "sx",
+   "sy"
+  ],
+  "rows": [
+   [
+    0.0,
+    0.0,
+    1.0,
+    1.0
+   ],
+   [
+    0.042,
+    0.0,
+    1.04,
+    0.948
+   ],
+   [
+    0.083,
+    0.0,
+    1.073,
+    0.905
+   ],
+   [
+    0.125,
+    0.0,
+    1.094,
+    0.878
+   ],
+   [
+    0.167,
+    0.06,
+    0.93,
+    1.116
+   ],
+   [
+    0.208,
+    0.391,
+    0.944,
+    1.094
+   ],
+   [
+    0.25,
+    0.651,
+    0.957,
+    1.071
+   ],
+   [
+    0.292,
+    0.839,
+    0.971,
+    1.048
+   ],
+   [
+    0.333,
+    0.955,
+    0.985,
+    1.025
+   ],
+   [
+    0.375,
+    0.999,
+    0.998,
+    1.003
+   ],
+   [
+    0.417,
+    0.972,
+    0.995,
+    1.008
+   ],
+   [
+    0.458,
+    0.873,
+    0.989,
+    1.018
+   ],
+   [
+    0.5,
+    0.702,
+    0.984,
+    1.027
+   ],
+   [
+    0.542,
+    0.46,
+    0.978,
+    1.037
+   ],
+   [
+    0.583,
+    0.146,
+    0.972,
+    1.046
+   ],
+   [
+    0.625,
+    0.0,
+    1.091,
+    0.897
+   ],
+   [
+    0.667,
+    0.0,
+    1.148,
+    0.833
+   ],
+   [
+    0.708,
+    0.0,
+    1.045,
+    0.949
+   ],
+   [
+    0.75,
+    0.0,
+    0.985,
+    1.025
+   ],
+   [
+    0.792,
+    0.0,
+    0.994,
+    1.009
+   ],
+   [
+    0.833,
+    0.0,
+    1.002,
+    0.996
+   ],
+   [
+    0.875,
+    0.0,
+    1.002,
+    0.997
+   ],
+   [
+    0.917,
+    0.0,
+    1.0,
+    1.0
+   ],
+   [
+    0.958,
+    0.0,
+    1.0,
+    1.001
+   ],
+   [
+    1.0,
+    0.0,
+    1.0,
+    1.0
+   ]
+  ]
+ },
+ "reduced_motion": {
+  "summary": "Each state holds a still pose: no hops, bobs, breathing, shakes, nods, rocking, taps or scanning. Gaze may still follow touch or the pointer, blinks stay, badges show without animating, and state changes crossfade over 0.25 s. done shows its happy face for one_shot seconds, then crossfades back.",
+  "crossfade": 0.25,
+  "drop": [
+   "hops",
+   "bob",
+   "breath",
+   "shake",
+   "nod",
+   "rock",
+   "sway_x",
+   "taps",
+   "jitter"
+  ],
+  "badges_static": true,
+  "states": {
+   "working": {
+    "gaze": [
+     0.0,
+     0.45
+    ],
+    "mouth": "v_m"
+   },
+   "using_tool": {
+    "gaze": [
+     0.0,
+     0.8
+    ],
+    "mouth": "v_tongue"
+   },
+   "thinking": {
+    "tilt": 2.0
+   },
+   "speaking": {
+    "mouth": "v_o"
+   },
+   "done": {
+    "hops": null
+   }
+  }
+ },
+ "looks": [
+  {
+   "id": "nollie",
+   "name": "Nollie",
+   "shape": "hexnut",
+   "colour": "#8FBEF0",
+   "eyes": "sideeye",
+   "brows": "angry",
+   "mouth": "smile",
+   "extras": [
+    "barbell"
+   ],
+   "main": true,
+   "face": {
+    "eyes": [
+     [
+      0.34137,
+      0.54905
+     ],
+     [
+      0.60879,
+      0.54928
+     ]
+    ],
+    "unit": 0.10183,
+    "mouth": [
+     0.47505,
+     0.65704
+    ]
+   },
+   "box": [
+    0.0592,
+    0.10833,
+    0.8909,
+    0.94167
+   ],
+   "floor": [
+    0.47505,
+    1.09217
+   ],
+   "badge_radius": 0.1,
+   "badge_anchors": {
+    "corner": [
+     0.8609,
+     0.16833
+    ],
+    "thought": [
+     0.8809,
+     0.12833
+    ],
+    "side": [
+     0.888,
+     0.525
+    ]
+   },
+   "files": {
+    "master": {
+     "body": "looks/nollie/master/body.png"
+    },
+    "tiers": {
+     "28@1x": {
+      "px": 28,
+      "body": "looks/nollie/body_28@1x.png"
+     },
+     "28@2x": {
+      "px": 56,
+      "body": "looks/nollie/body_28@2x.png"
+     },
+     "28@3x": {
+      "px": 84,
+      "body": "looks/nollie/body_28@3x.png"
+     },
+     "52@1x": {
+      "px": 52,
+      "body": "looks/nollie/body_52@1x.png"
+     },
+     "52@2x": {
+      "px": 104,
+      "body": "looks/nollie/body_52@2x.png"
+     },
+     "52@3x": {
+      "px": 156,
+      "body": "looks/nollie/body_52@3x.png"
+     },
+     "124@1x": {
+      "px": 124,
+      "body": "looks/nollie/body_124@1x.png"
+     },
+     "124@2x": {
+      "px": 248,
+      "body": "looks/nollie/body_124@2x.png"
+     },
+     "124@3x": {
+      "px": 372,
+      "body": "looks/nollie/body_124@3x.png"
+     }
+    },
+    "glyph": "looks/nollie/glyph.svg",
+    "avatar_512": "looks/nollie/avatar_512.png"
+   }
+  },
+  {
+   "id": "kick",
+   "name": "Kick",
+   "shape": "star",
+   "colour": "#FF8A9C",
+   "eyes": "sideeye",
+   "brows": "none",
+   "mouth": "smirk",
+   "extras": [
+    "studs",
+    "snapback"
+   ],
+   "main": false,
+   "face": {
+    "eyes": [
+     [
+      0.32476,
+      0.60681
+     ],
+     [
+      0.6087,
+      0.60711
+     ]
+    ],
+    "unit": 0.1121,
+    "mouth": [
+     0.46668,
+     0.72644
+    ]
+   },
+   "box": [
+    0.05833,
+    0.11686,
+    0.89167,
+    0.93205
+   ],
+   "floor": [
+    0.46668,
+    1.07411
+   ],
+   "badge_radius": 0.09782,
+   "badge_anchors": {
+    "corner": [
+     0.86232,
+     0.17555
+    ],
+    "thought": [
+     0.88189,
+     0.13642
+    ],
+    "side": [
+     0.89022,
+     0.52446
+    ]
+   },
+   "files": {
+    "master": {
+     "body": "looks/kick/master/body.png"
+    },
+    "tiers": {
+     "28@1x": {
+      "px": 28,
+      "body": "looks/kick/body_28@1x.png"
+     },
+     "28@2x": {
+      "px": 56,
+      "body": "looks/kick/body_28@2x.png"
+     },
+     "28@3x": {
+      "px": 84,
+      "body": "looks/kick/body_28@3x.png"
+     },
+     "52@1x": {
+      "px": 52,
+      "body": "looks/kick/body_52@1x.png"
+     },
+     "52@2x": {
+      "px": 104,
+      "body": "looks/kick/body_52@2x.png"
+     },
+     "52@3x": {
+      "px": 156,
+      "body": "looks/kick/body_52@3x.png"
+     },
+     "124@1x": {
+      "px": 124,
+      "body": "looks/kick/body_124@1x.png"
+     },
+     "124@2x": {
+      "px": 248,
+      "body": "looks/kick/body_124@2x.png"
+     },
+     "124@3x": {
+      "px": 372,
+      "body": "looks/kick/body_124@3x.png"
+     }
+    },
+    "glyph": "looks/kick/glyph.svg",
+    "avatar_512": "looks/kick/avatar_512.png"
+   }
+  },
+  {
+   "id": "swell",
+   "name": "Swell",
+   "shape": "drop",
+   "colour": "#FFE07A",
+   "eyes": "chill",
+   "brows": "none",
+   "mouth": "tongue",
+   "extras": [
+    "headlamp",
+    "hoop"
+   ],
+   "main": false,
+   "face": {
+    "eyes": [
+     [
+      0.35832,
+      0.66638
+     ],
+     [
+      0.60783,
+      0.66667
+     ]
+    ],
+    "unit": 0.09846,
+    "mouth": [
+     0.48304,
+     0.77039
+    ]
+   },
+   "box": [
+    0.18705,
+    0.10833,
+    0.77752,
+    0.94167
+   ],
+   "floor": [
+    0.48304,
+    1.08273
+   ],
+   "badge_radius": 0.1,
+   "badge_anchors": {
+    "corner": [
+     0.74752,
+     0.16833
+    ],
+    "thought": [
+     0.76752,
+     0.12833
+    ],
+    "side": [
+     0.79752,
+     0.525
+    ]
+   },
+   "files": {
+    "master": {
+     "body": "looks/swell/master/body.png"
+    },
+    "tiers": {
+     "28@1x": {
+      "px": 28,
+      "body": "looks/swell/body_28@1x.png"
+     },
+     "28@2x": {
+      "px": 56,
+      "body": "looks/swell/body_28@2x.png"
+     },
+     "28@3x": {
+      "px": 84,
+      "body": "looks/swell/body_28@3x.png"
+     },
+     "52@1x": {
+      "px": 52,
+      "body": "looks/swell/body_52@1x.png"
+     },
+     "52@2x": {
+      "px": 104,
+      "body": "looks/swell/body_52@2x.png"
+     },
+     "52@3x": {
+      "px": 156,
+      "body": "looks/swell/body_52@3x.png"
+     },
+     "124@1x": {
+      "px": 124,
+      "body": "looks/swell/body_124@1x.png"
+     },
+     "124@2x": {
+      "px": 248,
+      "body": "looks/swell/body_124@2x.png"
+     },
+     "124@3x": {
+      "px": 372,
+      "body": "looks/swell/body_124@3x.png"
+     }
+    },
+    "glyph": "looks/swell/glyph.svg",
+    "avatar_512": "looks/swell/avatar_512.png"
+   }
+  },
+  {
+   "id": "spike",
+   "name": "Spike",
+   "shape": "lemon",
+   "colour": "#7FD39A",
+   "eyes": "wide",
+   "brows": "cocky",
+   "mouth": "fangs",
+   "extras": [
+    "mohawk:rose",
+    "hoops"
+   ],
+   "main": false,
+   "face": {
+    "eyes": [
+     [
+      0.35171,
+      0.54734
+     ],
+     [
+      0.60665,
+      0.54725
+     ]
+    ],
+    "unit": 0.07852,
+    "mouth": [
+     0.4792,
+     0.6303
+    ]
+   },
+   "box": [
+    0.05833,
+    0.22781,
+    0.89167,
+    0.80694
+   ],
+   "floor": [
+    0.4792,
+    0.91717
+   ],
+   "badge_radius": 0.0695,
+   "badge_anchors": {
+    "corner": [
+     0.87082,
+     0.26951
+    ],
+    "thought": [
+     0.88472,
+     0.24171
+    ],
+    "side": [
+     0.90557,
+     0.51738
+    ]
+   },
+   "files": {
+    "master": {
+     "body": "looks/spike/master/body.png"
+    },
+    "tiers": {
+     "28@1x": {
+      "px": 28,
+      "body": "looks/spike/body_28@1x.png"
+     },
+     "28@2x": {
+      "px": 56,
+      "body": "looks/spike/body_28@2x.png"
+     },
+     "28@3x": {
+      "px": 84,
+      "body": "looks/spike/body_28@3x.png"
+     },
+     "52@1x": {
+      "px": 52,
+      "body": "looks/spike/body_52@1x.png"
+     },
+     "52@2x": {
+      "px": 104,
+      "body": "looks/spike/body_52@2x.png"
+     },
+     "52@3x": {
+      "px": 156,
+      "body": "looks/spike/body_52@3x.png"
+     },
+     "124@1x": {
+      "px": 124,
+      "body": "looks/spike/body_124@1x.png"
+     },
+     "124@2x": {
+      "px": 248,
+      "body": "looks/spike/body_124@2x.png"
+     },
+     "124@3x": {
+      "px": 372,
+      "body": "looks/spike/body_124@3x.png"
+     }
+    },
+    "glyph": "looks/spike/glyph.svg",
+    "avatar_512": "looks/spike/avatar_512.png"
+   }
+  },
+  {
+   "id": "nite",
+   "name": "Nite",
+   "shape": "hexnut",
+   "colour": "#B48CFF",
+   "eyes": "tall",
+   "brows": "angry",
+   "mouth": "grin",
+   "extras": [
+    "safetypin",
+    "studbeanie",
+    "flame"
+   ],
+   "main": false,
+   "face": {
+    "eyes": [
+     [
+      0.39357,
+      0.73658
+     ],
+     [
+      0.57058,
+      0.73674
+     ]
+    ],
+    "unit": 0.0674,
+    "mouth": [
+     0.48205,
+     0.80806
+    ]
+   },
+   "box": [
+    0.18296,
+    0.10833,
+    0.78114,
+    0.94167
+   ],
+   "floor": [
+    0.48205,
+    1.04129
+   ],
+   "badge_radius": 0.1,
+   "badge_anchors": {
+    "corner": [
+     0.75114,
+     0.16833
+    ],
+    "thought": [
+     0.77114,
+     0.12833
+    ],
+    "side": [
+     0.80114,
+     0.525
+    ]
+   },
+   "files": {
+    "master": {
+     "body": "looks/nite/master/body.png"
+    },
+    "tiers": {
+     "28@1x": {
+      "px": 28,
+      "body": "looks/nite/body_28@1x.png"
+     },
+     "28@2x": {
+      "px": 56,
+      "body": "looks/nite/body_28@2x.png"
+     },
+     "28@3x": {
+      "px": 84,
+      "body": "looks/nite/body_28@3x.png"
+     },
+     "52@1x": {
+      "px": 52,
+      "body": "looks/nite/body_52@1x.png"
+     },
+     "52@2x": {
+      "px": 104,
+      "body": "looks/nite/body_52@2x.png"
+     },
+     "52@3x": {
+      "px": 156,
+      "body": "looks/nite/body_52@3x.png"
+     },
+     "124@1x": {
+      "px": 124,
+      "body": "looks/nite/body_124@1x.png"
+     },
+     "124@2x": {
+      "px": 248,
+      "body": "looks/nite/body_124@2x.png"
+     },
+     "124@3x": {
+      "px": 372,
+      "body": "looks/nite/body_124@3x.png"
+     }
+    },
+    "glyph": "looks/nite/glyph.svg",
+    "avatar_512": "looks/nite/avatar_512.png"
+   }
+  },
+  {
+   "id": "duo",
+   "name": "Duo",
+   "shape": "arch",
+   "colour": "#8FBEF0",
+   "eyes": "mischief",
+   "brows": "none",
+   "mouth": "smirk",
+   "extras": [
+    "chain"
+   ],
+   "finish": "tattoo",
+   "main": false,
+   "face": {
+    "eyes": [
+     [
+      0.33014,
+      0.50971
+     ],
+     [
+      0.61321,
+      0.50998
+     ]
+    ],
+    "unit": 0.11127,
+    "mouth": [
+     0.47164,
+     0.62831
+    ]
+   },
+   "box": [
+    0.05833,
+    0.13123,
+    0.89167,
+    0.91584
+   ],
+   "floor": [
+    0.47164,
+    1.0703
+   ],
+   "badge_radius": 0.09415,
+   "badge_anchors": {
+    "corner": [
+     0.86342,
+     0.18772
+    ],
+    "thought": [
+     0.88225,
+     0.15006
+    ],
+    "side": [
+     0.89396,
+     0.52353
+    ]
+   },
+   "files": {
+    "master": {
+     "body": "looks/duo/master/body.png"
+    },
+    "tiers": {
+     "28@1x": {
+      "px": 28,
+      "body": "looks/duo/body_28@1x.png"
+     },
+     "28@2x": {
+      "px": 56,
+      "body": "looks/duo/body_28@2x.png"
+     },
+     "28@3x": {
+      "px": 84,
+      "body": "looks/duo/body_28@3x.png"
+     },
+     "52@1x": {
+      "px": 52,
+      "body": "looks/duo/body_52@1x.png"
+     },
+     "52@2x": {
+      "px": 104,
+      "body": "looks/duo/body_52@2x.png"
+     },
+     "52@3x": {
+      "px": 156,
+      "body": "looks/duo/body_52@3x.png"
+     },
+     "124@1x": {
+      "px": 124,
+      "body": "looks/duo/body_124@1x.png"
+     },
+     "124@2x": {
+      "px": 248,
+      "body": "looks/duo/body_124@2x.png"
+     },
+     "124@3x": {
+      "px": 372,
+      "body": "looks/duo/body_124@3x.png"
+     }
+    },
+    "glyph": "looks/duo/glyph.svg",
+    "avatar_512": "looks/duo/avatar_512.png"
+   }
+  }
+ ]
+}

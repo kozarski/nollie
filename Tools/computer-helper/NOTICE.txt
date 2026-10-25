@@ -1,0 +1,12 @@
+Nollie includes Cua Driver by Cua AI, Inc., used under the MIT License.
+Nollie Computer is Nollie's build of Cua Driver. Cua and Cua Driver are trademarks of
+Cua AI, Inc. Nollie is not made, sponsored or endorsed by Cua AI, Inc.
+
+Cua Driver source: https://github.com/trycua/cua (tag cua-driver-rs-v0.36.0, unmodified).
+Its licence is in Cua-Driver-LICENSE.txt beside this file.
+
+Cua Driver also contains code from other projects and third-party Rust crates under their
+own licences (MIT, Apache-2.0, BSD, ISC, Zlib, Unicode, MPL-2.0 and others). Their notices
+are in Cua-Driver-THIRD_PARTY_NOTICES.md and THIRD_PARTY_NOTICES.txt beside this file.
+The MPL-2.0 crates (uniffi and its companions) are used unmodified; their source is at
+https://github.com/mozilla/uniffi-rs.
