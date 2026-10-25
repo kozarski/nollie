@@ -39,8 +39,10 @@ Run these from the repository root, on a clean `main` that has passed CI and `To
    good to know, checksums. Keep it plain, warm and short, with no em-dashes.
 3. **Build the Mac app.** `Tools/release/direct-release.sh` archives `NollieMacDirect`, signs it with
    Developer ID, has Apple notarize and staple it, checks Gatekeeper accepts it, then makes a signed
-   DMG and a zip in `build/release/<date-time>/`. Set `NOTARY_PROFILE` to a `notarytool` keychain
-   profile so the DMG is notarized too. It then signs the DMG and the zip for Sparkle and writes
+   DMG and a zip in `build/release/<date-time>/`. The DMG is notarized too when `NOTARY_PROFILE` names a
+   `notarytool` keychain profile, or when the App Store Connect key settings `testflight.sh` uses
+   (`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_PATH`) are set; without either it warns at the end, and the DMG
+   must not ship until it is notarized and stapled. It then signs the DMG and the zip for Sparkle and writes
    `appcast.xml` beside them (see [Automatic updates](#automatic-updates-direct-mac)). It stops before
    building anything if the update key is still the placeholder.
 4. **Name and checksum the files.** Give them the plain names the download links use, then write a checksum
@@ -116,8 +118,13 @@ is out; `sparkle-keys.sh` refuses to unless you pass `--replace`.
 `direct-release.sh` does these after the notarized zip and DMG exist; `Tools/release/sparkle-appcast.sh <folder>`
 does them on its own and can be run again.
 
-1. Checks the key in your keychain is the one inside the app. If not, nothing is signed.
-2. Signs the zip and the DMG with `sign_update` (the signatures are saved in `sparkle-signatures.txt`).
+1. Checks the key in your keychain is the one inside the app. If not, nothing is signed. With
+   `SPARKLE_KEY_FILE` set to the backup file, it signs from that file instead and skips the keychain. From
+   the keychain, macOS asks once whether `sign_update` may use the key, and the script waits until someone
+   answers (choose Always Allow).
+2. Signs the zip and the DMG with `sign_update` (the signatures are saved in `sparkle-signatures.txt`), then
+   checks each signature against the key inside the app with `Tools/sparkle/verify-signature.swift`, as an
+   installed copy would. If one does not match, nothing is written.
 3. Makes `appcast.xml` with `generate_appcast`: it starts from the latest published appcast, so earlier
    versions stay in the feed, and adds this one. The text people see in the update window is the GitHub
    release's notes, read with `gh release view`. If the release does not exist yet there are no notes to read:

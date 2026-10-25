@@ -4,8 +4,10 @@
 #   Tools/release/sparkle-appcast.sh <release folder> [tag]     tag defaults to v<version>
 #
 # direct-release.sh runs this at its end. Run it again, on the same folder, once the GitHub release
-# notes are final, so the appcast carries them. It needs the update key in your login keychain
-# (Tools/release/sparkle-keys.sh), and refuses to go on if that key is not the one the app trusts.
+# notes are final, so the appcast carries them. It needs the update key: in your login keychain
+# (Tools/release/sparkle-keys.sh), or in a file named by SPARKLE_KEY_FILE. From the keychain, macOS asks
+# once whether sign_update may use it, and waits until someone answers. Every signature is checked
+# against the key inside the app before anything is written, so a wrong key signs nothing that ships.
 #
 # Reads:   <folder>/notarized/Nollie.app, Nollie-<version>-<build>.zip and .dmg
 # Notes:   the GitHub release's text (gh), else <folder>/notes.md, else a one-line stand-in
@@ -29,20 +31,33 @@ DMG="$OUT/Nollie-$VERSION-$BUILD.dmg"
 [ -f "$ZIP" ] && [ -f "$DMG" ] || { echo "The zip or the DMG for $VERSION ($BUILD) is missing from $OUT." >&2; exit 1; }
 
 TOOLS=$(Tools/sparkle/fetch-sparkle.sh)/bin
-# The key in the keychain must be the one the app trusts, or no installed copy would accept the update.
-KEYCHAIN_KEY=$("$TOOLS/generate_keys" -p | /usr/bin/tr -d '[:space:]') || { echo "No update key in your login keychain. Run Tools/release/sparkle-keys.sh." >&2; exit 1; }
 APP_KEY=$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APP/Contents/Info.plist")
-[ "$KEYCHAIN_KEY" = "$APP_KEY" ] || { echo "The key in your keychain is not the one inside this app. Nothing was signed." >&2; exit 1; }
+KEY=()
+if [ -n "${SPARKLE_KEY_FILE:-}" ]; then
+  [ -f "$SPARKLE_KEY_FILE" ] || { echo "There is no key file at $SPARKLE_KEY_FILE." >&2; exit 1; }
+  KEY=(--ed-key-file "$SPARKLE_KEY_FILE")
+else
+  # The key in the keychain must be the one the app trusts, or no installed copy would accept the update.
+  KEYCHAIN_KEY=$("$TOOLS/generate_keys" -p | /usr/bin/tr -d '[:space:]') || { echo "No update key in your login keychain. Run Tools/release/sparkle-keys.sh." >&2; exit 1; }
+  [ "$KEYCHAIN_KEY" = "$APP_KEY" ] || { echo "The key in your keychain is not the one inside this app. Nothing was signed." >&2; exit 1; }
+  echo "Signing with the key in your keychain. If nothing happens, macOS is asking to allow it."
+fi
 
 echo "== Sign the downloads"
 {
   echo "# EdDSA signatures for $TAG (public key $APP_KEY)"
   for file in "$ZIP" "$DMG"; do
     printf '%s  ' "$(basename "$file")"
-    "$TOOLS/sign_update" "$file"
+    "$TOOLS/sign_update" ${KEY[@]+"${KEY[@]}"} "$file"
   done
 } > "$OUT/sparkle-signatures.txt"
 cat "$OUT/sparkle-signatures.txt"
+# Check each signature the way an installed copy will, against the key inside the app.
+for file in "$ZIP" "$DMG"; do
+  signature=$(grep -F "$(basename "$file")" "$OUT/sparkle-signatures.txt" | sed -E 's/.*edSignature="([^"]+)".*/\1/')
+  swift Tools/sparkle/verify-signature.swift "$APP_KEY" "$signature" "$file" \
+    || { echo "That key is not the one inside this app. Nothing was written." >&2; rm -f "$OUT/sparkle-signatures.txt"; exit 1; }
+done
 
 echo "== Make the appcast"
 STAGE="$OUT/appcast"
@@ -62,7 +77,7 @@ else
   echo "warning: no release notes found for $TAG. Once the draft release has its notes, run this again." >&2
   printf 'Nollie %s.\n' "$VERSION" > "$STAGE/Nollie.md"
 fi
-"$TOOLS/generate_appcast" \
+"$TOOLS/generate_appcast" ${KEY[@]+"${KEY[@]}"} \
   --download-url-prefix "https://github.com/$REPO/releases/download/$TAG/" \
   --full-release-notes-url "https://github.com/$REPO/releases/tag/$TAG" \
   --link "https://nollie.app" \
