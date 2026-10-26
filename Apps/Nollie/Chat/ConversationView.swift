@@ -182,7 +182,7 @@ struct ConversationView: View {
         for _ in 0..<40 {
             let active = BotComputerActivity.isActive(runtime: chat.runtime, profile: chat.profileName)
             let held = ComputerHandoff.shared.isHeld(chat.runtime, chat.profileName)
-            if WatchPolicy.showsWatch(active: active, held: held, isPrivate: PrivateBots.isPrivate(chat.profileName)) {
+            if WatchPolicy.showsWatch(active: active, held: held, isPrivate: PrivateBots.isPrivate(chat.profileName, connection: chat.runtime.connection.id)) {
                 panels.insert(.watch)
                 return
             }

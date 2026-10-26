@@ -176,7 +176,7 @@ struct ModelPreferencesView: View {
 
     /// Plain words for what a choice does and does not do, only when they are needed.
     @ViewBuilder private var notes: some View {
-        if PrivateBots.isPrivate(runtime?.selectedProfile) && mode != .local {
+        if PrivateBots.isPrivate(runtime?.selectedProfile, connection: runtime?.connection.id) && mode != .local {
             PageNote("This choice never turns on online models for a private bot.", symbol: "lock.fill", id: "models.private")
         }
         if let options = check.options, let provider = currentProvider, let word = ModelPlace.word(options) {

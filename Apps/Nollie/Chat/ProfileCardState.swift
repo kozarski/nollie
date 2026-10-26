@@ -12,6 +12,8 @@ final class ProfileCardState {
     var blurb = ""
     var isPrivate = false
     var savingPrivacy = false
+    /// A Private choice is kept on this device but the gateway hasn't heard it. The card offers another try.
+    var privacyNeedsRetry = false
     var tint: Color = .accentColor
     var avatar: CharacterChoice = .look(.main)
     var options: ModelOptionsResult?
@@ -36,7 +38,7 @@ final class ProfileCardState {
 
     var info: ProfileInfo? { runtime?.profiles.first { $0.name == name } }
     var label: String { info?.shownName ?? name }
-    var isHidden: Bool { PrivateBots.isPrivate(name) }
+    var isHidden: Bool { PrivateBots.isPrivate(name, connection: runtime?.connection.id) }
     var savedBlurb: String { (info?.description ?? "").trimmingCharacters(in: .whitespacesAndNewlines) }
 
     /// The provider and model as saved, or "Not set".
@@ -56,6 +58,7 @@ final class ProfileCardState {
         started = true
         blurb = info?.description ?? ""
         isPrivate = isHidden
+        privacyNeedsRetry = runtime?.privateSyncPending() == true
         tint = BotColors.color(for: name)
         avatar = BotAvatarStore.choice(for: name)
     }
@@ -74,21 +77,21 @@ final class ProfileCardState {
 
     var computer: CardComputer {
         let control = SystemControl.shared
-        if control.isOn(name) {
+        if control.isOn(name, runtime) {
             guard let runtime else { return .canUseMac }
             let onMac = BotComputerActivity.isActive(runtime: runtime, profile: name)
                 && !BotComputerActivity.usesOwnComputer(runtime: runtime, profile: name)
             return onMac ? .usingMac : .canUseMac
         }
         if let own = ownComputer.status, own.on { return .ownComputer(gettingReady: own.state == .gettingReady) }
-        if control.states[name] == nil { return controlChecked ? .unknown : .checking }
+        if control.state(name, runtime) == nil { return controlChecked ? .unknown : .checking }
         return .handsOff
     }
 
     /// A computer of its own. Never for a private bot: the add-on refuses it and lists nothing of it.
-    var mayHaveOwnComputer: Bool { !isHidden && info?.isPrivateBot != true }
+    var mayHaveOwnComputer: Bool { !isHidden && info?.isPrivateBot(on: runtime?.connection.id) != true }
 
-    var mayDelete: Bool { info.map { $0.isDefault != true && !$0.isPrivateBot } ?? false }
+    var mayDelete: Bool { info.map { $0.isDefault != true && !$0.isPrivateBot(on: runtime?.connection.id) } ?? false }
 
     // MARK: Saving
 
@@ -121,15 +124,40 @@ final class ProfileCardState {
     }
 
     func setPrivacy(_ on: Bool) async {
-        guard on != PrivateBots.isPrivate(name) else { return }
+        guard let runtime else { isPrivate = isHidden; return }
+        guard on != isHidden else { return }
         savingPrivacy = true
         defer { savingPrivacy = false }
         do {
-            if let runtime { try await runtime.setPrivate(name, on) } else { try PrivateBots.current.setting(name, private: on).save() }
+            try await runtime.setPrivate(name, on)
+            privacyNeedsRetry = false
         } catch {
-            failed("Couldn't save that. Try again.", error)
-            isPrivate = !on
+            privacyFailed(error)
         }
+    }
+
+    /// Sends a Private choice the gateway hasn't heard yet.
+    func retryPrivacy() async {
+        guard let runtime else { return }
+        savingPrivacy = true
+        defer { savingPrivacy = false }
+        do {
+            try await runtime.retryPrivateSync()
+            privacyNeedsRetry = false
+            note = "Saved. \(label) is private."
+        } catch {
+            privacyFailed(error)
+        }
+    }
+
+    /// The switch shows what is true now: turned on here and kept, or still on because turning it
+    /// off needs the gateway's yes.
+    private func privacyFailed(_ error: Error) {
+        let sync = error as? PrivateBotsSyncError
+        note = sync?.errorDescription ?? "Couldn't save that. Try again."
+        lastProblem = sync?.detail ?? error.localizedDescription
+        privacyNeedsRetry = sync?.kind == .notTold
+        isPrivate = isHidden
     }
 
     func deleteBot() async {
@@ -140,7 +168,7 @@ final class ProfileCardState {
             let _: JSONValue = try await runtime.api.send("DELETE", "/api/profiles/" + name, body: EmptyBody())
             // If the deleted bot was the selected one, move to the first public bot left.
             if runtime.selectedProfile == name {
-                let heir = runtime.profiles.first(where: { $0.name != name && !$0.isPrivateBot })
+                let heir = runtime.profiles.first(where: { $0.name != name && !$0.isPrivateBot(on: runtime.connection.id) })
                 runtime.selectedProfile = heir?.name
             }
             await runtime.loadProfiles()

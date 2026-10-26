@@ -13,7 +13,7 @@ struct WatchPill: View {
     private var held: Bool { ComputerHandoff.shared.isHeld(chat.runtime, chat.profileName) }
     private var shown: Bool {
         WatchPolicy.showsWatch(active: BotComputerActivity.isActive(runtime: chat.runtime, profile: chat.profileName), held: held,
-                               isPrivate: PrivateBots.isPrivate(chat.profileName))
+                               isPrivate: PrivateBots.isPrivate(chat.profileName, connection: chat.runtime.connection.id))
     }
 
     var body: some View {

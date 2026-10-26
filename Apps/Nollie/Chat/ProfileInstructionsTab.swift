@@ -22,6 +22,12 @@ struct ProfileInstructionsTab: View {
             .disabled(state.savingPrivacy)
             .onAppear { state.isPrivate = state.isHidden }
             .onChange(of: state.isPrivate) { _, on in Task { await state.setPrivacy(on) } }
+        if state.privacyNeedsRetry {
+            GlassButton("Try again", symbol: "arrow.clockwise", id: "bot.editor.private.retry") {
+                Task { await state.retryPrivacy() }
+            }
+            .disabled(state.savingPrivacy)
+        }
         // Private stays above the controls it hides once it is on.
         if !state.savingPrivacy, !state.isPrivate, !AskFirstModel.isPrivateBot(state.name) {
             AskFirstSection(profileName: state.name, label: state.label)

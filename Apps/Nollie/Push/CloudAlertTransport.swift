@@ -222,7 +222,7 @@ final class CloudAlertTransport {
     @discardableResult
     func publish(eventKey: String, profile: String, kind: CloudAlertKind,
                  target: CloudAlertTarget? = nil, preview: CloudAlertPreview? = nil) async -> String? {
-        guard isEnabled, !isDemo, CloudAlertEvent.permits(profile: profile),
+        guard isEnabled, !isDemo, CloudAlertEvent.permits(profile: profile, connection: target?.connectionID),
               !eventKey.isEmpty, eventKey.utf8.count <= 2048 else { return nil }
         let ticket = epoch
         do {

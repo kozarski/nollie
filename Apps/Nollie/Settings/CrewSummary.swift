@@ -39,7 +39,7 @@ final class CrewSummaryModel {
 
     private static func days(_ runtime: GatewayRuntime) async -> [BotDay]? {
         var found: [BotDay] = []
-        for profile in runtime.profiles where !PrivateBots.isPrivate(profile.name) {
+        for profile in runtime.profiles where !PrivateBots.isPrivate(profile.name, connection: runtime.connection.id) {
             guard case .on(let trail)? = try? await Papertrail.load(bot: profile.name, days: 1, api: runtime.api) else { continue }
             found.append(BotDay(bot: profile.name, name: profile.shownName, today: PapertrailToday(trail)))
         }

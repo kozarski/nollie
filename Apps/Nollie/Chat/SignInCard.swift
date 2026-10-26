@@ -82,7 +82,7 @@ enum SignInAnswer {
             await chat.respond(card: card, result: ["choice": "deny"])
             return nil
         }
-        if PrivateBots.isPrivate(chat.profileName) || chat.profileName.lowercased() == "private" {
+        if PrivateBots.isPrivate(chat.profileName, connection: chat.runtime.connection.id) || chat.profileName.lowercased() == "private" {
             await chat.respond(card: card, result: ["choice": "deny"])
             return "Saved sign-ins aren't used for private bots."
         }

@@ -39,7 +39,7 @@ final class HelperAtWorkActivities {
         var found: [String: HelperAtWork] = [:]
         for chat in runtime.chats {
             let profile = chat.profileName
-            guard let bot = runtime.profiles.first(where: { $0.name == profile }), !bot.isPrivateBot else { continue }
+            guard let bot = runtime.profiles.first(where: { $0.name == profile }), !bot.isPrivateBot(on: runtime.connection.id) else { continue }
             var work = BotComputerActivity.workPlace(in: chat.items, isRunning: chat.isRunning)
             if work == nil, chat.isRunning, let a = allowed[profile], now.timeIntervalSince(a.at) < allowedGrace {
                 work = (a.place, a.at)

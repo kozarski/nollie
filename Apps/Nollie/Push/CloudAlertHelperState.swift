@@ -20,7 +20,7 @@ struct CloudAlertHelperConfiguration: Codable, Equatable, Sendable {
         version == 1 && !profiles.isEmpty && profiles.count <= 20 && !source.isEmpty
             && accountFingerprint.count == 64
             && accountFingerprint.allSatisfy { "0123456789abcdef".contains($0) }
-            && profiles.allSatisfy(Self.permitsProfile)
+            && profiles.allSatisfy { Self.permitsProfile($0, connection: connectionID) }
             && (canonicalSessions ?? [:]).allSatisfy { profile, id in
                 profile == "default" && profiles.contains(profile) && Self.permitsSessionID(id)
             }
@@ -39,8 +39,8 @@ struct CloudAlertHelperConfiguration: Codable, Equatable, Sendable {
         return self == comparison
     }
 
-    static func permitsProfile(_ profile: String) -> Bool {
-        CloudAlertEvent.permits(profile: profile) && profile.lowercased() != "all"
+    static func permitsProfile(_ profile: String, connection: UUID? = nil) -> Bool {
+        CloudAlertEvent.permits(profile: profile, connection: connection) && profile.lowercased() != "all"
             && !profile.isEmpty && profile.count <= 64
             && profile.unicodeScalars.allSatisfy { CharacterSet.alphanumerics.contains($0) || "_-".unicodeScalars.contains($0) }
     }

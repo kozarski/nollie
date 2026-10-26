@@ -33,7 +33,8 @@ final class NotificationService: UNNotificationServiceExtension {
             openSealed(sealed, into: content, gate: gate)
         } else {
             Self.note("plain notification (no enc)")
-            Self.present(content, profile: Self.routing("profile", in: request.content), gate: gate)
+            Self.present(content, profile: Self.routing("profile", in: request.content),
+                         connection: UUID(uuidString: Self.routing("connection_id", in: request.content)), gate: gate)
         }
     }
 
@@ -97,7 +98,7 @@ final class NotificationService: UNNotificationServiceExtension {
                 target.categoryIdentifier = "HERMES_CLOUD_REPLY"
             }
             target.threadIdentifier = CloudAlertEvent.digest([destination.gatewayFingerprint, destination.profile, destination.sessionID].joined(separator: "/"))
-            Self.present(target, profile: destination.profile, gate: gate, policy: policy)
+            Self.present(target, profile: destination.profile, connection: destination.connectionID, gate: gate, policy: policy)
         })
     }
 
@@ -125,14 +126,16 @@ final class NotificationService: UNNotificationServiceExtension {
         if let thread = fields["thread_id"]?.stringValue, !thread.isEmpty { content.threadIdentifier = thread }
         if fields["interruption"]?.stringValue == "time-sensitive" { content.interruptionLevel = .timeSensitive }
         var profile = ""
+        var connection: UUID?
         if let hermes = fields["hermes"]?.objectValue {
             var info = content.userInfo
             info["hermes"] = hermes.mapValues { $0.foundationValue }
             content.userInfo = info
             profile = hermes["profile"]?.stringValue ?? ""
+            connection = hermes["connection_id"]?.stringValue.flatMap { UUID(uuidString: $0) }
         }
         gate.updateRouting(content.userInfo)
-        Self.present(content, profile: profile, gate: gate)
+        Self.present(content, profile: profile, connection: connection, gate: gate)
     }
 
     // MARK: Presenting as a message
@@ -141,15 +144,17 @@ final class NotificationService: UNNotificationServiceExtension {
                                                       "HERMES_CLOUD_REPLY", "NOLLIE_COMPUTER"]
 
     /// Anything from a bot is shown as a message from it; other notifications (the test) keep the
-    /// plain look. Nothing goes out unless this device's preview policy still allows it.
-    private static func present(_ content: UNMutableNotificationContent, profile: String, gate: NotificationDeliveryGate,
-                                policy: NotificationPreviewPolicy? = nil) {
+    /// plain look. Nothing goes out unless this device's preview policy still allows it, and the
+    /// Private list is read again each time, since the app may have changed it since this
+    /// extension last ran. A push that names no gateway is held back if any gateway has the bot private.
+    private static func present(_ content: UNMutableNotificationContent, profile: String, connection: UUID?,
+                                gate: NotificationDeliveryGate, policy: NotificationPreviewPolicy? = nil) {
         let previewsAllowed: () -> Bool = {
             let allowed = NotificationPreviewPolicy.load()?.allowsPreview(matching: policy) == true
             if !allowed && policy != nil { CloudAlertPreviewDiagnostic.record(.privacyChanged) }
             return allowed
         }
-        if gate.isFinished || !previewsAllowed() || PrivateBots.isPrivate(profile) {
+        if gate.isFinished || !previewsAllowed() || PrivateBots.isPrivate(profile, connection: connection, fresh: true) {
             gate.finish()
             return
         }

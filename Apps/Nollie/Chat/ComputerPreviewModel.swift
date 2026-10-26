@@ -139,7 +139,7 @@ final class ComputerPreviewModel {
         defer { loading = false }
         while !Task.isCancelled {
             await refresh(chat)
-            if wantsLive, !PrivateBots.isPrivate(chat.profileName), now() >= liveAgainAt {
+            if wantsLive, !PrivateBots.isPrivate(chat.profileName, connection: chat.runtime.connection.id), now() >= liveAgainAt {
                 await playLive(chat)
                 guard !Task.isCancelled else { return }
                 continue

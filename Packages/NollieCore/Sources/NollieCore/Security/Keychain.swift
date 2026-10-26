@@ -122,6 +122,13 @@ public enum Keychain {
         return found as? Data
     }
 
+    /// Like `get`, but a failed read is told apart from nothing saved: nil means no item, and
+    /// anything else that goes wrong is thrown.
+    public static func read(account: String) throws -> Data? {
+        if memoryOnly { return demoStore.value(for: account) }
+        return try readData(gatewayQuery(account), context: nil)
+    }
+
     public static func delete(account: String) {
         if memoryOnly { demoStore.put(nil, for: account); return }
         let outcome = SecItemDelete(gatewayQuery(account) as CFDictionary)

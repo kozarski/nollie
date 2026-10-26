@@ -253,7 +253,7 @@ struct NewBotSheet: View {
             Spacer()
             Picker("Start from", selection: $cloneFrom) {
                 Text("A fresh bot").tag("")
-                ForEach(runtime.profiles.filter { !$0.isPrivateBot }) { bot in
+                ForEach(runtime.profiles.filter { !$0.isPrivateBot(on: runtime.connection.id) }) { bot in
                     Text(bot.label).tag(bot.name)
                 }
             }

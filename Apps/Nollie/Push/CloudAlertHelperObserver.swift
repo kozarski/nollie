@@ -29,8 +29,12 @@ protocol CloudAlertOutcomeSource {
 @MainActor
 final class HermesCloudAlertOutcomeSource: CloudAlertOutcomeSource {
     private let api: HermesAPI
-    init(api: HermesAPI) { self.api = api }
+    /// The gateway this reads, so the Private list asked about is that gateway's. Without one, a bot
+    /// private anywhere counts.
+    private let connectionID: UUID?
+    init(api: HermesAPI) { self.api = api; connectionID = nil }
     init(connection: GatewayConnection, store: ConnectionStore) async {
+        connectionID = connection.id
         let secrets = store.secrets(for: connection.id)
         let config = URLSessionConfiguration.ephemeral
         config.httpShouldSetCookies = false
@@ -55,7 +59,7 @@ final class HermesCloudAlertOutcomeSource: CloudAlertOutcomeSource {
     }
 
     func sessions(profile: String) async throws -> [CloudAlertObservedSession] {
-        guard CloudAlertHelperConfiguration.permitsProfile(profile) else { throw CloudAlertHelperFailure.invalidConsent }
+        guard CloudAlertHelperConfiguration.permitsProfile(profile, connection: connectionID) else { throw CloudAlertHelperFailure.invalidConsent }
         struct Response: Decodable {
             let sessions: [CloudAlertObservedSession]
             let errors: [JSONValue]?
@@ -68,7 +72,7 @@ final class HermesCloudAlertOutcomeSource: CloudAlertOutcomeSource {
     }
 
     func messages(sessionID: String, profile: String) async throws -> CloudAlertObservedMessages {
-        guard CloudAlertHelperConfiguration.permitsProfile(profile),
+        guard CloudAlertHelperConfiguration.permitsProfile(profile, connection: connectionID),
               CloudAlertHelperConfiguration.permitsSessionID(sessionID) else { throw CloudAlertHelperFailure.invalidConsent }
         // GatewayURL encodes the path once. The validated ID contains only letters, digits,
         // underscores and hyphens; pre-encoding here would turn an underscore into %255F.

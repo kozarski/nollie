@@ -217,16 +217,18 @@ enum LocalNotifier {
 
     /// Whether text may appear on the lock screen: the preview policy must allow it, and the bot must
     /// be named and not private.
-    static func showsPreview(policy: NotificationPreviewPolicy?, profile: String?) -> Bool {
+    static func showsPreview(policy: NotificationPreviewPolicy?, profile: String?, connection: UUID? = nil) -> Bool {
         let name = profile?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
-        return policy?.allowsPreview == true && !name.isEmpty && !PrivateBots.isPrivate(name)
+        return policy?.allowsPreview == true && !name.isEmpty && !PrivateBots.isPrivate(name, connection: connection, fresh: true)
     }
 
     // MARK: Helpers
 
     private static func post(_ content: UNMutableNotificationContent, id: String) {
-        let profile = (content.userInfo["hermes"] as? [String: Any])?["profile"] as? String
-        if !showsPreview(policy: NotificationPreviewPolicy.load(), profile: profile) {
+        let hermes = content.userInfo["hermes"] as? [String: Any]
+        let profile = hermes?["profile"] as? String
+        let connection = (hermes?["connection_id"] as? String).flatMap { UUID(uuidString: $0) }
+        if !showsPreview(policy: NotificationPreviewPolicy.load(), profile: profile, connection: connection) {
             content.title = "Nollie"
             content.subtitle = ""
             content.body = "There’s an update waiting for you in Nollie."

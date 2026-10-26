@@ -53,7 +53,7 @@ final class LinkStopWatcher {
         for raw in list["jobs"]?.arrayValue ?? list["items"]?.arrayValue ?? list.arrayValue ?? [] {
             guard let job = ScheduledWork.decode(raw), !ScheduledWork.paused(job), !ScheduledWork.completed(job) else { continue }
             let owner = ScheduledWork.owner(raw)
-            if let owner, PrivateBots.isPrivate(owner) { continue }
+            if let owner, PrivateBots.isPrivate(owner, connection: runtime.connection.id) { continue }
             guard let reply: JSONValue = try? await runtime.api.send("POST", "/api/cron/jobs/\(job.identity)/pause", profile: owner, body: EmptyBody()),
                   ScheduledWork.confirms(reply, jobID: job.identity, enabled: false, profile: owner) else { continue }
             paused += 1

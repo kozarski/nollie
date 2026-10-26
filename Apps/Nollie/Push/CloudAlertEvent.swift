@@ -18,7 +18,7 @@ struct CloudAlertTarget: Codable, Equatable, Sendable {
 
     var isValid: Bool {
         gatewayFingerprint.count == 64 && gatewayFingerprint.allSatisfy { "0123456789abcdef".contains($0) }
-            && CloudAlertEvent.permits(profile: profile) && profile.lowercased() != "all"
+            && CloudAlertEvent.permits(profile: profile, connection: connectionID) && profile.lowercased() != "all"
             && Self.isIdentifier(profile, maximum: 64) && Self.isIdentifier(sessionID, maximum: 255)
             && messageRowID.map { $0 > 0 } != false
             && gatewayIdentity.map(GatewayIdentity.isValid) != false
@@ -113,9 +113,11 @@ struct CloudAlertEvent: Equatable, Sendable {
         value.count == 68 && value.hasPrefix("oa1_") && value.dropFirst(4).allSatisfy { "0123456789abcdef".contains($0) }
     }
 
-    static func permits(profile: String) -> Bool {
+    /// Whether an alert may be made for this bot. The Private list is read afresh: this runs in the
+    /// helper and the app, and either may have changed it. Unreadable counts as private.
+    static func permits(profile: String, connection: UUID? = nil) -> Bool {
         let name = profile.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return !name.isEmpty && !PrivateBots.isPrivate(name)
+        return !name.isEmpty && !PrivateBots.isPrivate(name, connection: connection, fresh: true)
     }
 }
 

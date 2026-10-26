@@ -6,6 +6,9 @@ import UserNotifications
 
 @MainActor
 @Suite struct ForegroundNotificationPolicyTests {
+    /// An alert's target is only kept for a bot that isn't Private, so the list is set here.
+    init() { PrivateBots.useForTesting(PrivateBots(names: ["private", "moss"], settled: true)) }
+
     private let alerts: UNNotificationPresentationOptions = [.banner, .sound, .list]
 
     private func connection(_ address: String = "https://assistant.example", identity: String? = nil) throws -> GatewayConnection {
