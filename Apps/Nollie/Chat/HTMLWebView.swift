@@ -10,12 +10,16 @@ struct HTMLWebView {
     let document: String
     @Binding var loaded: Bool
     @Binding var height: CGFloat
+    /// Set when the card's network rules couldn't be built. The page is then not loaded at all.
+    @Binding var failed: Bool
 
-    init(document: String, scrolls: Bool, height: Binding<CGFloat>, loaded: Binding<Bool>, actions: HTMLCard.Actions? = nil) {
+    init(document: String, scrolls: Bool, height: Binding<CGFloat>, loaded: Binding<Bool>,
+         failed: Binding<Bool> = .constant(false), actions: HTMLCard.Actions? = nil) {
         self.document = document
         self.scrolls = scrolls
         self._height = height
         self._loaded = loaded
+        self._failed = failed
         self.actions = actions
     }
 

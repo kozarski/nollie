@@ -146,6 +146,8 @@ enum HTMLCard {
             }
         }
         let finished = await compileTask?.value
+        // A failure isn't kept, so the next card tries again.
+        if finished == nil { compileTask = nil }
         return finished ?? nil
     }
 

@@ -6,6 +6,7 @@ struct HTMLCardView: View {
     @Environment(\.colorScheme) private var scheme
     var html: String
     @State private var ready = false
+    @State private var failed = false
     @State private var measured: CGFloat = 96
     /// The thread's Show Source, offered in the card's menu.
     var onShowSource: (() -> Void)? = nil
@@ -41,8 +42,10 @@ struct HTMLCardView: View {
     }
 
     @ViewBuilder private var content: some View {
-        if onScreen {
-            HTMLWebView(document: page, scrolls: false, height: $measured, loaded: $ready, actions: menu)
+        if failed {
+            CardNotDrawn(html: html)
+        } else if onScreen {
+            HTMLWebView(document: page, scrolls: false, height: $measured, loaded: $ready, failed: $failed, actions: menu)
                 .frame(height: shownHeight)
                 .opacity(ready ? 1 : 0.01)
             if !ready { DrawingLabel() }
@@ -101,6 +104,24 @@ struct HTMLCardView: View {
     static func copy(_ html: String) { UIPasteboard.general.string = html }
 }
 
+/// What a card shows when it can't be drawn safely: a short line and its source as plain text.
+struct CardNotDrawn: View {
+    var html: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("This card can't be shown right now.").quiet(.caption)
+            Text(html)
+                .font(.system(.footnote, design: .monospaced))
+                .textSelection(.enabled)
+                .lineLimit(12)
+        }
+        .padding(12)
+        .spread(.leading)
+        .accessibilityIdentifier("card.notDrawn")
+    }
+}
+
 private struct DrawingLabel: View {
     var body: some View {
         HStack(spacing: 8) {
@@ -119,6 +140,7 @@ struct HTMLCardSheet: View {
     @State private var ready = false
     @Environment(\.dismiss) private var dismiss
     @State private var measured: CGFloat = 0
+    @State private var failed = false
 
     var body: some View {
         NavigationStack {
@@ -139,7 +161,7 @@ struct HTMLCardSheet: View {
     }
 
     @ViewBuilder private var page: some View {
-        if viewingSource {
+        if viewingSource || failed {
             ScrollView {
                 Text(html)
                     .textSelection(.enabled)
@@ -148,7 +170,7 @@ struct HTMLCardSheet: View {
                     .spread()
             }
         } else {
-            HTMLWebView(document: CardPage.make(html, dark: scheme == .dark), scrolls: true, height: $measured, loaded: $ready)
+            HTMLWebView(document: CardPage.make(html, dark: scheme == .dark), scrolls: true, height: $measured, loaded: $ready, failed: $failed)
                 .ignoresSafeArea(edges: .bottom)
         }
     }

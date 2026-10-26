@@ -33,8 +33,32 @@ extension HTMLWebView {
             if page == currentPage { return }
             currentPage = page
             Task { @MainActor in
-                if let rules = await HTMLCard.ruleList() { web.configuration.userContentController.add(rules) }
+                // Without its rules a card could reach more than it should, so it isn't drawn.
+                guard let rules = await HTMLCard.ruleList() else {
+                    parent.failed = true
+                    return
+                }
+                parent.failed = false
+                web.configuration.userContentController.add(rules)
                 web.loadHTMLString(page, baseURL: nil)
+            }
+        }
+
+        private static func kind(of action: WKNavigationAction) -> String {
+            switch action.navigationType {
+            case .linkActivated: "link"
+            case .formSubmitted, .formResubmitted: "form"
+            case .backForward: "history"
+            case .reload: "reload"
+            default: "other"
+            }
+        }
+
+        private static func words(for ruling: HTMLCard.Navigation) -> String {
+            switch ruling {
+            case .allow: "allowed"
+            case .block: "blocked"
+            case .openOutside: "sent to the browser"
             }
         }
 
@@ -46,10 +70,9 @@ extension HTMLWebView {
         // requirement, WebKit never called it, and a tapped link opened inside the card.
         func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction) async -> WKNavigationActionPolicy {
             let ruling = rule(for: action, mainFrame: action.targetFrame?.isMainFrame ?? true)
-            let url = action.request.url
-            let target = url?.absoluteString ?? "nil"
-            HTMLCard.log.notice("card went to \(target, privacy: .public) (kind \(action.navigationType.rawValue)), ruled \(String(describing: ruling), privacy: .public)")
-            if ruling == .openOutside, let url { HTMLCard.openOutside(url) }
+            // What a card links to can be anything it was told to write, so only the kind and the ruling are logged.
+            HTMLCard.log.notice("card navigation: \(Self.kind(of: action), privacy: .public), \(Self.words(for: ruling), privacy: .public)")
+            if ruling == .openOutside, let url = action.request.url { HTMLCard.openOutside(url) }
             return ruling == .allow ? .allow : .cancel
         }
 
