@@ -63,7 +63,8 @@ class DemoCase: XCTestCase {
         if portrait { XCUIDevice.shared.orientation = .portrait }
         XCUIDevice.shared.appearance = look.uiAppearance
         app = XCUIApplication(bundleIdentifier: bundle)
-        var flags = ["-companionPromptShown", "YES", "-colorSchemePreference", look.rawValue]
+        // Face ID before a yes to sending would wait on a system prompt no test answers; unit tests cover it.
+        var flags = ["-companionPromptShown", "YES", "-colorSchemePreference", look.rawValue, "-approvals.ownerCheck", "NO"]
         if withGateway {
             flags += ["-nollie-demo-gateway", address, "mock-token", "Studio",
                       "-notificationsSetupCardDone", "YES", "-bots.animate", "NO"]

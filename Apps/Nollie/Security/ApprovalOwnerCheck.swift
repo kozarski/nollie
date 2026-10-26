@@ -11,7 +11,8 @@ enum ApprovalOwnerCheck {
     nonisolated static let key = "approvals.ownerCheck"
 
     nonisolated static func isOn(_ defaults: UserDefaults = .standard) -> Bool {
-        defaults.object(forKey: key) as? Bool ?? true
+        // `bool(forKey:)` also reads "NO" from a launch argument or a managed setting.
+        defaults.object(forKey: key) == nil ? true : defaults.bool(forKey: key)
     }
 
     /// Whether a yes to this approval will ask, so the card can show a lock on its button.

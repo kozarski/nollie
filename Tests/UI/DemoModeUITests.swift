@@ -68,6 +68,7 @@ final class DemoModeUITests: XCTestCase {
         app.launchArguments = [
             "-nollie.onboarding.progress.v1", "", "-nollie.onboarding.welcomeIntroSeen", "YES",
             "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES", "-bots.animate", "NO",
+            "-approvals.ownerCheck", "NO",
         ]
         app.launch()
     }
