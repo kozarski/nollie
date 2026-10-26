@@ -92,6 +92,31 @@ class NightRouteTests(unittest.TestCase):
                          ("[hidden]", "[hidden]", "send_message", "ok"))
         self.assertEqual(self.client.post(BASE + "/rehearsals/rehearsal-moss-x-1/turn-on").status_code, 404)
 
+    def test_missed_schedules_of_private_bots_never_appear(self):
+        self.store.put({"id": "night-y", "kind": "night_shift", "at": self.now - 5, "unwatched": [], "runs": [],
+                        "sleep": [{"from": self.now - 9000, "to": self.now - 3600, "kind": "asleep"}],
+                        "missed": [{"bot": "moss", "bot_name": "Moss", "job_id": "a", "title": "Diary", "count": 2},
+                                   {"bot": "career", "bot_name": "Scout", "job_id": "b", "title": "Prices", "count": 1}]})
+        night_post = self.client.get(BASE + "/posts").json()["posts"][-1]
+        self.assertEqual([m["bot"] for m in night_post["missed"]], ["career"])
+        self.assertEqual(night_post["sleep"][0]["kind"], "asleep")
+        self.assertNotIn("Moss", json.dumps(night_post))
+
+    def test_sleep_gaps(self):
+        sleep = __import__("nollie_workflow_dashboard.sleep_watch", fromlist=["gaps"])
+        gaps = [{"from": self.now - 40 * 86400, "to": self.now - 40 * 86400 + 600, "kind": "asleep"},
+                {"from": self.now - 7200, "to": self.now - 3600, "kind": "off"}]
+        self.root.mkdir(parents=True, exist_ok=True)
+        (self.root / sleep.FILE_NAME).write_text(json.dumps({"version": 1, "seen": None, "gaps": gaps}))
+        response = self.client.get(BASE + "/sleep")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["cache-control"], "no-store")
+        self.assertEqual(response.json(), {"version": 1, "gaps": [gaps[1]]})
+        self.assertEqual(self.client.get(BASE + f"/sleep?since={self.now - 5000}").json()["gaps"],
+                         [dict(gaps[1], **{"from": self.now - 5000})])
+        self.active = "career"
+        self.assertEqual(self.client.get(BASE + "/sleep").status_code, 403)
+
     def test_only_the_main_profile(self):
         self.active = "career"
         self.assertEqual(self.client.get(BASE + "/posts").status_code, 403)

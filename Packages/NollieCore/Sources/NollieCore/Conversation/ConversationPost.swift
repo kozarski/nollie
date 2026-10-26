@@ -35,15 +35,62 @@ public struct ConversationPost: Codable, Hashable, Sendable, Identifiable {
         public var runs: [Run]
         /// Runs past the ones listed (the add-on lists at most 100).
         public var moreRuns: Int
+        /// When the Mac was asleep or off in the window, as the add-on saw it.
+        public var sleep: [SleepGap]
+        /// Schedules that were due while the Mac slept and never ran for those times.
+        public var missed: [Missed]
 
         public init(from: Date? = nil, to: Date? = nil, counts: Counts = Counts(), unwatched: [String] = [], runs: [Run] = [],
-                    moreRuns: Int = 0) {
+                    moreRuns: Int = 0, sleep: [SleepGap] = [], missed: [Missed] = []) {
             self.from = from
             self.to = to
             self.counts = counts
             self.unwatched = unwatched
             self.runs = runs
             self.moreRuns = moreRuns
+            self.sleep = sleep
+            self.missed = missed
+        }
+    }
+
+    /// A stretch when the Mac was asleep, off, or on without Hermes running.
+    public struct SleepGap: Codable, Hashable, Sendable {
+        public var from: Date
+        public var to: Date
+        public var kind: Kind
+
+        public enum Kind: String, Codable, Hashable, Sendable {
+            case asleep, off, stopped
+        }
+
+        public init(from: Date, to: Date, kind: Kind) {
+            self.from = from
+            self.to = to
+            self.kind = kind
+        }
+
+        public func holds(_ date: Date) -> Bool { from <= date && date < to }
+    }
+
+    /// One schedule's times that went by while the Mac slept, with nothing run for them.
+    public struct Missed: Codable, Hashable, Sendable {
+        public var bot: String
+        public var botName: String
+        public var jobId: String
+        public var title: String
+        public var firstDue: Date?
+        public var lastDue: Date?
+        public var count: Int
+
+        public init(bot: String, botName: String, jobId: String, title: String, firstDue: Date? = nil, lastDue: Date? = nil,
+                    count: Int) {
+            self.bot = bot
+            self.botName = botName
+            self.jobId = jobId
+            self.title = title
+            self.firstDue = firstDue
+            self.lastDue = lastDue
+            self.count = count
         }
     }
 
@@ -78,9 +125,16 @@ public struct ConversationPost: Codable, Hashable, Sendable, Identifiable {
         public var actions: [Action]
         /// Actions past the ones listed.
         public var more: Int
+        /// When a schedule run was due.
+        public var dueAt: Date?
+        /// It started more than five minutes after it was due.
+        public var late: Bool
 
         public init(id: String, kind: String = "schedule", bot: String, botName: String, title: String, outcome: Outcome? = nil,
-                    startedAt: Date? = nil, finishedAt: Date? = nil, actions: [Action] = [], more: Int = 0) {
+                    startedAt: Date? = nil, finishedAt: Date? = nil, actions: [Action] = [], more: Int = 0, dueAt: Date? = nil,
+                    late: Bool = false) {
+            self.dueAt = dueAt
+            self.late = late
             self.id = id
             self.kind = kind
             self.bot = bot
@@ -240,7 +294,9 @@ extension ConversationPost {
                     entry.stringValue ?? entry["bot_name"]?.stringValue ?? entry["bot"]?.stringValue
                 },
                 runs: (json["runs"]?.arrayValue ?? []).compactMap(Run.init(wire:)),
-                moreRuns: max(json["more_runs"]?.intValue ?? 0, 0))))
+                moreRuns: max(json["more_runs"]?.intValue ?? 0, 0),
+                sleep: (json["sleep"]?.arrayValue ?? []).compactMap(SleepGap.init(wire:)),
+                missed: (json["missed"]?.arrayValue ?? []).compactMap(Missed.init(wire:)))))
         case "rehearsal":
             let check = json["check"].flatMap { value -> Check? in
                 guard value.objectValue != nil else { return nil }
@@ -281,7 +337,28 @@ extension ConversationPost.Run {
                   outcome: json["outcome"]?.stringValue.flatMap(ConversationPost.Outcome.init(rawValue:)),
                   startedAt: ConversationPost.date(json["started_at"]), finishedAt: ConversationPost.date(json["finished_at"]),
                   actions: (json["actions"]?.arrayValue ?? []).compactMap(ConversationPost.Action.init(wire:)),
-                  more: json["more"]?.intValue ?? 0)
+                  more: json["more"]?.intValue ?? 0, dueAt: ConversationPost.date(json["due_at"]),
+                  late: json["late"]?.boolValue ?? false)
+    }
+}
+
+extension ConversationPost.SleepGap {
+    /// One gap of the add-on's card or of `GET /api/plugins/nollie-workflow/sleep`. Nil without both ends, or for
+    /// a kind this build doesn't know.
+    public init?(wire json: GatewayJSON) {
+        guard let from = ConversationPost.date(json["from"]), let to = ConversationPost.date(json["to"]), to > from,
+              let kind = json["kind"]?.stringValue.flatMap(Kind.init(rawValue:)) else { return nil }
+        self.init(from: from, to: to, kind: kind)
+    }
+}
+
+extension ConversationPost.Missed {
+    init?(wire json: GatewayJSON) {
+        guard let count = json["count"]?.intValue, count > 0 else { return nil }
+        self.init(bot: json["bot"]?.stringValue ?? "", botName: json["bot_name"]?.stringValue ?? "",
+                  jobId: json["job_id"]?.stringValue ?? "", title: json["title"]?.stringValue ?? "",
+                  firstDue: ConversationPost.date(json["first_due"]), lastDue: ConversationPost.date(json["last_due"]),
+                  count: count)
     }
 }
 

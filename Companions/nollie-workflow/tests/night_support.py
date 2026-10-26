@@ -113,8 +113,8 @@ class Checks:
         return ask
 
 
-def execution(job_id="3f2a9c", execution_id="e-81", name="Morning prices"):
-    return SimpleNamespace(job_id=job_id, execution_id=execution_id, job_name=name)
+def execution(job_id="3f2a9c", execution_id="e-81", name="Morning prices", scheduled_instant=None):
+    return SimpleNamespace(job_id=job_id, execution_id=execution_id, job_name=name, scheduled_instant=scheduled_instant)
 
 
 class Clock:

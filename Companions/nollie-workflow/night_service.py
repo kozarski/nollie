@@ -15,7 +15,7 @@ from pathlib import Path
 import shutil
 import time
 
-from . import private_bots, rehearsals
+from . import private_bots, rehearsals, sleep_watch
 from .night_shift import (RECEIPTS, RECORDERS, GrantLog, OutcomeLog, Settings, assemble, check_post, day_files,
                           local_day, night_card, parse_time, read_lines, read_unrecorded, rehearsal_post)
 from .posts import PostStore
@@ -31,6 +31,8 @@ CHECK = "Nollie needs you to look at this first. Turn it on in Nollie when you'r
 STATUS_NAME = "night-shift-status.json"
 FOLLOWUPS_NAME = "followups.json"
 FOLLOWUPS_MAX_BYTES = 4_000_000
+# After the Mac wakes, Hermes runs what it missed within a minute or two: the morning card waits for that.
+SETTLE_AFTER_WAKE = 600
 
 
 class Conflict(Exception):
@@ -120,7 +122,7 @@ def wait_for_wake(root, stop, seconds):
 
 
 class NightService:
-    def __init__(self, home, jobs=None, *, now=time.time, private=None, redactor=None):
+    def __init__(self, home, jobs=None, *, now=time.time, private=None, redactor=None, clocks=None):
         self.home = Path(home)
         self.root = self.home / "nollie-workflow"
         if jobs is None:
@@ -133,6 +135,7 @@ class NightService:
         self.posts = PostStore(self.root, now)
         self.outcomes = OutcomeLog(self.root)
         self.grants = GrantLog(self.root)
+        self.sleep = sleep_watch.SleepWatch(self.root, clocks=clocks or sleep_watch.read_clocks)
         self.housekept = None
         self.folded = {}
         self.status = {"version": 1, "last_tick_at": None, "last_error": None}
@@ -143,6 +146,11 @@ class NightService:
 
     def tick(self):
         self.trouble = None
+        try:
+            # First, so a morning card built on waking already knows how long the Mac slept.
+            self.sleep.tick()
+        except Exception as exc:
+            log.warning("Sleep watch skipped a tick: %s", type(exc).__name__)
         settings = self.settings.get()
         try:
             private = frozenset(self.private())
@@ -406,6 +414,9 @@ class NightService:
         earlier = [p for p in self.posts.all() if p["kind"] == "night_shift"]
         start = earlier[-1]["window"]["to"] if earlier and isinstance(earlier[-1].get("window"), dict) else now - 43200
         start = max(int(start), now - 86400)
+        sleep = sleep_watch.gaps(self.root, start, now + 1)
+        if sleep and now - sleep[-1]["to"] < SETTLE_AFTER_WAKE:
+            return  # Just woke: what waited is still running.
         self.fold(bots, now)
         info = {}
         for profile in bots:
@@ -415,11 +426,31 @@ class NightService:
                 jobs = []
             info[profile] = {"name": bot_name(self.jobs, profile), "lines": read_lines(self.root, profile, start, now + 1),
                              "jobs": jobs, "unrecorded": read_unrecorded(self.root, profile, start, now + 1),
-                             "watched": self.watching(profile)}
+                             "watched": self.watching(profile), "due": self.due(profile, jobs, sleep)}
         unwatched = [info[p]["name"] for p in bots if not info[p]["watched"]]
         post = night_card(day=day, window=(start, now), bots=info, outcomes=self.outcomes.read(),
-                          grants=self.grants.read(), unwatched=unwatched, private=private, redactor=self.redactor)
+                          grants=self.grants.read(), unwatched=unwatched, private=private, redactor=self.redactor,
+                          sleep=sleep)
         self.posts.put(post)
+
+    def due(self, profile, jobs, sleep):
+        """Each running schedule's due times while the Mac was asleep or off. Paused ones were never due."""
+        reckon = getattr(self.jobs, "due_times", None)
+        if reckon is None or not sleep:
+            return {}
+        found = {}
+        for job in jobs:
+            if not isinstance(job.get("id"), str) or job.get("enabled") is False or job.get("state") == "paused":
+                continue
+            times = []
+            for gap in sleep:
+                try:
+                    times += reckon(profile, job, gap["from"], gap["to"])
+                except Exception:
+                    continue
+            if times:
+                found[job["id"]] = sorted(set(times))
+        return found
 
     # Housekeeping ------------------------------------------------------------------------
 

@@ -30,6 +30,8 @@ struct NightShiftShareModel: Equatable {
 
     var window: String?
     var counts: String
+    /// When the Mac was asleep: times and counts only.
+    var sleep: String?
     var unwatched: String?
     var runs: [Run]
     /// "12 more runs not listed", on a night with more runs than the card lists.
@@ -42,6 +44,7 @@ struct NightShiftShareModel: Equatable {
     init(_ card: ConversationPost.NightShift, now: Date = Date()) {
         window = card.from.map { NightShiftWords.since($0, now: now) }
         counts = NightShiftWords.counts(card.counts)
+        sleep = SleepNote.line(for: card)
         unwatched = card.unwatched.isEmpty ? nil : NightShiftWords.unwatched(card.unwatched)
         runs = card.runs.map { run in
             Run(id: run.id, bot: run.bot, title: Self.pieces(NightShiftWords.title(of: run)), line: NightShiftWords.runLine(run),
@@ -50,6 +53,9 @@ struct NightShiftShareModel: Equatable {
                            receipt: NightShiftWords.receipt(action, in: run), warn: action.status == .blocked)
                 },
                 more: max(run.actions.count - Self.actionsPerRun, 0) + run.more)
+        } + card.missed.map { missed in
+            Run(id: "missed:\(missed.bot):\(missed.jobId)", bot: missed.bot, title: Self.pieces(missed.title.isEmpty ? "Schedule" : missed.title),
+                line: NightShiftWords.missedLine(missed), actions: [], more: 0)
         }
         moreRuns = card.moreRuns > 0 ? NightShiftWords.moreRuns(card.moreRuns) : nil
     }
@@ -78,7 +84,7 @@ struct NightShiftShareModel: Equatable {
 
     /// Every word the picture holds.
     var words: [String] {
-        var out = [window, counts, unwatched, moreRuns].compactMap { $0 }
+        var out = [window, counts, sleep, unwatched, moreRuns].compactMap { $0 }
         for run in runs {
             out.append(run.title.map(\.text).joined())
             out.append(run.line)
@@ -101,6 +107,9 @@ struct NightShiftShareView: View {
         VStack(alignment: .leading, spacing: 16) {
             NightShiftHeading(window: model.window)
             Text(model.counts).font(Ink.cardBody).foregroundStyle(NightShiftInk.text)
+            if let sleep = model.sleep {
+                Text(sleep).font(Ink.cardBody).foregroundStyle(NightShiftInk.text).fixedSize(horizontal: false, vertical: true)
+            }
             if let unwatched = model.unwatched {
                 Text(unwatched).font(Ink.cardBody).foregroundStyle(NightShiftInk.warning)
             }

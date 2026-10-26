@@ -112,6 +112,8 @@ enum LinkDoorPolicy {
         Rule(["GET"], "/api/plugins/nollie-workflow/posts"),
         Rule(["POST"], "/api/plugins/nollie-workflow/rehearsals/*/turn-on"),
         Rule(["POST"], "/api/plugins/nollie-workflow/rehearsals/*/keep-off"),
+        // When the Mac slept, for a schedule that ran late: times and a kind only.
+        Rule(["GET"], "/api/plugins/nollie-workflow/sleep"),
         Rule(["GET"], "/api/plugins/nollie-computer/preview"),
         Rule(["GET", "PUT"], "/api/plugins/nollie-computer/ask-first"),
         // A saved sign-in card: the phone may only say it is the one answering. Sites, the

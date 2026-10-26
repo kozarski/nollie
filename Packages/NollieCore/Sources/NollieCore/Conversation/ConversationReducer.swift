@@ -321,6 +321,10 @@ extension ConversationState {
     // MARK: Compression
 
     private mutating func status(kind: String, text: String) {
+        if let change = BackupSwitch.read(kind: kind, text: text) {
+            append(.note(.notice(change.line(here: BackupSwitch.here))))
+            return
+        }
         switch ConversationReducer.compressionSign(kind: kind, text: text) {
         case .summarizing:
             joinTurn()

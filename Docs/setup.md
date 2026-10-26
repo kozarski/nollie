@@ -23,13 +23,21 @@ It installs fixed, tested versions of uv, Python and Hermes Agent, Hermes's own 
 changes to Hermes and Nollie's add-ons (Board follow-through with Papertrail and the Night shift, the crew, the page
 reader and computer previews). "What's installed" names each one. A newer Nollie brings newer add-ons into the setup
 by itself; Hermes loads them the next time the background service starts.
-Starting its background service is an explicit action. The Mac must remain awake and online for work to continue.
+Starting its background service is an explicit action. The Mac must remain awake and online for work to continue:
+Settings › Keep awake holds it awake for the crew while helpers work and, plugged in, until the night's schedules
+have run. When it slept anyway, the morning's Night shift card says so.
 
 ## Choose where it thinks
 
 - **On your Mac:** use a local model, with a download appropriate to the computer.
 - **Online:** connect a supported provider account or API.
 - **Both:** choose a mix that suits the work.
+
+**If my plan runs out** is off until chosen. It sets a second model (one downloaded to the assistant's computer, or
+another plan or key the assistant is signed in to) as the first entry of the bot's Hermes `fallback_providers`. When
+the main model hits a limit or stops answering, Hermes moves to it and the chat says so in one line; Hermes moves back
+by itself on the first message after the time it gives (or the next message), and the chat says that too. Papertrail
+lists each reply under the route that answered it. Turning it off empties the list.
 
 This preference does not silently rewrite imported routing.
 A model being selected is different from a successful reply, and a successful reply is different from reliable tool use.

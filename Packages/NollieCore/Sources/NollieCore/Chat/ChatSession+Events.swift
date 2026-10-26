@@ -250,6 +250,12 @@ extension ChatSession {
 
     private func statusChanged(_ payload: JSONValue) {
         let text = payload.text("text") ?? ""
+        if let change = BackupSwitch.read(kind: payload.text("kind") ?? "", text: text) {
+            // One plain row where Hermes's own words would have flashed by in the status line.
+            items.append(TranscriptItem(id: UUID().uuidString, kind: .system(text: change.line(here: BackupSwitch.here),
+                                                                             symbol: "arrow.triangle.branch")))
+            return
+        }
         switch CompressionNotice.read(kind: payload.text("kind") ?? "", text: text) {
         case .summarizing:
             statusLine = CompressionNotice.summarizingLine

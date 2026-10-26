@@ -204,7 +204,7 @@ struct NollieLinkDoorTests {
             ("GET", "/api/plugins/nollie-workflow/private-bots", false),
             ("GET", "/api/plugins/nollie-workflow/papertrail", false),
             ("GET", "/api/plugins/nollie-computer/preview", false), ("POST", "/nollie/link/claim", false),
-            ("GET", "/api/plugins/nollie-workflow/posts", false),
+            ("GET", "/api/plugins/nollie-workflow/posts", false), ("GET", "/api/plugins/nollie-workflow/sleep", false),
             ("POST", "/api/plugins/nollie-workflow/rehearsals/rehearsal-career-3f2a9c-e-81/turn-on", false),
             ("POST", "/api/plugins/nollie-workflow/rehearsals/rehearsal-career-3f2a9c-e-81/keep-off", false),
             ("POST", "/api/plugins/nollie-workflow/sign-ins/requests/0123456789abcdef0123456789abcdef/claim", false),
@@ -259,6 +259,7 @@ struct NollieLinkDoorTests {
             ("GET", "/api/sessionsX", false), ("GET", "/api/profiles/", false), ("GET", "/api/sessions//messages", false),
             // The main chat's cards: read, Turn on and Keep off only.
             ("POST", "/api/plugins/nollie-workflow/posts", false), ("DELETE", "/api/plugins/nollie-workflow/posts", false),
+            ("PUT", "/api/plugins/nollie-workflow/sleep", false), ("GET", "/api/plugins/nollie-workflow/sleep/1", false),
             ("GET", "/api/plugins/nollie-workflow/posts/night-2026-10-21", false), ("GET", "/api/plugins/nollie-workflow/posts", true),
             ("GET", "/api/plugins/nollie-workflow/rehearsals/r1/turn-on", false), ("PUT", "/api/plugins/nollie-workflow/rehearsals/r1/keep-off", false),
             ("POST", "/api/plugins/nollie-workflow/rehearsals/r1", false), ("POST", "/api/plugins/nollie-workflow/rehearsals", false),

@@ -24,6 +24,7 @@ _papertrail = __import__(_name + ".papertrail", fromlist=["read"])
 _posts = __import__(_name + ".posts", fromlist=["PostStore"])
 _night = __import__(_name + ".night_service", fromlist=["turn_on"])
 _shift = __import__(_name + ".night_shift", fromlist=["without_private"])
+_sleep = __import__(_name + ".sleep_watch", fromlist=["gaps"])
 _sign_ins = __import__(_name + ".sign_ins", fromlist=["Store"])
 _apple = __import__(_name + ".apple_data", fromlist=["Store"])
 _cron_followups = __import__(_name + ".hermes_support.ollie_cron_followups", fromlist=["ready"])
@@ -152,9 +153,12 @@ def visible(post, private):
     if post.get("kind") == "night_shift":
         runs = [r for r in post.get("runs", []) if not _private.excluded(r.get("bot"), private)]
         unwatched = [n for n in post.get("unwatched", []) if not _core.private_identity(n, private)]
+        missed = [m for m in post.get("missed", []) if isinstance(m, dict) and not _private.excluded(m.get("bot"), private)]
         by_bot = post.get("by_bot")
-        post = {k: v for k, v in post.items() if k != "by_bot"}
+        post = {k: v for k, v in post.items() if k not in ("by_bot", "missed")}
         post.update(runs=runs, unwatched=unwatched)
+        if missed:
+            post["missed"] = missed
         if isinstance(by_bot, dict):
             kept = [c for b, c in by_bot.items() if isinstance(c, dict) and not _private.excluded(b, private)]
             counts = {name: sum(c.get(name) for c in kept if type(c.get(name)) is int) for name in _shift.COUNTS}
@@ -181,6 +185,16 @@ def posts(since: int | None = None, limit: int = 60):
         raise HTTPException(503, "Night shift cards are unavailable.") from None
     shown = [p for p in (visible(p, private) for p in stored) if p is not None][-limit:]
     return JSONResponse({"version": 1, "posts": shown}, headers=NO_STORE)
+
+
+@router.get("/sleep")
+def sleep(since: int | None = None):
+    """When the Mac was asleep, off, or without Hermes, oldest first: times and a kind, nothing else."""
+    target = home()
+    now = int(time.time())
+    since = now - POST_DAYS * 86400 if since is None else max(int(since), now - _sleep.KEEP_SECONDS)
+    gaps = _sleep.gaps(target / "nollie-workflow", since, now + 1)
+    return JSONResponse({"version": 1, "gaps": gaps}, headers=NO_STORE)
 
 
 def schedule_jobs(target):

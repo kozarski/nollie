@@ -77,6 +77,19 @@ enum ScheduledWork {
         return parsed.formatted(date: .abbreviated, time: .shortened)
     }
 
+    /// The last run, when it started late: when it was due and when it ran, from Hermes's `last_dispatch`. Nil for
+    /// a run on time, for Run now (Hermes records no dispatch for it) and for a record older than the last run.
+    static func lateRun(_ raw: JSONValue) -> (due: Date, ran: Date)? {
+        let dispatch = raw["last_dispatch"]
+        guard ["late", "catch_up"].contains(dispatch?["kind"]?.stringValue ?? ""),
+              let due = dispatch?["scheduled_at"]?.stringValue.flatMap(CronSchedule.onceDate),
+              let sent = dispatch?["dispatched_at"]?.stringValue.flatMap(CronSchedule.onceDate),
+              let ran = raw["last_run_at"]?.stringValue.flatMap(CronSchedule.onceDate),
+              sent.timeIntervalSince(due) > SleepNote.lateSeconds,
+              sent <= ran.addingTimeInterval(60), ran.timeIntervalSince(sent) < 3 * 3600 else { return nil }
+        return (due, sent)
+    }
+
     static func result(_ job: CronJob) -> String {
         guard let status = job.lastStatus, !status.isEmpty else { return "No result yet" }
         if CronRun.isGood(status) { return "Completed" }

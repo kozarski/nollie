@@ -21,8 +21,9 @@ spec.loader.exec_module(mock)
 
 POSTS = "/api/plugins/nollie-workflow/posts"
 REHEARSAL = "rehearsal-work-a41c7e-e-12"
-NIGHT_KEYS = {"id", "kind", "at", "window", "counts", "unwatched", "runs"}
-RUN_KEYS = {"id", "kind", "bot", "bot_name", "title", "outcome", "started_at", "finished_at", "actions", "more"}
+NIGHT_KEYS = {"id", "kind", "at", "window", "counts", "unwatched", "runs", "sleep", "missed"}
+RUN_KEYS = {"id", "kind", "bot", "bot_name", "title", "outcome", "started_at", "finished_at", "actions", "more", "due_at"}
+MISSED_KEYS = {"bot", "bot_name", "job_id", "title", "first_due", "last_due", "count"}
 ACTION_KEYS = {"tool", "target", "status", "at", "receipt"}
 REHEARSAL_KEYS = {"id", "kind", "at", "bot", "bot_name", "job_id", "title", "schedule", "state", "check",
                   "outcome", "held", "looked", "reply"}
@@ -82,7 +83,8 @@ class NightShiftFixtureTests(unittest.TestCase):
         self.assertEqual(night["id"], "night-" + time.strftime("%Y-%m-%d", time.localtime(night["at"])))
         self.assertEqual(len(night["runs"]), 2)
         for run in night["runs"]:
-            self.assertEqual(set(run), RUN_KEYS)
+            self.assertLessEqual(set(run) - {"late"}, RUN_KEYS)
+            self.assertLessEqual(RUN_KEYS, set(run))
             self.assertTrue(night["window"]["from"] <= run["started_at"] < run["finished_at"] <= night["window"]["to"])
             for action in run["actions"]:
                 self.assertEqual(set(action), ACTION_KEYS)
@@ -95,6 +97,21 @@ class NightShiftFixtureTests(unittest.TestCase):
         self.assertIn({"kind": "blocked", "detail": "mac"}, receipts)
         blocked = next(a for run in night["runs"] for a in run["actions"] if a["receipt"]["kind"] == "blocked")
         self.assertEqual(blocked["status"], "blocked")
+
+        # The Mac slept: one run waited until it woke, an hourly check missed three times, never counted as runs.
+        (asleep,) = night["sleep"]
+        self.assertEqual(set(asleep), {"from", "to", "kind"})
+        self.assertEqual(asleep["kind"], "asleep")
+        self.assertTrue(night["window"]["from"] <= asleep["from"] < asleep["to"] <= night["window"]["to"])
+        late = [run for run in night["runs"] if run.get("late")]
+        self.assertEqual([run["title"] for run in late], ["Morning brief"])
+        self.assertTrue(asleep["from"] <= late[0]["due_at"] < asleep["to"] <= late[0]["started_at"])
+        on_time = next(run for run in night["runs"] if not run.get("late"))
+        self.assertLess(on_time["started_at"] - on_time["due_at"], 300)
+        (missed,) = night["missed"]
+        self.assertEqual(set(missed), MISSED_KEYS)
+        self.assertEqual(missed["count"], 3)
+        self.assertTrue(asleep["from"] <= missed["first_due"] < missed["last_due"] < asleep["to"])
 
         self.assertEqual(set(rehearsal), REHEARSAL_KEYS)
         self.assertEqual(rehearsal["id"], REHEARSAL)
@@ -309,12 +326,13 @@ class AddOnContractTests(unittest.TestCase):
         mock.PRIVATE_BOTS.update(private)
         mock.LIVE.clear()
 
-    def lines(self, at, run="cron:a41c7e:e-12", job_id="a41c7e", rehearsal=False):
+    def lines(self, at, run="cron:a41c7e:e-12", job_id="a41c7e", rehearsal=False, due_at=None):
         """Receipt lines for one run, written as the recorder writes them."""
         line = lambda event, offset, **fields: {"run": run, "at": at + offset, "event": event, **fields}
+        due = {} if due_at is None else {"due_at": due_at}
         return [
             line("start", 0, kind="schedule", job_id=job_id, execution_id="e-12", title="Nightly export",
-                 rehearsal=rehearsal),
+                 rehearsal=rehearsal, **due),
             line("call", 10, call="c1", tool="read_file", target="/srv/export/last-run.log", receipt={"kind": "safe"}),
             line("result", 11, call="c1", tool="read_file", status="done"),
             line("call", 20, call="c2", tool="terminal", target="pg_dump --schema-only exports",
@@ -345,11 +363,17 @@ class AddOnContractTests(unittest.TestCase):
 
     def real_night(self, at):
         shift, night = self.api._shift, self.api._night
-        bots = {bot: {"name": night.bot_name(self.jobs, bot), "jobs": [],
-                      "lines": self.lines(at - 3600, run=f"cron:{bot}-job:e-1", job_id=f"{bot}-job")}
-                for bot in ("default", "work")}
+        asleep = {"from": at - 7 * 3600, "to": at - 2 * 3600, "kind": "asleep"}
+        # As the mock's: an on-time run before the Mac slept, opening with an allow-list command, then one that
+        # waited for it to wake.
+        bots = {bot: {"name": night.bot_name(self.jobs, bot), "jobs": [], "due": {},
+                      "lines": self.lines(start, run=f"cron:{bot}-job:e-1", job_id=f"{bot}-job", due_at=due)}
+                for bot, start, due in (("work", at - 8 * 3600, at - 8 * 3600), ("default", at - 3600, at - 6 * 3600))}
+        bots["work"]["lines"] = [line for line in bots["work"]["lines"] if line.get("call") != "c1"]
+        bots["work"]["jobs"] = [{"id": "hourly", "name": "Hourly price check"}]
+        bots["work"]["due"] = {"hourly": [at - 6 * 3600, at - 5 * 3600, at - 4 * 3600]}
         card = shift.night_card(day="2026-10-21", window=(at - 12 * 3600, at), bots=bots, outcomes=[], grants=[],
-                                unwatched=[], private=set())
+                                unwatched=[], private=set(), sleep=[asleep])
         # As the routes send it: the per-bot counts stay in the store.
         return self.api.visible(card, set())
 

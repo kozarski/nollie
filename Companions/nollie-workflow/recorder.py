@@ -21,7 +21,7 @@ import threading
 import time
 
 from . import ask_first, private_bots, receipts, rehearsals
-from .night_shift import RECORDERS, Settings, local_day, receipts_dir
+from .night_shift import RECORDERS, Settings, local_day, parse_time, receipts_dir
 from .workflow_core import atomic_write, file_lock
 
 QUEUE_LIMIT = 2000
@@ -51,6 +51,16 @@ def held_action(tool_name, args):
         return ask_first.classify(tool_name, args, screen=_Blank(), read_file=None)
     except Exception:
         return None
+
+
+def instant(value):
+    """A cron run's scheduled instant (an ISO string, or a datetime) in Unix seconds, or None."""
+    if hasattr(value, "timestamp"):
+        try:
+            return int(value.timestamp())
+        except (TypeError, ValueError, OverflowError, OSError):
+            return None
+    return parse_time(value)
 
 
 def _session_env(name):
@@ -247,7 +257,8 @@ class Recorder:
             run = task_id if isinstance(task_id, str) and task_id.startswith(f"cron:{job_id}:") \
                 else f"cron:{job_id}:{execution_id}"
             return {"key": run, "kind": "schedule", "job_id": job_id, "execution_id": execution_id,
-                    "title": str(getattr(execution, "job_name", "") or "")}
+                    "title": str(getattr(execution, "job_name", "") or ""),
+                    "due": instant(getattr(execution, "scheduled_instant", None))}
         try:
             board = self.environ.get("HERMES_KANBAN_TASK")
         except Exception:
@@ -390,6 +401,9 @@ class Recorder:
         if run["kind"] == "schedule":
             fields.update(job_id=run["job_id"], execution_id=run["execution_id"],
                           title=receipts.scrub(run["title"], self.redactor, 240))
+            if run.get("due") is not None:
+                # The time it was due: a run that waited for the Mac to wake starts later than this.
+                fields["due_at"] = run["due"]
         if run["kind"] == "board":
             fields["task"] = run["task"]
         self.writer.put(self._line(run, "start", **fields))

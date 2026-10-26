@@ -639,6 +639,29 @@ def own_computer_rest(method: str, base: str, query: dict, payload) -> tuple[int
     return ok(own_computer_view(name))
 
 
+# The backup model each bot uses when its plan runs out: Hermes's `fallback_providers` list, read with
+# GET /api/config and changed by a PUT /api/config whose `config` names it (the real one deep-merges, and a
+# list replaces the old one whole). Other config writes go on as before.
+FALLBACKS: dict = {}
+BACKUP_MODEL = "llama-3.2-3b-instruct-q4_k_m"
+
+
+def backup_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    if base != "/api/config":
+        return None
+    profile = query.get("profile") or "default"
+    if method == "GET":
+        return ok(dict(config=dict(CONFIG, fallback_providers=copy.deepcopy(FALLBACKS.get(profile, [])))))
+    edits = payload.get("config") if isinstance(payload, dict) else None
+    if method != "PUT" or not isinstance(edits, dict) or not ({"fallback_providers", "fallback_model"} & set(edits)):
+        return None
+    chain = edits.get("fallback_providers", FALLBACKS.get(profile, []))
+    if not isinstance(chain, list) or not all(isinstance(e, dict) and e.get("provider") and e.get("model") for e in chain):
+        return refuse(422, "Each backup needs a provider and a model.")
+    FALLBACKS[profile] = copy.deepcopy(chain)
+    return ok(dict(ok=True))
+
+
 # Night shift and rehearsal cards, as nollie-workflow posts them into the default bot's main chat
 # (GET /api/plugins/nollie-workflow/posts, POST .../rehearsals/<post id>/turn-on and /keep-off).
 # The fixture is one morning card with two runs and a rehearsal waiting for Turn on.
@@ -671,29 +694,44 @@ def _shift_run(run_id: str, bot: str, title: str, started: float, length: int, a
             more=0)
 
 
+def night_shift_sleep(stamp: int) -> dict:
+    """The Mac asleep for five and a half hours of the night before `stamp`, as the add-on's sleep watch keeps it."""
+    woke = stamp - 50 * 60
+    return dict(kind="asleep", to=woke, **{"from": woke - 330 * 60})
+
+
 def night_shift_fixture(base: int) -> list:
-    """Both cards, the morning card at `base` + 1 and the rehearsal at `base` + 2."""
+    """Both cards, the morning card at `base` + 1 and the rehearsal at `base` + 2. The Mac slept for part of
+    the night: the export check ran on time before, the morning brief waited until it woke, and an hourly
+    check missed three of its times."""
     hour = 3600
     stamp = base + 1
-    morning_start = stamp - 4 * hour
-    export_start = stamp - 2 * hour
+    asleep = night_shift_sleep(stamp)
+    export_start = asleep["from"] - hour
+    morning_due = asleep["from"] + 50 * 60
+    morning_start = asleep["to"] + 60
     first_grant = base - 9 * NIGHT_SHIFT_DAY
-    morning = _shift_run("cron:morning-brief:e-80", "default", "Morning brief", morning_start, 68, [
-        _shift_action("terminal", "df -h", morning_start + 10, dict(kind="safe")),
-        _shift_action("write_file", "~/reports/morning-brief.md", morning_start + 30, dict(kind="tool")),
-        _shift_action("terminal", "git push origin main", morning_start + 50,
-                      dict(kind="always", detail="git push", granted_at=first_grant)),
-    ])
     export = _shift_run("cron:export-health:e-41", "work", "Export health check", export_start, 45, [
         _shift_action("terminal", "pg_dump --schema-only exports", export_start + 12,
                       dict(kind="allowlist", detail="pg_dump")),
         _shift_action("computer_use", "screenshot", export_start + 30,
                       dict(kind="blocked", detail="mac"), status="blocked"),
     ])
-    runs = [morning, export]
+    export.update(due_at=export_start - 4)
+    morning = _shift_run("cron:morning-brief:e-80", "default", "Morning brief", morning_start, 68, [
+        _shift_action("terminal", "df -h", morning_start + 10, dict(kind="safe")),
+        _shift_action("write_file", "~/reports/morning-brief.md", morning_start + 30, dict(kind="tool")),
+        _shift_action("terminal", "git push origin main", morning_start + 50,
+                      dict(kind="always", detail="git push", granted_at=first_grant)),
+    ])
+    morning.update(due_at=morning_due, late=True)
+    runs = [export, morning]
+    first_missed = asleep["from"] + 2 * hour - asleep["from"] % hour
+    missed = [dict(bot="work", bot_name=shown_bot_name("work"), job_id="c71d02", title="Hourly price check",
+                   first_due=first_missed, last_due=first_missed + 2 * hour, count=3)]
     night = {"id": time.strftime("night-%Y-%m-%d", time.localtime(stamp)), "kind": "night_shift",
              "at": stamp, "unwatched": [], "runs": runs, "counts": night_shift_counts(runs),
-             "window": {"from": stamp - 12 * hour, "to": stamp}}
+             "window": {"from": stamp - 12 * hour, "to": stamp}, "sleep": [asleep], "missed": missed}
     late = base + 2
     blocked_screenshot = _shift_action("computer_use", "screenshot", late - 30, dict(kind="blocked", detail="mac"),
                                        status="blocked")
@@ -757,7 +795,12 @@ def shown_post(post: dict) -> dict | None:
     if post["kind"] == "rehearsal":
         return None if private_identity(post["bot"]) or private_identity(post["bot_name"]) else copy.deepcopy(post)
     runs = [run for run in post["runs"] if not (private_identity(run["bot"]) or private_identity(run["bot_name"]))]
-    return dict(copy.deepcopy(post), runs=copy.deepcopy(runs), counts=night_shift_counts(runs))
+    shown = dict(copy.deepcopy(post), runs=copy.deepcopy(runs), counts=night_shift_counts(runs))
+    missed = [m for m in post.get("missed", []) if not (private_identity(m["bot"]) or private_identity(m["bot_name"]))]
+    shown.pop("missed", None)
+    if missed:
+        shown["missed"] = copy.deepcopy(missed)
+    return shown
 
 
 def night_shift_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
@@ -765,6 +808,12 @@ def night_shift_rest(method: str, base: str, query: dict, payload) -> tuple[int,
         changed = isinstance(payload, dict) and payload.get("changed") is True
         return ok(dict(posts=[p for p in map(shown_post, reset_night_shift(changed)) if p]))
     rehearsal = re.fullmatch(r"/api/plugins/nollie-workflow/rehearsals/([^/]+)/(turn-on|keep-off)", base)
+    if base == "/api/plugins/nollie-workflow/sleep":
+        if query.get("profile", "default") != "default":
+            return refuse(403, "Night shift belongs to Nollie.")
+        if method != "GET":
+            return refuse(405, "Method Not Allowed")
+        return ok(dict(version=1, gaps=sleep_gaps(query.get("since"))))
     if base != "/api/plugins/nollie-workflow/posts" and not rehearsal:
         return None
     if query.get("profile", "default") != "default":
@@ -799,6 +848,20 @@ def night_shift_rest(method: str, base: str, query: dict, payload) -> tuple[int,
 
 
 NIGHT_SHIFT["posts"] = night_shift_fixture(int(time.time()))
+
+# When the Mac slept, as GET /api/plugins/nollie-workflow/sleep answers it: the night on the morning card,
+# and the morning the brief's last run waited for (see CRON_JOBS).
+SCHEDULE_SLEEP = dict(kind="asleep", **{"from": 1790053800, "to": 1790062800})   # 2026-09-22 05:10 to 07:40 UTC
+
+
+def sleep_gaps(since) -> list:
+    try:
+        since = int(since) if since is not None else int(time.time()) - 14 * NIGHT_SHIFT_DAY
+    except ValueError:
+        since = 0
+    night = next((p for p in NIGHT_SHIFT["posts"] if p["kind"] == "night_shift"), None)
+    gaps = [SCHEDULE_SLEEP] + (night or {}).get("sleep", [])
+    return [dict(g, **{"from": max(g["from"], since)}) for g in gaps if g["to"] > since]
 
 
 # Canned reply text. It has markdown, a fenced code sample and tool cards to render.
@@ -1613,7 +1676,10 @@ CRON_JOBS = [
     dict(job_id="morning-brief", name="Morning brief", schedule="0 7 * * 1-5",
      prompt_preview="Summarize alerts that fired overnight, failed jobs and open PRs.", deliver="local",
      enabled=True, state="active", next_run_at="2026-09-23T07:00:00Z",
-     last_run_at="2026-09-22T07:00:00Z", last_status="ok", profile="default"),
+     last_run_at="2026-09-22T07:42:00Z", last_status="ok", profile="default",
+     # Due at 7, run when the Mac woke at 7:40, as Hermes records a late dispatch.
+     last_dispatch=dict(scheduled_at="2026-09-22T07:00:00Z", dispatched_at="2026-09-22T07:41:00Z",
+                        lateness_seconds=2460, kind="catch_up")),
     dict(job_id="dep-audit", name="Weekly dependency audit", schedule="0 3 * * 0",
      prompt_preview="Run the dependency audit and report what our code can reach.",
      deliver="local", enabled=False, state="paused", last_status="ok", profile="work"),
@@ -2888,6 +2954,7 @@ def process_request(connection, request):
         ("normal", lambda: auth_rest(method, base, query, fields, request.headers)),
         ("normal", lambda: profile_creation(method, base, fields)),
         ("normal", lambda: private_bots_rest(method, base, query, body)),
+        ("normal", lambda: backup_rest(method, base, query, body)),
         ("quiet", lambda: sign_ins_rest(method, base, query, body)),
         ("normal", lambda: crew_rest(method, base, body)),
         ("quiet", lambda: papertrail_rest(method, base, query, body)),
@@ -3488,6 +3555,29 @@ class Gateway:
         await self.stream_words(s, reply)
         await self.settle(s, prompt, [reply], reply, warning=warning)
 
+    async def _backup_turn(self, s, prompt):
+        """A reply the backup model wrote: the main model ran out partway, Hermes moved to the backup, and
+        once the reply is done it says so in its own words (agent/chat_completion_helpers.py), with when it
+        will try the main model again. The app turns that into one plain line."""
+        await self.begin_message(s)
+        reply = "Here is the short version: the backups finished at 2:14 and every check passed."
+        await self.stream_words(s, reply)
+        await self.report_usage(s)
+        retry = 3600 - int(time.time()) % 3600 + 3600   # The top of the hour after next.
+        notice = (f"⚠️ Model fallback: {MODEL} via {PROVIDER} unavailable (billing or quota exhausted); "
+                  f"using {BACKUP_MODEL} via llamacpp. Primary retry eligible in ~{retry} s; recovery is not guaranteed.")
+        await self.event("status.update", s.sid, dict(kind="lifecycle", text=notice))
+        await self.settle(s, prompt, [reply], reply)
+
+    async def _plan_back_turn(self, s, prompt):
+        """The first reply after the main model works again: Hermes says so as the turn starts."""
+        await self.event("status.update", s.sid, dict(kind="lifecycle", text=(
+            f"✅ Primary model restored: {MODEL} via {PROVIDER}; fallback {BACKUP_MODEL} via llamacpp is no longer active.")))
+        await self.begin_message(s)
+        reply = "Back to normal. Anything else?"
+        await self.stream_words(s, reply)
+        await self.settle(s, prompt, [reply], reply)
+
     async def _delegate_turn(self, s, prompt):
         """A turn that splits its work across two helpers. The gateway raises `subagent.*` events on the
         parent's session, then records the combined report as a user-side message for the bot to read
@@ -3795,6 +3885,8 @@ class Gateway:
         ("starts", "marathon", "_marathon_turn"),
         ("starts", "files", "_files_turn"),
         ("starts", "fail", "_fail_turn"),
+        ("starts", "backup", "_backup_turn"),
+        ("starts", "plan back", "_plan_back_turn"),
         ("starts", "interrupt", "_interrupt_turn"),
     )
 

@@ -10,6 +10,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
     private static let services: [@MainActor () -> Void] = [
         { ContinuityMenuFilter.start() }, // Continuity Camera is limited to places a photo can be dropped
         { MacSleepAway.shared.start() },         // sleep and wake are this Mac's away and back
+        { MacKeepAwake.shared.start() },         // stays awake for the crew, when that is on
         { SignInCenter.shared.start() },         // saved sign-ins for the add-on
         { AppleDataCenter.shared.start() },      // helpers' Calendar, Reminders and Contacts requests
     ]

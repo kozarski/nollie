@@ -202,6 +202,22 @@ class ProfileJobs:
                 return None
             return self._same(resume_job(job_id), job_id)
 
+    def due_times(self, profile, job, start, end):
+        """When a recurring schedule was due in ``[start, end)``, by Hermes's own reckoning."""
+        from datetime import datetime, timezone
+        from cron.jobs import compute_next_run
+        from .night_shift import occurrences, parse_time
+        schedule = job.get("schedule")
+        if not isinstance(schedule, dict) or schedule.get("kind") not in ("cron", "interval"):
+            return []
+
+        def after(moment):
+            stamp = datetime.fromtimestamp(moment, timezone.utc).isoformat()
+            return parse_time(compute_next_run(schedule, last_run_at=stamp))
+
+        with self.scope(profile):
+            return occurrences(after, start, end)
+
     def file_hash(self, profile):
         from .rehearsals import file_hash
         return file_hash(self.profile_home(profile))

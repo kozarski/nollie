@@ -5,15 +5,18 @@ struct SettingsCategoryTests {
     @Test func normalSettingsHasOneHomeForEachGroup() {
         #if os(macOS)
         #expect(SettingsCategory.visible(developerMode: false) == [
-            .bots, .appearance, .speech, .notifications, .privacy, .signIns, .siri, .connection, .about
+            .bots, .appearance, .speech, .notifications, .privacy, .signIns, .siri, .connection, .keepAwake, .about
         ])
         #expect(SettingsCategory.visible(developerMode: false, matching: "password") == [.signIns])
+        #expect(SettingsCategory.visible(developerMode: false, matching: "sleep") == [.keepAwake])
         #else
         // Saved sign-ins are the Mac's alone: the iPhone never holds a password.
         #expect(SettingsCategory.visible(developerMode: false) == [
             .bots, .appearance, .speech, .notifications, .privacy, .siri, .connection, .about
         ])
         #expect(SettingsCategory.visible(developerMode: false, matching: "password").isEmpty)
+        // Keep awake is the Mac's own sleep.
+        #expect(SettingsCategory.visible(developerMode: false, matching: "sleep").isEmpty)
         #endif
         #expect(SettingsCategory.visible(developerMode: false, matching: "avatar") == [.bots])
         #expect(SettingsCategory.visible(developerMode: false, matching: "glass") == [.appearance])

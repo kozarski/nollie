@@ -247,6 +247,38 @@ It holds every unattended run in the window, oldest first:
 
 A quiet night still gets a card: "Quiet night. Nothing ran." One short line each morning shows the watch works.
 
+### When the Mac slept
+
+The add-on's sleep watch (`sleep_watch.py`) keeps when the Mac was `asleep`, `off`, or on with Hermes `stopped`, from
+the service's own ticks (see the add-on's README). The card carries:
+
+- `sleep`: `[{"from", "to", "kind"}]`, the gaps in its window.
+- On a schedule run, `due_at` (from the recorder's start line, Hermes's `scheduled_instant`) and `late: true` when it
+  started more than five minutes after it was due. A gated run takes both from the job's `last_dispatch`.
+- `missed`: `[{"bot", "bot_name", "job_id", "title", "first_due", "last_due", "count"}]`, a schedule's times due
+  while the Mac slept that no run stood for. Hermes runs a missed schedule once on waking, for its first missed
+  time, and skips the rest; a paused schedule was never due. These are never counted as runs.
+
+The card is built 10 minutes after the latest wake at the earliest, so what waited has run. Private bots' `missed`
+entries are taken out at read time, like their runs.
+
+The app says it in one line under the counts, then marks each run that waited ("Due 2:00 AM") and lists each
+schedule that missed times ("Didn't run 3 times · 2:00 AM to 4:00 AM"). The line counts the runs that waited (late,
+due inside a gap) and the missed times: "Your Mac was asleep from 1:10 to 6:40, so two runs waited until it woke."
+Off reads "until it was back on", Hermes stopped reads "Your crew wasn't running". The shared picture keeps the line.
+A schedule's page says why its last run was late from Hermes's `last_dispatch` and
+`GET /api/plugins/nollie-workflow/sleep`: "Your Mac was asleep at 7:00, so this ran at 7:41."
+
+### Keep awake
+
+Settings › Keep awake on the Mac ("Keep Mac awake for my crew", off by default). While it is on and the assistant
+runs on this Mac, Nollie holds one `PreventUserIdleSystemSleep` assertion named for Nollie and the reason
+(`pmset -g assertions` lists it): plugged in, while helpers work and while a schedule is due within 12 hours; on
+battery, while helpers work or a schedule is due within 15 minutes, never below 20% or in Low Power Mode
+(`KeepAwakePolicy`). The screen still sleeps, a closed lid still sleeps, and an app can't wake a sleeping Mac, so a
+run due later waits and the card says so. Nothing in the Mac's own energy settings is changed. It works while
+Nollie is open.
+
 ### Post format
 
 `GET /api/plugins/nollie-workflow/posts?since=<unix seconds>&limit=<n>` (default profile only; 403 otherwise;
@@ -276,7 +308,8 @@ A quiet night still gets a card: "Quiet night. Nothing ran." One short line each
    "reply": "The 2TB drive is down to 119. I would have sent you a note about it."}]}
 ```
 
-- Run `outcome`: `done`, `failed`, `stopped`, `skipped` (gated), `rehearsal`.
+- Run `outcome`: `done`, `failed`, `stopped`, `skipped` (gated), `rehearsal`. A schedule run may add `due_at` and
+  `late`; the card may add `sleep` and `missed` (see "When the Mac slept").
 - Rehearsal `state`: `ready`, `on`, `kept_off`, `changed`. `check`, for a job Nollie can't rehearse:
   `{"reason": "script" | "once" | "repeat" | "unwatched", "prompt": "...", "script": "...", "hash": "3f2a9c01be44"}`;
   then `held`, `looked` and `reply` are empty.
@@ -358,7 +391,9 @@ an allowed action was safe.
 `Tools/mock-gateway/mock_gateway.py` serves `GET /api/plugins/nollie-workflow/posts` (403 for other profiles) and
 the two POSTs, through its own handler beside `crew_rest`, before the catch-all. The fixture is small: a night shift
 post with two runs and five actions (one `always`, one stopped at the Mac), and a rehearsal post with one held and one
-looked action. `POST /api/_mock/night-shift` resets both and stamps them one and two seconds after the newest row of
+looked action. The Mac slept for part of that night: the morning brief waited until it woke and an hourly
+check missed three times, and `GET /api/plugins/nollie-workflow/sleep` answers that gap and the one the Schedules
+fixture's morning brief waited for. `POST /api/_mock/night-shift` resets both and stamps them one and two seconds after the newest row of
 the default main chat, so they land at its end; UI tests call it before each launch. With `{"changed": true}` the
 rehearsal's schedule counts as edited since, so Turn on answers 409 with the card in state `changed`. Taps answer as
 the add-on does: a refused one is a 409 whose body is the card itself. Neutral names only, no private bot.

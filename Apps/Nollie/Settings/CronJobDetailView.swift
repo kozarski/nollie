@@ -30,6 +30,8 @@ struct CronJobDetailView: View {
     @State private var jsonOpen = false
     @State private var isOnScreen = false
     @State private var picker = ScheduleDraft()
+    /// When the Mac slept around a late run, from Nollie's add-on.
+    @State private var sleepGaps: [ConversationPost.SleepGap] = []
 
     init(runtime: GatewayRuntime, job: CronJob, raw: JSONValue, onChange: @escaping () -> Void) {
         _runtime = State(initialValue: runtime)
@@ -193,6 +195,12 @@ struct CronJobDetailView: View {
             LabeledContent("When", value: scheduleSummary)
             LabeledContent("Next check", value: ScheduledWork.next(current))
             LabeledContent("Last check", value: lastCheckSummary)
+            if let late = ScheduledWork.lateRun(record),
+               let line = SleepNote.scheduleLine(due: late.due, ran: late.ran, gaps: sleepGaps) {
+                Text(line).small(.footnote, .secondary)
+                    .testID("schedules.lateRun")
+                    .task(id: late.due) { await loadSleep(around: late.due) }
+            }
             if let owner, owner != "default" {
                 LabeledContent("Assistant", value: runtime.profiles.first(where: { $0.name == owner })?.shownName ?? owner)
             }
@@ -363,6 +371,14 @@ struct CronJobDetailView: View {
         guard allowed else { return }
         feedback = ScheduledWork.failureMessage(error)
         feedbackIsProblem = true
+    }
+
+    /// Why the last run was late, when the add-on knows. Without it the line says only that it ran late.
+    private func loadSleep(around due: Date) async {
+        guard allowed else { return }
+        let gaps = try? await HermesSleepGaps(api: runtime.api).gaps(since: due.addingTimeInterval(-3600))
+        guard allowed, let gaps else { return }
+        sleepGaps = gaps
     }
 
     private func firstLoad() async {

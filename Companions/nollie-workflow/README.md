@@ -328,6 +328,7 @@ Version 0.3 adds two features, both off until turned on. The design is in
 | `night_shift.py` | Settings, receipt files, the Board outcome log and the card builders |
 | `posts.py` | The cards posted into the main chat, 30 days at most |
 | `night_service.py` | The service's sweep each tick, the morning card, pruning, Turn on and Keep off |
+| `sleep_watch.py` | When the Mac was asleep, off or without Hermes, from the service's own ticks |
 
 In the default profile `register` keeps everything above and also loads the recorder.
 Every other profile loads the recorder, and only when it is not Private. It also loads
@@ -387,6 +388,9 @@ All in the main home's `nollie-workflow` folder, files 0600 and folders 0700.
   the newest 500. `always.json`: the newest 500 Always answers.
 - `night-shift.wake`: the wake flag. `night-shift-status.json`: last tick time and an
   error type name.
+- `sleep.json` (lock `sleep.lock`): `{"version": 1, "seen": {"at", "boot"}, "gaps": [{"from", "to", "kind"}]}`,
+  the newest 400 gaps within 35 days. Kinds are `asleep`, `off` and `stopped` (the Mac on, Hermes not).
+  Times and kinds only.
 
 ### The sweep
 
@@ -408,6 +412,21 @@ While Night shift is on, the morning card is built on the first tick at or after
 morning hour (local time) when today's is missing. Its window starts where the last
 card ended, or 12 hours back, and is at most 24 hours.
 
+### Sleep notes
+
+Each tick first looks at how long the Mac slept since the last one: a clock that keeps counting
+through sleep against one that stops (`CLOCK_MONOTONIC_RAW` and `CLOCK_UPTIME_RAW`). A new process
+compares its start with the stamp the last one left once a minute and the Mac's boot time, so a
+night switched off reads `off` and a gateway that was stopped reads `stopped`. Gaps under three
+minutes are dropped. Nothing is asked of macOS and no power log is read.
+
+The recorder writes a schedule run's `due_at` (Hermes's `scheduled_instant`) on its start line. The
+morning card then carries `sleep` (the gaps in its window), `due_at` and `late` on each run that
+started more than five minutes after it was due, and `missed`: per schedule, the times due while
+the Mac slept that no run stood for (Hermes runs a missed schedule once on waking, for the first
+time it missed, and skips the rest). The card waits until 10 minutes after the latest wake, so what
+waited has run. Missed times are counted with Hermes's own `compute_next_run`; they are never runs.
+
 ### Routes
 
 Default profile only (403 otherwise), `Cache-Control: no-store`:
@@ -423,6 +442,8 @@ Default profile only (403 otherwise), `Cache-Control: no-store`:
   is 404.
 - `POST /api/plugins/nollie-workflow/rehearsals/{post_id}/keep-off`: the entry becomes
   `kept_off` and the schedule stays paused. 200, 404 or 409 as above.
+- `GET /api/plugins/nollie-workflow/sleep?since=<unix seconds>`: `{"version": 1, "gaps": [...]}`, oldest
+  first, cut to `since` (default 14 days back, at most 35). A schedule's page asks it why a run was late.
 
 ### Turn it on
 

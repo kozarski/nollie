@@ -30,6 +30,10 @@ MAX_PROMPT = 2000
 OUTCOME_LIMIT = 500
 GRANT_LIMIT = 500
 QUIET = "Quiet night. Nothing ran."
+# Hermes counts a run as late past five minutes (cron/jobs.py, _LATE_DISPATCH_TOLERANCE_SECONDS).
+LATE_SECONDS = 300
+# A schedule's missed times within one gap that the card lists, at most.
+MAX_MISSED = 50
 UNFINISHED = "The rehearsal did not finish."
 BOARD_OUTCOMES = {"completed": "done", "blocked": "stopped", "gave_up": "failed",
                   "block_loop_detected": "failed", "escalated": "failed"}
@@ -391,13 +395,61 @@ def run_card(run, bot, bot_name, jobs, grants, private, titles=None, redactor=No
     else:
         outcome = end.get("outcome") if end.get("outcome") in ("done", "failed", "stopped") else "failed"
     actions = [action(c, bot, grants, private) for c in run["calls"]]
-    return {"id": run["id"], "kind": kind, "bot": bot, "bot_name": bot_name, "title": clean(title, private, 240),
+    card = {"id": run["id"], "kind": kind, "bot": bot, "bot_name": bot_name, "title": clean(title, private, 240),
             "outcome": outcome, "started_at": start.get("at", run["first"]), "finished_at": end.get("at", run["last"]),
             "actions": actions[:MAX_ACTIONS], "more": max(0, len(actions) - MAX_ACTIONS), "_all": actions}
+    return with_due(card, start.get("due_at"))
 
 
-def night_card(*, day, window, bots, outcomes, grants, unwatched, private, redactor=None):
-    """The morning card. ``bots`` maps each followed bot to its name, receipt lines, jobs and drops.
+def with_due(card, due):
+    """The time a schedule run was due, and whether it started late, as Hermes counts late."""
+    if type(due) is int and due > 0:
+        card["due_at"] = due
+        if card["started_at"] - due > LATE_SECONDS:
+            card["late"] = True
+    return card
+
+
+def dispatched_due(job, ran):
+    """When Hermes says the job's last run was due, if that run is the one at ``ran``."""
+    dispatch = job.get("last_dispatch") if isinstance(job.get("last_dispatch"), dict) else {}
+    due, sent = parse_time(dispatch.get("scheduled_at")), parse_time(dispatch.get("dispatched_at"))
+    if due is None or sent is None or ran is None or not sent - 60 <= ran:
+        return None
+    return due
+
+
+def occurrences(after, start, end, limit=MAX_MISSED):
+    """Due times in ``[start, end)``: ``after(t)`` is the schedule's next time after ``t``, or None."""
+    times, moment = [], start - 1
+    while len(times) < limit:
+        try:
+            following = after(moment)
+        except Exception:
+            break
+        if following is None or following >= end or following <= moment:
+            break
+        moment = following
+        if moment >= start:
+            times.append(moment)
+    return times
+
+
+def missed_times(dues, runs):
+    """The due times in a gap that no run stood for, given the runs that were due in a gap. Hermes runs a missed schedule once when the Mac
+    wakes, for the first time it missed, and skips the rest."""
+    left = sorted(dues)
+    for run in sorted(runs, key=lambda r: r["due_at"]):
+        if not left:
+            break
+        # The same time, or for an interval schedule counted from the gap's start, the nearest one.
+        left.remove(min(left, key=lambda d: abs(d - run["due_at"])))
+    return left
+
+
+def night_card(*, day, window, bots, outcomes, grants, unwatched, private, redactor=None, sleep=()):
+    """The morning card. ``bots`` maps each followed bot to its name, receipt lines, jobs and drops,
+    and ``due``: each schedule's due times inside ``sleep``, the gaps when the Mac was asleep or off.
 
     ``by_bot`` keeps the counts per bot, so the routes can count again without a bot marked
     Private later; they never send it.
@@ -405,6 +457,8 @@ def night_card(*, day, window, bots, outcomes, grants, unwatched, private, redac
     start, end = window
     private = frozenset(private)
     runs = []
+    missed = []
+    gaps = [dict(g) for g in sleep if start <= g["to"] and g["from"] < end]
     by_bot = {}
     board_runs = {}
     for bot, info in sorted(bots.items()):
@@ -431,10 +485,22 @@ def night_card(*, day, window, bots, outcomes, grants, unwatched, private, redac
                 outcome = "skipped"
             else:
                 outcome = "done" if job.get("last_status") in ("ok", "delivery_queued") else "failed"
-            runs.append({"id": f"cron:{job_id}:{ran}", "kind": "schedule", "bot": bot, "bot_name": info["name"],
-                         "title": clean(scrub(job.get("name") or "Schedule", redactor), private, 240),
-                         "outcome": outcome, "started_at": ran, "finished_at": ran, "actions": [], "more": 0,
-                         "_all": []})
+            runs.append(with_due({"id": f"cron:{job_id}:{ran}", "kind": "schedule", "bot": bot,
+                                  "bot_name": info["name"],
+                                  "title": clean(scrub(job.get("name") or "Schedule", redactor), private, 240),
+                                  "outcome": outcome, "started_at": ran, "finished_at": ran, "actions": [],
+                                  "more": 0, "_all": []}, dispatched_due(job, ran)))
+        for job_id, dues in sorted((info.get("due") or {}).items()):
+            job = jobs.get(job_id)
+            if job is None or not dues:
+                continue
+            ran = [r for r in runs if r["bot"] == bot and r["id"].startswith(f"cron:{job_id}:") and "due_at" in r
+                   and any(g["from"] <= r["due_at"] < g["to"] for g in gaps)]
+            left = missed_times([d for d in dues if start <= d < end], ran)
+            if left:
+                missed.append({"bot": bot, "bot_name": info["name"], "job_id": job_id,
+                               "title": clean(scrub(job.get("name") or "Schedule", redactor), private, 240),
+                               "first_due": left[0], "last_due": left[-1], "count": len(left)})
         dropped = sum(info.get("unrecorded", {}).values())
         if dropped:
             by_bot.setdefault(bot, dict.fromkeys(COUNTS, 0))["unrecorded"] += dropped
@@ -475,6 +541,10 @@ def night_card(*, day, window, bots, outcomes, grants, unwatched, private, redac
     post = {"id": "night-" + day, "kind": "night_shift", "at": end, "window": {"from": start, "to": end},
             "counts": counts, "unwatched": sorted(clean(n, private) for n in unwatched), "runs": shown,
             "by_bot": by_bot}
+    if gaps:
+        post["sleep"] = [{"from": max(g["from"], start), "to": min(g["to"], end), "kind": g["kind"]} for g in gaps]
+    if missed:
+        post["missed"] = sorted(missed, key=lambda m: (m["first_due"], m["bot"], m["job_id"]))[:MAX_RUNS]
     if len(runs) > MAX_RUNS:
         post["more_runs"] = len(runs) - MAX_RUNS
     if not runs:

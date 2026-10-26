@@ -6,7 +6,7 @@ import UserNotifications
 private let settingsGroups: [[SettingsCategory]] = [
     [.bots, .appearance, .speech],
     [.notifications, .privacy, .signIns, .siri],
-    [.connection, .away],
+    [.connection, .away, .keepAwake],
     [.about, .advanced],
 ]
 
@@ -134,9 +134,18 @@ private struct SettingsDestination: View {
         case .siri: SiriSettingsView().untitledPage()
         case .connection: GatewaysView(includesSetup: true).untitledPage()
         case .away: AwayFromHomeView().untitledPage()
+        case .keepAwake: keepAwake
         case .about: AboutView()
         case .advanced: if developerMode { AdvancedSettingsView() }
         }
+    }
+
+    @ViewBuilder private var keepAwake: some View {
+        #if os(macOS)
+        KeepAwakeView().untitledPage()
+        #else
+        EmptyView()
+        #endif
     }
 
     @ViewBuilder private var signIns: some View {

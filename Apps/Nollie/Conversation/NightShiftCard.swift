@@ -57,11 +57,21 @@ struct NightShiftCard: View {
                 .accessibilityIdentifier("post.nightShift.share")
             }
             Text(NightShiftWords.counts(card.counts)).font(Ink.cardBody).foregroundStyle(NightShiftInk.text)
+            if let asleep = SleepNote.line(for: card) {
+                Text(asleep).font(Ink.cardBody).foregroundStyle(NightShiftInk.text)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("post.nightShift.sleep")
+            }
             if !card.unwatched.isEmpty {
                 Text(NightShiftWords.unwatched(card.unwatched)).font(Ink.cardBody).foregroundStyle(NightShiftInk.warning)
             }
             ForEach(card.runs) { run in
                 NightShiftRunView(run: run, open: expanded.contains(run.id)) { tap(.showAll(run.id)) }
+            }
+            ForEach(card.missed, id: \.self) { missed in
+                PostBotLine(bot: missed.bot, title: missed.title.isEmpty ? "Schedule" : missed.title,
+                            detail: NightShiftWords.missedLine(missed), colors: .night)
+                    .accessibilityIdentifier("post.nightShift.missed.\(missed.jobId)")
             }
             if card.moreRuns > 0 {
                 Text(NightShiftWords.moreRuns(card.moreRuns)).font(Ink.stamp).foregroundStyle(NightShiftInk.detail)
@@ -220,11 +230,25 @@ enum NightShiftWords {
         }
     }
 
-    /// "Nollie · Done · 3:10 AM".
+    /// "Nollie · Done · 3:10 AM", and for a run that waited for the Mac, when it was due: "· Due 2:00 AM".
     static func runLine(_ run: ConversationPost.Run) -> String {
         var parts = [run.botName.isEmpty ? ProfileInfo.shownName(of: run.bot) : run.botName]
         if let outcome = run.outcome { parts.append(outcomeWords(outcome)) }
         if let at = run.finishedAt ?? run.startedAt { parts.append(at.formatted(.dateTime.hour().minute())) }
+        if run.late, let due = run.dueAt { parts.append("Due \(due.formatted(.dateTime.hour().minute()))") }
+        return parts.joined(separator: " · ")
+    }
+
+    /// A schedule that never ran for some of its times: "Scout · Didn't run 3 times · 2:00 AM to 4:00 AM".
+    static func missedLine(_ missed: ConversationPost.Missed) -> String {
+        var parts = [missed.botName.isEmpty ? ProfileInfo.shownName(of: missed.bot) : missed.botName,
+                     missed.count == 1 ? "Didn't run" : "Didn't run \(missed.count) times"]
+        let time = { (date: Date) in date.formatted(.dateTime.hour().minute()) }
+        switch (missed.firstDue, missed.lastDue) {
+        case let (first?, last?) where missed.count > 1 && last > first: parts.append("\(time(first)) to \(time(last))")
+        case let (first?, _): parts.append("Due \(time(first))")
+        default: break
+        }
         return parts.joined(separator: " · ")
     }
 

@@ -9,7 +9,7 @@ enum ModelPreferenceStore {
 /// the provider's own name.
 enum ModelPlace {
     /// Providers that run the model on the assistant's own computer.
-    static let localProviders: Set<String> = ["ollama", "llamacpp", "llama.cpp", "llama-cpp", "lmstudio", "lm-studio", "mlx", "local"]
+    static let localProviders = BackupRoute.localProviders
 
     static func isLocal(_ provider: String?) -> Bool {
         guard let provider = provider?.lowercased() else { return false }
@@ -17,9 +17,7 @@ enum ModelPlace {
     }
 
     /// A plan people already pay for and sign in to.
-    static func isPlan(_ provider: String) -> Bool {
-        provider == "openai-codex" || provider.hasPrefix("claude-subscription")
-    }
+    static func isPlan(_ provider: String) -> Bool { BackupRoute.isPlan(provider) }
 
     /// "On this Mac" on the Mac, "On your Mac" on the phone.
     static var here: String {
@@ -144,6 +142,7 @@ struct ModelPreferencesView: View {
                 ModelsComparison()
                 choices
                 notes
+                if runtime?.socketState.isOpen == true { BackupModelSection(check: check) }
             }
             if mode != .cloud { localArea }
             AdvancedLink(id: "models.advanced") {
