@@ -50,7 +50,7 @@ struct ToolStepPresentation: Sendable {
     }
 
     private enum Action: Hashable {
-        case read, write, edit, find, command, searchWeb, readWeb, computer, signIn, unknown(String)
+        case read, write, edit, find, command, searchWeb, readWeb, computer, signIn, pay, cards, unknown(String)
         /// The Mac's calendar, reminders or contacts: a look, or a change that waits for a yes.
         case appleData(AppleDataArea, change: Bool)
 
@@ -69,6 +69,8 @@ struct ToolStepPresentation: Sendable {
             case "web_extract", "web_fetch", "fetch_url": self = .readWeb
             case "computer_use": self = .computer
             case "request_sign_in": self = .signIn
+            case "request_payment": self = .pay
+            case "payment_cards": self = .cards
             default:
                 if let tool = AppleDataTool(rawValue: name) {
                     self = .appleData(tool.area, change: tool.isWrite)
@@ -99,6 +101,8 @@ struct ToolStepPresentation: Sendable {
             case .readWeb: words = ("Read page", "Reading page", "Read page")
             case .computer: words = ("Use computer", "Using computer", "Used computer")
             case .signIn: words = ("Sign in", "Signing in", "Asked to sign in")
+            case .pay: words = ("Pay", "Asking to pay", "Asked to pay")
+            case .cards: words = ("Check cards", "Checking your cards", "Checked your cards")
             case let .appleData(area, change):
                 let what = "your " + area.title.lowercased()
                 words = change ? ("Change \(what)", "Changing \(what)", "Asked to change \(what)")
@@ -124,6 +128,8 @@ struct ToolStepPresentation: Sendable {
             case .readWeb: words = ("Web pages", "Reading pages", "Read pages")
             case .computer: words = ("Computer steps", "Using the computer", "Used the computer")
             case .signIn: words = ("Sign-ins", "Signing in", "Asked to sign in")
+            case .pay: words = ("Payments", "Asking to pay", "Asked to pay")
+            case .cards: words = ("Cards", "Checking your cards", "Checked your cards")
             case let .appleData(area, _): words = (area.title, area.title, area.title)
             case .unknown(let name): words = (name, name, name)
             }
@@ -140,6 +146,7 @@ struct ToolStepPresentation: Sendable {
             case .searchWeb, .readWeb: "globe"
             case .computer: "desktopcomputer"
             case .signIn: "key"
+            case .pay, .cards: "creditcard"
             case let .appleData(area, _): area.symbol
             case .unknown: "gearshape"
             }

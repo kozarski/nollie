@@ -14,7 +14,8 @@ import NollieCore
                               ("terminal", "Ran command"), ("bash", "Ran command"),
                               ("web_search", "Searched web"), ("web_extract", "Read page"),
                               ("computer_use", "Used computer"), ("mcp__cua__computer_click", "Used computer"),
-                              ("mcp__filesystem__read_file", "Read file")] {
+                              ("mcp__filesystem__read_file", "Read file"), ("request_payment", "Asked to pay"),
+                              ("payment_cards", "Checked your cards")] {
             #expect(ToolStepPresentation(step(name)).title == title)
         }
     }
