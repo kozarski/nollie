@@ -1,5 +1,5 @@
-import Foundation
 import NollieCore
+import SwiftUI
 
 /// A question asked before a board change is made. Done needs a summary, Block needs a reason and
 /// Comment needs its text; Archive, Delete and Stop just need a yes.
@@ -65,4 +65,68 @@ enum KanbanAsk: Identifiable {
     var placeholder: String { script.hint ?? "" }
 
     var message: String { script.message }
+}
+
+/// Rules the Board, its task sheet and the Mac's card menu and inspector share, kept as plain functions.
+extension KanbanAsk {
+    /// The question a move to this status has to answer first (a note, or a yes), if there is one.
+    static func gate(_ task: KanbanTask, movingTo status: KanbanStatus) -> KanbanAsk? {
+        switch status {
+        case .done: .done(task)
+        case .blocked: .block(task)
+        case .archived: .archive(task)
+        default: nil
+        }
+    }
+
+    /// Where a hand can put a card from `column`: every status but its own and the ones only the gateway sets.
+    static func moveTargets(from column: KanbanStatus?) -> [KanbanStatus] {
+        KanbanStatus.moveTargets.filter { $0 != column }
+    }
+}
+
+extension KanbanStore {
+    /// Carries out a question the person confirmed, with what they typed. Nil means nothing was
+    /// asked of the gateway (a comment with no words); otherwise whether it went through.
+    func carryOut(_ confirmed: KanbanAsk, typed: String) async -> Bool? {
+        switch confirmed {
+        case .done(let task): await move(task, to: .done, summary: typed)
+        case .block(let task): await move(task, to: .blocked, blockReason: typed)
+        case .comment(let task): typed.isEmpty ? nil : await comment(task, typed)
+        case .archive(let task): await move(task, to: .archived)
+        case .delete(let task): await delete(task)
+        case .stop(let task): await stop(task, reason: "stopped from Nollie")
+        }
+    }
+}
+
+/// The question put to the person before a board change: a text box for Done, Block and
+/// Comment, a plain yes or no for the rest.
+struct BoardQuestions: ViewModifier {
+    @Binding var question: KanbanAsk?
+    @Binding var reply: String
+    let settle: (KanbanAsk) -> Void
+
+    private func showing(text: Bool) -> Binding<Bool> {
+        Binding(
+            get: { question.map { $0.asksForText == text } ?? false },
+            set: { if !$0 { question = nil } })
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .alert(question?.title ?? "", isPresented: showing(text: true), presenting: question) { ask in
+                TextField(ask.placeholder, text: $reply)
+                Button(ask.verb) { settle(ask) }
+                Button("Cancel", role: .cancel) { (question, reply) = (nil, "") }
+            } message: { ask in
+                Text(ask.message)
+            }
+            .confirmationDialog(question?.title ?? "", isPresented: showing(text: false), titleVisibility: .visible, presenting: question) { ask in
+                Button(ask.verb, role: ask.destructive ? .destructive : nil) { settle(ask) }
+                Button("Cancel", role: .cancel) { (question, reply) = (nil, "") }
+            } message: { ask in
+                Text(ask.message)
+            }
+    }
 }
