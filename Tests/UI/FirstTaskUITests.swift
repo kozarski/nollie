@@ -35,13 +35,33 @@ final class FirstTaskUITests: XCTestCase {
                        "Preparing an idea must not start the assistant", file: file, line: line)
     }
 
+    /// The keyboard's frame once it is on screen and still, or nil when it has gone. Typed keys reach
+    /// the simulator like a hardware keyboard, which tucks the on-screen one below the window for about
+    /// a second after each key. A frame read then sent the drag off the bottom of the screen.
+    private func restingKeyboardFrame(file: StaticString = #filePath, line: UInt = #line) -> CGRect? {
+        let keyboard = app.keyboards.firstMatch
+        var last = CGRect.null
+        let deadline = Date().addingTimeInterval(10)
+        while keyboard.exists, Date() < deadline {
+            let frame = keyboard.frame
+            if frame.minY < app.frame.maxY, frame == last { return frame }
+            last = frame
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+        }
+        XCTAssertFalse(keyboard.exists, "The keyboard must come to rest on screen", file: file, line: line)
+        return nil
+    }
+
     private func dismissKeyboard() {
         let keyboard = app.keyboards.firstMatch
-        if keyboard.exists {
-            // Start inside the transcript, above the composer, then use its interactive dismissal.
+        if let frame = restingKeyboardFrame() {
+            // Start on open transcript space, between the header and the ideas' heading (not on a
+            // control), and pull down into the keyboard, the transcript's interactive dismissal.
+            let header = visible(app.buttons["chat.titlePill"].firstMatch).frame.maxY
+            let heading = visible(app.staticTexts["A small place to start"].firstMatch).frame.minY
             let origin = app.coordinate(withNormalizedOffset: .zero)
-            let start = origin.withOffset(CGVector(dx: app.frame.midX, dy: keyboard.frame.minY - 120))
-            let end = origin.withOffset(CGVector(dx: app.frame.midX, dy: keyboard.frame.maxY - 40))
+            let start = origin.withOffset(CGVector(dx: app.frame.midX, dy: (header + heading) / 2))
+            let end = origin.withOffset(CGVector(dx: app.frame.midX, dy: frame.maxY - 40))
             start.press(forDuration: 0.01, thenDragTo: end)
         }
         let hidden = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: keyboard)
@@ -78,7 +98,13 @@ final class FirstTaskUITests: XCTestCase {
         let defaultBot = app.descendants(matching: .any).matching(identifier: "bots.row.default").firstMatch
         visible(defaultBot, timeout: 30).tap()
         visible(button("chat.more"), timeout: 30).tap()
-        visible(button("botmenu.sideChat")).tap()
+        // Now and then the menu shows a tap on its item but stays open, with the chat behind it still
+        // loading. While the item is still showing, no side chat has opened, so tap it once more.
+        let sideChat = visible(button("botmenu.sideChat"))
+        sideChat.tap()
+        if !button("firstTask.purchase").waitForExistence(timeout: 5), sideChat.exists, sideChat.isHittable {
+            sideChat.tap()
+        }
         visible(button("firstTask.purchase"), timeout: 30)
         assertNoTurn()
         shot("first-task-ideas")
