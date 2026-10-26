@@ -13,12 +13,12 @@ struct ProfileComputerTab: View {
         let stance = state.computer.stance
         PageHero(symbol: stance.symbol, title: stance.title, line: stance.line, tint: stance.tint, id: "profile.computer.hero")
         GlassSwitch("Allow Mac control", isOn: Binding(
-            get: { control.isOn(state.name) },
+            get: { control.isOn(state.name, state.runtime) },
             set: { on in
                 guard let runtime = state.runtime else { return }
                 Task { await control.set(on, profile: state.name, rt: runtime) }
             }), id: "profile.systemControl")
-            .disabled(control.busy.contains(state.name))
+            .disabled(control.isBusy(state.name, state.runtime))
         if control.lastError != nil {
             PageNote("Couldn't change that. Try again.", symbol: "exclamationmark.triangle.fill", tint: .orange,
                      id: "profile.systemControl.problem")

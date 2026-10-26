@@ -60,7 +60,7 @@ extension TranscriptView {
     /// off ("human_has_control"), and it is still off with nothing running, this is the tool
     /// row's id, so a card can offer to switch it on.
     var systemControlStop: String? {
-        guard !chat.isRunning, !SystemControl.shared.isOn(chat.profileName) else { return nil }
+        guard !chat.isRunning, !SystemControl.shared.isOn(chat.profileName, chat.runtime) else { return nil }
         for item in chat.items.reversed() {
             if case .user = item.kind { return nil }
             guard case .tool(let tool) = item.kind, tool.name == "computer_use" else { continue }

@@ -8,6 +8,7 @@ import NollieCore
 @MainActor
 @Suite(.serialized) struct ComputerPreviewTests {
     private let now = Date(timeIntervalSince1970: 10_000)
+    private static let work = SystemControl.Key(UUID(), "work")
 
     private func frame(state: String = "live", at: Double? = 10_000, image: String? = nil) -> ComputerPreviewFrame {
         ComputerPreviewFrame(state: state, computerName: "Work computer", kind: "space", imageDataUrl: image, capturedAt: at)
@@ -244,12 +245,12 @@ import NollieCore
         ComputerPreviewStub.handler = { fixture.respond($0) }
         defer { ComputerPreviewStub.reset() }
         let control = SystemControl()
-        let stopped = await control.stopMacControl(profile: "work", home: MacControlFixture.home,
+        let stopped = await control.stopMacControl(key: Self.work, home: MacControlFixture.home,
                                                     api: try api(), allowed: { true })
         #expect(stopped)
-        #expect(control.states["work"] == false)
-        #expect(control.states["other"] == nil)
-        #expect(!control.busy.contains("work"))
+        #expect(control.states[Self.work] == false)
+        #expect(control.states[SystemControl.Key(Self.work.connection, "other")] == nil)
+        #expect(!control.busy.contains(Self.work))
         #expect(control.lastError == nil)
         #expect(fixture.snapshot.writes == 1)
         #expect(fixture.snapshot.reads == 2)
@@ -262,9 +263,9 @@ import NollieCore
         ComputerPreviewStub.handler = { fixture.respond($0) }
         defer { ComputerPreviewStub.reset() }
         let control = SystemControl()
-        #expect(!(await control.stopMacControl(profile: "work", home: MacControlFixture.home,
+        #expect(!(await control.stopMacControl(key: Self.work, home: MacControlFixture.home,
                                                api: try api(), allowed: { true })))
-        #expect(control.states["work"] == nil)
+        #expect(control.states[Self.work] == nil)
         #expect(control.lastError != nil)
         #expect(fixture.snapshot.writes == 1)
     }
@@ -275,10 +276,10 @@ import NollieCore
         ComputerPreviewStub.handler = { fixture.respond($0) }
         defer { ComputerPreviewStub.reset() }
         let control = SystemControl()
-        #expect(!(await control.stopMacControl(profile: "work", home: MacControlFixture.home,
+        #expect(!(await control.stopMacControl(key: Self.work, home: MacControlFixture.home,
                                                api: try api(), allowed: { fixture.snapshot.allowed })))
         #expect(fixture.snapshot.writes == 0)
-        #expect(control.states["work"] == nil)
+        #expect(control.states[Self.work] == nil)
     }
 
     @Test(.timeLimit(.minutes(1))) func cancellingDuringAcknowledgementNeverClaimsTheMacStopped() async throws {
@@ -288,15 +289,15 @@ import NollieCore
         defer { ComputerPreviewStub.reset(); waiting.continuation.finish() }
         let control = SystemControl()
         let api = try api()
-        let stop = Task { await control.stopMacControl(profile: "work", home: MacControlFixture.home, api: api, allowed: { true }) }
+        let stop = Task { await control.stopMacControl(key: Self.work, home: MacControlFixture.home, api: api, allowed: { true }) }
         var events = waiting.stream.makeAsyncIterator()
         _ = await events.next()
-        #expect(control.busy.contains("work"))
-        #expect(control.states["work"] == nil)
+        #expect(control.busy.contains(Self.work))
+        #expect(control.states[Self.work] == nil)
         stop.cancel()
         #expect(!(await stop.value))
-        #expect(control.states["work"] == nil)
-        #expect(!control.busy.contains("work"))
+        #expect(control.states[Self.work] == nil)
+        #expect(!control.busy.contains(Self.work))
         #expect(fixture.snapshot.writes == 1)
     }
 }

@@ -2,6 +2,9 @@ import Foundation
 import Observation
 import NollieCore
 
+/// Turning System control on didn't work.
+struct SystemControlFailure: Error {}
+
 /// System control: whether a bot may use this Mac's apps and screen (Hermes's computer_use), as one
 /// switch per bot.
 ///
@@ -18,16 +21,27 @@ import NollieCore
 final class SystemControl {
     static let shared = SystemControl()
 
-    /// What each bot's switch shows, by profile name. Absent: not read yet.
-    private(set) var states: [String: Bool] = [:]
+    /// One bot on one gateway. Two gateways can each have a bot called "default"; consent given
+    /// to one is never the other's.
+    struct Key: Hashable, Sendable {
+        let connection: UUID
+        let profile: String
+        init(_ connection: UUID, _ profile: String) { (self.connection, self.profile) = (connection, profile) }
+    }
+
+    /// What each bot's switch shows. Absent: not read yet.
+    private(set) var states: [Key: Bool] = [:]
     /// Whether each bot has computers of its own (Cua Spaces, its `cua` MCP server).
-    private(set) var spaces: [String: Bool] = [:]
+    private(set) var spaces: [Key: Bool] = [:]
     /// The bots whose switch is being written.
-    private(set) var busy: Set<String> = []
+    private(set) var busy: Set<Key> = []
     /// The last thing that went wrong, for the bot's Computer page.
     var lastError: String?
-    private var readAt: [String: Date] = [:]
-    private var writeGeneration: [String: UUID] = [:]
+    /// The gateway address each state was read from or written to. A state only counts while the
+    /// connection still points there.
+    private var source: [Key: GatewayURL] = [:]
+    private var readAt: [Key: Date] = [:]
+    private var writeGeneration: [Key: UUID] = [:]
 
     /// Every screen action Hermes asks about (the actions that change something, and bringing a
     /// window to the front), in the background and in front.
@@ -36,13 +50,33 @@ final class SystemControl {
     static let keys: [String] = actions.flatMap { ["cua:\($0):background", "cua:\($0):foreground"] }
         + ["cua:launch_app:background"]
 
-    func isOn(_ profile: String) -> Bool { states[profile] == true }
+    static func key(_ profile: String, _ rt: GatewayRuntime) -> Key { Key(rt.connection.id, profile) }
+
+    /// The switch as read from this gateway. Nil: not read yet, or read from another address.
+    func state(_ profile: String, _ rt: GatewayRuntime?) -> Bool? {
+        guard let rt else { return nil }
+        return state(Self.key(profile, rt), gateway: rt.connection.gateway)
+    }
+
+    func state(_ key: Key, gateway: GatewayURL) -> Bool? {
+        guard source[key] == gateway else { return nil }
+        return states[key]
+    }
+
+    func isOn(_ profile: String, _ rt: GatewayRuntime?) -> Bool { state(profile, rt) == true }
+
+    func isBusy(_ profile: String, _ rt: GatewayRuntime?) -> Bool {
+        guard let rt else { return false }
+        return busy.contains(Self.key(profile, rt))
+    }
 
     /// The app's own answer to an approval, before any card: allowed in this chat for a screen
-    /// action of a bot whose System control is on. Nil shows the card as usual.
-    func autoAnswer(_ approval: ApprovalRequest, profile: String) -> String? {
-        guard !busy.contains(profile) else { return nil }
-        return Self.autoAnswer(approval, controlOn: isOn(profile))
+    /// action of a bot whose System control is on. Nil shows the card as usual. Only a switch read
+    /// from this gateway counts.
+    func autoAnswer(_ approval: ApprovalRequest, profile: String, connection: UUID, gateway: GatewayURL) -> String? {
+        let key = Key(connection, profile)
+        guard !busy.contains(key) else { return nil }
+        return Self.autoAnswer(approval, controlOn: state(key, gateway: gateway) == true)
     }
 
     /// Never "always": a screen grant ends with the chat it was given in.
@@ -71,20 +105,26 @@ final class SystemControl {
     /// Every bot's switch, at most once a minute each unless `force`.
     func refreshAll(_ rt: GatewayRuntime, force: Bool = false) async {
         for p in rt.profiles {
-            if !force, let t = readAt[p.name], Date().timeIntervalSince(t) < 60 { continue }
+            let key = Self.key(p.name, rt)
+            if !force, source[key] == rt.connection.gateway, let t = readAt[key], Date().timeIntervalSince(t) < 60 { continue }
             await refresh(p.name, rt)
         }
     }
 
     func refresh(_ profile: String, _ rt: GatewayRuntime) async {
-        guard !busy.contains(profile), let home = home(rt, profile) else { return }
-        let generation = writeGeneration[profile]
-        readAt[profile] = Date()
+        let key = Self.key(profile, rt)
+        guard !busy.contains(key), let home = home(rt, profile) else { return }
+        let generation = writeGeneration[key]
+        let gateway = rt.connection.gateway
+        readAt[key] = Date()
         guard let cfg = try? await config(rt, profile) else { return }
-        spaces[profile] = cfg.spaces
+        // An answer that comes back after the connection moved or a write began is dropped.
+        guard rt.connection.gateway == gateway, writeGeneration[key] == generation else { return }
+        spaces[key] = cfg.spaces
         guard let lease = try? await readLease(rt, home) else { return }
-        guard !busy.contains(profile), writeGeneration[profile] == generation else { return }
-        states[profile] = lease.explicitAgent && !cfg.disabled.contains("computer_use")
+        guard !busy.contains(key), writeGeneration[key] == generation, rt.connection.gateway == gateway else { return }
+        states[key] = lease.explicitAgent && !cfg.disabled.contains("computer_use")
+        source[key] = gateway
     }
 
     /// Whether Hermes's own computer_use could act on this Mac for a bot now, by Hermes's own
@@ -116,16 +156,19 @@ final class SystemControl {
     /// screen action. Either way, screen rules an older version left on the always-allowed list go.
     @discardableResult
     func set(_ on: Bool, profile: String, rt: GatewayRuntime) async -> Bool {
-        guard !busy.contains(profile) else { return false }
+        let key = Self.key(profile, rt)
+        guard !busy.contains(key) else { return false }
         guard let home = home(rt, profile) else {
             lastError = "The gateway didn't say where this bot lives."
             return false
         }
-        busy.insert(profile)
-        writeGeneration[profile] = UUID()
-        defer { busy.remove(profile) }
-        let was = states[profile]
-        states[profile] = on
+        let gateway = rt.connection.gateway
+        busy.insert(key)
+        writeGeneration[key] = UUID()
+        defer { busy.remove(key) }
+        let (was, wasFrom) = (states[key], source[key])
+        states[key] = on
+        source[key] = gateway
         do {
             let current = (try? await readLease(rt, home)) ?? Lease(holder: "agent", epoch: 0)
             try await writeLease(rt, home, holder: on ? "agent" : "human", epoch: current.epoch + 1)
@@ -140,10 +183,11 @@ final class SystemControl {
                 let _: JSONValue = try await rt.api.send("PUT", "/api/config", profile: profile, json: ["config": .object(body)])
             }
             lastError = nil
-            readAt[profile] = Date()
+            readAt[key] = Date()
             return true
         } catch {
-            states[profile] = was
+            states[key] = was
+            source[key] = wasFrom
             lastError = error.localizedDescription
             return false
         }
@@ -158,16 +202,16 @@ final class SystemControl {
             lastError = "The gateway didn't say where this bot lives."
             return false
         }
-        return await stopMacControl(profile: profile, home: home, api: rt.api, allowed: allowed)
+        return await stopMacControl(key: Self.key(profile, rt), home: home, api: rt.api, allowed: allowed)
     }
 
     @discardableResult
-    func stopMacControl(profile: String, home: String, api: HermesAPI,
+    func stopMacControl(key: Key, home: String, api: HermesAPI,
                         allowed: @escaping @MainActor () -> Bool) async -> Bool {
-        guard !busy.contains(profile), !Task.isCancelled, allowed() else { return false }
-        busy.insert(profile)
-        writeGeneration[profile] = UUID()
-        defer { busy.remove(profile) }
+        guard !busy.contains(key), !Task.isCancelled, allowed() else { return false }
+        busy.insert(key)
+        writeGeneration[key] = UUID()
+        defer { busy.remove(key) }
         var attemptedWrite = false
         do {
             let gateway = await api.gateway
@@ -182,15 +226,17 @@ final class SystemControl {
             let confirmed = try await readLease(api, home)
             try await checkStopAllowed(api: api, gateway: gateway, allowed: allowed)
             guard confirmed.confirmedHuman, confirmed.epoch >= epoch else { throw StopFailure.unconfirmed }
-            states[profile] = false
-            readAt[profile] = Date()
+            states[key] = false
+            source[key] = gateway
+            readAt[key] = Date()
             lastError = nil
             return true
         } catch {
             if attemptedWrite {
                 // An interrupted acknowledgement leaves the result unknown, never reported as off.
-                states.removeValue(forKey: profile)
-                readAt.removeValue(forKey: profile)
+                states.removeValue(forKey: key)
+                source.removeValue(forKey: key)
+                readAt.removeValue(forKey: key)
             }
             lastError = "Couldn't confirm Mac control is off. Check the connection and try again."
             return false

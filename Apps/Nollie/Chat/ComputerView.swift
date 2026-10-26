@@ -45,7 +45,7 @@ struct ComputerView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Toggle(isOn: Binding(get: { control.isOn(profile) }, set: { enabled in
+                        Toggle(isOn: Binding(get: { control.isOn(profile, chat.runtime) }, set: { enabled in
                             controlMessage = nil
                             Task {
                                 let saved = await control.set(enabled, profile: profile, rt: chat.runtime)
@@ -56,13 +56,13 @@ struct ComputerView: View {
                         }
                         .toggleStyle(.switch)
                         .spread()
-                        .disabled(control.busy.contains(profile) || control.states[profile] == nil)
+                        .disabled(control.isBusy(profile, chat.runtime) || control.state(profile, chat.runtime) == nil)
                         .accessibilityIdentifier("profile.systemControl")
                         Text("Applies to \(name)’s Mac screen actions. Tasks and virtual computers keep running.")
                             .font(.caption).foregroundStyle(.secondary)
-                        if control.states[profile] != false {
+                        if control.state(profile, chat.runtime) != false {
                             Button("Stop Mac control", systemImage: "stop.circle") { stopMacControl() }
-                                .disabled(control.busy.contains(profile) || model.lock.isLocked || (control.states[profile] == nil && controlError == nil))
+                                .disabled(control.isBusy(profile, chat.runtime) || model.lock.isLocked || (control.state(profile, chat.runtime) == nil && controlError == nil))
                                 .accessibilityHint("Turns off this bot’s permission for further Mac screen actions.")
                                 .accessibilityIdentifier("computer.stopMacControl")
                         }

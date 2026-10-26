@@ -54,7 +54,7 @@ struct TurnMenu: View {
     private var control: SystemControl { .shared }
 
     var body: some View {
-        let allowed = (model.runtime?.profiles ?? []).filter { control.isOn($0.name) }
+        let allowed = (model.runtime?.profiles ?? []).filter { control.isOn($0.name, model.runtime) }
         VStack(alignment: .leading, spacing: 0) {
             if board.turns.isEmpty {
                 IdleHeader(gateway: model.runtime.map { "\($0.connection.name) · \($0.socketState.label)" })
@@ -65,7 +65,7 @@ struct TurnMenu: View {
             }
             if !allowed.isEmpty { Divider() }
             ForEach(allowed) { bot in
-                MacAccessRow(bot: bot, busy: control.busy.contains(bot.name)) { switchOff(bot.name) }
+                MacAccessRow(bot: bot, busy: control.isBusy(bot.name, model.runtime)) { switchOff(bot.name, model.runtime) }
             }
             Divider()
             MenuFooter(attention: board.attention, running: board.running) { open(nil) }
@@ -74,8 +74,8 @@ struct TurnMenu: View {
     }
 
     /// Turns system control off for a bot. Its next screen action is refused and one in progress stops.
-    private func switchOff(_ profile: String) {
-        guard let runtime = model.runtime else { return }
+    private func switchOff(_ profile: String, _ runtime: GatewayRuntime?) {
+        guard let runtime else { return }
         Task { await control.set(false, profile: profile, rt: runtime) }
     }
 
@@ -160,7 +160,7 @@ private struct RowChoice: Identifiable {
 private struct TurnRow: View {
     let turn: TurnBoard.Turn
     let open: (String?) -> Void
-    let switchOff: (String) -> Void
+    let switchOff: (String, GatewayRuntime?) -> Void
 
     private var control: SystemControl { .shared }
 
@@ -232,10 +232,10 @@ private struct TurnRow: View {
 
     private var choices: [RowChoice] {
         if let waiting { return approvalChoices(waiting.chat, waiting.card, waiting.approval) }
-        let usingMac = !turn.attention && turn.detail.contains("computer_use") && control.isOn(turn.profile)
+        let usingMac = !turn.attention && turn.detail.contains("computer_use") && control.isOn(turn.profile, turn.chat?.runtime)
         guard usingMac else { return [] }
         return [RowChoice(title: "Stop", identifier: "menubar.stopUsingMac",
-                          help: "System control off: it stops using your Mac at once") { switchOff(turn.profile) }]
+                          help: "System control off: it stops using your Mac at once") { switchOff(turn.profile, turn.chat?.runtime) }]
     }
 
     private func approvalChoices(_ chat: ChatSession, _ card: PendingCard, _ approval: ApprovalRequest) -> [RowChoice] {

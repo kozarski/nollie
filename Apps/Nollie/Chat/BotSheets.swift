@@ -59,7 +59,7 @@ struct BotMenuItems: View {
     }
 
     private var hidesMacControl: Bool {
-        model.runtime?.profiles.first(where: { $0.name == profile })?.isPrivateBot == true
+        model.runtime?.profiles.first(where: { $0.name == profile })?.isPrivateBot(on: model.runtime?.connection.id) == true
     }
 
     var body: some View {
@@ -86,16 +86,17 @@ struct BotMenuItems: View {
 struct SystemControlToggle: View {
     var profile: String
     private var control: SystemControl { .shared }
+    private var runtime: GatewayRuntime? { AppModel.shared.runtime }
 
     var body: some View {
-        Toggle(isOn: Binding(get: { control.isOn(profile) }, set: { on in
-            guard let rt = AppModel.shared.runtime else { return }
+        Toggle(isOn: Binding(get: { control.isOn(profile, runtime) }, set: { on in
+            guard let rt = runtime else { return }
             Task { await control.set(on, profile: profile, rt: rt) }
         })) {
             Label("Allow Mac control", systemImage: "cursorarrow.rays")
         }
-        .disabled(control.busy.contains(profile))
-        .accessibilityHint(control.isOn(profile) ? "Stops this bot using your Mac" : "Lets this bot use your Mac's apps without asking each time")
+        .disabled(control.isBusy(profile, runtime))
+        .accessibilityHint(control.isOn(profile, runtime) ? "Stops this bot using your Mac" : "Lets this bot use your Mac's apps without asking each time")
         .accessibilityIdentifier("botmenu.systemControl")
     }
 }

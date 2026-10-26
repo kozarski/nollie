@@ -199,6 +199,6 @@ import Testing
         let held = approval("plugin_rule:nollie-ask-first:send:" + id, "Press “Send”\nYou're about to press “Send”.")
         #expect(!SystemControl.isScreen(held))
         #expect(SystemControl.autoAnswer(held, controlOn: true) == nil)
-        #expect(SystemControl.shared.autoAnswer(held, profile: "career") == nil)
+        #expect(SystemControl.shared.autoAnswer(held, profile: "career", connection: UUID(), gateway: try! GatewayURL.normalize("https://a.invalid")) == nil)
     }
 }

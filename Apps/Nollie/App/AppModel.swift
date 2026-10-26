@@ -379,8 +379,11 @@ final class AppModel {
         runtime.pushRegistrar = push
         runtime.cardNotifier = LocalCardNotifier()
         // A screen action by a bot whose System control is on is answered here, with no card.
-        runtime.approvalAutoAnswer = { approval, profile in
-            SystemControl.shared.autoAnswer(approval, profile: profile)
+        // The answer needs a switch read from this runtime's own gateway, not another one's.
+        runtime.approvalAutoAnswer = { [weak runtime] approval, profile in
+            guard let runtime else { return nil }
+            return SystemControl.shared.autoAnswer(approval, profile: profile, connection: runtime.connection.id,
+                                                   gateway: runtime.connection.gateway)
         }
         #if os(iOS)
         runtime.activityReporterFactory = { BotTurnReporter() }

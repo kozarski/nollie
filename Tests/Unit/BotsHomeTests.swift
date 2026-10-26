@@ -131,10 +131,10 @@ import Testing
         }
         let screen = ApprovalRequest(requestId: "r", sessionId: "s", patternKey: "cua:click:background")
         #expect(SystemControl.isScreen(screen))
-        #expect(SystemControl.shared.autoAnswer(screen, profile: "not-read-yet") == nil)
+        #expect(SystemControl.shared.autoAnswer(screen, profile: "not-read-yet", connection: UUID(), gateway: try! GatewayURL.normalize("https://a.invalid")) == nil)
         let command = ApprovalRequest(requestId: "r", sessionId: "s", command: "rm -r build", patternKey: "rm -r")
         #expect(!SystemControl.isScreen(command))
-        #expect(SystemControl.shared.autoAnswer(command, profile: "not-read-yet") == nil)
+        #expect(SystemControl.shared.autoAnswer(command, profile: "not-read-yet", connection: UUID(), gateway: try! GatewayURL.normalize("https://a.invalid")) == nil)
         #expect(ApprovalCardView.screenStep("cua:click:foreground") == "a click, in front")
         #expect(ApprovalCardView.screenStep("cua:type:background") == "typing, in the background")
     }
