@@ -86,7 +86,7 @@ enum LinkDoorPolicy {
     /// keys and secrets (`/api/env`, credentials, providers), all configuration (`/api/config`
     /// returns secrets from config.yaml), plugin and MCP management, updates, restarts and ops,
     /// sign-in, local model downloads, files (Hermes's file routes are not confined to a folder
-    /// the door can enforce), the raw file system and git, logs, memory, webhooks, creating or
+    /// the door can enforce), the raw file system and git, logs, Hermes's own memory routes (reset and provider), webhooks, creating or
     /// changing scheduled tasks (their scripts can't be inspected here), deleting bots, bulk
     /// session routes, and every page or asset outside `/api`.
     private static let rules: [Rule] = [
@@ -125,6 +125,11 @@ enum LinkDoorPolicy {
         // private bots; the door allows nothing but `?profile=` on these (see `allowsQuery`).
         Rule(["POST"], "/api/plugins/nollie-computer/take-over"),
         Rule(["POST"], "/api/plugins/nollie-computer/hand-back"),
+        // What a helper remembers: read it, add, edit or forget one entry, and its one switch. The add-on
+        // refuses Moss and every private bot from here; the door allows nothing but `?bot=` (see `allowsQuery`).
+        Rule(["GET"], "/api/plugins/nollie-workflow/memory"),
+        Rule(["POST", "PUT", "DELETE"], "/api/plugins/nollie-workflow/memory/notes"),
+        Rule(["PUT"], "/api/plugins/nollie-workflow/memory/switch"),
     ]
 
     private static func matches(_ pattern: [Substring], _ path: [Substring]) -> Bool {
@@ -164,14 +169,24 @@ enum LinkDoorPolicy {
     static let profileOnlyPaths: Set<String> = ["/api/plugins/nollie-computer/take-over", "/api/plugins/nollie-computer/hand-back",
                                                "/api/plugins/nollie-computer/ask-first"]
 
+    /// Paths whose query is held to one `bot` and nothing else: a helper's memory. So a phone can't say
+    /// `on_this_mac`, which only Nollie on the Mac that runs Hermes sends for a private bot.
+    static let botOnlyPaths: Set<String> = ["/api/plugins/nollie-workflow/memory", "/api/plugins/nollie-workflow/memory/notes",
+                                           "/api/plugins/nollie-workflow/memory/switch"]
+
     /// Every other path passes its query on as before; these take exactly one profile name.
     static func allowsQuery(path: String, query: String?) -> Bool {
-        guard profileOnlyPaths.contains(path) else { return true }
+        if profileOnlyPaths.contains(path) { return onlyOneName("profile", in: query) }
+        if botOnlyPaths.contains(path) { return onlyOneName("bot", in: query) }
+        return true
+    }
+
+    private static func onlyOneName(_ key: Substring, in query: String?) -> Bool {
         guard let query, !query.isEmpty else { return false }
         let pairs = query.split(separator: "&", omittingEmptySubsequences: false)
         guard pairs.count == 1 else { return false }
         let parts = pairs[0].split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
-        guard parts.count == 2, parts[0] == "profile", let value = parts[1].removingPercentEncoding,
+        guard parts.count == 2, parts[0] == key, let value = parts[1].removingPercentEncoding,
               (1...64).contains(value.utf8.count) else { return false }
         return value.utf8.allSatisfy { (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || $0 == 45 || $0 == 95 }
     }

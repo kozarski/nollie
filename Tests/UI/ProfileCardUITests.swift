@@ -8,6 +8,7 @@ final class ProfileCardUITests: DemoCase {
     private let pages: [(tab: String, mark: String)] = [
         ("look", "bot.editor.reset"),
         ("instructions", "profile.instructions"),
+        ("memory", "profile.memory.add"),
         ("model", "profile.model.advanced"),
         ("display", "profile.display.hero"),
         ("thisChat", "profile.rename"),

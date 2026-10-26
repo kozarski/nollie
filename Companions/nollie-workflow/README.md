@@ -50,6 +50,16 @@ The authenticated default-profile dashboard namespace exposes:
   installation boundary are server-owned. This endpoint is read-only.
 - `GET` and `PUT /api/plugins/nollie-workflow/private-bots`: the Private list, described
   below.
+- `GET /api/plugins/nollie-workflow/memory?bot=<name>`: what a helper remembers, from its
+  Hermes memory files (`memories/USER.md` and `memories/MEMORY.md`), and whether Hermes uses
+  memory for it (`memory.py`). `POST`, `PUT` and `DELETE .../memory/notes` add, change or forget one entry,
+  named by its exact text; `PUT .../memory/switch` sets `memory.memory_enabled` and
+  `memory.user_profile_enabled` through Hermes's own config calls. Every change takes the
+  lock Hermes's memory tool takes (`flock` on `<file>.lock`), reads the file again and
+  replaces it whole, so an entry Hermes adds meanwhile is kept; an edit to an entry Hermes
+  has just changed gets `409` and nothing is written. Moss and bots named private are always
+  refused. Another bot on the Private list is answered only with `on_this_mac=true`, which
+  only Nollie on the Mac that runs Hermes sends and the Nollie Link door never lets through.
 
 Check the status endpoint through the normal signed-in dashboard connection. A
 404 means the dashboard has not loaded the plugin. A 403 means a nondefault profile

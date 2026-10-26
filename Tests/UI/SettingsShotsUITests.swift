@@ -83,7 +83,7 @@ final class SettingsShotsUITests: DemoCase {
         tap("chat.more")
         tap("botmenu.settings")
         XCTAssertTrue(find("profile.tabs").waitForExistence(timeout: 15), "the bot's settings did not open")
-        for tab in ["look", "instructions", "model", "papertrail", "apps", "computer", "display"] {
+        for tab in ["look", "instructions", "memory", "model", "papertrail", "apps", "computer", "display"] {
             tap("profile.tab.\(tab)")
             pause(0.8)
             shot("settings-bot-\(tab)")

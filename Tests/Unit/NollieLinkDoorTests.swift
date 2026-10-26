@@ -895,6 +895,39 @@ extension NollieLinkDoorTests {
         }
     }
 
+    @Test func memoryAllowsOnlyItsOwnRoutesAndOneBot() {
+        let base = "/api/plugins/nollie-workflow/memory"
+        let allowed: [(String, String)] = [("GET", base), ("POST", base + "/notes"), ("PUT", base + "/notes"),
+                                           ("DELETE", base + "/notes"), ("PUT", base + "/switch")]
+        for (method, path) in allowed {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .hermes, "\(method) \(path)")
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: true) == .refused, "\(method) \(path)")
+        }
+        let refused: [(String, String)] = [
+            ("POST", base), ("PUT", base), ("DELETE", base), ("PATCH", base + "/notes"), ("GET", base + "/notes"),
+            ("GET", base + "/switch"), ("POST", base + "/switch"), ("DELETE", base + "/switch"),
+            ("GET", base + "/notes/abc"), ("PUT", base + "/notes/abc"), ("DELETE", base + "/notes/abc"),
+            ("GET", base + "/files"), ("GET", base + "s"), ("GET", base + "/"), ("GET", "/api/plugins/nollie-workflow/memory%2fnotes"),
+            // Hermes's own memory routes stay shut: provider changes and resets that delete the files.
+            ("GET", "/api/memory"), ("PUT", "/api/memory/provider"), ("POST", "/api/memory/reset"),
+            ("GET", "/api/memory/providers"), ("GET", "/api/fs/read-text"), ("POST", "/api/fs/write-text"),
+        ]
+        for (method, path) in refused {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .refused, "\(method) \(path)")
+        }
+        for path in [base, base + "/notes", base + "/switch"] {
+            #expect(LinkDoorPolicy.allowsQuery(path: path, query: "bot=default"))
+            #expect(LinkDoorPolicy.allowsQuery(path: path, query: "bot=night-owl_2"))
+            for bad in [nil, "", "bot=", "bot=default&on_this_mac=true", "on_this_mac=true&bot=default", "on_this_mac=true",
+                        "bot=a&bot=b", "profile=default", "bot=../x", "bot=a%2Fb", "bot=" + String(repeating: "a", count: 65), "bot"] {
+                #expect(!LinkDoorPolicy.allowsQuery(path: path, query: bad), "\(path) \(bad ?? "nil")")
+            }
+        }
+        // The profile-only routes keep their own rule.
+        #expect(!LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "bot=default"))
+        #expect(LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "profile=default"))
+    }
+
     @Test func takeOverAndHandBackPassAsPostsWithOnlyAProfile() {
         for path in ["/api/plugins/nollie-computer/take-over", "/api/plugins/nollie-computer/hand-back"] {
             #expect(LinkDoorPolicy.route(method: "POST", path: path, websocket: false) == .hermes)

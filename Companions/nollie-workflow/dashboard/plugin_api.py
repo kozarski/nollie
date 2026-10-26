@@ -27,6 +27,7 @@ _shift = __import__(_name + ".night_shift", fromlist=["without_private"])
 _sleep = __import__(_name + ".sleep_watch", fromlist=["gaps"])
 _sign_ins = __import__(_name + ".sign_ins", fromlist=["Store"])
 _apple = __import__(_name + ".apple_data", fromlist=["Store"])
+_memory = __import__(_name + ".memory", fromlist=["Memory"])
 _cron_followups = __import__(_name + ".hermes_support.ollie_cron_followups", fromlist=["ready"])
 NO_STORE = {"Cache-Control": "no-store"}
 router = APIRouter()
@@ -494,3 +495,91 @@ class AppleAnswer(BaseModel):
 @router.post("/apple-data/requests/{request_id}/answer")
 def answer_apple_data(request_id: str, body: AppleAnswer):
     return apple_request(request_id, lambda store: store.answer(request_id, body.result, body.error))
+
+
+# What a helper remembers: its Hermes memory files, to see and change. Moss and every bot named
+# private never; another bot on the Private list only for Nollie on the Mac that runs Hermes, which
+# says so with ``on_this_mac`` (the Nollie Link door lets nothing but ``bot`` through on these).
+
+def memory_of(bot, on_this_mac=False):
+    target = home()
+    if not isinstance(bot, str) or not _private.PROFILE_NAME.match(bot):
+        raise HTTPException(422, "Send a bot's Hermes profile name.", headers=NO_STORE)
+    if _core.private_identity(bot, _private.carried_over_names()):
+        raise HTTPException(403, "This bot's memory is never read.", headers=NO_STORE)
+    try:
+        private = _private.read(target)[0]
+    except (OSError, ValueError):
+        raise HTTPException(503, "The Private list cannot be read.", headers=NO_STORE) from None
+    if _core.private_identity(bot, private) and on_this_mac is not True:
+        raise HTTPException(403, "A private bot's memory stays on its Mac.", headers=NO_STORE)
+    return _memory.Memory(bot_home(bot, target))
+
+
+def memory_answer(memory, bot, step=None):
+    try:
+        if step:
+            step(memory)
+        return JSONResponse(memory.view(bot), headers=NO_STORE)
+    except _memory.Changed:
+        raise HTTPException(409, "This changed on your Mac.", headers=NO_STORE) from None
+    except _memory.Refused as exc:
+        raise HTTPException(422, str(exc), headers=NO_STORE) from None
+    except _memory.Busy as exc:
+        raise HTTPException(503, str(exc), headers=NO_STORE) from None
+    except OSError:
+        raise HTTPException(503, "This memory can't be changed right now.", headers=NO_STORE) from None
+
+
+@router.get("/memory")
+def memory_view(bot: str = "default", on_this_mac: bool = False):
+    return memory_answer(memory_of(bot, on_this_mac), bot)
+
+
+class MemoryNote(BaseModel):
+    model_config = {"extra": "forbid"}
+    target: str = "user"
+    text: str = Field(max_length=8000)
+
+
+class MemoryEdit(BaseModel):
+    model_config = {"extra": "forbid"}
+    target: str
+    old: str = Field(max_length=300000)
+    text: str = Field(max_length=8000)
+
+
+class MemoryForget(BaseModel):
+    model_config = {"extra": "forbid"}
+    target: str
+    old: str = Field(max_length=300000)
+
+
+class MemorySwitch(BaseModel):
+    model_config = {"extra": "forbid"}
+    on: bool
+
+
+@router.post("/memory/notes")
+def memory_add(body: MemoryNote, bot: str = "default", on_this_mac: bool = False):
+    return memory_answer(memory_of(bot, on_this_mac), bot, lambda m: m.add(body.target, body.text))
+
+
+@router.put("/memory/notes")
+def memory_edit(body: MemoryEdit, bot: str = "default", on_this_mac: bool = False):
+    return memory_answer(memory_of(bot, on_this_mac), bot, lambda m: m.edit(body.target, body.old, body.text))
+
+
+@router.delete("/memory/notes")
+def memory_forget(body: MemoryForget, bot: str = "default", on_this_mac: bool = False):
+    return memory_answer(memory_of(bot, on_this_mac), bot, lambda m: m.forget(body.target, body.old))
+
+
+@router.put("/memory/switch")
+def memory_switch(body: MemorySwitch, bot: str = "default", on_this_mac: bool = False):
+    memory = memory_of(bot, on_this_mac)
+    try:
+        memory.set_on(body.on)
+    except Exception:
+        raise HTTPException(503, "That can't be changed right now.", headers=NO_STORE) from None
+    return memory_answer(memory, bot)

@@ -128,7 +128,9 @@ struct ProfileCardView: View {
         ScrollView {
             VStack(spacing: 0) {
                 ProfileCardHeader(state: state, today: today, botState: chat?.botState ?? .idle, floating: floatingControls)
-                ProfileTabRow(tabs: ProfileTab.available(withChat: chat != nil, privateBot: state.isHidden), selected: $tab)
+                ProfileTabRow(tabs: ProfileTab.available(withChat: chat != nil, privateBot: state.isHidden,
+                                                         memory: ProfileMemoryTab.access(state: state, runtime: runtime) != .hidden),
+                              selected: $tab)
                     .frame(maxWidth: 640)
                     .padding(.top, 18)
                 VStack(spacing: 32) {
@@ -181,6 +183,7 @@ struct ProfileCardView: View {
         switch tab {
         case .look: ProfileLookTab(state: state)
         case .instructions: ProfileInstructionsTab(state: state)
+        case .memory: ProfileMemoryTab(state: state)
         case .model: ProfileModelTab(state: state)
         case .papertrail:
             if !state.isHidden {

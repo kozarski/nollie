@@ -548,6 +548,117 @@ def apple_data_rest(method: str, base: str, query: dict, payload) -> tuple[int, 
     return ok(dict(bot=bot, on=APPLE_DATA["bots"].get(bot, []), mac=dict(APPLE_DATA["mac"])))
 
 
+# What a helper remembers, as nollie-workflow serves it (GET /api/plugins/nollie-workflow/memory, POST, PUT and
+# DELETE .../memory/notes, PUT .../memory/switch). Oldest first, as Hermes keeps them. Moss and bots named private
+# are never read; another private bot only with on_this_mac=true. "default" starts with a few invented facts and
+# "work" with nothing. POST /api/_mock/memory sets the fixture: {"reset": true}, "bot" with "user", "memory",
+# "on" and "provider", and "hermes_edit" ({"bot", "target", "old", "new"}) to change an entry as Hermes would
+# while someone is editing it. GET returns every change as it arrived.
+MEMORY_TARGETS = ("user", "memory")
+MEMORY_LIMITS = {"user": 1375, "memory": 2200}
+
+
+def memory_fixture() -> dict:
+    return {
+        "default": dict(on=True, provider="", user=[
+            "Name is Alex. Lives in Bristol.",
+            "Prefers short answers without jargon.",
+            "Has a cocker spaniel called Biscuit.",
+            "Book club meets the first Thursday of the month.",
+        ], memory=[
+            "The weekly food shop is ordered on Sunday evenings.",
+            "Alex's sister Jo visits from 14 to 16 November.",
+        ]),
+    }
+
+
+MEMORY: dict = dict(bots=memory_fixture(), log=[])
+
+
+def memory_view(bot: str) -> dict:
+    entry = MEMORY["bots"].setdefault(bot, dict(on=True, provider="", user=[], memory=[]))
+    stores = {}
+    for target in MEMORY_TARGETS:
+        items = entry[target]
+        stores[target] = dict(entries=[dict(id=hashlib.sha256(t.encode()).hexdigest()[:16], text=t) for t in items],
+                              used=len("\n§\n".join(items)), limit=MEMORY_LIMITS[target])
+    return dict(bot=bot, on=entry["on"], provider=entry["provider"], stores=stores)
+
+
+def memory_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    fields = payload if isinstance(payload, dict) else {}
+    if base == "/api/_mock/memory":
+        if method == "GET":
+            return ok(dict(log=MEMORY["log"]))
+        if fields.get("reset"):
+            MEMORY["bots"] = memory_fixture()
+            MEMORY["log"] = []
+        if isinstance(fields.get("bot"), str):
+            entry = MEMORY["bots"].setdefault(fields["bot"], dict(on=True, provider="", user=[], memory=[]))
+            for key in ("user", "memory"):
+                if isinstance(fields.get(key), list):
+                    entry[key] = [str(t) for t in fields[key]]
+            if isinstance(fields.get("on"), bool):
+                entry["on"] = fields["on"]
+            if isinstance(fields.get("provider"), str):
+                entry["provider"] = fields["provider"]
+        edit = fields.get("hermes_edit")
+        if isinstance(edit, dict):
+            items = MEMORY["bots"].get(edit.get("bot"), {}).get(edit.get("target"), [])
+            if edit.get("old") in items:
+                items[items.index(edit["old"])] = str(edit.get("new"))
+        return ok(dict(ok=True))
+    prefix = "/api/plugins/nollie-workflow/memory"
+    if base not in (prefix, prefix + "/notes", prefix + "/switch"):
+        return None
+    allowed = {prefix: ("GET",), prefix + "/notes": ("POST", "PUT", "DELETE"), prefix + "/switch": ("PUT",)}[base]
+    if method not in allowed:
+        return refuse(405, "Method Not Allowed")
+    bot = unquote(query.get("bot", "default"))
+    if not PRIVATE_PROFILE_NAME.fullmatch(bot):
+        return refuse(422, "Send a bot's Hermes profile name.")
+    if set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names() or bot in carried_over_private_names():
+        return refuse(403, "This bot's memory is never read.")
+    if private_identity(bot) and query.get("on_this_mac") != "true":
+        return refuse(403, "A private bot's memory stays on its Mac.")
+    if bot not in PROFILES and bot not in CREATED_PROFILES:
+        return refuse(404, "No such bot.")
+    if method == "GET":
+        return ok(memory_view(bot))
+    entry = MEMORY["bots"].setdefault(bot, dict(on=True, provider="", user=[], memory=[]))
+    if base.endswith("/switch"):
+        if set(fields) != {"on"} or type(fields["on"]) is not bool:
+            return refuse(422, "Choose on or off.")
+        entry["on"] = fields["on"]
+        MEMORY["log"].append(dict(bot=bot, method=method, on=fields["on"]))
+        return ok(memory_view(bot))
+    target = fields.get("target", "user")
+    if target not in MEMORY_TARGETS:
+        return refuse(422, "Choose about you or its notes.")
+    items = entry[target]
+    text = fields.get("text", "").strip() if isinstance(fields.get("text"), str) else ""
+    old = fields.get("old")
+    if method in ("POST", "PUT"):
+        if not text:
+            return refuse(422, "Write something to remember.")
+        if "ignore previous instructions" in text.lower():
+            return refuse(422, "Your helper can't keep that. Try other words.")
+    if method == "PUT" and old not in items:
+        return refuse(409, "This changed on your Mac.")
+    if method == "POST" and text not in items:
+        if len("\n§\n".join(items + [text])) > MEMORY_LIMITS[target]:
+            return refuse(422, "Its memory is full. Forget something first.")
+        items.append(text)
+    elif method == "PUT" and text in items and text != old:
+        items.remove(old)
+    elif method == "PUT":
+        items[items.index(old)] = text
+    elif method == "DELETE" and old in items:
+        items.remove(old)
+    MEMORY["log"].append(dict(bot=bot, method=method, target=target, old=old, text=text or None))
+    return ok(memory_view(bot))
+
+
 # Helpers' own computers, as nollie-computer serves them (GET and POST
 # /api/plugins/nollie-computer/own-computer). Every bot starts with its switch off and Cua ready.
 # Turning one on shows "getting ready" for OWN_COMPUTERS["ready_after"] seconds, then Ready.
@@ -3016,6 +3127,7 @@ def process_request(connection, request):
         ("quiet", lambda: own_computer_rest(method, base, query, body)),
         ("quiet", lambda: ask_first_rest(method, base, query, body)),
         ("quiet", lambda: apple_data_rest(method, base, query, body)),
+        ("quiet", lambda: memory_rest(method, base, query, body)),
         ("quiet", lambda: link_rest(method, base, body)),
     ]
     answer = None

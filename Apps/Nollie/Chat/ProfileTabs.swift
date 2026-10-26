@@ -3,17 +3,19 @@ import NollieCore
 
 /// One tab per section of the bot card. A new case shows up without the header or the row changing.
 enum ProfileTab: String, CaseIterable, Identifiable {
-    case thisChat, look, instructions, model, papertrail, apps, computer, display
+    case thisChat, look, instructions, memory, model, papertrail, apps, computer, display
 
     var id: String { rawValue }
 
     var title: String { self == .thisChat ? "This chat" : rawValue.capitalized }
 
     /// Tabs for a card. "This chat" needs a chat to be open, and a private bot has no Papertrail.
-    static func available(withChat: Bool, privateBot: Bool = false) -> [ProfileTab] {
+    /// Memory shows where the bot's memory may be read (never Moss's; see `HelperMemoryAccess`).
+    static func available(withChat: Bool, privateBot: Bool = false, memory: Bool = true) -> [ProfileTab] {
         var hidden = Set<ProfileTab>()
         if !withChat { hidden.insert(.thisChat) }
         if privateBot { hidden.insert(.papertrail) }
+        if !memory { hidden.insert(.memory) }
         return allCases.filter { !hidden.contains($0) }
     }
 
