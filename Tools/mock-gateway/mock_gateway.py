@@ -265,26 +265,76 @@ def sign_ins_rest(method: str, base: str, query: dict, payload) -> tuple[int, ob
 
 
 # The crew add-on's buttons (POST /api/plugins/nollie-crew/undo and /suggestions/<id>), for the
-# "crew" turn below: Undo removes the member it added, Add creates the suggested one.
-CREW: dict = dict(undo={}, suggestions={})
+# "crew" turn below: Undo removes the member it added, Add creates the suggested one. The new-bot
+# sheet's gallery reads GET …/crew and adds a ready-made helper with POST …/members.
+CREW: dict = dict(undo={}, suggestions={}, members={})
+CREW_CAP = 8
+READY_MADE_FIELDS = ("name", "role", "come_to_me_for", "instructions")
 
 
-def crew_member(name: str) -> None:
-    key = name.lower()
+def crew_member(name: str, description: str = "Checks new roles each morning", soul: str | None = None) -> str:
+    key = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
     CREATED_PROFILES[key] = dict(name=key, path=f"/home/hermes/.hermes/profiles/{key}",
                              is_default=False, model="local/assistant-mini", provider="local",
-                             description="Checks new roles each morning", skill_count=3, has_env=False)
+                             description=description, skill_count=3, has_env=False)
+    if soul is not None:  # a ready-made helper carries its display name, as the add-on writes it
+        CREATED_PROFILES[key]["display_name"] = name
+    CREW["members"][key] = dict(name=name, soul=soul)
+    return key
+
+
+def crew_roster() -> dict:
+    members = [dict(profile=key, name=m["name"], status="active") for key, m in CREW["members"].items()
+               if key in CREATED_PROFILES]
+    return dict(ok=True, members=members, cap=CREW_CAP, room=max(0, CREW_CAP - len(members)),
+                other_bots=[name for name in PROFILES if name != "default" and name not in private_names()],
+                suggestion=None)
+
+
+def crew_ready_made(body: dict) -> tuple[int, object]:
+    """A ready-made helper from the gallery, checked the way the add-on checks one."""
+    if not all(isinstance(body.get(key), str) and body[key].strip() for key in READY_MADE_FIELDS):
+        return refuse(422, "A ready-made helper needs a name, role, come to me for and instructions.")
+    name = " ".join(body["name"].split())
+    key = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9 '\-]{0,31}", name) or private_identity(key) \
+            or key in ("default", "nollie", "moss", "private"):
+        return 409, dict(ok=False, error=f"The name {name} is already taken. Pick another one.")
+    if key in PROFILES or key in CREATED_PROFILES:
+        return 409, dict(ok=False, error=f"The name {name} is already taken. Pick another one.")
+    if crew_roster()["room"] == 0:
+        return 409, dict(ok=False, status="full", error=f"The crew is full ({CREW_CAP}). Retire someone first.")
+    if re.search(r"without asking|don't ask|no need to ask|assume (a )?yes", body["instructions"], re.I):
+        return 409, dict(ok=False, error="Those instructions would skip asking first, so I can't use them.")
+    soul = f"# {name}\n\n## What you do\n\n{body['instructions'].strip()}\n"
+    crew_member(name, description=body["come_to_me_for"].strip(), soul=soul)
+    token = f"undo-{key}-{int(time.time() * 1000)}"
+    CREW["undo"][token] = name
+    role = body["role"].strip().rstrip(".")
+    return ok(dict(ok=True, status="added", profile=key, name=name, undo=token,
+                   note=f"I've added {name} to {role}.",
+                   changes=[f"Added {name} to the crew", "Model: local, on this Mac"],
+                   actions=[dict(id="meet", label="Meet", profile=key, name=name),
+                            dict(id="undo", label="Undo", token=token)]))
 
 
 def crew_rest(method: str, base: str, payload) -> tuple[int, object] | None:
-    if not base.startswith("/api/plugins/nollie-crew/") or method != "POST":
+    if not base.startswith("/api/plugins/nollie-crew/"):
+        return None
+    if base == "/api/plugins/nollie-crew/crew":
+        return ok(crew_roster()) if method == "GET" else refuse(405, "Method Not Allowed")
+    if method != "POST":
         return None
     body = payload if isinstance(payload, dict) else {}
+    if base == "/api/plugins/nollie-crew/members":
+        return crew_ready_made(body)
     if base == "/api/plugins/nollie-crew/undo":
         name = CREW["undo"].pop(str(body.get("token", "")), None)
         if name is None:
             return 409, dict(ok=False, note="That was already undone.")
-        CREATED_PROFILES.pop(name.lower(), None)
+        key = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+        CREATED_PROFILES.pop(key, None)
+        CREW["members"].pop(key, None)
         return ok(dict(ok=True, status="removed", note=f"Removed {name}."))
     key = base.removeprefix("/api/plugins/nollie-crew/suggestions/")
     name = CREW["suggestions"].pop(key, None)
@@ -2196,6 +2246,9 @@ def rest(path: str, query: dict) -> tuple[int, object] | None:
 
     parts = base.split("/")
     if base.startswith("/api/profiles/") and base.endswith("/soul"):
+        member = CREW["members"].get(unquote(parts[3])) if len(parts) == 5 else None
+        if member and member.get("soul"):
+            return ok(dict(content=member["soul"], exists=True))
         return _soul_route(query)
     if base.startswith("/api/sessions/") and len(parts) == 4:
         return _one_session_route(base, query)

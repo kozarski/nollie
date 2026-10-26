@@ -179,13 +179,18 @@ class Crew:
         role = policy.clean_role(args.get("role"))
         come = policy.clean_come_to_me_for(args.get("come_to_me_for"))
         schedule = policy.clean_schedule(args.get("schedule"))
+        instructions = policy.clean_instructions(args.get("instructions"))
         nollie = self._nollie()
-        reach = policy.resolve_reach(nollie, args.get("toolsets"), args.get("model_route"))
+        toolsets = args.get("toolsets")
+        if args.get("ready_made") is True:
+            toolsets = policy.ready_made_toolsets(nollie, toolsets)
+        reach = policy.resolve_reach(nollie, toolsets, args.get("model_route"))
         ids, names = self._names()
         policy.check_name_free(name, profile_id, ids, names)
         needs = policy.needs_for(reach, schedule, nollie)
         return {"name": name, "profile": profile_id, "role": role, "come_to_me_for": come,
-                "schedule": schedule, "reach": reach, "needs": needs, "nollie": nollie}
+                "instructions": instructions, "schedule": schedule, "reach": reach, "needs": needs,
+                "nollie": nollie}
 
     def approval_request(self, tool, args):
         """For the approval hook: what the person must agree to before ``tool`` runs, or None."""
@@ -212,6 +217,8 @@ class Crew:
     def add(self, args, *, approved=False, actor="nollie"):
         if not isinstance(args, dict):
             return _error("The request was not understood.")
+        if actor != "person":  # a ready-made helper's own words come only from the person's tap
+            args = {k: v for k, v in args.items() if k not in ("instructions", "ready_made")}
         with store.file_lock(self.lock_path):
             state = self.read_state()
             try:
@@ -227,7 +234,18 @@ class Crew:
                            message=policy.approval_message("add", plan["name"], plan["needs"]),
                            note="Ask the person first. Their answer comes from the approval prompt, "
                                 "then call crew_add again with the same details.")
-            return self._create(state, plan, origin="person" if actor == "person" else "asked")
+            origin = "ready_made" if args.get("ready_made") is True else ("person" if actor == "person" else "asked")
+            return self._create(state, plan, origin=origin)
+
+    def add_ready_made(self, args):
+        """The person's tap on a ready-made helper in the app: added at once with its own
+        instructions, on the local model, and with only the tools that need no further yes."""
+        if not isinstance(args, dict):
+            return _error("The request was not understood.")
+        wanted = {key: copy.deepcopy(args.get(key))
+                  for key in ("name", "role", "come_to_me_for", "instructions", "toolsets")}
+        wanted.update(asked_by_person=True, ready_made=True)
+        return self.add(wanted, actor="person")
 
     def _suggest(self, state, plan, args):
         words = policy.idea_words(plan["role"])
@@ -261,7 +279,8 @@ class Crew:
         marker = {"owner": "nollie-crew", "id": self.token(), "created_at": int(self.clock())}
         profile_id, name = plan["profile"], plan["name"]
         try:
-            self.profiles.create(profile_id, config=config, soul=policy.persona(name, plan["role"], plan["come_to_me_for"]),
+            soul = policy.persona(name, plan["role"], plan["come_to_me_for"], plan.get("instructions"))
+            self.profiles.create(profile_id, config=config, soul=soul,
                                  display_name=name, description=plan["come_to_me_for"], marker=marker)
             job = None
             if plan["schedule"]:
@@ -276,6 +295,8 @@ class Crew:
         member = {"name": name, "role": plan["role"], "come_to_me_for": plan["come_to_me_for"],
                   "status": "active", "marker": marker["id"], "created_at": marker["created_at"],
                   "origin": origin, "reach": plan["reach"], "schedule": None, "jobs": []}
+        if plan.get("instructions"):
+            member["instructions"] = plan["instructions"]
         if job:
             member["schedule"], member["jobs"] = plan["schedule"], [job]
             changes.append(f"Schedule: {plan['schedule']['when']}")
@@ -389,7 +410,8 @@ class Crew:
                                                 else "local, on this Mac"))
             soul = None
             if {"name", "role", "come_to_me_for"} & set(plan["fields"]):
-                soul = policy.persona(updated["name"], updated["role"], updated["come_to_me_for"])
+                soul = policy.persona(updated["name"], updated["role"], updated["come_to_me_for"],
+                                      updated.get("instructions"))
             self.profiles.write_files(profile_id, config=config, soul=soul,
                                       display_name=plan["fields"].get("name"),
                                       description=plan["fields"].get("come_to_me_for"))

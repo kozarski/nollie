@@ -1,4 +1,4 @@
-"""The app's buttons: Add or Not now on a suggestion card, and Undo on a crew note.
+"""The app's buttons: Add or Not now on a suggestion card, Add on a ready-made helper, and Undo.
 
 Hermes authenticates this namespace. These answers come from the person's own tap in the app,
 never from a model, and only for Nollie's profile.
@@ -54,6 +54,21 @@ def answer(key: str, body: Answer):
     if body.answer not in ("add", "not_now"):
         raise HTTPException(400, "Answer with add or not_now.")
     return reply(crew().answer_suggestion(key, body.answer))
+
+
+class ReadyMade(BaseModel):
+    name: str
+    role: str
+    come_to_me_for: str
+    instructions: str
+    toolsets: list[str] = []
+
+
+@router.post("/members")
+def add_ready_made(body: ReadyMade):
+    """A ready-made helper the person picked in the app. The tap is their yes to exactly it."""
+    fields = body.model_dump() if hasattr(body, "model_dump") else body.dict()
+    return reply(crew().add_ready_made(fields))
 
 
 class Undo(BaseModel):

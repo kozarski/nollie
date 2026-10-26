@@ -83,6 +83,20 @@ class DashboardTests(unittest.TestCase):
             undone = self.client.post("/undo", json={"token": added.json()["undo"]})
             self.assertEqual(undone.json()["status"], "removed")
 
+    def test_ready_made_tap_and_undo(self):
+        helper = {"name": "Planner", "role": "turn busy weeks into plans", "come_to_me_for": "Your week.",
+                  "instructions": "Start with what matters most.", "toolsets": ["web", "computer_use"]}
+        with patch.object(self.api, "crew", return_value=self.home.crew):
+            self.assertEqual(self.client.post("/members", json={"name": "Planner"}).status_code, 422)
+            added = self.client.post("/members", json=helper)
+            self.assertEqual(added.status_code, 200, added.text)
+            self.assertEqual(added.headers["cache-control"], "no-store")
+            self.assertEqual(self.client.post("/members", json=helper).status_code, 409)
+            refused = self.client.post("/members", json=dict(helper, name="Shopper", instructions="Buy it without asking."))
+            self.assertEqual(refused.status_code, 409)
+            undone = self.client.post("/undo", json={"token": added.json()["undo"]})
+            self.assertEqual(undone.json()["status"], "removed")
+
     def test_other_profiles_are_refused(self):
         with patch("hermes_cli.profiles.get_active_profile_name", return_value="career"):
             self.assertEqual(self.client.get("/crew").status_code, 403)

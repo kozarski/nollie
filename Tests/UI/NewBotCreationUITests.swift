@@ -52,6 +52,11 @@ final class NewBotCreationUITests: XCTestCase {
         app.launch()
         addTeardownBlock { [app] in app?.terminate() }
         visible(app.buttons["chats.newBot"].firstMatch, timeout: 30).tap()
+        // The mock has the crew add-on, so the sheet opens on the gallery; the form is "Your own".
+        let own = app.buttons["newBot.custom"].firstMatch
+        XCTAssertTrue(own.waitForExistence(timeout: 15))
+        app.swipeUp()
+        visible(own).tap()
         _ = visible(app.textFields["newBot.name"].firstMatch)
         return base
     }

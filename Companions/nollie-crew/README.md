@@ -100,9 +100,16 @@ person's taps. These answers come from the app, never from a model.
 - `POST /api/plugins/nollie-crew/suggestions/<id>` with `{"answer": "add"}` or
   `{"answer": "not_now"}`. The suggestion card names everything the member would use, so the
   Add tap is the person's yes to exactly that.
+- `POST /api/plugins/nollie-crew/members` with `{"name", "role", "come_to_me_for", "instructions",
+  "toolsets"}`: a ready-made helper the person picked in the app's gallery. It is added at once, as
+  if the person had asked, with the same result (note, Meet and Undo). Its instructions go in its
+  `SOUL.md` under "What you do", above the fixed rules, and are refused if they would skip asking
+  first ("buy it without asking", "assume a yes"). Its toolsets are kept to ones Nollie has that need
+  no further yes; anything else (the Mac, connections, schedules, messages) is left out, never asked
+  for, and an empty list falls back to the safe default. It runs on the crew's local model.
 - `POST /api/plugins/nollie-crew/undo` with `{"token": "<token>"}`.
 
-Answered or stale requests return `409` with `ok: false`.
+Answered or stale requests, and refused ready-made helpers, return `409` with `ok: false`.
 
 ## Handoffs
 

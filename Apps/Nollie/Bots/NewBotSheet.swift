@@ -3,9 +3,11 @@ import NollieCore
 
 /// The sheet for making a bot, or (with `editing`) changing one.
 ///
-/// A bot is a gateway profile (name, description, default model) plus a look stored on this device.
-/// The sheet opens with the live character, its name and the looks to pick from, and closes with one
-/// button. Description, model and "start from" are tucked under More options.
+/// A new bot starts in the gallery of ready-made helpers when the crew add-on can take one: a tap
+/// adds a helper with its look and instructions. "Your own" (and a gateway without the add-on) opens
+/// the form: a gateway profile (name, description, default model) plus a look stored on this
+/// device, with the live character, its name and the looks to pick from, and one button.
+/// Description, model and "start from" are tucked under More options.
 struct NewBotSheet: View {
     var runtime: GatewayRuntime
     /// Set this to edit an existing bot (look, description, model); a Delete button then appears at the
@@ -29,6 +31,8 @@ struct NewBotSheet: View {
     @State private var asksToDelete = false
     @State private var creation = NewBotCreation()
     @State private var pending: Task<Void, Never>?
+    @State private var gallery = HelperGallery()
+    @State private var makingOwn = false
     @FocusState private var nameFocused: Bool
 
     // MARK: Derived values
@@ -77,41 +81,8 @@ struct NewBotSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 22) {
-                    BotAvatar(profile: lookKey, size: 124, state: .listening, override: look)
-                        .padding(.top, 10)
-                        .accessibilityLabel("The new bot's look")
-                    nameBox
-                    // A bot that does not exist yet has no place to keep a photo.
-                    CharacterLookPicker(profile: lookKey, choice: Binding(get: { look }, set: { pickedLook = $0 }), allowsPhoto: false)
-                    moreOptions
-                    if let problem {
-                        Text(problem)
-                            .small(.footnote, .red)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .testID("newBot.issue")
-                    }
-                    if let editing { deleteSection(editing) }
-                }
-                .padding(.horizontal, 22).padding(.bottom, 20)
-                .frame(maxWidth: 520)
-                .frame(maxWidth: .infinity)
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .safeAreaInset(edge: .bottom, spacing: 0) { footer }
-            .navigationTitle(editing.map { "Edit \($0.label)" } ?? "New Bot")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                        .tint(.primary)
-                        .accessibilityLabel("Cancel")
-                        .help("Cancel")
-                        .disabled(working)
-                }
-            }
-            .task { await prepare() }
+            start
+                .navigationDestination(isPresented: $makingOwn) { form }
         }
         .presentationDetents([.large])
         .interactiveDismissDisabled(working)
@@ -119,6 +90,68 @@ struct NewBotSheet: View {
         .onChange(of: app.lock.isLocked) { _, locked in
             if locked { pending?.cancel() }
         }
+        .task {
+            guard editing == nil else { return }
+            await gallery.load(.gateway(runtime))
+        }
+    }
+
+    /// Where the sheet opens: the gallery when it can be used, else the form.
+    @ViewBuilder private var start: some View {
+        if editing != nil || gallery.availability == .unavailable {
+            form
+        } else if gallery.availability == .ready {
+            HelperGalleryView(runtime: runtime, gallery: gallery) { makingOwn = true }
+                .navigationTitle("New Bot")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { cancelItem }
+        } else {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .navigationTitle("New Bot")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { cancelItem }
+        }
+    }
+
+    private var cancelItem: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button { dismiss() } label: { Image(systemName: "xmark") }
+                .tint(.primary)
+                .accessibilityLabel("Cancel")
+                .help("Cancel")
+                .disabled(working)
+        }
+    }
+
+    private var form: some View {
+        ScrollView {
+            VStack(spacing: 22) {
+                BotAvatar(profile: lookKey, size: 124, state: .listening, override: look)
+                    .padding(.top, 10)
+                    .accessibilityLabel("The new bot's look")
+                nameBox
+                // A bot that does not exist yet has no place to keep a photo.
+                CharacterLookPicker(profile: lookKey, choice: Binding(get: { look }, set: { pickedLook = $0 }), allowsPhoto: false)
+                moreOptions
+                if let problem {
+                    Text(problem)
+                        .small(.footnote, .red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .testID("newBot.issue")
+                }
+                if let editing { deleteSection(editing) }
+            }
+            .padding(.horizontal, 22).padding(.bottom, 20)
+            .frame(maxWidth: 520)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .safeAreaInset(edge: .bottom, spacing: 0) { footer }
+        .navigationTitle(editing.map { "Edit \($0.label)" } ?? (makingOwn ? "Your Own" : "New Bot"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { if !makingOwn { cancelItem } }
+        .task { await prepare() }
     }
 
     private var footer: some View {
