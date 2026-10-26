@@ -47,9 +47,12 @@ extension GatewayRuntime {
         await kanban.probe()
     }
 
-    private func learnProfileHome() async {
-        let asked = profileParams(["key": "profile"])
-        guard let config = try? await socket.call("config.get", params: asked) else { return }
+    func learnProfileHome() async {
+        // Asked of the bot selected now, and kept only if it still is: the answer for another bot would
+        // point this one's files at the wrong folder.
+        let bot = selectedProfile
+        let asked = Self.params(["key": "profile"], owner: bot)
+        guard let config = try? await call("config.get", asked, 120), selectedProfile == bot else { return }
         profileHome = config["home"]?.stringValue
     }
 

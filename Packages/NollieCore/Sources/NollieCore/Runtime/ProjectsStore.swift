@@ -50,12 +50,27 @@ public final class ProjectsStore {
     public private(set) var canMove = true
     public private(set) var activeID: String?
     public private(set) var lastError: String?
-    /// The selected bot's own projects and chat membership.
-    private var mine = Scope()
+    /// What was last read, and the bot it was read for.
+    private var stored = Scope()
+    private var storedFor: String?
+    /// The selected bot's own projects and chat membership. Empty until they are read for the bot
+    /// that is selected now, so a switch never shows the last bot's projects under the new one.
+    private var mine: Scope {
+        get { storedFor == runtime?.selectedProfile ? stored : Scope() }
+        set { stored = newValue; storedFor = runtime?.selectedProfile }
+    }
     public private(set) var others: [String: Scope] = [:]
 
     private weak var runtime: GatewayRuntime?
-    private var busyReading = false
+    @ObservationIgnored private var busyReading = false
+    /// A refresh was asked for while one was reading. It runs once that one is done.
+    @ObservationIgnored private var readAgain = false
+    /// Numbers each read of the tree and of the other bots' projects, so a slow older read never
+    /// replaces a newer one.
+    @ObservationIgnored private var treeTicket = 0
+    @ObservationIgnored private var treeCommitted = 0
+    @ObservationIgnored private var othersTicket = 0
+    @ObservationIgnored private var othersCommitted = 0
 
     private static let treeQuery: [String: JSONValue] = ["preview_limit": 0, "session_limit": 2000]
 
@@ -97,48 +112,96 @@ public final class ProjectsStore {
     // MARK: Reading from the gateway
 
     public func refresh() async {
-        guard let runtime, !busyReading else { return }
+        guard runtime != nil else { return }
+        if busyReading {
+            readAgain = true
+            return
+        }
         busyReading = true
         defer { busyReading = false }
+        repeat {
+            readAgain = false
+            await readProjects()
+        } while readAgain
+    }
+
+    /// One pass over the selected bot's projects and tree. The bot is fixed at the start and given to
+    /// every call. If the selection moves meanwhile, nothing is kept and another pass is made.
+    private func readProjects() async {
+        guard let runtime else { return }
+        let profile = runtime.selectedProfile
         do {
-            let list: ProjectsListResponse = try await runtime.rpc("projects.list").decode()
-            mine.projects = list.projects
+            let list: ProjectsListResponse = try await runtime.rpc("projects.list", owner: profile).decode()
+            guard commit(for: profile, { $0.projects = list.projects }) else {
+                readAgain = true
+                return
+            }
             activeID = list.activeId
             available = true
             lastError = nil
-            await refreshTree()
+            await readTree(for: profile)
+            if runtime.selectedProfile != profile { readAgain = true }
         } catch let failure as RPCError where failure.code == RPCError.methodNotFound {
+            guard runtime.selectedProfile == profile else {
+                readAgain = true
+                return
+            }
             available = false
             activeID = nil
             mine = Scope()
             others = [:]
         } catch {
+            guard runtime.selectedProfile == profile else {
+                readAgain = true
+                return
+            }
             lastError = error.localizedDescription
         }
+    }
+
+    /// Keeps a read for `profile` only while that bot is still the selected one.
+    private func commit(for profile: String?, _ change: (inout Scope) -> Void) -> Bool {
+        guard runtime?.selectedProfile == profile else { return false }
+        if storedFor != profile { (stored, storedFor) = (Scope(), profile) }
+        change(&stored)
+        return true
     }
 
     /// Refreshes the chat-to-project mapping. It is inexpensive, so it runs on every chat list change.
     public func refreshTree() async {
         guard available == true, let runtime else { return }
-        if let tree = try? await runtime.rpc("projects.tree", Self.treeQuery).decode(ProjectsTreeResponse.self) {
-            mine.membership = Self.table(from: tree)
-        }
+        await readTree(for: runtime.selectedProfile)
+    }
+
+    private func readTree(for profile: String?) async {
+        guard let runtime else { return }
+        treeTicket += 1
+        let ticket = treeTicket
+        guard let tree = try? await runtime.rpc("projects.tree", Self.treeQuery, owner: profile).decode(ProjectsTreeResponse.self),
+              ticket > treeCommitted else { return }
+        if commit(for: profile, { $0.membership = Self.table(from: tree) }) { treeCommitted = ticket }
     }
 
     /// Reads the other bots' projects for a list that mixes every bot's chats. A bot missing
-    /// from `profiles` is forgotten.
+    /// from `profiles` is forgotten. If the selected bot changes while this reads, the result is
+    /// dropped: the other bots are now a different set.
     public func refreshOthers(_ profiles: [String]) async {
         guard let runtime else { return }
         guard available == true else {
             if available == false { others = [:] }
             return
         }
+        let selected = runtime.selectedProfile
+        othersTicket += 1
+        let ticket = othersTicket
         var gathered: [String: Scope] = [:]
-        for name in profiles where name != runtime.selectedProfile {
+        for name in profiles where name != selected {
             guard let list = try? await runtime.rpc("projects.list", profile: name).decode(ProjectsListResponse.self) else { continue }
             let tree = try? await runtime.rpc("projects.tree", Self.treeQuery, profile: name).decode(ProjectsTreeResponse.self)
             gathered[name] = Scope(projects: list.projects, membership: tree.map(Self.table(from:)) ?? [:])
         }
+        guard runtime.selectedProfile == selected, ticket > othersCommitted else { return }
+        othersCommitted = ticket
         others = gathered
     }
 

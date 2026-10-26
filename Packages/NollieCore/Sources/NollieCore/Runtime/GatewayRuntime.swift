@@ -82,7 +82,11 @@ public final class GatewayRuntime {
             var saved = connection
             saved.lastProfile = selectedProfile
             store.updateMetadata(saved)
-            if oldValue != selectedProfile { Task { await refreshCapabilities() } }
+            if oldValue != selectedProfile {
+                // The old bot's folder is not this one's.
+                profileHome = nil
+                Task { await refreshCapabilities() }
+            }
         }
     }
 
@@ -126,6 +130,9 @@ public final class GatewayRuntime {
     public let kanban = KanbanStore()
 
     var globalEventTask: Task<Void, Never>? = nil
+    /// Replacement for the socket on this runtime's calls. Always nil in the app. Tests set it to
+    /// decide the reply to each call and its timing.
+    @ObservationIgnored var gatewayStandIn: (@MainActor (String, JSONValue) async throws -> JSONValue)?
     /// True after `dispose()`. A disposed runtime does not start again or open chats.
     public private(set) var isDisposed = false
 
@@ -301,7 +308,8 @@ public final class GatewayRuntime {
         try await call(method, profileParams(params, profile: profile), timeout)
     }
 
-    private func call(_ method: String, _ params: JSONValue, _ timeout: TimeInterval) async throws -> JSONValue {
+    func call(_ method: String, _ params: JSONValue, _ timeout: TimeInterval) async throws -> JSONValue {
+        if let standIn = gatewayStandIn { return try await standIn(method, params) }
         try await socket.waitUntilReady()
         return try await socket.call(method, params: params, timeout: timeout)
     }
