@@ -355,6 +355,9 @@ final class AppModel {
             }
         }
         guard activationGeneration == generation, ifCurrent(), !Task.isCancelled else { return }
+        // The old gateway is gone for good now, so let go of its chats and anything they were waiting on.
+        await runtime?.dispose()
+        guard activationGeneration == generation, ifCurrent(), !Task.isCancelled else { return }
 
         store.activeConnectionID = connection.id
         let fresh = GatewayRuntime(connection: connection, store: store, backend: backend)
@@ -436,8 +439,10 @@ final class AppModel {
         activationRecovery = nil
         await runtime?.stop()
         guard activationGeneration == generation else { return }
+        let old = runtime
         runtime = nil
         ChatGoals.shared.attach(nil)
+        await old?.dispose()
     }
 
     /// Before removing Nollie's data: tell the gateway to stop sending here, then close the connection.
