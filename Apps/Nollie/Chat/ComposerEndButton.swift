@@ -24,16 +24,20 @@ struct ComposerEndButton: View {
     }
 
     var body: some View {
-        switch face {
-        case .listening, .mic:
-            TalkButton(dictation: dictation, size: side, inked: true, onTranscript: onDictated)
-        case .transcribing:
-            ProgressView().controlSize(.small).frame(square: side).accessibilityLabel("Transcribing")
-        case .stop:
-            stopButton
-        case .send:
-            sendButton
+        // Each face is a small circle, so a tap lands on a 44 pt square around it.
+        Group {
+            switch face {
+            case .listening, .mic:
+                TalkButton(dictation: dictation, size: side, inked: true, onTranscript: onDictated)
+            case .transcribing:
+                ProgressView().controlSize(.small).frame(square: side).accessibilityLabel("Transcribing")
+            case .stop:
+                stopButton
+            case .send:
+                sendButton
+            }
         }
+        .environment(\.tapTargetFace, side)
     }
 
     private var stopButton: some View {

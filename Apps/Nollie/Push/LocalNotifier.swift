@@ -55,7 +55,7 @@ enum LocalNotifier {
         // app and the card checks once more. Off: the answer goes straight from the notification.
         let opensApp: UNNotificationActionOptions = ApprovalConfirm.isOn ? [.foreground] : []
         let approve = UNNotificationAction(identifier: approveOnceAction, title: "Approve once",
-                                           options: opensApp.union(.authenticationRequired))
+                                           options: approveOptions(confirm: ApprovalConfirm.isOn, ownerCheck: ApprovalOwnerCheck.isOn()))
         let deny = UNNotificationAction(identifier: denyAction, title: "Deny",
                                         options: opensApp.union([.authenticationRequired, .destructive]))
         let reply = UNTextInputNotificationAction(identifier: replyAction, title: "Reply", options: replyOptions,
@@ -72,6 +72,13 @@ enum LocalNotifier {
         categories.append(UNNotificationCategory(identifier: ComputerStartedWords.category, actions: [stop], intentIdentifiers: [], options: []))
         #endif
         UNUserNotificationCenter.current().setNotificationCategories(Set(categories))
+    }
+
+    /// Approve always needs the phone unlocked. It opens the app when approvals are confirmed there,
+    /// and while Face ID for buying and sending is on, since a push doesn't say which kind of approval
+    /// it carries and Face ID can only be asked in the app. Deny never needs more than unlocking.
+    static func approveOptions(confirm: Bool, ownerCheck: Bool) -> UNNotificationActionOptions {
+        (confirm || ownerCheck) ? [.foreground, .authenticationRequired] : [.authenticationRequired]
     }
 
     // MARK: Taking notifications down

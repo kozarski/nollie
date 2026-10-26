@@ -55,7 +55,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Scan your Mac's pairing code or take a photo to attach to a chat.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Unlock the app and your saved gateway credentials.</string>
+	<string>Check it's you before Nollie unlocks, opens saved sign-ins, or pays, sends or posts for you.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_nollie._tcp</string>

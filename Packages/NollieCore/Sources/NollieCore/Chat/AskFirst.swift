@@ -78,3 +78,20 @@ public struct AskFirstAsk: Equatable, Sendable {
         return label
     }
 }
+
+// MARK: - Checking it's the owner
+
+extension AskFirstAsk {
+    /// The kinds that spend money or speak for the person. With Face ID for buying and sending on
+    /// (Settings, Privacy), a yes to one of these checks it's the owner first.
+    public static let ownerCheckedKinds: Set<Kind> = [.buy, .send, .post]
+
+    /// Whether a yes to this approval should check it's the owner. Read from the rule's key alone, so
+    /// a request whose words can't be read is covered all the same.
+    public static func needsOwner(_ approval: ApprovalRequest?) -> Bool {
+        guard let key = approval?.patternKey, key.hasPrefix(rulePrefix) else { return false }
+        let word = key.dropFirst(rulePrefix.count).split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false).first
+        guard let word, let kind = Kind(rawValue: String(word)) else { return false }
+        return ownerCheckedKinds.contains(kind)
+    }
+}

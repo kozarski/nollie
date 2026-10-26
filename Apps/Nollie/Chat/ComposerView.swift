@@ -90,7 +90,9 @@ struct ComposerView: View {
         HStack(alignment: .bottom, spacing: 10) {
             plusButton
             middle.spread()
-            if text.isEmpty && chat.staged.isEmpty && !dictation.isListening && !dictation.isTranscribing { TalkModeButton(chat: chat) }
+            if text.isEmpty && chat.staged.isEmpty && !dictation.isListening && !dictation.isTranscribing {
+                TalkModeButton(chat: chat).environment(\.tapTargetFace, Ink.composerButton)
+            }
             ComposerEndButton(chat: chat, text: text, dictation: dictation,
                               onSend: { await send() }, onDictated: dictated)
         }
@@ -179,15 +181,16 @@ struct ComposerView: View {
         withAnimation(.snappy(duration: 0.32)) { sources.panelOpen.toggle() }
     }
 
-    /// The round +, pale grey in the capsule, turning into a cross while the panel is open.
+    /// The round +, pale grey in the capsule, turning into a cross while the panel is open. Like the
+    /// other round buttons here, a tap lands on a 44 pt square around it.
     private var plusButton: some View {
         PlainButton(action: togglePanel) {
             Glyph("plus", .system(size: Ink.composerButton * 0.4, weight: .medium), Ink.text)
                 .rotationEffect(.degrees(sources.panelOpen ? 45 : 0))
                 .frame(square: Ink.composerButton)
                 .background(Ink.plusFill, in: .circle)
-                .contentShape(.circle)
         }
+        .environment(\.tapTargetFace, Ink.composerButton)
         .accessibilityLabel(sources.panelOpen ? "Close attach panel" : "Attach")
     }
 

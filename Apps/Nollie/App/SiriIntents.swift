@@ -83,7 +83,10 @@ struct AnswerApprovalIntent: AppIntent {
         case .confirm(let question, let waiting):
             try await requestConfirmation(result: spoken(question))
             let choice = answer == .approve ? "once" : "deny"
-            await waiting.chat.respond(card: waiting.card, result: ["choice": .string(choice)])
+            // A yes that needs Face ID can't be given by voice: nothing goes out and the card waits.
+            guard await waiting.chat.respond(card: waiting.card, result: ["choice": .string(choice)]) else {
+                return spoken("Nothing was approved. Open Nollie to answer it.")
+            }
             return spoken(answer == .approve ? "Approved." : "Denied.")
         }
     }

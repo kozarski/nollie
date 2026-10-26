@@ -90,12 +90,16 @@ struct StagedCard: View {
             .padding(.init(top: 10, leading: 16, bottom: 14, trailing: 16))
     }
 
+    /// The small cross in the corner. A tap lands anywhere in a 44 pt square tucked into the card's
+    /// corner, so it stays inside the strip and clear of the next card.
     private var removeButton: some View {
         PlainButton(action: onRemove) {
             Glyph("xmark", .system(size: 11, weight: .bold), .white)
                 .frame(square: 24)
                 .background(.black.opacity(0.75), in: .circle)
                 .overlay { Circle().strokeBorder(Color.white.opacity(0.9), lineWidth: 1.5) }
+                .frame(width: Ink.minTarget, height: Ink.minTarget, alignment: .topTrailing)
+                .contentShape(.rect)
         }
         .offset(x: 6, y: -6)
         .accessibilityLabel("Remove \(attachment.name)")

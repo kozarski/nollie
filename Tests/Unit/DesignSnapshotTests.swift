@@ -217,4 +217,24 @@ import Testing
         attach(card("Press “Send” on its computer.\nYou're about to press “Send”.",
                     tool: "computer_use"), named: "ask-first-check", width: 390)
     }
+
+    /// The largest text on the narrowest phone: answers stack and wrap, nothing is cut short, and a
+    /// yes that asks for Face ID wears its lock.
+    @Test func approvalAnswersAtTheLargestText() throws {
+        let pay = ApprovalRequest(requestId: "r", sessionId: "s", description: "Pay £12.40 at Hollow Bakery\nfor two loaves.",
+                                  choices: ["once", "deny"],
+                                  patternKey: "plugin_rule:nollie-ask-first:buy:0123456789abcdef0123456789abcdef")
+        let ask = try #require(AskFirstAsk(pay))
+        let screen = ApprovalRequest(requestId: "r2", sessionId: "s", choices: ["once", "session", "deny"],
+                                     patternKey: "cua:click:background")
+        let cards = VStack(spacing: 16) {
+            AskFirstCardBody(ask: ask, botName: "Scout", locked: true) { _ in }
+            ApprovalCardView(approval: screen, count: 1, botName: "Scout", onChoice: { _ in }, onSystemControl: { _ in })
+        }
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .background(Ink.card, in: .rect(cornerRadius: 18, style: .continuous))
+        .padding(8)
+        .environment(\.dynamicTypeSize, .accessibility5)
+        attach(cards, named: "approval-answers-ax5", width: 320)
+    }
 }

@@ -36,14 +36,19 @@ extension View {
     }
 }
 
-/// A button that draws only what it is given: no chrome, no highlight of its own.
+/// A button that draws only what it is given: no chrome, no highlight of its own. Inside a
+/// `tapTargetFace`, its round face gets a fingertip-sized target.
 struct PlainButton<Label: View>: View {
     var role: ButtonRole? = nil
     var action: () -> Void
     @ViewBuilder var label: Label
+    @Environment(\.tapTargetFace) private var face
 
     var body: some View {
-        Button(role: role, action: action) { label }.buttonStyle(.plain)
+        Button(role: role, action: action) {
+            if let face { label.tapTarget(face: face) } else { label }
+        }
+        .buttonStyle(.plain)
     }
 }
 

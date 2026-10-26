@@ -102,7 +102,6 @@ struct TalkButton: View {
         PlainButton(action: toggle) { face }
             .accessibilityHint(spokenHint)
             .accessibilityLabel(spokenLabel)
-            .contentShape(.circle)
     }
 
     private var spokenLabel: String { dictation.isListening ? "Stop dictating" : "Dictate" }

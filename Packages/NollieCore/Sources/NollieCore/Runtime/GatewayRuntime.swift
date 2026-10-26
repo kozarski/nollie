@@ -117,6 +117,10 @@ public final class GatewayRuntime {
     /// the bot's profile, it returns a choice (such as "always") or nil to show the card as usual.
     /// The app uses it for screen actions of a bot whose System control is on.
     public var approvalAutoAnswer: (@MainActor (ApprovalRequest, String) -> String?)? = nil
+    /// Asked before any yes to an approval goes out (never before a Deny). Given the request and the
+    /// bot's profile, it returns false to send nothing and leave the card waiting. The app uses it
+    /// for Face ID before buying, sending and posting.
+    public var approvalOwnerCheck: (@MainActor (ApprovalRequest, String) async -> Bool)? = nil
 
     // MARK: Parts that belong to this gateway
 

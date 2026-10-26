@@ -17,8 +17,10 @@ enum Ink {
     static let text = dyn(0x1D1D1F, 0xF5F5F7)
     /// Second-rank words: a row's last message, a card's description, the steps line.
     static let text2 = dyn(0x6E6E73, 0xA1A1A6)
-    /// Quiet words: times, placeholders, what a working bot is doing.
-    static let text3 = dyn(0xA1A1A6, 0x7C7C82)
+    /// Quiet words: times, placeholders, what a working bot is doing. Still at least 4.5:1 on the
+    /// canvas, the sidebar, cards and bubbles in both modes, so small words stay readable; they read
+    /// as quieter through their smaller size and lighter weight.
+    static let text3 = dyn(0x6D6D72, 0x95959B)
     /// Borders: the composer, the outline buttons, the scheduled-run pill.
     static let line = dyn(0xE5E5EA, 0x3A3A3E)
     /// The rule under the chat's header.
@@ -166,6 +168,8 @@ enum Ink {
     static let composerInset: CGFloat = 7
     static let composerTextInset: CGFloat = 7
     #endif
+    /// The least a fingertip needs to hit something without looking.
+    static let minTarget: CGFloat = 44
     /// Cards in the thread (an approval, a crew note): soft, round corners like a sheet's.
     static let cardRadius: CGFloat = 26
     /// Pill buttons: chunky capsules.
@@ -241,8 +245,35 @@ extension ProfileInfo {
 
 // MARK: - Buttons
 
+extension Ink {
+    /// The side of the square a tap can hit for a round face of `face` points, and how far it reaches
+    /// past the face on each side.
+    static func target(face: CGFloat) -> (side: CGFloat, overhang: CGFloat) {
+        let side = max(face, minTarget)
+        return (side, (side - face) / 2)
+    }
+}
+
+extension EnvironmentValues {
+    /// Set on a control drawn as a small round face (the composer's Talk and mic): its `PlainButton`
+    /// then takes a full-size target around that face. Nil leaves buttons as drawn.
+    @Entry var tapTargetFace: CGFloat? = nil
+}
+
+extension View {
+    /// Gives a round face smaller than a fingertip a full `Ink.minTarget` square to hit, without
+    /// moving anything: the square hangs over the padding around the face.
+    func tapTarget(face: CGFloat) -> some View {
+        let reach = Ink.target(face: face)
+        return frame(width: reach.side, height: reach.side)
+            .contentShape(.rect)
+            .padding(-reach.overhang)
+    }
+}
+
 /// The ink pill: the answer most people give ("Allow once", "Create"). Tinted glass on a capsule,
-/// chunky enough to hit without looking.
+/// chunky enough to hit without looking. Side by side its words keep to one line; stacked (`fill`)
+/// they wrap and the pill grows taller, so big text never cuts an answer short.
 struct InkPillStyle: ButtonStyle {
     var fill = false
     @Environment(\.isEnabled) private var enabled
@@ -250,7 +281,7 @@ struct InkPillStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Ink.button)
-            .lineLimit(1)
+            .pillWords(wrap: fill)
             .foregroundStyle(Ink.onInk)
             .padding(.horizontal, Ink.pillPadH).padding(.vertical, Ink.pillPadV)
             .frame(maxWidth: fill ? .infinity : nil)
@@ -269,7 +300,7 @@ struct OutlinePillStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Ink.button)
-            .lineLimit(1)
+            .pillWords(wrap: fill)
             .foregroundStyle(configuration.role == .destructive ? Color.red : Ink.text)
             .padding(.horizontal, Ink.pillPadH).padding(.vertical, Ink.pillPadV)
             .frame(maxWidth: fill ? .infinity : nil)
@@ -277,6 +308,17 @@ struct OutlinePillStyle: ButtonStyle {
             .opacity(!enabled ? 0.4 : (configuration.isPressed ? 0.75 : 1))
             .contentShape(.capsule)
             .animation(.snappy(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+extension View {
+    /// A pill's words: one line, or as many as they need, centred, when the pill may grow taller.
+    @ViewBuilder func pillWords(wrap: Bool) -> some View {
+        if wrap {
+            lineLimit(nil).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+        } else {
+            lineLimit(1)
+        }
     }
 }
 

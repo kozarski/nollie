@@ -33,6 +33,8 @@ struct ApprovalCardView: View {
     private var hasMoreAnswers: Bool {
         offers.contains("session") || offers.contains("always") || commandText != nil
     }
+    /// A yes to this one asks for Face ID first (buying, sending or posting).
+    private var locked: Bool { ApprovalOwnerCheck.willAsk(approval) }
 
     /// What the request is about, for when the gateway sent no description.
     private var kind: String {
@@ -54,7 +56,7 @@ struct ApprovalCardView: View {
         if let onSignIn, let ask = SignInAsk(approval) {
             SignInCardBody(ask: ask, botName: botName, onAnswer: onSignIn)
         } else if let ask = AskFirstAsk(approval) {
-            AskFirstCardBody(ask: ask, botName: botName, onChoice: onChoice)
+            AskFirstCardBody(ask: ask, botName: botName, locked: locked, onChoice: onChoice)
         } else if let onSystemControl, SystemControl.isScreen(approval) {
             systemControlBody(onSystemControl)
         } else {
@@ -70,7 +72,7 @@ struct ApprovalCardView: View {
             // The question is the whole card, so no "Action needed" label; the title gets the room.
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Image(systemName: "cursorarrow.rays").foregroundStyle(Ink.text)
-                Text("\(who) wants to use your Mac").foregroundStyle(Ink.text).lineLimit(2)
+                Text("\(who) wants to use your Mac").foregroundStyle(Ink.text).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
             .font(Ink.cardTitle)
@@ -113,7 +115,8 @@ struct ApprovalCardView: View {
 
     private var approvalHead: some View {
         HStack(alignment: .center, spacing: 8) {
-            Text("\(who) needs your OK").font(Ink.cardTitle).foregroundStyle(Ink.text).lineLimit(1)
+            Text("\(who) needs your OK").font(Ink.cardTitle).foregroundStyle(Ink.text)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 6)
             if count > 1 { waitingChip }
         }
@@ -187,9 +190,7 @@ struct ApprovalCardView: View {
     }
 
     @ViewBuilder private func answers(fill: Bool) -> some View {
-        Button("Allow once") { onChoice("once") }
-            .buttonStyle(InkPillStyle(fill: fill))
-            .accessibilityIdentifier("approval.once")
+        ApproveButton(title: "Allow once", locked: locked, fill: fill) { onChoice("once") }
         Button("Deny") { onChoice("deny") }
             .buttonStyle(OutlinePillStyle(fill: fill))
             .accessibilityIdentifier("approval.deny")

@@ -6,6 +6,8 @@ import NollieCore
 struct AskFirstCardBody: View {
     var ask: AskFirstAsk
     var botName: String
+    /// Allow once asks for Face ID first, and its pill wears a small lock.
+    var locked = false
     /// "once" or "deny".
     var onChoice: (String) -> Void
 
@@ -89,11 +91,36 @@ struct AskFirstCardBody: View {
     }
 
     @ViewBuilder private func answers(fill: Bool) -> some View {
-        Button("Allow once") { onChoice("once") }
-            .buttonStyle(InkPillStyle(fill: fill))
-            .accessibilityIdentifier("approval.once")
+        ApproveButton(title: "Allow once", locked: locked, fill: fill) { onChoice("once") }
         Button("Deny") { onChoice("deny") }
             .buttonStyle(OutlinePillStyle(fill: fill))
             .accessibilityIdentifier("approval.deny")
+    }
+}
+
+/// The yes on an approval card. When it will ask for Face ID first, a small lock sits before its
+/// words and VoiceOver says so.
+struct ApproveButton: View {
+    var title: String
+    var locked: Bool
+    var fill: Bool
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                if locked {
+                    Image(systemName: "lock.fill")
+                        .imageScale(.small)
+                        .accessibilityHidden(true)
+                        .testID("approval.once.lock")
+                }
+                Text(title)
+            }
+        }
+        .buttonStyle(InkPillStyle(fill: fill))
+        .accessibilityLabel(title)
+        .accessibilityHint(locked ? "Checks it's you first" : "")
+        .accessibilityIdentifier("approval.once")
     }
 }

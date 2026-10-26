@@ -342,7 +342,19 @@ extension ChatSession {
     /// Answers a card, using whichever card is currently up for that question. The approval queue's
     /// card yields to the request's own when it appears; a caller still holding the queue's would
     /// clear nothing and reply through the queue while the request stayed open.
-    public func respond(card given: PendingCard, result: JSONValue) async {
+    ///
+    /// A yes to an approval first passes the app's owner check (`approvalOwnerCheck`). False means
+    /// nothing was sent: the check said no, or the card went while it was asking.
+    @discardableResult
+    public func respond(card given: PendingCard, result: JSONValue) async -> Bool {
+        if let approval = given.approval, given.method == "approval", let choice = result.text("choice"), choice != "deny",
+           let check = runtime.approvalOwnerCheck {
+            let names = [given.id, approval.requestId].filter { !$0.isEmpty }
+            let wasUp = approvalCard(named: names) != nil
+            guard await check(approval, profileName) else { return false }
+            // Answered on another device or withdrawn while the person was checked: leave it be.
+            if wasUp, approvalCard(named: names) == nil { return false }
+        }
         let card = approvalCard(named: [given.id]) ?? given
         takeDown(card)
         cardWent()
@@ -353,7 +365,7 @@ extension ChatSession {
         }
         if card.viaApprovalRPC, let request = card.approval?.requestId {
             _ = try? await ask("approval.respond", ["request_id": .string(request), "choice": result["choice"] ?? "deny"])
-            return
+            return true
         }
         switch inlineAnswers.removeValue(forKey: card.id) {
         case .some(let waiter):
@@ -363,6 +375,7 @@ extension ChatSession {
             await socket.respond(to: card.id, result: result)
         }
         if isApproval { addNote("Approval: \(result.text("choice") ?? "?")", symbol: "checkmark.shield") }
+        return true
     }
 
     /// The gateway withdrew a request.

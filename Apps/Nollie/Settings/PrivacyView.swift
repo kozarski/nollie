@@ -44,17 +44,24 @@ struct PrivacyHero: View {
         return DeviceWords.isMac ? "your password" : "your passcode"
     }
 
+    /// The same at the start of a switch: "Face ID", "Passcode", or "Password" on a Mac.
+    static func switchWord(_ biometry: String) -> String {
+        if biometry != "Passcode" { return biometry }
+        return DeviceWords.isMac ? "Password" : "Passcode"
+    }
+
     var body: some View {
         let look = LockLook(locked: locked, failed: failed, biometry: biometry)
         PageHero(symbol: look.symbol, title: look.title, line: look.line, tint: look.tint, id: "privacy.hero")
     }
 }
 
-/// Settings › Privacy: whether Nollie is locked, one switch for the lock, and when an answer from
-/// outside the app asks again.
+/// Settings › Privacy: whether Nollie is locked, one switch for the lock, one for Face ID before
+/// buying and sending, and when an answer from outside the app asks again.
 struct PrivacyView: View {
     /// Read here as well as through `model.lock`, so the page follows the switch at once.
     @AppStorage(AppLock.enabledKey) private var lockOn = false
+    @AppStorage(ApprovalOwnerCheck.key) private var ownerCheck = true
     @AppStorage(ApprovalConfirm.modeKey) private var askAgain = ApprovalConfirm.mode
     @Environment(AppModel.self) private var model
 
@@ -71,6 +78,11 @@ struct PrivacyView: View {
         }
     }
 
+    /// Money and messages sent as you get one plain line, since the switch guards them.
+    static func ownerCheckLine(_ on: Bool) -> String {
+        on ? "Nollie checks it's you before it pays, sends or posts." : "A yes to paying, sending or posting counts right away."
+    }
+
     var body: some View {
         let biometry = model.lock.biometryName
         SettingsPage("privacy.page") {
@@ -78,6 +90,11 @@ struct PrivacyView: View {
             GlassSwitch("Require \(PrivacyHero.lockWord(biometry))",
                         isOn: Binding(get: { lockOn }, set: { model.lock.isEnabled = $0 }),
                         id: "security.lock")
+            VStack(spacing: 14) {
+                GlassSwitch("\(PrivacyHero.switchWord(biometry)) for buying and sending", isOn: $ownerCheck, id: "security.ownerCheck")
+                    .onChange(of: ownerCheck) { LocalNotifier.registerCategories() }
+                PageNote(Self.ownerCheckLine(ownerCheck), id: "security.ownerCheck.line")
+            }
             VStack(spacing: 14) {
                 GlassChoice("Ask again for approvals", selection: $askAgain, options: Self.askChoices, id: "security.approvals")
                     .onChange(of: askAgain) { LocalNotifier.registerCategories() }
