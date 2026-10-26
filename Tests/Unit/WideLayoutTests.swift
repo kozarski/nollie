@@ -8,11 +8,13 @@ import Testing
 /// moves the dividing line, and the measurements the chat takes from its own window.
 @MainActor @Suite struct SplitLayoutTests {
     @Test func aWideWindowGivesTheListAboutAThird() {
-        let layout = SplitLayout.make(width: 951)
-        #expect(layout.list == .init(x: 0, width: 317))
-        #expect(layout.chat == .init(x: 317, width: 634))
+        let layout = SplitLayout.make(width: 1194)
+        #expect(layout.list == .init(x: 0, width: 398))
+        #expect(layout.chat == .init(x: 398, width: 796))
         #expect(layout.panel == nil)
         #expect(!layout.listCovered)
+        // An open iPhone Duo: a third would be narrower than a phone, so the list keeps a phone's width.
+        #expect(SplitLayout.make(width: 951).list == .init(x: 0, width: 340))
     }
 
     @Test func theListKeepsToComfortableLimits() {
