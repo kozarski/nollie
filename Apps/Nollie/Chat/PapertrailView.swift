@@ -8,6 +8,8 @@ import NollieCore
 final class PapertrailModel {
     enum State: Equatable { case loading, on(Papertrail), off, privateBot, failed }
     private(set) var state: State = .loading
+    /// The bot's name as the person knows it, for the Why on each entry.
+    private(set) var botName = ""
     private var key: String?
     private let apiOverride: HermesAPI?
 
@@ -18,6 +20,8 @@ final class PapertrailModel {
     func load(bot: String, runtime: GatewayRuntime) async -> Bool {
         let key = "\(runtime.connection.id)/\(bot)"
         if self.key != key { state = .loading; self.key = key }
+        let named = runtime.profiles.first { $0.name == bot }?.displayName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        botName = named.flatMap { $0.isEmpty ? nil : $0 } ?? ProfileInfo.shownName(of: bot)
         do {
             let result = try await Papertrail.load(bot: bot, api: apiOverride ?? runtime.api)
             guard !Task.isCancelled, self.key == key else { return true }
@@ -88,6 +92,9 @@ struct PapertrailView: View {
     var stale = false
     var retry: () -> Void = {}
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Entries whose Why is open.
+    @State private var open: Set<String> = []
 
     var body: some View {
         switch model.state {
@@ -194,23 +201,12 @@ struct PapertrailView: View {
         }
     }
 
-    /// Where it went and when. How much, and which model, are under Advanced.
+    /// One entry, with its Why opened or closed in place.
     private func row(_ entry: Papertrail.Entry, index: Int, today: Bool) -> some View {
-        let time = Self.time(entry.at, today: today)
-        return HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Image(systemName: entry.route == "network" ? "network" : "globe")
-                .foregroundStyle(Ink.text2)
-                .frame(width: 24)
-            Text(entry.routeLabel)
-                .font(.body.weight(.medium))
-                .foregroundStyle(Ink.text)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 8)
-            Text(time).font(.body).foregroundStyle(Ink.text2).monospacedDigit()
+        let id = "\(index)/\(entry.id)"
+        return PapertrailRow(entry: entry, index: index, today: today, bot: model.botName, open: open.contains(id)) {
+            withAnimation(reduceMotion ? nil : .snappy) { if open.remove(id) == nil { open.insert(id) } }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(entry.routeLabel), \(time)")
-        .accessibilityIdentifier("papertrail.row.\(index)")
     }
 
     /// "14:32" today, "Mon 09:12" before, in this device's own clock style. A Today row (the
@@ -219,6 +215,48 @@ struct PapertrailView: View {
         let date = Date(timeIntervalSince1970: at)
         return today && calendar.isDateInToday(date) ? date.formatted(.dateTime.hour().minute())
                      : date.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+    }
+}
+
+/// Where it went and when, and a Why? that opens why it went and what went, in place. How much, and which model,
+/// are under Advanced.
+struct PapertrailRow: View {
+    let entry: Papertrail.Entry
+    let index: Int
+    let today: Bool
+    /// The bot's name as the person knows it.
+    let bot: String
+    let open: Bool
+    let toggle: () -> Void
+
+    var body: some View {
+        let time = PapertrailView.time(entry.at, today: today)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 12) {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Image(systemName: entry.route == "network" ? "network" : "globe")
+                        .foregroundStyle(Ink.text2)
+                        .frame(width: 24)
+                    Text(entry.routeLabel)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(Ink.text)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Text(time).font(.body).foregroundStyle(Ink.text2).monospacedDigit()
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(entry.routeLabel), \(time)")
+                .accessibilityIdentifier("papertrail.row.\(index)")
+                WhyButton(open: open, action: toggle)
+                    .accessibilityIdentifier("papertrail.why.\(index)")
+            }
+            if open {
+                let why = entry.why(bot: bot.isEmpty ? "This bot" : bot)
+                WhyNote(text: why.reason, detail: why.sent, colors: PostColors(text: Ink.text, detail: Ink.text2))
+                    .padding(.leading, 36)
+                    .accessibilityIdentifier("papertrail.why.\(index).text")
+            }
+        }
     }
 }
 

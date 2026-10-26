@@ -424,6 +424,8 @@ class Recorder:
             if held is not None:
                 # The person reads what was held in the morning, in the same plain words a card would use.
                 target = receipts.scrub(held.summary, self.redactor, receipts.TARGET_LIMIT)
+                if held.kind in ask_first.KINDS + (ask_first.UNSURE,):
+                    receipt["ask"] = held.kind  # send, buy, post, delete, or unsure: why it needs a yes
             self.writer.put(self._line(run, "call", call=str(tool_call_id or ""), tool=str(tool_name or ""),
                                        target=target, receipt=receipt))
         except Exception:

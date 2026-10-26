@@ -199,8 +199,8 @@ struct NightShiftPage: View {
             if let card = summary.night {
                 NightShiftCard(card: card, expanded: expanded) { tap in
                     switch tap {
-                    case .showAll(let run):
-                        withAnimation(.snappy) { if expanded.contains(run) { expanded.remove(run) } else { expanded.insert(run) } }
+                    case .showAll(let key), .why(let key):
+                        withAnimation(.snappy) { if expanded.contains(key) { expanded.remove(key) } else { expanded.insert(key) } }
                     case .share:
                         sharing = ConversationPost(id: "settings-night", at: card.to ?? Date(), kind: .nightShift(card))
                     case .turnOn, .keepOff:

@@ -9,11 +9,13 @@ enum ConversationPostTap: Equatable {
     case share
     /// Shows all of a run's actions, or the first few again.
     case showAll(String)
+    /// Opens or closes the answer to "Why?" on one entry (`NightShiftWhy.key`).
+    case why(String)
 }
 
 /// A post in the thread: the morning's night shift card or a rehearsal's report. Cells are recycled and measured
 /// in bare hosts, so the cards hold no state of their own: what they show comes in with the post, and what is
-/// open (`expanded`) comes from the screen.
+/// open (`expanded`: runs shown whole, and entries whose Why is open) comes from the screen.
 struct ConversationPostView: View {
     let post: ConversationPost
     let expanded: Set<String>
@@ -24,7 +26,7 @@ struct ConversationPostView: View {
         case .nightShift(let card):
             NightShiftCard(card: card, expanded: expanded, tap: tap)
         case .rehearsal(let card):
-            RehearsalCard(card: card, pending: post.pending, problem: post.problem, tap: tap)
+            RehearsalCard(card: card, pending: post.pending, problem: post.problem, expanded: expanded, tap: tap)
         }
     }
 }
@@ -66,7 +68,7 @@ struct NightShiftCard: View {
                 Text(NightShiftWords.unwatched(card.unwatched)).font(Ink.cardBody).foregroundStyle(NightShiftInk.warning)
             }
             ForEach(card.runs) { run in
-                NightShiftRunView(run: run, open: expanded.contains(run.id)) { tap(.showAll(run.id)) }
+                NightShiftRunView(run: run, open: expanded.contains(run.id), expanded: expanded, tap: tap)
             }
             ForEach(card.missed, id: \.self) { missed in
                 PostBotLine(bot: missed.bot, title: missed.title.isEmpty ? "Schedule" : missed.title,
@@ -91,15 +93,20 @@ struct NightShiftCard: View {
 private struct NightShiftRunView: View {
     let run: ConversationPost.Run
     let open: Bool
-    let showAll: () -> Void
+    /// Entries whose Why is open, among others.
+    let expanded: Set<String>
+    let tap: (ConversationPostTap) -> Void
 
     var body: some View {
         let shown = open ? run.actions : Array(run.actions.prefix(NightShiftCard.firstActions))
         VStack(alignment: .leading, spacing: 10) {
             PostBotLine(bot: run.bot, title: NightShiftWords.title(of: run), detail: NightShiftWords.runLine(run), colors: .night)
-            ForEach(Array(shown.enumerated()), id: \.offset) { _, action in
+            ForEach(Array(shown.enumerated()), id: \.offset) { index, action in
+                let key = NightShiftWhy.key(run: run.id, index: index)
                 PostActionLine(verb: NightShiftWords.verb(action), target: action.target,
-                               receipt: NightShiftWords.receipt(action, in: run), warn: action.status == .blocked, colors: .night)
+                               receipt: NightShiftWords.receipt(action, in: run), warn: action.status == .blocked, colors: .night,
+                               why: NightShiftWhy.explain(action, in: run), whyOpen: expanded.contains(key),
+                               whyID: "post.nightShift.why.\(run.id).\(index)") { tap(.why(key)) }
                     .padding(.leading, PostBotLine.indent)
             }
             if open, run.more > 0 {
@@ -107,7 +114,7 @@ private struct NightShiftRunView: View {
                     .padding(.leading, PostBotLine.indent)
             }
             if run.actions.count > NightShiftCard.firstActions {
-                Button(action: showAll) {
+                Button { tap(.showAll(run.id)) } label: {
                     Text(open ? "Show fewer" : "Show all")
                         .font(Ink.chip)
                         .foregroundStyle(NightShiftInk.text)
@@ -131,9 +138,11 @@ struct PostColors {
     var detail = Ink.text3
     var code = Ink.codeText
     var warning = Ink.warnText
+    /// The sky is dark in light mode too, so the glass on it is drawn dark.
+    var scheme: ColorScheme? = nil
 
     static let night = PostColors(text: NightShiftInk.text, detail: NightShiftInk.detail,
-                                  code: NightShiftInk.detail, warning: NightShiftInk.warning)
+                                  code: NightShiftInk.detail, warning: NightShiftInk.warning, scheme: .dark)
 }
 
 /// A bot's face beside a title and a quiet line under it.
@@ -160,7 +169,7 @@ struct PostBotLine: View {
 }
 
 /// One action: its verb, what it acted on in code type, and the receipt words under it. VoiceOver reads it as one
-/// sentence.
+/// sentence. With `why`, a small glass Why? sits beside it and opens the answer under it.
 struct PostActionLine: View {
     let verb: String
     let target: String
@@ -169,8 +178,34 @@ struct PostActionLine: View {
     /// What VoiceOver reads, when the verb alone would not say it.
     var label: String? = nil
     var colors = PostColors()
+    var why: String? = nil
+    var whyOpen = false
+    var whyID: String? = nil
+    var whyTap: (() -> Void)? = nil
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        if let why, let whyTap {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top, spacing: 10) {
+                    line.frame(maxWidth: .infinity, alignment: .leading)
+                    WhyButton(open: whyOpen, tint: colors.text, action: whyTap)
+                        .modifier(SchemeIfSet(scheme: colors.scheme))
+                        .accessibilityIdentifier(whyID ?? "post.why")
+                }
+                if whyOpen {
+                    WhyNote(text: why, colors: colors)
+                        .accessibilityIdentifier((whyID ?? "post.why") + ".text")
+                }
+            }
+            .animation(reduceMotion ? nil : .snappy, value: whyOpen)
+        } else {
+            line
+        }
+    }
+
+    private var line: some View {
         VStack(alignment: .leading, spacing: 2) {
             if target.isEmpty {
                 Text(verb).font(Ink.cardBody).foregroundStyle(colors.text)
@@ -190,6 +225,15 @@ struct PostActionLine: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label ?? NightShiftWords.sentence(verb: verb, target: target, receipt: receipt))
+    }
+}
+
+/// Draws a view in a fixed light or dark, when the colours under it need one.
+private struct SchemeIfSet: ViewModifier {
+    let scheme: ColorScheme?
+
+    func body(content: Content) -> some View {
+        if let scheme { content.environment(\.colorScheme, scheme) } else { content }
     }
 }
 

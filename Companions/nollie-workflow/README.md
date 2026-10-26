@@ -127,13 +127,15 @@ The mock gateway in `Tools/mock-gateway` serves the same two routes from memory.
 
 ## Papertrail
 
-Papertrail is each bot's record of what left this Mac. The add-on listens to four Hermes
-hooks (`post_api_request`, `api_request_error`, `post_auxiliary_call`, `post_tool_call`)
-in every bot whose name is not private, and writes one line per call to
+Papertrail is each bot's record of what left this Mac. The add-on listens to five Hermes
+hooks (`post_api_request`, `api_request_error`, `post_auxiliary_call`, `post_tool_call`,
+`post_approval_response`) in every bot whose name is not private, and writes one line per call to
 `<bot home>/nollie-workflow/papertrail/<YYYY-MM-DD>.jsonl`. A line keeps when, the route
 (`mac`, `network` or `online`), provider, `scheme://host[:port]`, model and token counts,
 or a count of searches, pages and pictures. It keeps no prompts, replies, queries, URLs or
-arguments. Files are user-only, links are refused and days older than 35 are deleted. A
+arguments. For the app's Why? it also keeps what started the work (a chat and its chat app, a
+schedule's or Board task's id, a schedule's helper), how many messages a request carried,
+whether the backup model answered, and the person's approval answers in the turn. Files are user-only, links are refused and days older than 35 are deleted. A
 hook only hands its line to a writer thread, so Hermes never waits on the file. The Private
 list is checked before every line: a bot marked Private stops recording at once. A failure
 is noted by type only in `papertrail/last_error`; Hermes never sees it.

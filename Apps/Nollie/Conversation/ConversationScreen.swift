@@ -70,6 +70,9 @@ struct ConversationScreen: View {
         case .showAll(let run):
             let key = ConversationListItem.expandedKey(post: post.id, run: run)
             if expanded.remove(key) == nil { expanded.insert(key) }
+        case .why(let entry):
+            let key = ConversationListItem.expandedKey(post: post.id, run: entry)
+            if expanded.remove(key) == nil { expanded.insert(key) }
         }
     }
 

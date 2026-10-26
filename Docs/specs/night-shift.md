@@ -130,6 +130,11 @@ or `blocked`, and a block replaces the receipt with what stopped it (from the `B
 | `blocked` | Stopped by Hermes or Nollie | `risky`, `mac`, `deny_rule`, `hardline`, `plugin`, `other` | Stopped: … |
 | `unknown` | The add-on could not tell | | Allowed. Reason not recorded |
 
+Two more fields say which rule decided (1.1): `rule`, the safety check's own words for a risky or never-allowed
+command ("recursive delete") or the person's deny rule that matched, and `ask`, what Ask first held a call for
+(`send`, `buy`, `post`, `delete`, `unsure`). A stop keeps `rule` only when the stop it predicted is the one that
+happened. Receipts from before have neither, and read as they did.
+
 `always` names when the person chose it when the recorder saw that choice: in every followed profile it also keeps
 `post_approval_response` answers of `always` (pattern keys, description, bot, time), the newest 500.
 
@@ -366,6 +371,13 @@ On the new chat view (`Apps/Nollie/Conversation/`), list item kinds `nightShift`
   pill). After a tap: "On. It runs for real from now on." or "Kept off." A changed schedule: "It changed since. It
   will rehearse again." A check card says why it can't rehearse ("This runs a script before Nollie can watch.",
   "This runs once.") and shows the prompt.
+- **Why?** Each action, on the morning card and in a rehearsal's report, has a small glass Why? beside it. It opens,
+  in place, who did it and for what ("Scout did this during your schedule “Morning prices”."), the fixed rule in
+  plain words ("It matches “pg_dump” on your allowed list, so it runs without asking.", "You chose Always for
+  “git push” on 17 Oct at 14:02") or what stopped it, and for a stop or a hold what the person can do. Times are
+  in the person's own format. An action with no receipt says "Nollie didn't keep the reason for this one."; nothing
+  is guessed. Words: `NightShiftWhy`. The screen keeps which are open, with the runs shown whole, as
+  `<post id>/why:<run>#<index>` (`.why(key)` beside `.showAll`).
 - **Taps.** Cells are recycled and measured in bare hosts, so cards hold no state and read nothing from the
   environment but Ink and AppStorage. A second closure beside `answer`, `post: (ConversationPost, ConversationPostTap)
   -> Void` with `.turnOn`, `.keepOff`, `.share` and `.showAll(run)`, goes through `ConversationItemView`, both lists'

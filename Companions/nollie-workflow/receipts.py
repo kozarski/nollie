@@ -15,6 +15,9 @@ from .ask_first import HELD as ASK_FIRST_HELD
 
 HIDDEN = "[hidden]"
 TARGET_LIMIT = 300
+RULE_LIMIT = 120
+# Kept beside a receipt's kind and detail: the words of the deciding rule, and what Ask first held it for.
+REASON_FIELDS = ("rule", "ask")
 KINDS = frozenset(("tool", "safe", "allowlist", "always", "held", "blocked", "unknown"))
 BLOCKS = frozenset(("risky", "mac", "deny_rule", "hardline", "plugin", "other"))
 # Why a call was held rather than stopped: it sends, buys, posts or deletes, and needs the person's yes.
@@ -237,16 +240,25 @@ class HermesChecks:
         return _is_permanently_approved(pattern_key)
 
 
+def _with_rule(receipt, rule, redactor=None):
+    """The receipt with the words of the rule that decided it, when Hermes gave some: its description of a
+    risky or never-allowed command, or the person's own deny rule."""
+    if isinstance(rule, str) and rule.strip():
+        receipt["rule"] = scrub(rule.strip(), redactor, RULE_LIMIT)
+    return receipt
+
+
 def classify_command(command, checks, redactor=None):
     """The receipt for a terminal command, in the order Hermes's check_all_command_guards uses."""
-    hardline, _ = checks.hardline(command)
+    hardline, why = checks.hardline(command)
     if hardline or checks.runtime_delete(command):
-        return {"kind": "blocked", "detail": "hardline"}
+        return _with_rule({"kind": "blocked", "detail": "hardline"}, why if hardline else None, redactor)
     sudo, _ = checks.sudo_guard(command)
     if sudo:
         return {"kind": "blocked", "detail": "other"}
-    if checks.deny_rule(command):
-        return {"kind": "blocked", "detail": "deny_rule"}
+    rule = checks.deny_rule(command)
+    if rule:
+        return _with_rule({"kind": "blocked", "detail": "deny_rule"}, rule, redactor)
     entry = checks.allowlist_entry(command)
     if entry:
         return {"kind": "allowlist", "detail": scrub(entry, redactor, TARGET_LIMIT)}
@@ -255,7 +267,7 @@ def classify_command(command, checks, redactor=None):
         return {"kind": "safe"}
     if key and checks.permanently_approved(key):
         return {"kind": "always", "detail": scrub(description or key, redactor, TARGET_LIMIT), "key": str(key)}
-    return {"kind": "blocked", "detail": "risky"}
+    return _with_rule({"kind": "blocked", "detail": "risky"}, description, redactor)
 
 
 def classify(tool, args, checks, *, guard=None, redactor=None):
@@ -321,10 +333,15 @@ def settle(receipt, status, block=None):
     receipt = dict(receipt or {"kind": "unknown"})
     if status == "blocked":
         if block == "held":
-            return {"kind": "held"}
-        if block == ASK_FIRST:
-            return {"kind": "held", "detail": ASK_FIRST}
-        return {"kind": "blocked", "detail": block if block in BLOCKS else "other"}
+            settled = {"kind": "held"}
+        elif block == ASK_FIRST:
+            settled = {"kind": "held", "detail": ASK_FIRST}
+        else:
+            settled = {"kind": "blocked", "detail": block if block in BLOCKS else "other"}
+        if receipt.get("kind") == settled["kind"] and receipt.get("detail") == settled.get("detail"):
+            # Stopped by the rule it predicted: keep that rule's words. Another stop's words would mislead.
+            settled.update({k: receipt[k] for k in REASON_FIELDS if isinstance(receipt.get(k), str)})
+        return settled
     if receipt.get("kind") in ("blocked", "held"):
         # Predicted a stop, but it ran: Hermes allowed it for a reason Nollie can't see.
         return {"kind": "unknown"}

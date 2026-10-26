@@ -344,7 +344,7 @@ class AskFirstReceiptTests(RecorderCase):
         rec.record_call(tool_name="send_message", args=self.SEND, task_id="cron:3f2a9c:e-81", session_id="s",
                         tool_call_id="c1")
         call = [l for l in self.lines(rec) if l["event"] == "call"][0]
-        self.assertEqual(call["receipt"], {"kind": "held", "detail": "ask_first"})
+        self.assertEqual(call["receipt"], {"kind": "held", "detail": "ask_first", "ask": "send"})
 
     def test_the_guard_leaves_the_hold_to_ask_first(self):
         for tool, args in (("terminal", self.RM), ("send_message", self.SEND)):
@@ -361,7 +361,8 @@ class AskFirstReceiptTests(RecorderCase):
                              session_id="s", tool_call_id="c2")
         lines = self.lines(self.rec)
         self.assertEqual([l["event"] for l in lines], ["start", "call", "result", "call"])
-        self.assertEqual(lines[1]["receipt"], {"kind": "held", "detail": "ask_first"})
+        # It keeps what it was held for: deleting needs the person's yes.
+        self.assertEqual(lines[1]["receipt"], {"kind": "held", "detail": "ask_first", "ask": "delete"})
         self.assertEqual(lines[1]["target"], "Run this command:\nrm -rf build\nWhy Nollie asks: rm deletes files.")
         self.assertEqual((lines[2]["status"], lines[2]["block"]), ("blocked", "ask_first"))
         # Calls Ask first lets through keep their usual target.
@@ -371,7 +372,7 @@ class AskFirstReceiptTests(RecorderCase):
         self.rec.record_call(tool_name="send_message", args={"message": "key sk-abcdefghijklmnop1234567890"},
                              task_id="cron:3f2a9c:e-81", session_id="s", tool_call_id="c1")
         [_, call] = self.lines(self.rec)
-        self.assertEqual(call["receipt"], {"kind": "held", "detail": "ask_first"})
+        self.assertEqual(call["receipt"], {"kind": "held", "detail": "ask_first", "ask": "send"})
         self.assertNotIn("sk-abcdefghijklmnop", call["target"])
         self.assertTrue(call["target"].startswith("Send"))
 

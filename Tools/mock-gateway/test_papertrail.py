@@ -1,4 +1,5 @@
 import datetime
+import importlib
 import importlib.util
 import json
 from pathlib import Path
@@ -15,6 +16,8 @@ ROUTE = "/api/plugins/nollie-workflow/papertrail"
 ENTRY_KEYS = ["id", "at", "started_at", "route", "provider", "provider_name", "host", "model", "calls",
               "helpers", "services", "input_tokens", "output_tokens", "cache_read_tokens", "reasoning_tokens",
               "searches", "pages", "images"]
+WHY_KEYS = {"origin", "task", "platform", "messages", "backup", "approvals"}
+ADDON = Path(__file__).resolve().parents[2] / "Companions/nollie-workflow"
 VENDORS = re.compile(r"anthropic|claude|sonnet|opus|haiku|openai|gpt|openrouter|\bnous\b|hermes-4|\bexa\b|"
                      r"gemini|google|llama|qwen|mistral|tavily|firecrawl", re.IGNORECASE)
 
@@ -48,7 +51,8 @@ class PapertrailFixtureTests(unittest.TestCase):
         self.assertEqual(list(body), ["bot", "days", "now", "today_starts_at", "tomorrow_starts_at", "since", "recording_since",
                                       "stayed", "left", "entries", "more"])
         self.assertEqual((body["bot"], body["days"], body["more"]), ("default", 7, 0))
-        self.assertTrue(all(list(entry) == ENTRY_KEYS for entry in body["entries"]))
+        # Entries kept before 1.1 have no reason; the rest carry it last.
+        self.assertTrue(all(list(entry) in (ENTRY_KEYS, ENTRY_KEYS + ["why"]) for entry in body["entries"]))
         times = [entry["at"] for entry in body["entries"]]
         self.assertEqual(times, sorted(times, reverse=True))
         self.assertTrue(all(body["since"] <= at <= body["now"] for at in times))
@@ -136,6 +140,37 @@ class PapertrailFixtureTests(unittest.TestCase):
         self.assertEqual(self.request("/api/_mock/papertrail", "POST", {"state": "loud"}).status_code, 422)
         self.request("/api/_mock/papertrail", "POST", {"state": "busy"})
         self.assertTrue(self.get()[1]["entries"])
+
+    def test_reasons_have_the_add_ons_shape_and_some_entries_have_none(self):
+        _, body = self.get("?days=35")
+        whys = [entry.get("why") for entry in body["entries"]]
+        self.assertIn(None, whys)  # The app's fallback for an entry kept before reasons were.
+        kept = [why for why in whys if why]
+        self.assertEqual({why["origin"] for why in kept}, {"chat", "schedule", "board", "helper"})
+        self.assertTrue(any(why["backup"] for why in kept) and any(why["platform"] for why in kept))
+        for entry in body["entries"]:
+            why = entry.get("why")
+            if not why:
+                continue
+            self.assertEqual(set(why), WHY_KEYS)
+            for answer in why["approvals"]:
+                self.assertEqual(set(answer), {"at", "choice", "ask"})
+                self.assertTrue(entry["started_at"] <= answer["at"] <= entry["at"])
+                self.assertIn(answer["choice"], {"once", "session", "always", "deny"})
+        self.assertEqual({a["choice"] for why in kept for a in why["approvals"]}, {"once", "deny"})
+
+    def test_reasons_match_what_the_add_on_builds(self):
+        spec = importlib.util.spec_from_file_location("papertrail_addon_for_mock", ADDON / "__init__.py",
+                                                      submodule_search_locations=[str(ADDON)])
+        package = importlib.util.module_from_spec(spec)
+        import sys
+        sys.modules[spec.name] = package
+        spec.loader.exec_module(package)
+        papertrail = importlib.import_module(spec.name + ".papertrail")
+        call = dict(at=10.0, route="online", source="model", origin="chat", platform="", messages=3, backup=False,
+                    job="", board="", choice="", ask="")
+        built = papertrail._why([call], [call], {})
+        self.assertEqual(set(built), WHY_KEYS)
 
     def test_neutral_bodies_name_no_vendor_and_online_routes_never_read_local(self):
         mock.NEUTRAL_MODELS = True

@@ -728,6 +728,51 @@ class MorningCardTests(ServiceCase):
                          ("blocked", {"kind": "held", "detail": "ask_first"}))
         self.assertEqual((card["counts"]["held"], card["counts"]["stopped"]), (1, 0))
 
+    def test_the_card_keeps_each_stops_rule_and_what_a_hold_needs_a_yes_for(self):
+        self.settings(night_shift=True)
+        run, start = "cron:aaa111:e-83", MORNING - 3600
+        self.write("default", [
+            {"at": start, "run": run, "event": "start", "kind": "schedule", "job_id": "aaa111", "execution_id": "e-83",
+             "title": "Morning brief", "rehearsal": False},
+            {"at": start + 1, "run": run, "event": "call", "call": "1", "tool": "terminal", "target": "rm -rf build",
+             "receipt": {"kind": "blocked", "detail": "risky", "rule": "recursive delete"}},
+            {"at": start + 2, "run": run, "event": "result", "call": "1", "tool": "terminal", "status": "blocked",
+             "block": "risky"},
+            {"at": start + 3, "run": run, "event": "call", "call": "2", "tool": "send_message",
+             "target": "Send: send message", "receipt": {"kind": "held", "detail": "ask_first", "ask": "send"}},
+            {"at": start + 4, "run": run, "event": "result", "call": "2", "tool": "send_message", "status": "blocked",
+             "block": "ask_first"},
+            # A rule that names a private bot is hidden whole; an unknown hold kind is dropped.
+            {"at": start + 5, "run": run, "event": "call", "call": "3", "tool": "terminal", "target": "cat x",
+             "receipt": {"kind": "blocked", "detail": "deny_rule", "rule": "cat *moss*", "ask": "launch"}},
+            {"at": start + 6, "run": run, "event": "result", "call": "3", "tool": "terminal", "status": "blocked",
+             "block": "deny_rule"},
+            # Stopped by something other than what was predicted: the predicted rule's words are not kept.
+            {"at": start + 7, "run": run, "event": "call", "call": "4", "tool": "terminal", "target": "rm -r old",
+             "receipt": {"kind": "blocked", "detail": "risky", "rule": "recursive delete"}},
+            {"at": start + 8, "run": run, "event": "result", "call": "4", "tool": "terminal", "status": "blocked",
+             "block": "hardline"},
+            {"at": start + 9, "run": run, "event": "end", "outcome": "done"}])
+        self.service.tick()
+        [brief] = [r for r in self.card()["runs"] if r["id"] == run]
+        self.assertEqual([a["receipt"] for a in brief["actions"]], [
+            {"kind": "blocked", "detail": "risky", "rule": "recursive delete"},
+            {"kind": "held", "detail": "ask_first", "ask": "send"},
+            {"kind": "blocked", "detail": "deny_rule", "rule": "[hidden]"},
+            {"kind": "blocked", "detail": "hardline"}])
+
+    def test_receipts_from_before_reasons_were_kept_read_as_they_did(self):
+        # A line written by the 1.0 recorder: no rule, no hold kind. Nothing is made up for it.
+        line = {"at": 5, "event": "call", "call": "1", "tool": "terminal", "target": "rm -rf build",
+                "receipt": {"kind": "blocked", "detail": "risky"}}
+        result = {"at": 6, "event": "result", "call": "1", "tool": "terminal", "status": "blocked", "block": "risky"}
+        found = night.action({"line": line, "result": result}, "default", [], frozenset())
+        self.assertEqual(found["receipt"], {"kind": "blocked", "detail": "risky"})
+        line = dict(line, receipt={"kind": "always", "detail": "git push", "key": "git push"})
+        found = night.action({"line": line, "result": dict(result, status="done", block=None)}, "default", [],
+                             frozenset())
+        self.assertEqual(found["receipt"], {"kind": "always", "detail": "git push"})
+
     def test_caps(self):
         self.settings(night_shift=True)
         run = "cron:aaa111:e-1"

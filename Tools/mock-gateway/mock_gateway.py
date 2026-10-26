@@ -382,13 +382,24 @@ PAPERTRAIL_STATES = ("busy", "empty", "off")
 
 def _papertrail_seed(entry_id, day, when, took, route="online", provider=None, name=None, model=None,
                      host=None, calls=1, helpers=(), services=(), tokens=(0, 0, 0, 0), searches=0,
-                     pages=0, images=0) -> dict:
-    """One seeded entry: `when` is minutes ago for today (day 0), else an (hour, minute) on that day."""
-    return dict(id=entry_id, day=day, when=when, took=took, route=route, provider=provider,
+                     pages=0, images=0, why=None) -> dict:
+    """One seeded entry: `when` is minutes ago for today (day 0), else an (hour, minute) on that day.
+    `why` is what the add-on kept about why it went (see _papertrail_why); None for one kept before 1.1."""
+    seed = dict(id=entry_id, day=day, when=when, took=took, route=route, provider=provider,
             provider_name=name, host=host, model=model, calls=calls, helpers=list(helpers),
             services=list(services), input_tokens=tokens[0], output_tokens=tokens[1],
             cache_read_tokens=tokens[2], reasoning_tokens=tokens[3], searches=searches,
             pages=pages, images=images)
+    if why is not None:
+        seed["why"] = why
+    return seed
+
+
+def _papertrail_why(origin="chat", task=None, platform=None, messages=0, backup=False, approvals=()) -> dict:
+    """Why an entry went, as the add-on reads it from its lines. `approvals` are (seconds before the entry's
+    time, choice, ask) and become times when the week is served."""
+    return dict(origin=origin, task=task, platform=platform, messages=messages, backup=backup,
+                approvals=[dict(before=before, choice=choice, ask=ask) for before, choice, ask in approvals])
 
 
 _PT_DIRECT = dict(provider="anthropic", name="Anthropic", model="claude-sonnet-4.6")
@@ -397,24 +408,34 @@ _PT_PORTAL = dict(provider="nous", name="Nous Portal", model="nous/hermes-4-70b"
 PAPERTRAIL_SEED = dict(
     default=dict(recording_days=12, stayed={0: 12, 1: 9, 2: 7, 3: 5, 5: 4, 6: 3, 9: 6, 11: 2}, entries=[
         _papertrail_seed("t-d1", 0, 12, 95, **_PT_DIRECT, calls=6, helpers=["title_generation"],
-                         services=["exa"], tokens=(18000, 900, 52000, 0), searches=2, pages=3),
-        _papertrail_seed("t-d2", 0, 70, 40, **_PT_RELAY, calls=3, tokens=(6400, 1200, 0, 0)),
-        _papertrail_seed("t-d3", 0, 150, 6, services=["exa"], searches=1),
+                         services=["exa"], tokens=(18000, 900, 52000, 0), searches=2, pages=3,
+                         why=_papertrail_why(messages=24, approvals=[(40, "once", "send")])),
+        _papertrail_seed("t-d2", 0, 70, 40, **_PT_RELAY, calls=3, tokens=(6400, 1200, 0, 0),
+                         why=_papertrail_why("schedule", "Morning brief", messages=6, backup=True)),
+        _papertrail_seed("t-d3", 0, 150, 6, services=["exa"], searches=1, why=_papertrail_why()),
         _papertrail_seed("t-d4", 0, 230, 55, route="network", provider="custom", model="assistant-open-32b",
-                         host="http://192.168.1.40:8080", calls=2, tokens=(3100, 420, 0, 0)),
-        _papertrail_seed("t-d5", 1, (18, 40), 120, **_PT_DIRECT, calls=4, tokens=(24000, 1800, 61000, 0), pages=2),
-        _papertrail_seed("t-d6", 1, (9, 12), 30, **_PT_DIRECT, calls=2, tokens=(5200, 640, 12000, 0)),
-        _papertrail_seed("t-d7", 2, (14, 5), 80, **_PT_RELAY, calls=3, tokens=(9100, 1500, 0, 800), images=1),
-        _papertrail_seed("t-d8", 3, (10, 30), 45, **_PT_DIRECT, calls=2, tokens=(4800, 700, 9000, 0)),
+                         host="http://192.168.1.40:8080", calls=2, tokens=(3100, 420, 0, 0),
+                         why=_papertrail_why(messages=8)),
+        _papertrail_seed("t-d5", 1, (18, 40), 120, **_PT_DIRECT, calls=4, tokens=(24000, 1800, 61000, 0), pages=2,
+                         why=_papertrail_why("board", "Draft the launch notes", messages=31)),
+        _papertrail_seed("t-d6", 1, (9, 12), 30, **_PT_DIRECT, calls=2, tokens=(5200, 640, 12000, 0),
+                         why=_papertrail_why(platform="telegram", messages=4)),
+        _papertrail_seed("t-d7", 2, (14, 5), 80, **_PT_RELAY, calls=3, tokens=(9100, 1500, 0, 800), images=1,
+                         why=_papertrail_why(messages=10)),
+        _papertrail_seed("t-d8", 3, (10, 30), 45, **_PT_DIRECT, calls=2, tokens=(4800, 700, 9000, 0),
+                         why=_papertrail_why("helper", messages=3)),
         _papertrail_seed("t-d9", 5, (21, 15), 140, **_PT_DIRECT, calls=5, services=["exa"],
-                         tokens=(31000, 2200, 88000, 0), searches=3, pages=1),
+                         tokens=(31000, 2200, 88000, 0), searches=3, pages=1,
+                         why=_papertrail_why(messages=18, approvals=[(90, "deny", "delete")])),
         _papertrail_seed("t-d10", 6, (8, 2), 300, **_PT_DIRECT, calls=9, tokens=(142000, 5100, 310000, 0)),
         _papertrail_seed("t-d11", 9, (16, 48), 60, **_PT_DIRECT, calls=3, tokens=(8800, 900, 20000, 0)),
     ]),
     work=dict(recording_days=6, stayed={0: 3, 1: 2, 3: 4}, entries=[
-        _papertrail_seed("t-w1", 0, 35, 50, **_PT_PORTAL, calls=2, tokens=(4200, 600, 0, 0)),
+        _papertrail_seed("t-w1", 0, 35, 50, **_PT_PORTAL, calls=2, tokens=(4200, 600, 0, 0),
+                         why=_papertrail_why("schedule", "Hourly price check", messages=5)),
         _papertrail_seed("t-w2", 2, (11, 20), 25, services=["exa"], searches=2),
-        _papertrail_seed("t-w3", 4, (15, 45), 70, **_PT_PORTAL, calls=3, tokens=(7600, 1100, 0, 0), pages=1),
+        _papertrail_seed("t-w3", 4, (15, 45), 70, **_PT_PORTAL, calls=3, tokens=(7600, 1100, 0, 0), pages=1,
+                         why=_papertrail_why(messages=9)),
     ]),
 )
 
@@ -444,7 +465,11 @@ def papertrail_view(bot: str, days: int, now: float | None = None) -> dict:
                 at = midnight(seeded["day"]) + hour * 3600 + minute * 60
                 started_at = at - seeded["took"]
             entry = dict(id=seeded["id"], at=int(at), started_at=int(started_at))
-            entry.update({k: v for k, v in seeded.items() if k not in ("id", "day", "when", "took")})
+            entry.update({k: v for k, v in seeded.items() if k not in ("id", "day", "when", "took", "why")})
+            if "why" in seeded:
+                why = copy.deepcopy(seeded["why"])
+                why["approvals"] = [dict(at=int(max(started_at, at - a.pop("before"))), **a) for a in why["approvals"]]
+                entry["why"] = why
             listed.append((seeded["day"], entry))
     listed.sort(key=lambda pair: pair[1]["at"], reverse=True)
     stayed = {day: count for day, count in seed["stayed"].items() if day <= days - 1}

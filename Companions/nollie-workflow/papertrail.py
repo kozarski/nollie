@@ -3,6 +3,10 @@
 One JSON line per model call, helper call or online tool, kept in the bot's own home under
 ``nollie-workflow/papertrail/<YYYY-MM-DD>.jsonl``. Only when, where and how much: never prompts,
 replies, queries, URLs or arguments. Stdlib only here; Hermes is imported lazily and best effort.
+
+Each line also says why it went, in ids and short names only: what started the work (a chat, a schedule,
+a Board task, a schedule's helper), on which chat app, how many messages went, whether the bot's backup
+model answered, and the person's approval answers in the same turn.
 """
 from __future__ import annotations
 
@@ -32,9 +36,16 @@ MAX_ENTRIES = 200
 WINDOW_SECONDS = 600
 LOCK_WAIT_SECONDS = 2.0
 MAX_WAITING = 5000
-HOOKS = ("post_api_request", "api_request_error", "post_auxiliary_call", "post_tool_call")
+HOOKS = ("post_api_request", "api_request_error", "post_auxiliary_call", "post_tool_call",
+         "post_approval_response")
 ROUTES = frozenset({"mac", "network", "online"})
-SOURCES = frozenset({"model", "helper", "tool"})
+# An "approval" line is a person's answer, kept for the turn's Why. Older readers skip it by its source.
+SOURCES = frozenset({"model", "helper", "tool", "approval"})
+ORIGINS = frozenset({"chat", "schedule", "board", "helper"})
+CHOICES = frozenset({"once", "session", "always", "deny"})
+ASK_KINDS = frozenset({"send", "buy", "post", "delete", "unsure"})
+ASK_PREFIX = "nollie-ask-first:"
+MAX_APPROVALS = 8
 LOCAL_RUNTIMES = frozenset({"llamacpp", "llama.cpp", "llama-cpp", "ollama", "lmstudio", "lm-studio", "mlx",
                             "local"})
 LOCAL_SCHEMES = frozenset({"process", "unix", "file"})
@@ -48,6 +59,7 @@ IMAGE_TOOLS = frozenset({"image_generate"})
 EXTRACT_MAX_URLS = 5
 DAY_FILE = re.compile(r"(\d{4}-\d{2}-\d{2})\.jsonl\Z")
 SERVICE_NAME = re.compile(r"[a-z0-9][a-z0-9._-]{0,63}\Z")
+PLATFORM_NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,31}\Z")
 HOST_TEXT = re.compile(r"[A-Za-z0-9._:%\[\]-]{1,255}\Z")
 UNSAFE_ID = re.compile(r"[^A-Za-z0-9._:/@+=-]")
 TOKEN_FIELDS = (("in", "input_tokens"), ("out", "output_tokens"), ("cache", "cache_read_tokens"),
@@ -175,8 +187,7 @@ def prune(root, today):
                 path.unlink()
 
 
-def _search_backend(config_path):
-    """The bot's web search service, best effort: ``web.search_backend``, else ``web.backend``."""
+def _config(config_path):
     try:
         from hermes_cli.config import read_user_config_raw
         config = read_user_config_raw(config_path)
@@ -185,7 +196,12 @@ def _search_backend(config_path):
             import yaml
             config = yaml.safe_load(Path(config_path).read_text())
         except Exception:
-            return ""
+            return {}
+    return config if isinstance(config, dict) else {}
+
+
+def _search_backend(config):
+    """The bot's web search service, best effort: ``web.search_backend``, else ``web.backend``."""
     web = config.get("web") if isinstance(config, dict) else None
     if not isinstance(web, dict):
         return ""
@@ -194,6 +210,49 @@ def _search_backend(config_path):
         if name and name != "auto" and SERVICE_NAME.match(name):
             return name
     return ""
+
+
+def _backups(config):
+    """(main provider, backup providers) from the bot's config: ``model.provider``, then each
+    ``fallback_providers`` entry and the older ``fallback_model``."""
+    model = config.get("model") if isinstance(config, dict) else None
+    main = str(model.get("provider") or "").strip().lower() if isinstance(model, dict) else ""
+    chain = config.get("fallback_providers") if isinstance(config, dict) else None
+    chain = list(chain) if isinstance(chain, list) else []
+    if isinstance(config, dict) and isinstance(config.get("fallback_model"), dict):
+        chain.append(config["fallback_model"])
+    backups = {str(item.get("provider") or "").strip().lower() for item in chain if isinstance(item, dict)}
+    return main, frozenset(backups - {"", main})
+
+
+def hermes_context(ctx):
+    """What started the work a hook fires in, from Hermes's run context. No file is read.
+
+    A schedule's run (``ctx.current_cron_execution()``), a Board worker (``HERMES_KANBAN_TASK``), a helper a
+    schedule started (``HERMES_CRON_SESSION``), else a chat, with the chat app it came from when Hermes says.
+    """
+    def session_env(name):
+        try:
+            from gateway.session_context import get_session_env
+            return str(get_session_env(name) or "")
+        except Exception:
+            return str(os.environ.get(name) or "")
+
+    def context():
+        try:
+            execution = ctx.current_cron_execution()
+        except Exception:
+            execution = None
+        if execution is not None:
+            return {"origin": "schedule", "job": _id(getattr(execution, "job_id", ""), 64)}
+        board = os.environ.get("HERMES_KANBAN_TASK")
+        if board:
+            return {"origin": "board", "board": _id(board, 64)}
+        if session_env("HERMES_CRON_SESSION").strip().lower() in ("1", "true", "yes"):
+            return {"origin": "helper"}
+        platform = (session_env("HERMES_SESSION_PLATFORM") or session_env("HERMES_SESSION_SOURCE")).strip().lower()
+        return {"origin": "chat", "platform": platform if PLATFORM_NAME.match(platform) else ""}
+    return context
 
 
 _RECORDERS = weakref.WeakSet()
@@ -214,13 +273,15 @@ class Recorder:
     ``is_private`` is asked before every line; when it says yes, or cannot say, nothing is written.
     """
 
-    def __init__(self, home, *, clock=time.time, is_private=None):
+    def __init__(self, home, *, clock=time.time, is_private=None, context=None):
         self.home = Path(home)
         self.root = self.home / "nollie-workflow" / "papertrail"
         self.clock = clock
         self.is_private = is_private
+        # What started the work (``hermes_context``). Without it lines say nothing of why, as before.
+        self.context = context
         self._pruned_on = None
-        self._service = None
+        self._config = None
         self._guard = threading.Lock()
         self._waiting = deque()
         self._writer = None
@@ -231,12 +292,15 @@ class Recorder:
     # Hermes hooks. Keyword arguments only; Hermes adds fields over time, so the rest is ignored.
 
     def post_api_request(self, session_id="", turn_id="", model="", provider="", base_url="", ended_at=None,
-                         usage=None, **_):
-        self._safely(self._call, "model", "", provider, base_url, model, turn_id, session_id, ended_at, usage)
+                         usage=None, platform="", message_count=None, **_):
+        self._safely(self._call, "model", "", provider, base_url, model, turn_id, session_id, ended_at, usage,
+                     platform, message_count)
 
-    def api_request_error(self, session_id="", turn_id="", model="", provider="", base_url="", ended_at=None, **_):
+    def api_request_error(self, session_id="", turn_id="", model="", provider="", base_url="", ended_at=None,
+                          platform="", message_count=None, **_):
         # The request still went out, so it is listed, without tokens.
-        self._safely(self._call, "model", "", provider, base_url, model, turn_id, session_id, ended_at, None)
+        self._safely(self._call, "model", "", provider, base_url, model, turn_id, session_id, ended_at, None,
+                     platform, message_count)
 
     def post_auxiliary_call(self, session_id="", turn_id="", aux_task="", model="", provider="", base_url="",
                             ended_at=None, usage=None, **_):
@@ -245,21 +309,63 @@ class Recorder:
     def post_tool_call(self, tool_name="", args=None, status="", session_id="", turn_id="", **_):
         self._safely(self._tool, tool_name, args, status, turn_id, session_id)
 
+    def post_approval_response(self, choice="", pattern_key="", pattern_keys=None, session_id="", turn_id="",
+                               session_key="", **_):
+        self._safely(self._approval, choice, pattern_key, pattern_keys, turn_id, session_id or session_key)
+
     # Lines.
 
     def _line(self, **fields):
         line = {"v": 1, "at": round(self.clock(), 3), "route": "online", "source": "model", "provider": "",
                 "host": None, "model": "", "task": "", "tool": "", "turn": "", "session": "",
                 "in": 0, "out": 0, "cache": 0, "think": 0, "searches": 0, "pages": 0, "images": 0}
+        if self.context is not None:
+            try:
+                found = self.context()
+            except Exception:
+                found = None
+            if isinstance(found, dict) and found.get("origin") in ORIGINS:
+                line["origin"] = found["origin"]
+                for key in ("job", "board", "platform"):
+                    if found.get(key):
+                        line[key] = _id(found[key], 64)
         line.update(fields)
         return line
 
-    def _call(self, source, task, provider, base_url, model, turn, session, ended_at, usage):
+    def _call(self, source, task, provider, base_url, model, turn, session, ended_at, usage, platform="",
+              message_count=None):
         usage = usage if isinstance(usage, dict) else {}
-        return self._line(at=_when(ended_at, self.clock), route=route(provider, base_url), source=source,
+        line = self._line(at=_when(ended_at, self.clock), route=route(provider, base_url), source=source,
                           provider=_id(provider), host=host(base_url), model=_id(model), task=_id(task, 64),
                           turn=_id(turn), session=_id(session),
                           **{short: _count(usage.get(name)) for short, name in TOKEN_FIELDS})
+        if "origin" not in line:
+            return line
+        if source == "model":
+            # How much of the chat went with the request: a count, never the messages.
+            line["messages"] = _count(message_count)
+            platform = str(platform or "").strip().lower()
+            if line["origin"] == "chat" and not line.get("platform") and PLATFORM_NAME.match(platform):
+                line["platform"] = platform
+            main, backups = self.models()
+            name = str(provider or "").strip().lower()
+            line["backup"] = bool(name) and name != main and name in backups
+        return line
+
+    def _approval(self, choice, pattern_key, pattern_keys, turn, session):
+        """A person's answer in a turn, for that turn's Why. Only real answers, and only inside a turn: a
+        timeout or a withdrawn question decided nothing, and without a turn it belongs to no entry."""
+        choice = str(choice or "")
+        if choice not in CHOICES or not turn:
+            return None
+        ask = ""
+        for key in [pattern_key] + list(pattern_keys or []):
+            if isinstance(key, str) and key.startswith(ASK_PREFIX):
+                kind = key[len(ASK_PREFIX):].split(":", 1)[0]
+                ask = kind if kind in ASK_KINDS else ""
+                break
+        return self._line(route="mac", source="approval", choice=choice, ask=ask, turn=_id(turn),
+                          session=_id(session))
 
     def _tool(self, tool_name, args, status, turn, session):
         name = str(tool_name or "")
@@ -283,17 +389,24 @@ class Recorder:
                           session=_id(session), searches=int(name in SEARCH_TOOLS), pages=pages,
                           images=int(name in IMAGE_TOOLS))
 
-    def search_service(self):
-        """Read lazily and cached until the bot's config.yaml changes."""
+    def _settings(self):
+        """The bot's config.yaml, read lazily and cached until it changes."""
         path = self.home / "config.yaml"
         try:
             info = path.stat()
             signature = (info.st_mtime_ns, info.st_size, info.st_ino)
         except OSError:
             signature = None
-        if self._service is None or self._service[0] != signature:
-            self._service = (signature, _search_backend(path) if signature else "")
-        return self._service[1]
+        if self._config is None or self._config[0] != signature:
+            self._config = (signature, _config(path) if signature else {})
+        return self._config[1]
+
+    def search_service(self):
+        return _search_backend(self._settings())
+
+    def models(self):
+        """(main provider, backup providers), as the bot's config says now."""
+        return _backups(self._settings())
 
     # Storage.
 
@@ -435,11 +548,16 @@ def _calls(path, since):
             if isinstance(at, bool) or not isinstance(at, (int, float)) or not math.isfinite(at) or at < since:
                 continue
             call = {key: line.get(key) if isinstance(line.get(key), str) else ""
-                    for key in ("provider", "model", "task", "tool", "turn", "session")}
+                    for key in ("provider", "model", "task", "tool", "turn", "session", "job", "board", "platform",
+                                "choice", "ask")}
             call.update({key: _count(line.get(key))
-                         for key in ("in", "out", "cache", "think", "searches", "pages", "images")})
+                         for key in ("in", "out", "cache", "think", "searches", "pages", "images", "messages")})
             call.update(at=float(at), route=line["route"], source=line["source"],
-                        host=line.get("host") if isinstance(line.get("host"), str) else None)
+                        host=line.get("host") if isinstance(line.get("host"), str) else None,
+                        origin=line.get("origin") if line.get("origin") in ORIGINS else None,
+                        backup=line.get("backup") is True)
+            if call["source"] == "approval" and (call["choice"] not in CHOICES or not call["turn"]):
+                continue
             yield call
 
 
@@ -459,7 +577,33 @@ def _tokens(call):
     return call["in"] + call["out"] + call["cache"] + call["think"]
 
 
-def _entry(key, group, provider_name):
+def _why(group, left, titles):
+    """Why the entry went, from what its lines kept; None when none of them kept it (recorded before 1.1)."""
+    origins = [call for call in group if call.get("origin") in ORIGINS]
+    if not origins:
+        return None
+    # The work that started it: a schedule or Board task over a helper, over a chat.
+    first = min(origins, key=lambda call: (("schedule", "board", "helper", "chat").index(call["origin"]), call["at"]))
+    origin = first["origin"]
+    ref = first.get("job") if origin == "schedule" else first.get("board") if origin == "board" else ""
+    title = (titles or {}).get((origin, ref)) if ref else None
+    models = [call for call in left if call["source"] == "model"]
+    approvals = sorted((call for call in group if call["source"] == "approval"), key=lambda call: call["at"])
+    return {
+        "origin": origin,
+        "task": title or None,
+        "platform": next((call.get("platform") for call in origins
+                          if call["origin"] == "chat" and call.get("platform")), None),
+        # The most messages any one request carried: each request sends the chat so far.
+        "messages": max((call.get("messages", 0) for call in models), default=0),
+        "backup": any(call.get("backup") for call in models),
+        "approvals": [{"at": int(call["at"]), "choice": call.get("choice"),
+                       "ask": call.get("ask") if call.get("ask") in ASK_KINDS else None}
+                      for call in approvals[-MAX_APPROVALS:]],
+    }
+
+
+def _entry(key, group, provider_name, titles=None):
     """An entry for what left; None when every call stayed on this Mac."""
     left = [call for call in group if call["route"] != "mac"]
     if not left:
@@ -477,7 +621,7 @@ def _entry(key, group, provider_name):
     best = max(candidates, key=lambda k: (candidates[k], [str(part or "") for part in k]), default=None)
     _, provider, host_, model = best if best else (None, None, None, None)
     provider = provider or None
-    return {
+    entry = {
         "id": key[1] if key[0] == "turn" else "w-" + hashlib.sha256(json.dumps(key).encode()).hexdigest()[:16],
         "at": int(max(call["at"] for call in group)),
         "started_at": int(min(call["at"] for call in group)),
@@ -501,10 +645,16 @@ def _entry(key, group, provider_name):
         "local_reads": sorted({LOCAL_READS[call["tool"]] for call in group
                                if call["source"] == "tool" and call["tool"] in LOCAL_READS}),
     }
+    why = _why(group, left, titles)
+    if why is not None:
+        entry["why"] = why
+    return entry
 
 
-def read(home, bot, days, *, now=None, provider_name=None):
-    """The Papertrail answer for one bot home over ``days`` local days ending today."""
+def read(home, bot, days, *, now=None, provider_name=None, titles=None):
+    """The Papertrail answer for one bot home over ``days`` local days ending today. ``titles`` maps
+    ``("schedule", job id)`` and ``("board", task id)`` to the names the person gave them, read now, never
+    kept in the record."""
     root = Path(home) / "nollie-workflow" / "papertrail"
     now = time.time() if now is None else now
     today = _local_day(now)
@@ -539,7 +689,9 @@ def read(home, bot, days, *, now=None, provider_name=None):
     stayed = {"today": 0, "window": 0}
     entries = []
     for key, group in groups.items():
-        entry = _entry(key, group, cached_name)
+        if all(call["source"] == "approval" for call in group):
+            continue  # An answer alone is not a reply: it only explains one.
+        entry = _entry(key, group, cached_name, titles)
         if entry is None:
             stayed["window"] += 1
             stayed["today"] += max(call["at"] for call in group) >= today_starts_at

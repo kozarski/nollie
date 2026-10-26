@@ -36,6 +36,7 @@ Plugin hooks do see every call, with the live route (fallbacks included):
 | `api_request_error` | each failed main-loop call (the request still went out) | `session_id, turn_id, api_request_id, model, provider, base_url, ended_at` |
 | `post_auxiliary_call` | each attempt of a helper call (titles, compression, vision, approval, ...) | `session_id, turn_id, api_request_id, aux_task, model, provider, base_url, ended_at, usage, error` |
 | `post_tool_call` | each tool call | `session_id, turn_id, tool_name, args, result, status` |
+| `post_approval_response` | each answer to an approval question | `turn_id, session_id, choice, pattern_key(s)` |
 
 `usage` (when present) has `input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
 reasoning_tokens`. Hooks are delivered per bot home (the plugin manager is keyed by `HERMES_HOME`), so a
@@ -94,7 +95,13 @@ Storage, per bot: `<home>/nollie-workflow/papertrail/<YYYY-MM-DD>.jsonl` (Mac lo
  "in":1200,"out":340,"cache":9000,"think":0,"searches":0,"pages":0,"images":0}
 ```
 
-- `source` is `model` (main loop), `helper` (auxiliary, `task` names it) or `tool` (`tool` names it).
+- `source` is `model` (main loop), `helper` (auxiliary, `task` names it), `tool` (`tool` names it) or `approval`.
+- Why it went (1.1), from Hermes's run context with no file read: `origin` (`chat`, `schedule`, `board`, `helper`
+  for a schedule's helper), `job` or `board` (ids only), `platform` (the chat app, when Hermes says), and on model
+  calls `messages` (Hermes's `message_count`) and `backup` (the provider is one of the bot's `fallback_providers`,
+  not its main one). An `approval` line keeps a person's answer in a turn: `choice` (`once`, `session`, `always`,
+  `deny`) and `ask` (what Ask first asked about, from its rule key). Timeouts, withdrawn questions and answers
+  outside a turn are not kept. Older readers skip `approval` lines by their source.
 - `host` is `scheme://host[:port]` for HTTP(S) URLs only, never a path, query or credentials; `null` otherwise.
 - No words are kept: no prompts, replies, queries, URLs or arguments. Only when, where and how much.
 - Lines older than 35 days are removed: on the first write of each day, files older than 35 days are deleted.
@@ -145,6 +152,10 @@ reply, not listed. Everything else is listed.
 }
 ```
 
+- `why` (1.1, absent on entries recorded before): `{"origin", "task", "platform", "messages", "backup",
+  "approvals": [{"at", "choice", "ask"}]}`. `task` is the schedule's or Board task's name, read when the week is
+  asked for (`<bot home>/cron`, the Board outcome log), never kept in the record; a name that holds a private
+  bot's is left out. An entry made only of answers is neither listed nor counted.
 - `tomorrow_starts_at` is the Mac's next local midnight (not always 24 hours later, on clock-change days).
 - `since` is the start of the window (local midnight, `days - 1` days before today). `today_starts_at` is
   today's local midnight on the Mac, so the app splits Today from the rest without guessing time zones.
@@ -168,6 +179,11 @@ A tab `Papertrail` after Model, hidden for private bots.
 - Then a quiet native list in two sections, **Today** and **Earlier this week**. Each row: the route
   ("Claude plan", "OpenRouter", "Your network", "Exa" when only a search left), the amount ("19k tokens ·
   2 searches · 3 pages") and the time ("14:32", or "Mon 09:12"). Developer Mode adds the model and host.
+- Each row has a small glass Why? that opens, in place, what started it ("Scout was running your schedule
+  “Morning brief”."), why it went where it went (the bot's online model, its backup, your network, a web search),
+  the person's own answers ("You said yes to sending at 14:02."), then "What went:" in sizes and kinds only.
+  An entry from before 1.1 says "Nollie didn't keep the reason for this one." Words: `Papertrail.Entry.why(bot:)`.
+  The device that answered is not recorded yet: Hermes's approval hook does not say, so the words leave it out.
 - Nothing listed this week: one row, "Nothing left your Mac this week."
 - Add-on missing or not on (404): one row, "Papertrail isn't on for this bot yet."
 - Load failure: "Couldn't load Papertrail." in the sheet's status line. A 403 means a private bot only when

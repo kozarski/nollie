@@ -45,8 +45,8 @@ def _register_papertrail(ctx, profile, default_home):
                 return
         except (OSError, ValueError):
             return  # A damaged Private list keeps every bot unrecorded until it is repaired.
-        from .papertrail import HOOKS, Recorder
-        recorder = Recorder(bot_home, is_private=is_private)
+        from .papertrail import HOOKS, Recorder, hermes_context
+        recorder = Recorder(bot_home, is_private=is_private, context=hermes_context(ctx))
         for name in HOOKS:
             ctx.register_hook(name, getattr(recorder, name))
     except Exception as exc:

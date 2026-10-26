@@ -7,7 +7,8 @@ import NollieCore
 /// that changed.
 enum ConversationListItem: Equatable, Identifiable {
     case row(ConversationRow, startsTurn: Bool)
-    /// A post's row, with the runs the person opened up: a card that grows changes its item, so it is measured again.
+    /// A post's row, with what the person opened up on it (runs shown whole, entries whose Why is open): a card that
+    /// grows changes its item, so it is measured again.
     case post(ConversationRow, expanded: Set<String>)
     case card(ConversationCard)
     case activity(String)
@@ -51,7 +52,8 @@ enum ConversationListItem: Equatable, Identifiable {
     }
 
     /// The transcript, then (only while the window touches the newest end) the cards and the activity line.
-    /// `expanded` holds `<post id>/<run id>` for each run whose actions are all shown.
+    /// `expanded` holds `<post id>/<run id>` for each run whose actions are all shown, and `<post id>/<why key>` for
+    /// each entry whose Why is open.
     static func make(transcript: [ConversationRow], cards: [ConversationCard], activity: String?,
                      atNewestEnd: Bool, expanded: Set<String> = []) -> [ConversationListItem] {
         var out: [ConversationListItem] = []
@@ -61,8 +63,7 @@ enum ConversationListItem: Equatable, Identifiable {
         var seen = Set<String>()
         for row in transcript where seen.insert(row.id).inserted {
             if let post = row.post {
-                let runs = post.nightShift?.runs.map(\.id).filter { expanded.contains(expandedKey(post: post.id, run: $0)) } ?? []
-                out.append(.post(row, expanded: Set(runs)))
+                out.append(.post(row, expanded: opened(on: post, in: expanded)))
                 previousWasYours = false
                 continue
             }
@@ -77,6 +78,12 @@ enum ConversationListItem: Equatable, Identifiable {
     }
 
     static func expandedKey(post: String, run: String) -> String { "\(post)/\(run)" }
+
+    /// What is open on one post, without its id in front.
+    static func opened(on post: ConversationPost, in expanded: Set<String>) -> Set<String> {
+        let prefix = post.id + "/"
+        return Set(expanded.lazy.filter { $0.hasPrefix(prefix) }.map { String($0.dropFirst(prefix.count)) })
+    }
 }
 
 /// What changed between two lists of entries: the new order, and entries that stayed but draw differently.

@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 import time
 
-from .receipts import HIDDEN, hermes_redactor, scrub, settle
+from .receipts import HIDDEN, RULE_LIMIT, hermes_redactor, scrub, settle
 from .workflow_core import atomic_write, file_lock, private_identity
 
 SETTINGS_NAME = "night-shift.json"
@@ -22,6 +22,7 @@ RECEIPTS = "receipts"
 RECORDERS = "recorders"
 EVENTS = frozenset(("start", "call", "result", "end", "always", "reply"))
 MAX_ACTIONS = 40
+ASK_KINDS = frozenset(("send", "buy", "post", "delete", "unsure"))
 MAX_RUNS = 100
 MAX_CARD_ACTIONS = 200  # Across one morning card, so one card stays far below the post store's bound.
 COUNTS = ("runs", "actions", "held", "stopped", "unrecorded")
@@ -296,7 +297,8 @@ def clean(text, private, limit=None):
     return text[:limit] if limit else text
 
 
-PLAIN_FIELDS = frozenset(("id", "kind", "state", "outcome", "status", "tool", "reason", "hash", "job_id", "bot"))
+PLAIN_FIELDS = frozenset(("id", "kind", "state", "outcome", "status", "tool", "reason", "hash", "job_id", "bot",
+                          "ask"))
 
 
 def without_private(value, private):
@@ -372,8 +374,23 @@ def action(call, bot, grants, private):
             receipt["granted_at"] = at
     if "detail" in receipt:
         receipt["detail"] = clean(receipt["detail"], private, 300)
+    found = reasons(receipt, private)
+    for key in ("rule", "ask"):
+        receipt.pop(key, None)
+    receipt.update(found)
     return {"tool": str(line.get("tool") or "")[:80], "target": clean(line.get("target"), private, 300),
             "status": status, "at": line["at"], "receipt": receipt}
+
+
+def reasons(receipt, private):
+    """The deciding rule's words and what Ask first held a call for, checked again for private bots. A receipt
+    from before they were kept has neither, and the app says the reason wasn't kept."""
+    found = {}
+    if isinstance(receipt.get("rule"), str) and receipt["rule"]:
+        found["rule"] = clean(receipt["rule"], private, RULE_LIMIT)
+    if receipt.get("ask") in ASK_KINDS:
+        found["ask"] = receipt["ask"]
+    return found
 
 
 def run_kind(run_id, start):
@@ -571,6 +588,7 @@ def rehearsal_post(*, profile, bot_name, job, run, now, finished, private, redac
                 receipt["detail"] = clean(raw.get("detail") or "other", private, 300)
             elif raw.get("detail"):
                 receipt["detail"] = clean(raw["detail"], private, 300)
+            receipt.update(reasons(raw, private))
         entry = {"tool": item["tool"], "target": item["target"], "at": item["at"], "status": status,
                  "receipt": receipt}
         # Sorted by what stopped it, not by how it ended: a look that failed still ran.

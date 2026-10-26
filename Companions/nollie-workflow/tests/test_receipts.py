@@ -18,12 +18,13 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(self.command("git push origin main", dangerous=(True, "git push", "git push"),
                                       permanently_approved=True),
                          {"kind": "always", "detail": "git push", "key": "git push"})
+        # A stop keeps the words of the rule that decided it, for the card's Why.
         self.assertEqual(self.command("rm -rf build", dangerous=(True, "recursive delete", "recursive delete")),
-                         {"kind": "blocked", "detail": "risky"})
+                         {"kind": "blocked", "detail": "risky", "rule": "recursive delete"})
         self.assertEqual(self.command("rm -rf /", hardline=(True, "delete root")),
-                         {"kind": "blocked", "detail": "hardline"})
+                         {"kind": "blocked", "detail": "hardline", "rule": "delete root"})
         self.assertEqual(self.command("hermes config set x", deny_rule="hermes config*"),
-                         {"kind": "blocked", "detail": "deny_rule"})
+                         {"kind": "blocked", "detail": "deny_rule", "rule": "hermes config*"})
         self.assertEqual(self.command("echo x | sudo -S ls", sudo_guard=(True, "sudo guess")),
                          {"kind": "blocked", "detail": "other"})
         self.assertEqual(receipts.classify("send_message", {}, Checks(), guard="held"), {"kind": "held"})
@@ -38,7 +39,7 @@ class ClassificationTests(unittest.TestCase):
         checks = Checks(hardline=(True, "x"), deny_rule="rm*", allowlist_entry="rm *",
                         dangerous=(True, "k", "d"), permanently_approved=True)
         self.assertEqual(receipts.classify("terminal", {"command": "rm -rf /"}, checks),
-                         {"kind": "blocked", "detail": "hardline"})
+                         {"kind": "blocked", "detail": "hardline", "rule": "x"})
         self.assertNotIn("allowlist_entry", checks.asked)
         # The allowlist wins over pattern detection, as in check_all_command_guards.
         checks = Checks(allowlist_entry="git push *", dangerous=(True, "git push", "git push"))
@@ -83,6 +84,24 @@ class SettleTests(unittest.TestCase):
         # Approvals switched off is a stop, not a hold.
         bypassed = ask_first.BYPASSED_MESSAGE.format(summary="Send: send message")
         self.assertNotEqual(receipts.block_detail(json.dumps({"error": bypassed})), "ask_first")
+
+    def test_a_stop_keeps_its_rules_words_only_when_that_rule_stopped_it(self):
+        risky = {"kind": "blocked", "detail": "risky", "rule": "recursive delete"}
+        self.assertEqual(receipts.settle(risky, "blocked", "risky"), risky)
+        # Something else stopped it: those words would explain the wrong stop.
+        self.assertEqual(receipts.settle(risky, "blocked", "deny_rule"), {"kind": "blocked", "detail": "deny_rule"})
+        held = {"kind": "held", "detail": "ask_first", "ask": "send"}
+        self.assertEqual(receipts.settle(held, "blocked", "ask_first"), held)
+        self.assertEqual(receipts.settle(held, "blocked", "held"), {"kind": "held"})
+        # A rule's words are scrubbed and kept short.
+        found = receipts.classify("terminal", {"command": "x"}, Checks(deny_rule="curl *sk-abcdefghijklmnop123* " + "y" * 200))
+        self.assertNotIn("sk-abcdefghijklmnop", found["rule"])
+        self.assertLessEqual(len(found["rule"]), receipts.RULE_LIMIT)
+        # An empty description adds nothing.
+        self.assertEqual(self.command_receipt(dangerous=(True, "k", "")), {"kind": "blocked", "detail": "risky"})
+
+    def command_receipt(self, **answers):
+        return receipts.classify("terminal", {"command": "rm -r x"}, Checks(**answers))
 
     def test_a_predicted_stop_that_ran_is_not_claimed(self):
         self.assertEqual(receipts.settle({"kind": "blocked", "detail": "risky"}, "done"), {"kind": "unknown"})

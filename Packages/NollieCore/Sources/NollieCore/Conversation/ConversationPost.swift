@@ -180,16 +180,23 @@ public struct ConversationPost: Codable, Hashable, Sendable, Identifiable {
         public var detail: String?
         /// When the person chose Always, when the add-on saw it.
         public var grantedAt: Date?
+        /// The words of the rule that decided it, when the safety check gave some: what made a command risky or
+        /// never allowed ("recursive delete"), or the person's own rule that says no. Nil on receipts from before 1.1.
+        public var rule: String?
+        /// What Ask first held it for: `send`, `buy`, `post`, `delete` or `unsure`. Nil on receipts from before 1.1.
+        public var ask: String?
 
         /// A kind this build does not know reads as `unknown`.
         public enum Kind: String, Codable, Hashable, Sendable {
             case tool, safe, allowlist, always, held, blocked, unknown
         }
 
-        public init(kind: Kind, detail: String? = nil, grantedAt: Date? = nil) {
+        public init(kind: Kind, detail: String? = nil, grantedAt: Date? = nil, rule: String? = nil, ask: String? = nil) {
             self.kind = kind
             self.detail = detail
             self.grantedAt = grantedAt
+            self.rule = rule
+            self.ask = ask
         }
     }
 
@@ -369,7 +376,8 @@ extension ConversationPost.Action {
             guard value.objectValue != nil else { return nil }
             return ConversationPost.Receipt(
                 kind: value["kind"]?.stringValue.flatMap(ConversationPost.Receipt.Kind.init(rawValue:)) ?? .unknown,
-                detail: ConversationPost.text(value["detail"]), grantedAt: ConversationPost.date(value["granted_at"]))
+                detail: ConversationPost.text(value["detail"]), grantedAt: ConversationPost.date(value["granted_at"]),
+                rule: ConversationPost.text(value["rule"]), ask: ConversationPost.text(value["ask"]))
         }
         self.init(tool: tool, target: json["target"]?.stringValue ?? "",
                   status: json["status"]?.stringValue.flatMap(Status.init(rawValue:)),

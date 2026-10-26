@@ -11,6 +11,8 @@ struct RehearsalCard: View {
     let card: ConversationPost.Rehearsal
     let pending: ConversationPostAction?
     let problem: String?
+    /// Entries whose Why is open, from the screen.
+    var expanded: Set<String> = []
     let tap: (ConversationPostTap) -> Void
 
     var body: some View {
@@ -45,29 +47,42 @@ struct RehearsalCard: View {
             if card.held.isEmpty {
                 Text("Nothing that changes anything.").font(Ink.cardBody).foregroundStyle(Ink.cardText)
             }
-            ForEach(Array(card.held.enumerated()), id: \.offset) { _, action in
+            ForEach(Array(card.held.enumerated()), id: \.offset) { index, action in
+                let key = NightShiftWhy.key(run: "held", index: index)
+                let why = NightShiftWhy.explain(action, rehearsal: card, looked: false)
                 if NightShiftWords.heldByAskFirst(action), !action.target.isEmpty {
                     // Ask first: its words carry their own verb, and turning the schedule on doesn't change it.
                     PostActionLine(verb: "", target: action.target, receipt: RehearsalCard.everyTime,
                                    label: NightShiftWords.sentence(verb: "Would have:", target: action.target,
-                                                                   receipt: RehearsalCard.everyTime))
+                                                                   receipt: RehearsalCard.everyTime),
+                                   why: why, whyOpen: expanded.contains(key), whyID: "post.rehearsal.why.held.\(index)") {
+                        tap(.why(key))
+                    }
                 } else {
                     let verb = NightShiftWords.verbs(action.tool, target: action.target).1
                     // Stopped outright (the Mac, the add-on's own files): it could not have run for real either.
                     let stopped = action.receipt?.kind == .blocked ? NightShiftWords.stopped(action.receipt?.detail) : nil
                     PostActionLine(verb: verb, target: action.target, receipt: stopped, warn: stopped != nil,
                                    label: NightShiftWords.sentence(verb: "Would have: " + verb.lowercased(), target: action.target,
-                                                                   receipt: stopped ?? "Held for you"))
+                                                                   receipt: stopped ?? "Held for you"),
+                                   why: why, whyOpen: expanded.contains(key), whyID: "post.rehearsal.why.held.\(index)") {
+                        tap(.why(key))
+                    }
                 }
             }
         }
         if !card.looked.isEmpty {
             Section(title: "Looked at") {
-                ForEach(Array(card.looked.enumerated()), id: \.offset) { _, action in
+                ForEach(Array(card.looked.enumerated()), id: \.offset) { index, action in
                     let verb = NightShiftWords.verbs(action.tool, target: action.target).0
+                    let key = NightShiftWhy.key(run: "looked", index: index)
                     // Under "Looked at", a look needs no verb of its own.
                     PostActionLine(verb: verb == "Looked at" ? "" : verb, target: action.target, receipt: nil,
-                                   label: NightShiftWords.sentence(verb: verb, target: action.target, receipt: nil))
+                                   label: NightShiftWords.sentence(verb: verb, target: action.target, receipt: nil),
+                                   why: NightShiftWhy.explain(action, rehearsal: card, looked: true),
+                                   whyOpen: expanded.contains(key), whyID: "post.rehearsal.why.looked.\(index)") {
+                        tap(.why(key))
+                    }
                 }
             }
         }

@@ -418,6 +418,134 @@ class ReaderTests(unittest.TestCase):
 
 
 @unittest.skipUnless(fastapi and TestClient, "FastAPI and its test client are available in the Hermes runtime")
+class WhyTests(unittest.TestCase):
+    """Why each entry went: what started the work, how much of the chat went, the backup model and the
+    person's answers. Ids and short names only, and nothing made up for lines kept before."""
+
+    def setUp(self):
+        temp = TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.home = Path(temp.name)
+        self.now = {"origin": "chat", "platform": "telegram"}
+        self.recorder = papertrail.Recorder(self.home, clock=Clock(), context=lambda: dict(self.now))
+        self.root = self.home / "nollie-workflow" / "papertrail"
+
+    def model(self, at, turn, provider=SUBSCRIPTION, base_url=f"process://{SUBSCRIPTION}", messages=12, **extra):
+        self.recorder.post_api_request(session_id="s-1", turn_id=turn, model="m", provider=provider,
+                                       base_url=base_url, ended_at=at, usage=usage(100, 10), message_count=messages,
+                                       request_messages=[{"content": "secret-prompt"}], **extra)
+        self.assertTrue(self.recorder.flush())
+
+    def read(self, **kw):
+        return papertrail.read(self.home, "career", 7, now=NOW, provider_name=lambda p: None, **kw)
+
+    def test_a_chat_says_where_it_came_from_and_how_much_of_it_went(self):
+        self.model(NOW - 60, "t-1", messages=12)
+        self.model(NOW - 50, "t-1", messages=14)
+        [line, _] = lines(self.root)
+        self.assertEqual({k: line[k] for k in ("origin", "platform", "messages", "backup")},
+                         {"origin": "chat", "platform": "telegram", "messages": 12, "backup": False})
+        self.assertNotIn("secret-prompt", json.dumps(lines(self.root)))
+        [entry] = self.read()["entries"]
+        self.assertEqual(entry["why"], {"origin": "chat", "task": None, "platform": "telegram", "messages": 14,
+                                        "backup": False, "approvals": []})
+
+    def test_the_chat_app_comes_from_hermes_when_the_context_has_none(self):
+        self.now = {"origin": "chat", "platform": ""}
+        self.model(NOW - 60, "t-1", platform="Discord")
+        self.model(NOW - 50, "t-2", platform="not a name!")
+        entries = {e["id"]: e for e in self.read()["entries"]}
+        self.assertEqual((entries["t-1"]["why"]["platform"], entries["t-2"]["why"]["platform"]), ("discord", None))
+
+    def test_a_schedule_or_board_task_is_named_from_titles_read_now(self):
+        self.now = {"origin": "schedule", "job": "3f2a9c"}
+        self.model(NOW - 60, "t-1")
+        self.now = {"origin": "board", "board": "t_77"}
+        self.model(NOW - 50, "t-2")
+        self.now = {"origin": "helper"}
+        self.model(NOW - 40, "t-3")
+        self.now = {"origin": "schedule", "job": "gone"}
+        self.model(NOW - 30, "t-4")
+        text = "".join(path.read_text() for path in self.root.glob("*.jsonl"))
+        self.assertNotIn("Morning prices", text)  # Names are never kept in the record.
+        titles = {("schedule", "3f2a9c"): "Morning prices", ("board", "t_77"): "Draft the report"}
+        whys = {e["id"]: e["why"] for e in self.read(titles=titles)["entries"]}
+        self.assertEqual((whys["t-1"]["origin"], whys["t-1"]["task"]), ("schedule", "Morning prices"))
+        self.assertEqual((whys["t-2"]["origin"], whys["t-2"]["task"]), ("board", "Draft the report"))
+        self.assertEqual((whys["t-3"]["origin"], whys["t-3"]["task"]), ("helper", None))
+        self.assertEqual((whys["t-4"]["origin"], whys["t-4"]["task"]), ("schedule", None))
+
+    @unittest.skipUnless(yaml, "the bot's models are read from YAML")
+    def test_a_call_the_backup_model_answered_says_so(self):
+        (self.home / "config.yaml").write_text(
+            "model:\n  provider: claude-subscription-direct\n  default: claude\n"
+            "fallback_providers:\n  - provider: openrouter\n    model: gpt\n")
+        self.model(NOW - 60, "t-1")
+        self.model(NOW - 50, "t-2", provider="openrouter", base_url="https://openrouter.ai/api/v1")
+        # A provider that is neither the main one nor a backup is not called a backup.
+        self.model(NOW - 40, "t-3", provider="anthropic", base_url="https://api.anthropic.com")
+        whys = {e["id"]: e["why"]["backup"] for e in self.read()["entries"]}
+        self.assertEqual(whys, {"t-1": False, "t-2": True, "t-3": False})
+
+    def test_the_persons_answers_in_a_turn_are_kept_with_it(self):
+        self.model(NOW - 60, "t-1")
+        self.recorder.post_approval_response(choice="once", pattern_key="nollie-ask-first:send:ab12",
+                                             pattern_keys=["nollie-ask-first:send:ab12"], turn_id="t-1",
+                                             session_key="s-1", command="secret-prompt", description="secret-reply")
+        self.recorder.post_approval_response(choice="always", pattern_key="git push", turn_id="t-1")
+        # Nobody answered, or no turn to explain: nothing kept.
+        self.recorder.post_approval_response(choice="timeout", pattern_key="x", turn_id="t-1")
+        self.recorder.post_approval_response(choice="cancelled", pattern_key="x", turn_id="t-1")
+        self.recorder.post_approval_response(choice="once", pattern_key="x", turn_id="")
+        # An answer in a turn that stayed on this Mac neither lists nor counts it twice.
+        self.recorder.post_approval_response(choice="deny", pattern_key="nollie-ask-first:delete:cd34", turn_id="t-9")
+        self.assertTrue(self.recorder.flush())
+        recorded = lines(self.root)
+        self.assertEqual([l.get("choice") for l in recorded if l["source"] == "approval"], ["once", "always", "deny"])
+        self.assertNotIn("secret", json.dumps(recorded))
+        answer = self.read()
+        [entry] = answer["entries"]
+        self.assertEqual(entry["why"]["approvals"], [{"at": int(NOW), "choice": "once", "ask": "send"},
+                                                     {"at": int(NOW), "choice": "always", "ask": None}])
+        self.assertEqual(entry["calls"], 1)
+        self.assertEqual(answer["stayed"], {"today": 0, "window": 0})
+
+    def test_lines_kept_before_reasons_were_recorded_have_no_why(self):
+        old = papertrail.Recorder(self.home, clock=Clock())  # As 1.0 registered it: no context.
+        old.post_api_request(session_id="s-1", turn_id="t-old", provider="anthropic",
+                             base_url="https://api.anthropic.com", ended_at=NOW - 100, usage=usage(10, 2))
+        self.assertTrue(old.flush())
+        self.assertNotIn("origin", lines(self.root)[0])
+        self.model(NOW - 60, "t-new")
+        entries = {e["id"]: e for e in self.read()["entries"]}
+        self.assertNotIn("why", entries["t-old"])
+        self.assertEqual(entries["t-new"]["why"]["origin"], "chat")
+
+    def test_a_failing_context_still_records_the_call(self):
+        def broken():
+            raise RuntimeError("no context")
+        self.recorder.context = broken
+        self.model(NOW - 60, "t-1")
+        [line] = lines(self.root)
+        self.assertNotIn("origin", line)
+        self.assertEqual(line["in"], 100)
+
+    def test_hermes_context_reads_the_run_without_files(self):
+        execution = SimpleNamespace(job_id="3f2a9c", execution_id="e-1")
+        ctx = SimpleNamespace(current_cron_execution=lambda: execution)
+        self.assertEqual(papertrail.hermes_context(ctx)(), {"origin": "schedule", "job": "3f2a9c"})
+        ctx = SimpleNamespace(current_cron_execution=lambda: None)
+        with patch.dict(os.environ, {"HERMES_KANBAN_TASK": "t_9"}):
+            self.assertEqual(papertrail.hermes_context(ctx)(), {"origin": "board", "board": "t_9"})
+        env = {k: v for k, v in os.environ.items() if not k.startswith("HERMES_")}
+        with patch.dict(os.environ, dict(env, HERMES_CRON_SESSION="1"), clear=True):
+            self.assertEqual(papertrail.hermes_context(ctx)(), {"origin": "helper"})
+        with patch.dict(os.environ, dict(env, HERMES_SESSION_PLATFORM="Telegram"), clear=True):
+            self.assertEqual(papertrail.hermes_context(ctx)(), {"origin": "chat", "platform": "telegram"})
+        with patch.dict(os.environ, env, clear=True):
+            self.assertEqual(papertrail.hermes_context(ctx)(), {"origin": "chat", "platform": ""})
+
+
 class PapertrailRouteTests(unittest.TestCase):
     PATH = "/api/plugins/nollie-workflow/papertrail"
 
@@ -462,6 +590,28 @@ class PapertrailRouteTests(unittest.TestCase):
         response = self.client.get(self.PATH, params=params)
         self.assertEqual(response.headers.get("cache-control"), "no-store", (params, response.status_code))
         return response
+
+    def test_schedule_names_are_read_now_and_a_private_name_is_left_out(self):
+        recorder = papertrail.Recorder(self.bots["career"], context=lambda: {"origin": "schedule", "job": "j1"})
+        recorder.post_api_request(turn_id="t-2", provider="anthropic", base_url="https://api.anthropic.com",
+                                  usage=usage(10, 2))
+        recorder = papertrail.Recorder(self.bots["career"], context=lambda: {"origin": "schedule", "job": "j2"})
+        recorder.post_api_request(turn_id="t-3", provider="anthropic", base_url="https://api.anthropic.com",
+                                  usage=usage(10, 2))
+        self.assertTrue(recorder.flush())
+
+        class Jobs:
+            def __init__(self, home):
+                pass
+
+            def jobs(self, profile):
+                return [{"id": "j1", "name": "Morning prices"}, {"id": "j2", "name": "Moss diary"}]
+        with patch.object(self.api._adapter, "ProfileJobs", Jobs):
+            body = self.get(bot="career").json()
+        whys = {e["id"]: e.get("why") for e in body["entries"]}
+        self.assertEqual(whys["t-2"]["task"], "Morning prices")
+        self.assertIsNone(whys["t-3"]["task"])
+        self.assertIsNone(whys["t-1"])  # Kept before reasons were.
 
     def test_a_bot_with_papertrail_gets_its_record(self):
         response = self.get(bot="career", days="3")

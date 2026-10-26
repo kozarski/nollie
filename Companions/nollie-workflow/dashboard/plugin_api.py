@@ -115,6 +115,26 @@ def bot_home(bot, default_home):
     return Path(get_profile_dir(bot))
 
 
+def papertrail_titles(default_home, bot, private):
+    """The names of the bot's schedules and Board tasks, for Papertrail's Why. Read now, never kept in the
+    record; a name that holds a private bot's is left out. Best effort: without them the app says "a schedule"."""
+    titles = {}
+    redactor = _shift.hermes_redactor()
+    try:
+        for job in _adapter.ProfileJobs(default_home).jobs(bot):
+            if isinstance(job.get("id"), str) and isinstance(job.get("name"), str) and job["name"].strip():
+                titles[("schedule", job["id"])] = _shift.scrub(job["name"].strip(), redactor, 240)
+    except Exception:
+        pass
+    try:
+        for item in _shift.OutcomeLog(Path(default_home) / "nollie-workflow").read():
+            if item["assignee"] == bot and item["title"].strip():
+                titles[("board", item["task_id"])] = item["title"].strip()[:240]
+    except Exception:
+        pass
+    return {key: title for key, title in titles.items() if not _core.private_identity(title, private)}
+
+
 @router.get("/papertrail")
 def papertrail(bot: str = "default", days: str = "7"):
     """What left this Mac for one bot. Private bots are refused before their home is looked up."""
@@ -134,7 +154,7 @@ def papertrail(bot: str = "default", days: str = "7"):
     if folder.parent.is_symlink() or folder.is_symlink() or not folder.is_dir():
         raise HTTPException(404, "Papertrail is not on for this bot.", headers=NO_STORE)
     try:
-        result = _papertrail.read(source, bot, int(days))
+        result = _papertrail.read(source, bot, int(days), titles=papertrail_titles(target, bot, private))
     except OSError:
         raise HTTPException(503, "Papertrail cannot be read.", headers=NO_STORE) from None
     return JSONResponse(result, headers=NO_STORE)
