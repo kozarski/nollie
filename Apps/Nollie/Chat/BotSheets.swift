@@ -142,7 +142,9 @@ private struct BotSheetContent: View {
         case .history:
             BotHistoryView(profile: sheet.profile)
         case .knows:
-            BotKnowsView(profile: sheet.profile)
+            // The Memory tab reads through the add-on, which keeps the private bot's memory to itself.
+            ProfileInfoSheet(chat: sheet.chatID.flatMap { model.runtime?.chatForStored($0) }, profileName: sheet.profile, startTall: true,
+                             initialTab: .memory)
         case .settings:
             // Opened for its settings: tall from the start, so the tabs and the rows under them show.
             ProfileInfoSheet(chat: sheet.chatID.flatMap { model.runtime?.chatForStored($0) }, profileName: sheet.profile, startTall: true,
@@ -366,89 +368,5 @@ struct BotHistoryRow: View {
         .inset(v: 6)
         .contentShape(.rect)
         .accessibilityElement(children: .combine)
-    }
-}
-
-// MARK: - What a bot knows
-
-/// What a bot keeps about Corey and its own notes (its USER.md and MEMORY.md), to read. Hermes
-/// writes these as it learns; this only shows them.
-struct BotKnowsView: View {
-    var profile: String
-    @Environment(AppModel.self) private var model
-    @State private var about: String?
-    @State private var notes: String?
-    @State private var loading = true
-    @State private var problem: String?
-
-    private var bot: ProfileInfo? { model.runtime?.profiles.first { $0.name == profile } }
-    private var name: String { bot?.shownName ?? profile }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    if loading {
-                        ProgressView().spread(.center)
-                    } else if let problem {
-                        Label(problem, systemImage: "exclamationmark.triangle").font(Ink.cardBody).foregroundStyle(Ink.text2)
-                    } else {
-                        section("About you", about, empty: "Nothing yet.")
-                        section("Notes", notes, empty: "Nothing yet.")
-                    }
-                }
-                .padding(20)
-                .frame(maxWidth: 680, alignment: .leading)
-                .spread(.center)
-            }
-            .background(Ink.canvas)
-            .navigationTitle("What \(name) knows")
-            .doneToolbar()
-            .task { await load() }
-        }
-    }
-
-    @ViewBuilder private func section(_ title: String, _ text: String?, empty: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.title3.weight(.semibold)).foregroundStyle(Ink.text)
-            if let text, !text.isEmpty {
-                MarkdownView(text: Self.readable(text))
-                    .font(Ink.message)
-                    .foregroundStyle(Ink.text)
-                    .padding(18)
-                    .spread()
-                    .background(Ink.card, in: .rect(cornerRadius: Ink.cardRadius, style: .continuous))
-            } else {
-                Text(empty).font(Ink.cardBody).foregroundStyle(Ink.text2)
-            }
-        }
-    }
-
-    /// Hermes separates its entries with a line holding only "§": a rule reads better.
-    static func readable(_ text: String) -> String {
-        text.split(separator: "\n", omittingEmptySubsequences: false)
-            .map { $0.trimmingCharacters(in: .whitespaces) == "§" ? "---" : String($0) }
-            .joined(separator: "\n")
-    }
-
-    private func load() async {
-        defer { loading = false }
-        guard let rt = model.runtime else { problem = "Not connected."; return }
-        // Its own home; the gateway's reported one only when that is this bot's (it is the selected bot's).
-        guard let home = bot?.path ?? (profile == rt.selectedProfile ? rt.profileHome : nil), !home.isEmpty else {
-            problem = "The gateway didn't say where \(name) keeps its notes."
-            return
-        }
-        async let u = read(rt, home + "/memories/USER.md")
-        async let m = read(rt, home + "/memories/MEMORY.md")
-        let (a, n) = await (u, m)
-        about = a
-        notes = n
-    }
-
-    private func read(_ rt: GatewayRuntime, _ path: String) async -> String? {
-        let asked = [URLQueryItem(name: "path", value: path)]
-        let file: JSONValue? = try? await rt.api.get("/api/fs/read-text", query: asked, profile: profile)
-        return file?["text"]?.stringValue
     }
 }

@@ -116,10 +116,6 @@ import Testing
         #expect(!ProfileInfo(name: "career", provider: "openrouter").isPrivateBot(on: UUID()))
     }
 
-    @MainActor @Test func notesKeepTheirEntriesApart() {
-        #expect(BotKnowsView.readable("Likes tea\n§\nLives in London") == "Likes tea\n---\nLives in London")
-    }
-
     /// System control: one switch covers every screen action Hermes asks about, in the background
     /// and in front; a bot not read yet gets the card, never an answer by itself.
     @MainActor @Test func systemControlCoversEveryScreenAction() {
