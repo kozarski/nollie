@@ -45,6 +45,9 @@ struct WatchView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(AppModel.self) private var model
+    /// Beside the chat on a wide screen: closing puts the panel away, and it can spread out.
+    @Environment(\.inSidePanel) private var inPanel
+    @Environment(\.sidePanel) private var sidePanel
     @State private var preview = ComputerPreviewModel()
     @State private var zoom: CGFloat = 1
     @State private var settledZoom: CGFloat = 1
@@ -81,24 +84,30 @@ struct WatchView: View {
         #endif
         .task(id: watchKey) { if updating { await preview.watch(chat, live: true) } }
         .onChange(of: preview.holder) { _, holder in handoff.note(holder, runtime: chat.runtime, profile: profile) }
-        .onChange(of: model.lock.isLocked) { _, locked in if locked { work?.cancel(); dismiss() } }
+        .onChange(of: model.lock.isLocked) { _, locked in if locked { work?.cancel(); close() } }
         // If a take over or hand back was already requested it still completes after this closes,
         // and its result keeps the chat's Watch pill correct.
+    }
+
+    private var panelHost: SidePanelHost? { inPanel ? sidePanel : nil }
+
+    private func close() {
+        if let panelHost { withAnimation(.snappy) { panelHost.close() } } else { dismiss() }
     }
 
     // MARK: Top: the helper, centred, and how fresh the picture is
 
     private var topBar: some View {
         ZStack(alignment: .top) {
-            HStack {
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark").font(.title3.weight(.semibold))
-                        .frame(square: 44).nollieGlass(.regular.interactive(), in: .circle)
+            HStack(spacing: 12) {
+                circle("xmark", label: "Close", id: "watch.close", action: close)
+                    .keyboardShortcut(.cancelAction)
+                if let panelHost, panelHost.canExpand {
+                    circle(panelHost.expanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right",
+                           label: panelHost.expanded ? "Make smaller" : "Expand", id: "panel.expand") {
+                        withAnimation(.snappy) { panelHost.toggleExpanded() }
+                    }
                 }
-                .buttonStyle(.plain)
-                .keyboardShortcut(.cancelAction)
-                .accessibilityLabel("Close")
-                .accessibilityIdentifier("watch.close")
                 Spacer()
             }
             VStack(spacing: -BotAvatarStore.seat(for: profile, size: 44, overlap: 8)) {
@@ -134,6 +143,16 @@ struct WatchView: View {
                 #endif
             }
         }
+    }
+
+    private func circle(_ symbol: String, label: String, id: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.title3.weight(.semibold))
+                .frame(square: 44).nollieGlass(.regular.interactive(), in: .circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(id)
     }
 
     private var badge: some View {

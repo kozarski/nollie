@@ -223,12 +223,12 @@ struct TranscriptView: View {
         .scrollTargetLayout(isEnabled: notificationFocus != nil)
         .onChange(of: approvals.count) { followApprovals() }
         .padding(EdgeInsets(top: 8, leading: sidePad, bottom: 0, trailing: sidePad))
+        // The thread is a centred column about a page wide on a wide screen, whatever the window size.
+        .frame(maxWidth: ReadingColumn.thread + 32)
         #if os(macOS)
-        // On the Mac the thread is a centred column about a page wide, whatever the window size.
-        .frame(maxWidth: Ink.column + 32)
         .onGeometryChange(for: CGFloat.self, of: { 20 * ($0.size.width / 20).rounded() }) { columnWidth = $0 }
-        .spread(.center)
         #endif
+        .spread(.center)
         .dynamicTypeSize(ChatStyle.stepped(phoneTypeSize, prefs.textSize))
         .background(ScrollViewProbe(metrics: metrics))
     }

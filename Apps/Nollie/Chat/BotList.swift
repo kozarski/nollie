@@ -152,7 +152,7 @@ struct BotListRow: View {
             }
         }
         .inset(h: 12, v: 11)
-        .background(selected ? Ink.selected : (hovering ? Ink.hover : Color.clear), in: .rect(cornerRadius: 12, style: .continuous))
+        .background(selected ? Ink.selected : (hovering ? Ink.hover : Color.clear), in: highlight)
         // Messages' unread dot, in the margin before the face.
         .overlay(alignment: .leading) {
             if unread && !selected {
@@ -170,6 +170,15 @@ struct BotListRow: View {
         .accessibilityHint("Opens your chat with \(profile.shownName).")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("bots.row.\(profile.name)")
+    }
+
+    /// The open bot's soft highlight: a pill beside a chat on iPhone and iPad, as their sidebars draw it.
+    private var highlight: AnyShape {
+        #if os(iOS)
+        AnyShape(Capsule())
+        #else
+        AnyShape(.rect(cornerRadius: 12, style: .continuous))
+        #endif
     }
 
     @ViewBuilder private func preview(_ presence: BotPresence) -> some View {

@@ -1,12 +1,17 @@
 import SwiftUI
 import NollieCore
 
-/// The phone's main screen: the chat list, with Settings, the Board and Tasks opening above it
-/// as sheets. One persistent stack keeps the open conversation, scroll position and draft while a
-/// utility page is up. There is no bottom tab bar on the phone.
+/// The phone's and iPad's main screen: the chats (`ChatsRoot`, one stack on a narrow screen, the list
+/// beside the chat on a wide one), with Settings, the Board and Tasks opening above them as sheets.
+/// The chats keep the open conversation, scroll position and draft while a utility page is up.
+/// There is no bottom tab bar.
 struct MainTabView: View {
     @Environment(AppModel.self) private var model
     @State private var page: Page?
+    /// Opens Papertrail beside the chat on a wide screen (see `ChatsRoot`).
+    @State private var papertrailBeside: UUID?
+    /// Whether the chats sit beside the list right now.
+    @State private var chatsWide = false
 
     private enum Page: String, Identifiable {
         case settings, board, schedules
@@ -24,7 +29,7 @@ struct MainTabView: View {
     }
 
     var body: some View {
-        ChatListView()
+        chats
             .modifier(BotSheetHost())
             .sheet(item: $page, onDismiss: returnToChats) { content(for: $0).withAppModel() }
             .onChange(of: model.selectedTab, initial: true) { follow(model.selectedTab) }
@@ -32,6 +37,14 @@ struct MainTabView: View {
             .onChange(of: model.newChatRequest) { clearPage(if: model.newChatRequest != nil) }
             .onChange(of: model.lock.isLocked) { clearPage(if: model.lock.isLocked) }
             .onChange(of: model.signInPrompt.isEmpty) { clearPage(if: !model.signInPrompt.isEmpty) }
+    }
+
+    @ViewBuilder private var chats: some View {
+        #if os(iOS)
+        ChatsRoot(papertrailRequest: papertrailBeside, isWide: $chatsWide)
+        #else
+        ChatListView()
+        #endif
     }
 
     private func clearPage(if condition: Bool) {
@@ -50,6 +63,12 @@ struct MainTabView: View {
             return
         }
         if wanted == .board, model.runtime?.kanban.isPresent != true {
+            model.selectedTab = .chats
+        } else if wanted == .settings, chatsWide, model.papertrailRequest != nil {
+            // Papertrail from the search field: on a wide screen it opens beside the chat instead.
+            // Settings keeps the request when the chats are too narrow for that.
+            model.papertrailRequest = nil
+            papertrailBeside = UUID()
             model.selectedTab = .chats
         } else {
             page = wanted

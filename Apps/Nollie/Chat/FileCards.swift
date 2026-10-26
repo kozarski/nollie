@@ -24,7 +24,7 @@ struct FileCardStrip: View {
             }
         }
         .spread(alignment == .trailing ? .trailing : .leading)
-        .quickLookPreview($previewing)
+        .filePreview($previewing)
     }
 }
 

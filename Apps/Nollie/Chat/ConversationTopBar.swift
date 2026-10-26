@@ -25,7 +25,7 @@ struct ConversationTopBar: View {
         // the task card sits right under the contact header.
         .fixedSize(horizontal: false, vertical: true)
         .background(Ink.canvas.ignoresSafeArea(edges: .top))
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if (1..<800).contains($0) { metrics.header = $0 } }
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if metrics.plausibleHeader($0) { metrics.header = $0 } }
         // Single VoiceOver group, ordered behind the thread and dock. Accessibility hit tests visit elements
         // from the back of the order forwards, and the thread reaches under the header, so listing the
         // header last makes it get tried first, like a finger touching the topmost view. Swipe navigation

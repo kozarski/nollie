@@ -10,6 +10,8 @@ struct RenameChatSheet: View {
     @FocusState private var typing: Bool
     @State private var draft = ""
     @Bindable var chat: ChatSession
+    /// The content's own height, for the phone's sheet: it grows with large text.
+    @State private var height: CGFloat = 220
 
     private var name: String {
         draft.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
@@ -18,9 +20,13 @@ struct RenameChatSheet: View {
     var body: some View {
         content
             .padding(20)
+            #if os(macOS)
             .frame(minWidth: 320)
+            #endif
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if $0 > 0 { height = $0 } }
             .onAppear(perform: begin)
-            .modifier(RenameSheetShape())
+            .modifier(RenameSheetShape(height: height))
     }
 
     private var content: some View {
@@ -71,11 +77,14 @@ struct RenameChatSheet: View {
 
 /// Sheet size and, on the phone, selecting the old name as soon as the field starts editing.
 private struct RenameSheetShape: ViewModifier {
+    var height: CGFloat
+
     func body(content: Content) -> some View {
         #if os(iOS)
         content
+            .frame(maxHeight: .infinity, alignment: .top)
             .presentationDragIndicator(.hidden)
-            .presentationDetents([.height(220)])
+            .presentationDetents([.height(height)])
             .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) { note in
                 // With everything selected, the first key typed replaces the old name.
                 (note.object as? UITextField)?.selectAll(nil)

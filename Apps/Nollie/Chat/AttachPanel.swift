@@ -24,16 +24,39 @@ struct AttachPanel: View {
     /// Closes the panel. Called right before a row's own action.
     let close: () -> Void
 
+    /// Room above the composer, from the chat's own measurements. With large text or a short window
+    /// the rows scroll inside the panel instead of running off the top.
+    @Environment(\.attachPanelRoom) private var room
+    /// The rows' own height, measured, so the panel is never taller than they need.
+    @State private var natural: CGFloat = 0
+
+    static let width: CGFloat = 272
+
     var body: some View {
-        VStack(alignment: .leading, spacing: .zero) {
-            ForEach(items, content: row)
+        ScrollView {
+            VStack(alignment: .leading, spacing: .zero) {
+                ForEach(items, content: row)
+            }
+            .inset(v: 10)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { natural = $0 }
         }
-        .inset(v: 10)
-        .frame(width: 272)
-        // The panel hangs off a 36 pt button as an overlay, so it is only offered that much height and
-        // its glass came out shorter than the rows. Fixing the size lets it take the room it needs.
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollIndicators(.hidden)
+        .frame(width: Self.width, height: Self.height(natural: natural, estimate: estimate, room: room))
+        // The panel hangs off a 36 pt button as an overlay, so it is only offered that much height.
+        // Fixing the size lets it take the room it needs, within the room there is.
         .fixedSize()
         .nollieGlass(.regular, in: .rect(cornerRadius: 30))
+    }
+
+    /// A first guess at the rows' height, until they have been measured.
+    private var estimate: CGFloat { CGFloat(items.count) * 56 + 20 }
+
+    /// As tall as the rows, but no taller than the room (and never shorter than two rows).
+    static func height(natural: CGFloat, estimate: CGFloat, room: CGFloat) -> CGFloat {
+        let wanted = natural > 0 ? natural : estimate
+        guard room.isFinite else { return wanted }
+        return min(wanted, max(room, 132))
     }
 
     private func row(_ item: AttachItem) -> some View {

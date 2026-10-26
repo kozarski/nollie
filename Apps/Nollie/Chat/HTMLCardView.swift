@@ -19,7 +19,8 @@ struct HTMLCardView: View {
     static let awayGrace: TimeInterval = 4
 
     private let corner: CGFloat = 12
-    private var cap: CGFloat { HTMLCard.heightCap }
+    @Environment(\.threadViewport) private var viewport
+    private var cap: CGFloat { HTMLCard.heightCap(viewport: viewport) }
     private var shownHeight: CGFloat { min(max(measured, 48), cap) }
     private var page: String { CardPage.make(html, dark: scheme == .dark) }
     private var paper: Color { Color(.secondarySystemBackground) }
@@ -38,7 +39,17 @@ struct HTMLCardView: View {
         .overlay(alignment: .topTrailing) { fullScreenButton }
         .overlay(alignment: .bottom) { if overflows { fadeOut } }
         .animation(.snappy, value: ready)
-        .sheet(isPresented: $showingFull) { HTMLCardSheet(html: html).sheetFrame(.wide).withAppModel() }
+        .sheetOrSidePanel(isPresented: $showingFull, id: "card|\(html.hashValue)") {
+            HTMLCardSheet(html: html).sheetFrame(.wide).withAppModel()
+        } panel: {
+            HTMLCardPanel(html: html)
+        }
+        #if DEBUG
+        // For pictures: `-nollie-demo-card-full` opens the first card full size once it has drawn.
+        .onChange(of: ready) { _, drawn in
+            if drawn, DemoMode.isOn, ProcessInfo.processInfo.arguments.contains("-nollie-demo-card-full") { showingFull = true }
+        }
+        #endif
     }
 
     @ViewBuilder private var content: some View {
@@ -96,7 +107,7 @@ struct HTMLCardView: View {
 }
 
 /// Shared by the inline card and the full screen sheet.
-@MainActor private enum CardPage {
+@MainActor enum CardPage {
     static func make(_ html: String, dark: Bool) -> String {
         HTMLCard.document(html, dark: dark, background: HTMLCard.pageBackground(dark: dark))
     }

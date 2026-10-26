@@ -22,6 +22,8 @@ final class ScrollMetrics {
     var contentHeight: CGFloat = 0
     var containerHeight: CGFloat = 0
     var reportedInsetBottom: CGFloat = 0
+    /// The scroll view's size when its own inset was last measured; a new size measures again.
+    var autoInsetBasis: CGSize = .zero
 
     /// Locked to the end and untouched: new content may be followed.
     var followsEnd: Bool { stickToBottom && !userScrolling }

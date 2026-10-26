@@ -48,6 +48,8 @@ struct ChatHeader: View {
     /// Sends VoiceOver to Back on opening. Left alone it would start on the earliest
     /// message, because the header comes last in the screen's reading order (`ConversationTopBar`).
     @AccessibilityFocusState private var backFocused: Bool
+    /// Beside the list there is nowhere to go back to; the list itself switches chats.
+    @Environment(\.chatOpensBeside) private var besideList
 
     var body: some View {
         // Deliberately not inside a glass container: that draws its glass above everything and
@@ -74,12 +76,19 @@ struct ChatHeader: View {
         await MainActor.run { backFocused = true }
     }
 
+    /// Back, or beside the list an empty slot of the same width, which keeps the pill centred.
     private var backButton: some View {
-        HeaderCircle(symbol: "chevron.left", action: onBack)
-            .accessibilityLabel("Back")
-            .accessibilityIdentifier("chat.back")
-            .accessibilityFocused($backFocused)
-            .frame(width: 100, alignment: .leading)
+        Group {
+            if besideList {
+                Color.clear.frame(height: 44)
+            } else {
+                HeaderCircle(symbol: "chevron.left", action: onBack)
+                    .accessibilityLabel("Back")
+                    .accessibilityIdentifier("chat.back")
+                    .accessibilityFocused($backFocused)
+            }
+        }
+        .frame(width: 100, alignment: .leading)
     }
 
     private var trailing: some View {
@@ -103,10 +112,14 @@ private struct HeaderCircle: View {
     var symbol: String
     var action: () -> Void
 
+    /// The symbol stops growing at the largest standard text size so it stays inside its circle;
+    /// a long press shows it large, as bar buttons do.
     static func face(_ symbol: String) -> some View {
         Glyph(symbol, .title3.weight(.semibold))
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             .frame(square: 44)
             .nollieGlass(.regular.interactive(), in: .circle)
+            .accessibilityShowsLargeContentViewer()
     }
 
     var body: some View {
@@ -121,6 +134,7 @@ private struct ChatHeaderPill: View {
     var onRename: () -> Void
 
     @AppStorage(ChatStyle.headerShowsTitle) private var headerShowsTitle = false
+    @Environment(\.dynamicTypeSize) private var typeSize
     /// Flips on first appearance so the bot fades in, as a contact photo does in Messages.
     @State private var popped = false
 
@@ -197,6 +211,17 @@ private struct ChatHeaderPill: View {
         .contentShape(.rect)
     }
 
+    private func nameText(_ name: String) -> some View {
+        Text(shortened(name, limit: 26, keep: 25))
+            .font(.caption.weight(.semibold))
+            .multilineTextAlignment(.center)
+    }
+
+    /// At the accessibility text sizes the pill keeps the name whole: it may take two lines and
+    /// shrink a little, and the status line steps aside (the bot's pose still shows it, and
+    /// VoiceOver still reads it).
+    private var roomy: Bool { !typeSize.isAccessibilitySize }
+
     private var plate: some View {
         let line = status
         let name = headerShowsTitle ? shownTitle : chat.botDisplayName
@@ -204,16 +229,28 @@ private struct ChatHeaderPill: View {
             // Hugs its text like Messages does. The cut happens in code because a max-width
             // frame would widen the pill to the full screen.
             HStack(spacing: 3) {
-                Text(shortened(name, limit: 26, keep: 25)).font(.caption.weight(.semibold)).lineLimit(1)
-                Glyph("chevron.right", .caption2.weight(.bold), .secondary)
+                if roomy {
+                    nameText(name).lineLimit(1)
+                    Glyph("chevron.right", .caption2.weight(.bold), .secondary)
+                } else {
+                    // On one line when it fits, else on two, broken between words where it can be.
+                    ViewThatFits(in: .horizontal) {
+                        nameText(name).lineLimit(1)
+                        nameText(name).lineLimit(2).minimumScaleFactor(0.7)
+                    }
+                }
             }
-            // A compaction notice can be a whole sentence, so cut this line the same way.
-            Text(shortened(line.text, limit: 42, keep: 41, trimming: true))
-                .quiet(.caption2)
-                .lineLimit(1)
-                .contentTransition(.numericText())
-                .animation(.snappy, value: [chat.statusLine, line.goal, String(chat.botState == .needsYou)])
+            if roomy {
+                // A compaction notice can be a whole sentence, so cut this line the same way.
+                Text(shortened(line.text, limit: 42, keep: 41, trimming: true))
+                    .quiet(.caption2)
+                    .lineLimit(1)
+                    .contentTransition(.numericText())
+                    .animation(.snappy, value: [chat.statusLine, line.goal, String(chat.botState == .needsYou)])
+            }
         }
+        // Grows with the text up to a size that still fits between the circles.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .padding(EdgeInsets(top: 11, leading: 14, bottom: 6, trailing: 14))
         // Keeps its natural height yet stays within the space between the circles, so large text is cut with
         // "…". A pill that held its width once shoved the back circle off screen.
@@ -254,9 +291,11 @@ struct ComputerControlsButton: View {
             .shadow(color: inUse ? .blue.opacity(0.55) : .clear, radius: 6)
             #if os(iOS)
             .font(.title3)
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             .frame(square: 44)
             .nollieGlass(.regular.interactive(), in: .circle)
             .background(inUse ? Color.blue.opacity(0.12) : Color.clear, in: .circle)
+            .accessibilityShowsLargeContentViewer()
             #endif
     }
 }

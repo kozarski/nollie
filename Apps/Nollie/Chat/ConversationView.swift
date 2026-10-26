@@ -15,13 +15,17 @@ struct ConversationView: View {
     @Namespace private var glass
     @Environment(\.dismiss) private var dismiss
     @Environment(AppModel.self) private var model
+    /// On a wide screen Watch opens in the panel beside the chat (see `ChatsRoot`).
+    @Environment(\.sidePanel) private var sidePanel
+    @Environment(\.chatOpensBeside) private var besideList
 
     var body: some View {
         content
             // Like Messages, the composer takes the bottom edge inside a conversation.
             .hidesTabBar()
-            // With the navigation bar hidden UIKit drops swipe-back, so turn it on again.
-            .background(InteractivePopEnabler())
+            // With the navigation bar hidden UIKit drops swipe-back, so turn it on again. Beside the
+            // list there is nothing to swipe back to.
+            .background { if !besideList { InteractivePopEnabler() } }
             .task { await start() }
     }
 
@@ -42,10 +46,22 @@ struct ConversationView: View {
 
     private func actions(for chat: ChatSession) -> ConversationActions {
         ConversationActions(
-            show: { panels.insert($0) },
+            show: { show($0, for: chat) },
             newChat: { Task { await loader.startFresh(model: model) } },
             back: { dismiss() },
             close: { model.runtime?.closeChat(chat); dismiss() })
+    }
+
+    /// Opens one of the chat's screens. Watch goes beside the chat when there is room, so the chat
+    /// stays in view while the helper works; the rest are sheets everywhere.
+    private func show(_ panel: ConversationPanel, for chat: ChatSession) {
+        guard panel == .watch, let sidePanel else {
+            panels.insert(panel)
+            return
+        }
+        withAnimation(.snappy) {
+            sidePanel.show("watch|" + chat.storedID) { WatchView(chat: chat) }
+        }
     }
 
     /// An open chat with everything that reacts to it.
@@ -183,7 +199,7 @@ struct ConversationView: View {
             let active = BotComputerActivity.isActive(runtime: chat.runtime, profile: chat.profileName)
             let held = ComputerHandoff.shared.isHeld(chat.runtime, chat.profileName)
             if WatchPolicy.showsWatch(active: active, held: held, isPrivate: PrivateBots.isPrivate(chat.profileName, connection: chat.runtime.connection.id)) {
-                panels.insert(.watch)
+                show(.watch, for: chat)
                 return
             }
             try? await Task.sleep(for: .milliseconds(250))

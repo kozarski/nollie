@@ -151,12 +151,14 @@ enum HTMLCard {
         return finished ?? nil
     }
 
-    /// The most height a card gets in the thread. Full Screen shows the rest.
-    @MainActor static var heightCap: CGFloat {
+    /// The most height a card gets in a thread `viewport` points tall. Full Screen shows the rest.
+    /// Before the thread is measured the card waits at a phone-sized cap.
+    static func heightCap(viewport: CGFloat) -> CGFloat {
         #if os(macOS)
         return 480
         #else
-        return max(240, UIScreen.main.bounds.height * 0.6)
+        guard viewport > 0, viewport.isFinite else { return 480 }
+        return max(240, viewport * 0.6)
         #endif
     }
 
@@ -176,5 +178,56 @@ enum HTMLCard {
         config.allowsPictureInPictureMediaPlayback = false
         #endif
         return config
+    }
+}
+
+extension EnvironmentValues {
+    /// Height of the chat the thread is in, for sizing what sits in it (an HTML card's cap).
+    @Entry var threadViewport: CGFloat = 0
+}
+
+/// An HTML card full size in the panel beside the chat: the page scrolling, and its source a tap
+/// away. The panel brings close and expand.
+struct HTMLCardPanel: View {
+    var html: String
+    @Environment(\.colorScheme) private var scheme
+    @State private var viewingSource = false
+    @State private var ready = false
+    @State private var failed = false
+    @State private var measured: CGFloat = 0
+
+    var body: some View {
+        SidePanelPage(title: "Card") {
+            Group {
+                if viewingSource || failed {
+                    ScrollView {
+                        Text(html)
+                            .textSelection(.enabled)
+                            .font(.system(.footnote, design: .monospaced))
+                            .padding()
+                            .spread()
+                    }
+                } else {
+                    HTMLWebView(document: CardPage.make(html, dark: scheme == .dark), scrolls: true, height: $measured,
+                                loaded: $ready, failed: $failed)
+                        .ignoresSafeArea(edges: .bottom)
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        if !failed {
+                            Button { viewingSource.toggle() } label: {
+                                Label(viewingSource ? "Show Card" : "Show Source",
+                                      systemImage: viewingSource ? "rectangle.on.rectangle" : "chevron.left.forwardslash.chevron.right")
+                            }
+                        }
+                        Button { CardPage.copy(html) } label: { Label("Copy HTML", systemImage: "doc.on.doc") }
+                    } label: {
+                        Label("Card options", systemImage: "ellipsis.circle")
+                    }
+                }
+            }
+        }
     }
 }

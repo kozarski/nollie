@@ -17,7 +17,8 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
         } else {
             hosting = embed(card)
         }
-        resize(to: view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width - 16)
+        // Before the first layout there is no width yet; the next layout pass sizes it properly.
+        resize(to: view.bounds.width > 0 ? view.bounds.width : (view.window?.bounds.width ?? 320) - 16)
     }
 
     override func viewDidLayoutSubviews() {
@@ -28,7 +29,8 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
     /// Fits the content height to `width`, within what the system leaves above the reply field.
     private func resize(to width: CGFloat) {
         let natural = hosting?.sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude)).height ?? 120
-        let ceiling = max(200, UIScreen.main.bounds.height * 0.29)
+        // A share of the window the notification is shown in, whichever display that is.
+        let ceiling = max(200, (view.window?.bounds.height ?? 0) * 0.29)
         let height = (96...ceiling).clamp(natural)
         if abs(height - preferredContentSize.height) > 1 || preferredContentSize.width != width {
             preferredContentSize = CGSize(width: width, height: height)

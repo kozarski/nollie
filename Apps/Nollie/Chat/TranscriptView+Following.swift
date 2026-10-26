@@ -98,14 +98,19 @@ extension TranscriptView {
 
     // MARK: What the scroll view reports
 
-    /// Learns the scroll view's own inset, once, from the first report after the dock is known.
+    /// Learns the scroll view's own inset from the first report after the dock is known, and again
+    /// whenever the scroll view changes size (a rotated, resized or unfolded window). Never while
+    /// only the dock moves, which would feed back into itself.
     func measureAutoInset(from reported: CGFloat) {
-        guard autoInsetFixed == nil, dockTop > 0 else { return }
+        guard dockTop > 0 else { return }
         #if os(iOS)
+        let size = metrics.scrollView?.bounds.size ?? .zero
+        guard autoInsetFixed == nil || size != metrics.autoInsetBasis else { return }
+        metrics.autoInsetBasis = size
         let extra = max(0, reported - (bottomInset + 8))
         autoInsetFixed = (homeIndicatorHeight > 0 && extra > homeIndicatorHeight / 2) ? homeIndicatorHeight : 0
         #else
-        autoInsetFixed = 0 // a window has no home indicator
+        if autoInsetFixed == nil { autoInsetFixed = 0 } // a window has no home indicator
         #endif
     }
 
@@ -144,11 +149,11 @@ extension TranscriptView {
     }
 
     #if os(iOS)
-    /// The key window's home indicator height; 0 if the device has none.
-    var homeIndicatorHeight: CGFloat { ThreadMetrics.homeIndicatorHeight }
+    /// The home indicator height of the window the thread is in; 0 if it has none.
+    var homeIndicatorHeight: CGFloat { metrics.scrollView?.window?.safeAreaInsets.bottom ?? 0 }
 
     func keyboardMoved(_ note: Notification) {
-        guard let raised = ThreadMetrics.keyboardInset(note) else { return }
+        guard let raised = ThreadMetrics.keyboardInset(note, in: metrics.scrollView?.window) else { return }
         // A spring tuned to the system keyboard's, so content and composer land together.
         let followKeyboard = Animation.interpolatingSpring(mass: 3, stiffness: 1000, damping: 500)
         withAnimation(followKeyboard) {

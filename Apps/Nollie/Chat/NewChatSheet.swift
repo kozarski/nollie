@@ -23,6 +23,11 @@ struct NewChatSheet: View {
     /// The message field is UIKit, so its focus is tracked with a flag of our own.
     @State private var messageFocused = false
     @State private var sources = AttachSources()
+    /// The sheet's size and where the message row sits in it, so the attach panel and the tap
+    /// catcher around it fit the sheet itself.
+    @State private var sheetSize = CGSize.zero
+    @State private var rowFrame = CGRect.zero
+    nonisolated private static let space = "newchat.sheet"
 
     private var canSend: Bool { recipient.bot != nil && draft.hasContent }
 
@@ -40,6 +45,8 @@ struct NewChatSheet: View {
             BotMatchList(matches: matches, typed: recipient.words, problem: draft.problem, onPicked: pick)
             firstMessage
         }
+        .coordinateSpace(.named(Self.space))
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { sheetSize = $0 }
         .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
         .onAppear { toFocused = true }
@@ -87,8 +94,11 @@ struct NewChatSheet: View {
                     .frame(height: StagedCard.side + 12)
             }
             messageRow
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { rowFrame = $0 }
                 .overlay(alignment: .topLeading) { attachPopup }
-                .background { outsideTapCatcher }
+                .background(alignment: .topLeading) { outsideTapCatcher }
+                // Room for the panel: from under the sheet's header down to the row.
+                .environment(\.attachPanelRoom, max(0, rowFrame.minY - 80))
         }
         .inset(h: 16, v: 8)
     }
@@ -165,12 +175,14 @@ struct NewChatSheet: View {
         }
     }
 
-    /// Catches a tap anywhere outside the panel and closes it.
+    /// Catches a tap anywhere in the sheet outside the panel and closes it. It hangs behind the
+    /// message row, stretched to cover the whole sheet from there.
     @ViewBuilder private var outsideTapCatcher: some View {
         if sources.panelOpen {
             Color.clear
                 .contentShape(.rect)
-                .frame(width: 3000, height: 4000)
+                .frame(width: sheetSize.width, height: sheetSize.height)
+                .offset(x: -rowFrame.minX, y: -rowFrame.minY)
                 .onTapGesture(perform: closePanel)
         }
     }

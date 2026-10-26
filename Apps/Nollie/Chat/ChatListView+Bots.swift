@@ -37,6 +37,8 @@ extension ChatListView {
         .scrollDismissesKeyboard(.immediately)
         .overlay(alignment: .bottom) { SummaryProgressStrip().padding(.bottom, 6) }
         .safeAreaInset(edge: .top, spacing: 0) { topBars(runtime) }
+        // Beside a chat, search and New chat wait at the foot of the list, in reach of a thumb.
+        .safeAreaInset(edge: .bottom, spacing: 0) { if opensBeside { besideFoot } }
         .background((showingBots && searchText.isEmpty ? Ink.canvas : Color(.systemGroupedBackground)).ignoresSafeArea())
         #endif
         .animation(.snappy, value: [runtime.restartRequired == nil, model.needsSignIn == nil])
@@ -66,7 +68,7 @@ extension ChatListView {
                         .inset(h: 12, v: 6)
                 }
                 #if os(iOS)
-                if !pins.isEmpty { pinnedFaces(pins, front: ordered.first?.name, runtime: runtime) }
+                if !pins.isEmpty { pinnedFaces(pins, front: ordered.first?.name, open: openName, runtime: runtime) }
                 #endif
                 ForEach(rows) { botRow($0, runtime: runtime, selected: openName == $0.name) }
             }
@@ -82,21 +84,53 @@ extension ChatListView {
     }
 
     #if os(iOS)
-    private func pinnedFaces(_ pins: [ProfileInfo], front: String?, runtime: GatewayRuntime) -> some View {
-        HStack(alignment: .top, spacing: 0) {
-            ForEach(pins) { bot in
-                Button { openBot(bot.name) } label: {
-                    BotTile(runtime: runtime, profile: bot, entry: home.entry(runtime, bot.name),
-                            star: bot.name == front, unread: home.unread(runtime, bot.name))
-                }
-                .buttonStyle(BotRowButtonStyle())
-                .background(Ink.canvas, in: .rect(cornerRadius: 18, style: .continuous))
-                .contentShape(.contextMenuPreview, .rect(cornerRadius: 18, style: .continuous))
-                .contextMenu { botMenu(bot, runtime: runtime) }
-                .spread(.center)
+    /// The pinned faces share the width evenly. Where four do not fit (a narrow list column, very
+    /// large text) the row scrolls sideways instead of running off the edge.
+    private func pinnedFaces(_ pins: [ProfileInfo], front: String?, open: String?, runtime: GatewayRuntime) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 0) {
+                ForEach(pins) { pinnedFace($0, front: front, open: open, runtime: runtime).spread(.center) }
             }
+            .padding(EdgeInsets(top: 4, leading: 4, bottom: 8, trailing: 4))
+            ScrollView(.horizontal) {
+                HStack(alignment: .top, spacing: 4) {
+                    ForEach(pins) { pinnedFace($0, front: front, open: open, runtime: runtime) }
+                }
+                .padding(EdgeInsets(top: 4, leading: 4, bottom: 8, trailing: 4))
+            }
+            .scrollIndicators(.hidden)
         }
-        .padding(EdgeInsets(top: 4, leading: 4, bottom: 8, trailing: 4))
+    }
+
+    private func pinnedFace(_ bot: ProfileInfo, front: String?, open: String?, runtime: GatewayRuntime) -> some View {
+        Button { openBot(bot.name) } label: {
+            BotTile(runtime: runtime, profile: bot, entry: home.entry(runtime, bot.name),
+                    star: bot.name == front, unread: home.unread(runtime, bot.name))
+        }
+        .buttonStyle(BotRowButtonStyle())
+        .background(open == bot.name ? Ink.selected : Ink.canvas, in: .rect(cornerRadius: 18, style: .continuous))
+        .contentShape(.contextMenuPreview, .rect(cornerRadius: 18, style: .continuous))
+        .contextMenu { botMenu(bot, runtime: runtime) }
+        .accessibilityAddTraits(open == bot.name ? .isSelected : [])
+    }
+
+    /// The foot of the list beside a chat: search, and a pill for a new chat.
+    private var besideFoot: some View {
+        HStack(spacing: 10) {
+            InkSearchField(text: $searchText, prompt: "Search", focused: $searchFocused) {
+                if model.runtime != nil { PapertrailSearchButton() }
+            }
+            .clipShape(.capsule)
+            Button { model.newChatSheetRequest = UUID() } label: {
+                Label("New chat", systemImage: "square.and.pencil")
+                    .font(.body.weight(.semibold))
+                    .lineLimit(1)
+            }
+            .buttonStyle(.glass)
+            .fixedSize()
+            .accessibilityIdentifier("chats.newChat")
+        }
+        .padding(EdgeInsets(top: 8, leading: 16, bottom: 10, trailing: 16))
     }
     #endif
 
@@ -135,12 +169,12 @@ extension ChatListView {
         home.visibleOrder(home.ordered(runtime), raw: pinnedRaw)
     }
 
-    /// The bot whose chat is open beside the list (the Mac), for its row's highlight.
+    /// The bot whose chat is open beside the list (the Mac, a wide iPad or iPhone), for its row's highlight.
     var openBotName: String? {
         #if os(macOS)
         model.selectedTab == .chats ? model.visibleChat?.profileName : nil
         #else
-        nil
+        opensBeside && model.selectedTab == .chats ? model.visibleChat?.profileName : nil
         #endif
     }
 
@@ -193,7 +227,11 @@ extension ChatListView {
                 .padding(EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20))
             }
             #endif
+            #if os(iOS)
+            if !opensBeside { searchField }
+            #else
             searchField
+            #endif
             if let waiting = model.needsSignIn {
                 GatewaySignInBanner(connection: waiting)
                     .padding(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))

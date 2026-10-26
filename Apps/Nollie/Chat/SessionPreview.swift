@@ -21,7 +21,9 @@ struct SessionPreview: View {
             facts
         }
         .padding(16)
-        .frame(width: 340, alignment: .leading)
+        // Its own width when there is room for it, and whatever the preview is offered when there is not.
+        .frame(minWidth: 0, idealWidth: 340, maxWidth: 340, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
         .task {
             tail = await recentSpoken()
             settled = true

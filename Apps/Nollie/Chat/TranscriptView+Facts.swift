@@ -24,8 +24,16 @@ extension TranscriptView {
     }
 
     /// The lowest y the content can occupy. The frame may end at the safe area or run to the
-    /// screen's edge; subtracting the measured inset and taking the smaller makes both agree.
-    var visibleBottom: CGFloat { min(scrollBottom, UIScreen.main.bounds.height - autoInset) }
+    /// window's edge; subtracting the measured inset and taking the smaller makes both agree. The
+    /// window is the one the thread is in, so a resized or unfolded window gives the right edge.
+    var visibleBottom: CGFloat {
+        #if os(iOS)
+        let windowBottom = metrics.scrollView?.window?.bounds.height ?? scrollBottom
+        #else
+        let windowBottom = scrollBottom
+        #endif
+        return min(scrollBottom, windowBottom - autoInset)
+    }
 
     /// Margin that leaves the last line 8pt clear of the dock. It never drops below the keyboard
     /// plus one composer line: a first message in a fresh chat once ended up hidden behind both.

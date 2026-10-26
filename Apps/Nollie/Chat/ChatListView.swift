@@ -10,9 +10,14 @@ import AppKit
 struct ChatListView: View {
     @Environment(AppModel.self) var model
 
-    /// On the Mac the split view passes in the path of its detail column: a chat opens there next
-    /// to the list and replaces whichever one was open. On the phone the list has its own stack.
+    /// The path chats open on, owned by whoever holds the stack: the Mac's detail column, or on
+    /// iPhone and iPad `ChatsRoot`, whose one stack carries the chat whether the list sits under it
+    /// or beside it. Without one, the list has a stack of its own.
     var detailPath: Binding<NavigationPath>? = nil
+    #if os(iOS)
+    /// Set by `ChatsRoot` when the chat shows beside the list: a chat then replaces the one open.
+    @Environment(\.chatOpensBeside) var opensBeside
+    #endif
 
     // Loaded data and what is displayed
     @State var sessions: [StoredSession] = []
@@ -79,7 +84,11 @@ struct ChatListView: View {
         // On the Mac this view is one column, and the chats sit on the detail column's stack (`detailPath`).
         decorated
         #else
-        NavigationStack(path: path) { decorated }
+        if detailPath != nil {
+            decorated
+        } else {
+            NavigationStack(path: path) { decorated }
+        }
         #endif
     }
 
@@ -98,8 +107,8 @@ struct ChatListView: View {
             // long chain exceeded what the type checker can handle.
             .modifier(BotsHomeHooks(pinnedRaw: $pinnedRaw, showNewBot: $showNewBot))
             #if os(iOS)
-            // On the Mac the destinations belong to the detail column's stack instead.
-            .navigationDestination(for: ChatRoute.self) { ChatDestination(route: $0) }
+            // A stack owned elsewhere (`ChatsRoot`, the Mac's detail column) has the destinations.
+            .modifier(OwnChatDestinations(enabled: detailPath == nil))
             #endif
             .modifier(Reloads(list: self))
             .onChange(of: searchText) { _, typed in Task { await search(typed) } }
@@ -163,7 +172,22 @@ struct ChatListView: View {
         }
         selectedID = (route as? ChatRoute)?.storedID
         #else
-        path.wrappedValue.append(route)
+        if opensBeside {
+            // Beside the list, as on the Mac: the new chat takes the open one's place at once.
+            selectedID = (route as? ChatRoute)?.storedID
+            var instantly = Transaction()
+            instantly.disablesAnimations = true
+            withTransaction(instantly) {
+                if var blank = route as? ChatRoute, blank.storedID == nil {
+                    blank.token = UUID()
+                    path.wrappedValue = NavigationPath([blank])
+                } else {
+                    path.wrappedValue = NavigationPath([route])
+                }
+            }
+        } else {
+            path.wrappedValue.append(route)
+        }
         #endif
     }
 
@@ -242,6 +266,21 @@ struct ChatListView: View {
     }
     #endif
 }
+
+#if os(iOS)
+/// The list's own chat destinations, for when it holds its own stack.
+private struct OwnChatDestinations: ViewModifier {
+    var enabled: Bool
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if enabled {
+            content.navigationDestination(for: ChatRoute.self) { ChatDestination(route: $0) }
+        } else {
+            content
+        }
+    }
+}
+#endif
 
 /// Keeps the tab bar and tab state matched to how deep the Chats stack goes.
 private struct PathWatcher: ViewModifier {
