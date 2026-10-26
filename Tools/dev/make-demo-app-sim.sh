@@ -33,8 +33,8 @@ cp -R "$BUILT_APP" "$copy"
 
 plist_set() { /usr/libexec/PlistBuddy -c "Set :$1 $2" "$copy/Info.plist"; }
 
-# Extensions are tied to the real bundle id, so leave them out.
-rm -rf "$copy/PlugIns" "$copy/_CodeSignature"
+# Extensions and the Watch app are tied to the real bundle id, so leave them out.
+rm -rf "$copy/PlugIns" "$copy/Watch" "$copy/_CodeSignature"
 plist_set CFBundleIdentifier "$DEMO_ID"
 plist_set CFBundleName "Nollie Demo"
 plist_set CFBundleDisplayName "Nollie Demo"

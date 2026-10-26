@@ -54,10 +54,10 @@ enum LocalNotifier {
         // Under Settings, Security, "Confirm approvals" decides what the buttons do. On: they launch the
         // app and the card checks once more. Off: the answer goes straight from the notification.
         let opensApp: UNNotificationActionOptions = ApprovalConfirm.isOn ? [.foreground] : []
-        let approve = UNNotificationAction(identifier: approveOnceAction, title: "Approve once",
+        let approve = UNNotificationAction(identifier: approveOnceAction, title: "Allow once",
                                            options: approveOptions(confirm: ApprovalConfirm.isOn, ownerCheck: ApprovalOwnerCheck.isOn()))
-        let deny = UNNotificationAction(identifier: denyAction, title: "Deny",
-                                        options: opensApp.union([.authenticationRequired, .destructive]))
+        // Saying no is always safe, so Deny never asks to unlock, here or mirrored on the Watch.
+        let deny = UNNotificationAction(identifier: denyAction, title: "Deny", options: opensApp.union(.destructive))
         let reply = UNTextInputNotificationAction(identifier: replyAction, title: "Reply", options: replyOptions,
                                                   textInputButtonTitle: "Send", textInputPlaceholder: "Message")
         let layout: [(String, [UNNotificationAction])] = [
@@ -76,7 +76,7 @@ enum LocalNotifier {
 
     /// Approve always needs the phone unlocked. It opens the app when approvals are confirmed there,
     /// and while Face ID for buying and sending is on, since a push doesn't say which kind of approval
-    /// it carries and Face ID can only be asked in the app. Deny never needs more than unlocking.
+    /// it carries and Face ID can only be asked in the app. Deny never asks to unlock.
     static func approveOptions(confirm: Bool, ownerCheck: Bool) -> UNNotificationActionOptions {
         (confirm || ownerCheck) ? [.foreground, .authenticationRequired] : [.authenticationRequired]
     }

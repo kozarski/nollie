@@ -78,7 +78,7 @@ struct ApprovalConfirmation: ViewModifier {
     func body(content: Content) -> some View {
         content
             .alert(denying ? "Deny this action?" : "Approve this action?", isPresented: shown) {
-                Button(denying ? "Deny" : "Approve once", role: denying ? .destructive : nil, action: confirm)
+                Button(denying ? "Deny" : "Allow once", role: denying ? .destructive : nil, action: confirm)
                 Button("Cancel", role: .cancel, action: clear)
             } message: {
                 Text(words)

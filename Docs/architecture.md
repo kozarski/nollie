@@ -10,6 +10,7 @@ A saved gateway connects the app to one Hermes installation; each profile appear
 | Directory | Responsibility |
 | :--- | :--- |
 | `Apps/Nollie/` | Shared iPhone/Mac app model, SwiftUI screens, onboarding and push integration |
+| `Apps/Watch/` | The Apple Watch app and its widgets; it reaches the Mac only through the iPhone (WatchConnectivity, `Apps/Nollie/Watch/`) |
 | `Apps/Mac/` | Mac window, menus, app delegate, platform adapters and the live picture's host (`Live/`) |
 | `Packages/NollieCore/` | Gateway networking, wire models, chat/runtime state, storage, pure policies and the live picture's wire, encoder and client (`Live/`) |
 | `Shared/` | Bot drawing, appearance policy, icon and types shared with extensions |

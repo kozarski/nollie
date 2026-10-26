@@ -14,7 +14,7 @@ your own Apple Developer APNs key, and talks only to your gateway and to Apple.
    (`session.active_list`, then `session.activate`) and listens to the events.
 3. If an approval, a question or a secret request is waiting, a turn ends, an error is raised or a
    scheduled run finishes, it sends an APNs alert to every registered device. Tapping the alert
-   opens that session in the app. Approval alerts also carry **Approve once** and **Deny**
+   opens that session in the app. Approval alerts also carry **Allow once** and **Deny**
    buttons, which answer through `approval.respond`.
 4. When a turn is over it also closes the app's Live Activity with a `liveactivity` push.
 

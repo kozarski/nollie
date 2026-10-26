@@ -101,6 +101,8 @@
 		F5D2FD20FC5B288F072660D4 /* LinkDoorLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CD79C89A908EFF055C475E /* LinkDoorLive.swift */; };
 		5534592A0A87F5733A649E93 /* LinkDoorLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CD79C89A908EFF055C475E /* LinkDoorLive.swift */; };
 		CC0471000000000000000002 /* NollieControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CC0471000000000000000001 /* NollieControls.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A11CE0000000000000000002 /* NollieWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000001 /* NollieWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A11CE0000000000000001002 /* NollieWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000001001 /* NollieWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -174,6 +176,20 @@
 			remoteGlobalIDString = CC047100000000000000000A;
 			remoteInfo = NollieControls;
 		};
+		A11CE0000000000000000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A11CE000000000000000000A;
+			remoteInfo = NollieWatch;
+		};
+		A11CE0000000000000001003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A11CE000000000000000100A;
+			remoteInfo = NollieWatchWidgets;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -197,6 +213,28 @@
 			dstSubfolderSpec = 13;
 			files = (
 				AA00000000000000000310 /* NollieMacNotificationService.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A11CE0000000000000000019 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				A11CE0000000000000000002 /* NollieWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A11CE0000000000000000018 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A11CE0000000000000001002 /* NollieWatchWidgets.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -258,6 +296,8 @@
 		C9CD79C89A908EFF055C475E /* LinkDoorLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorLive.swift; path = Services/Runtime/LinkDoorLive.swift; sourceTree = SOURCE_ROOT; };
 		AFE2BAA70CA95419C1FD0919 /* LinkDoorWebSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorWebSocket.swift; path = Services/Runtime/LinkDoorWebSocket.swift; sourceTree = SOURCE_ROOT; };
 		CC0471000000000000000001 /* NollieControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A11CE0000000000000000001 /* NollieWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NollieWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A11CE0000000000000001001 /* NollieWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -365,6 +405,36 @@
 			);
 			target = CC047100000000000000000A /* NollieControls */;
 		};
+		A11CE0000000000000000006 /* Exceptions for "App" folder in "NollieWatch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A11CE000000000000000000A /* NollieWatch */;
+		};
+		A11CE0000000000000000007 /* Exceptions for "Shared" folder in "NollieWatch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppIcon.icon,
+				CharacterAvatars.xcassets,
+				HelperAtWork.swift,
+			);
+			target = A11CE000000000000000000A /* NollieWatch */;
+		};
+		A11CE0000000000000001006 /* Exceptions for "Widgets" folder in "NollieWatchWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A11CE000000000000000100A /* NollieWatchWidgets */;
+		};
+		A11CE0000000000000001007 /* Exceptions for "Shared" folder in "NollieWatchWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				HelperAtWork.swift,
+			);
+			target = A11CE000000000000000100A /* NollieWatchWidgets */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -411,6 +481,8 @@
 				AA00000000000000000130 /* Exceptions for "Shared" folder in "NollieNotificationContent" target */,
 				AA00000000000000000365 /* Exceptions for "Shared" folder in "NollieMacNotificationService" target */,
 				CC0471000000000000000007 /* Exceptions for "Shared" folder in "NollieControls" target */,
+				A11CE0000000000000000007 /* Exceptions for "Shared" folder in "NollieWatch" target */,
+				A11CE0000000000000001007 /* Exceptions for "Shared" folder in "NollieWatchWidgets" target */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -465,6 +537,30 @@
 			);
 			name = Controls;
 			path = Extensions/Controls;
+			sourceTree = "<group>";
+		};
+		A11CE0000000000000000005 /* App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A11CE0000000000000000006 /* Exceptions for "App" folder in "NollieWatch" target */,
+			);
+			name = App;
+			path = Apps/Watch/App;
+			sourceTree = "<group>";
+		};
+		A11CE0000000000000001005 /* Widgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A11CE0000000000000001006 /* Exceptions for "Widgets" folder in "NollieWatchWidgets" target */,
+			);
+			name = Widgets;
+			path = Apps/Watch/Widgets;
+			sourceTree = "<group>";
+		};
+		A11CE0000000000000002005 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = Shared;
+			path = Apps/Watch/Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -555,6 +651,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A11CE000000000000000000C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A11CE000000000000000100C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -581,6 +691,7 @@
 			children = (
 				AA00000000000000000060 /* Nollie */,
 				AA00000000000000000260 /* Mac */,
+				A11CE0000000000000002000 /* Watch */,
 			);
 			name = Apps;
 			sourceTree = "<group>";
@@ -648,6 +759,8 @@
 				AA00000000000000000101 /* NollieNotificationService.appex */,
 				AA00000000000000000121 /* NollieNotificationContent.appex */,
 				CC0471000000000000000001 /* NollieControls.appex */,
+				A11CE0000000000000000001 /* NollieWatch.app */,
+				A11CE0000000000000001001 /* NollieWatchWidgets.appex */,
 				AA00000000000000000220 /* Nollie.app */,
 				AA00000000000000000321 /* NollieMacNotificationService.appex */,
 				AA00000000000000000022 /* NollieTests.xctest */,
@@ -693,6 +806,16 @@
 				04AA5B015A39D31B398EF03D /* Shared app sources */,
 			);
 			name = Services;
+			sourceTree = "<group>";
+		};
+		A11CE0000000000000002000 /* Watch */ = {
+			isa = PBXGroup;
+			children = (
+				A11CE0000000000000000005 /* App */,
+				A11CE0000000000000001005 /* Widgets */,
+				A11CE0000000000000002005 /* Shared */,
+			);
+			name = Watch;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -742,6 +865,7 @@
 				AA00000000000000000091 /* Frameworks */,
 				AA00000000000000000092 /* Resources */,
 				AA00000000000000000050 /* Embed Foundation Extensions */,
+				A11CE0000000000000000019 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
@@ -749,10 +873,12 @@
 				AA00000000000000000111 /* PBXTargetDependency */,
 				AA0000000000000000012A /* PBXTargetDependency */,
 				CC0471000000000000000004 /* PBXTargetDependency */,
+				A11CE0000000000000000004 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				AA00000000000000000060 /* Nollie */,
 				AA00000000000000000063 /* Shared */,
+				A11CE0000000000000002005 /* Shared */,
 			);
 			name = Nollie;
 			packageProductDependencies = (
@@ -962,6 +1088,50 @@
 			productReference = CC0471000000000000000001 /* NollieControls.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		A11CE000000000000000000A /* NollieWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A11CE000000000000000000E /* Build configuration list for PBXNativeTarget "NollieWatch" */;
+			buildPhases = (
+				A11CE000000000000000000B /* Sources */,
+				A11CE000000000000000000C /* Frameworks */,
+				A11CE000000000000000000D /* Resources */,
+				A11CE0000000000000000018 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A11CE0000000000000001004 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A11CE0000000000000000005 /* App */,
+				A11CE0000000000000002005 /* Shared */,
+			);
+			name = NollieWatch;
+			productName = NollieWatch;
+			productReference = A11CE0000000000000000001 /* NollieWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A11CE000000000000000100A /* NollieWatchWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A11CE000000000000000100E /* Build configuration list for PBXNativeTarget "NollieWatchWidgets" */;
+			buildPhases = (
+				A11CE000000000000000100B /* Sources */,
+				A11CE000000000000000100C /* Frameworks */,
+				A11CE000000000000000100D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A11CE0000000000000001005 /* Widgets */,
+				A11CE0000000000000002005 /* Shared */,
+			);
+			name = NollieWatchWidgets;
+			productName = NollieWatchWidgets;
+			productReference = A11CE0000000000000001001 /* NollieWatchWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1007,6 +1177,8 @@
 				AA00000000000000000110 /* NollieNotificationService */,
 				AA00000000000000000125 /* NollieNotificationContent */,
 				CC047100000000000000000A /* NollieControls */,
+				A11CE000000000000000000A /* NollieWatch */,
+				A11CE000000000000000100A /* NollieWatchWidgets */,
 				AA00000000000000000240 /* NollieMac */,
 				AA00000000000000000340 /* NollieMacNotificationService */,
 				AA00000000000000000042 /* NollieTests */,
@@ -1090,6 +1262,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		CC047100000000000000000D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A11CE000000000000000000D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A11CE000000000000000100D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1377,6 +1563,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A11CE000000000000000000B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A11CE000000000000000100B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1429,6 +1629,16 @@
 			isa = PBXTargetDependency;
 			target = CC047100000000000000000A /* NollieControls */;
 			targetProxy = CC0471000000000000000003 /* PBXContainerItemProxy */;
+		};
+		A11CE0000000000000000004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A11CE000000000000000000A /* NollieWatch */;
+			targetProxy = A11CE0000000000000000003 /* PBXContainerItemProxy */;
+		};
+		A11CE0000000000000001004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A11CE000000000000000100A /* NollieWatchWidgets */;
+			targetProxy = A11CE0000000000000001003 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2863,6 +3073,226 @@
 			};
 			name = DirectRelease;
 		};
+		A11CE0000000000000000014 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Watch/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		A11CE0000000000000000015 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Watch/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = DirectDebug;
+		};
+		A11CE0000000000000000016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Watch/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		A11CE0000000000000000017 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Watch/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = DirectRelease;
+		};
+		A11CE0000000000000001014 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Watch/Widgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_WATCH_WIDGETS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		A11CE0000000000000001015 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Watch/Widgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_WATCH_WIDGETS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = DirectDebug;
+		};
+		A11CE0000000000000001016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Watch/Widgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_WATCH_WIDGETS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		A11CE0000000000000001017 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Apps/Watch/Widgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_WATCH_WIDGETS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = DirectRelease;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -3005,6 +3435,28 @@
 				CC0471000000000000000015 /* DirectDebug */,
 				CC0471000000000000000016 /* Release */,
 				CC0471000000000000000017 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A11CE000000000000000000E /* Build configuration list for PBXNativeTarget "NollieWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A11CE0000000000000000014 /* Debug */,
+				A11CE0000000000000000015 /* DirectDebug */,
+				A11CE0000000000000000016 /* Release */,
+				A11CE0000000000000000017 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A11CE000000000000000100E /* Build configuration list for PBXNativeTarget "NollieWatchWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A11CE0000000000000001014 /* Debug */,
+				A11CE0000000000000001015 /* DirectDebug */,
+				A11CE0000000000000001016 /* Release */,
+				A11CE0000000000000001017 /* DirectRelease */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -255,6 +255,6 @@ private struct TurnRow: View {
             // Touch ID). Saying no is fine from here.
             return [RowChoice(title: "Answer in Nollie", prominent: true, identifier: "menubar.answerInNollie") { open(turn.id) }, deny]
         }
-        return [RowChoice(title: "Approve once", prominent: true, run: reply("once")), deny]
+        return [RowChoice(title: "Allow once", prominent: true, run: reply("once")), deny]
     }
 }

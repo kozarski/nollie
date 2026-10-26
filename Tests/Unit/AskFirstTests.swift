@@ -169,7 +169,7 @@ import Testing
         }
     }
 
-    /// After a notification's Approve once, the alert reads the action and the check, never the command.
+    /// After a notification's Allow once, the alert reads the action and the check, never the command.
     @Test func theConfirmationReadsTheActionNotTheCommand() throws {
         let held = approval("plugin_rule:nollie-ask-first:send:" + id,
                             "Press “Send” on its computer (local:nollie-career).\nClick at (640, 410).\nYou're about to press “Send”.")
@@ -184,7 +184,7 @@ import Testing
     }
 
     #if os(macOS)
-    /// The menu bar offers Deny and Answer in Nollie for these, never a one-click Approve once.
+    /// The menu bar offers Deny and Answer in Nollie for these, never a one-click Allow once.
     @MainActor @Test func theMenuBarSendsAskFirstAndSignInsToTheApp() {
         #expect(TurnBoard.answersInApp(approval("plugin_rule:nollie-ask-first:send:" + id, "Send with gmail: send email")))
         #expect(TurnBoard.answersInApp(approval("plugin_rule:nollie-ask-first:send:" + id, "")))

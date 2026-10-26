@@ -203,6 +203,7 @@ final class AppModel {
         #endif
         cloudAlerts.startObservingAccountChanges()
         listenForSystemEvents()
+        WatchLink.start()
     }
 
     /// Things the app reacts to wherever it is: a push registration that needs syncing, and the
