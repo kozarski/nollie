@@ -235,6 +235,9 @@ extension ChatListView {
                     .padding(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
+            #if os(iOS)
+            QuickAnswerAwayBar(runtime: runtime)
+            #endif
         }
     }
 
