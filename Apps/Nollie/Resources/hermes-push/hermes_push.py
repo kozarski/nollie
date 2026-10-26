@@ -47,7 +47,7 @@ except ImportError as missing:  # pragma: no cover
 log = logging.getLogger("hermes-push")
 
 # Must equal the version in plugin/nollie-push/plugin.yaml, because the app shows them together.
-VERSION = "1.0.42"
+VERSION = "1.0.43"
 USER_AGENT = f"Nollie-Push/{VERSION} (companion for Hermes)"
 
 HOUR = 3600
@@ -471,12 +471,37 @@ def seal_for_device(device, content):
     return base64.b64encode(nonce + cipher).decode()
 
 
+def alert_fields(payload):
+    """What the app opens: the alert words, the category and the routing block. Only ever sent sealed."""
+    aps = payload.get("aps", {})
+    inner = dict(aps.get("alert") or {})
+    inner.update(category=aps.get("category", "HERMES_TURN"), thread_id=aps.get("thread-id", ""),
+                 interruption=aps.get("interruption-level", "active"), hermes=payload.get("hermes", {}))
+    return inner
+
+
+# What a lock screen shows if the app's extension can't, or won't, open the real words.
+GENERIC_ALERT = {"title": "Nollie", "body": "New message"}
+# The only routing a direct push carries in the clear: opaque ids, never words from the chat.
+OPEN_ROUTING = ("session_id", "profile", "gateway", "request_id")
+
 _APPLE_FIXED_HEADERS = {"apns-priority": "10", "apns-expiration": "0", "content-type": "application/json"}
 
 
 def _apple_host(device, forced_sandbox):
     development = forced_sandbox or device.get("apns_environment") == "development"
     return ("api.sandbox.push.apple.com" if development else "api.push.apple.com")
+
+
+def curl_config(url, headers, body):
+    """A curl config file (read with -K -) for one request, so no secret has to sit on the command line."""
+    def quoted(text):
+        escapes = {"\\": "\\\\", '"': '\\"', "\n": "\\n", "\r": "\\r", "\t": "\\t", "\v": "\\v"}
+        return '"' + "".join(escapes.get(char, char) for char in text) + '"'
+    lines = [f"url = {quoted(url)}"]
+    lines += [f"header = {quoted(f'{name}: {value}')}" for name, value in headers]
+    lines.append(f"data-binary = {quoted(body)}")
+    return "\n".join(lines) + "\n"
 
 
 class APNs:
@@ -499,6 +524,8 @@ class APNs:
     def send(self, device, payload, *, push_type="alert", collapse_id=None, token_override=None):
         if device.get("relay"):
             return self._via_relay(device, push_type, payload, collapse_id, token_override)
+        if push_type == "alert":
+            payload = self._direct_alert(device, payload)
         return self._to_apple(device, push_type, payload, collapse_id, token_override)
 
     # relay
@@ -523,9 +550,7 @@ class APNs:
             return {"push_type": "sound", "thread_id": thread, "collapse_id": collapse_id}
         if kind != "alert":
             return {"push_type": kind}
-        inner = dict(aps.get("alert") or {})
-        inner.update(category=aps.get("category", "HERMES_TURN"), thread_id=thread,
-                     interruption=aps.get("interruption-level", "active"), hermes=payload.get("hermes", {}))
+        inner = alert_fields(payload)
         sealed = seal_for_device(device, inner)
         if sealed is None:
             log.warning("device %s uses a relay but has no payload_key: skipped", device.get("device_id"))
@@ -560,6 +585,29 @@ class APNs:
         return status == 200
 
     # straight to Apple
+
+    @staticmethod
+    def _direct_alert(device, payload):
+        """A direct alert reads the same on the lock screen as a relayed one: generic words and
+        mutable-content, with the real ones sealed for the app's extension, which checks Hide details,
+        App Lock and Private bots before it opens them. With no key to seal with, nothing real goes."""
+        aps, hermes = payload.get("aps", {}), payload.get("hermes", {})
+        if not aps.get("alert") or hermes.get("kind") == "test":
+            return payload          # the test words are fixed and hold nothing from a chat
+        outer = {"alert": dict(GENERIC_ALERT), "mutable-content": 1,
+                 "thread-id": aps.get("thread-id", ""), "interruption-level": aps.get("interruption-level", "active")}
+        if aps.get("sound"):
+            outer["sound"] = aps["sound"]
+        direct = {"aps": outer, "hermes": {name: hermes[name] for name in OPEN_ROUTING if hermes.get(name)}}
+        try:
+            sealed = seal_for_device(device, alert_fields(payload))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("could not seal an alert for %s (%s): sending the generic words only",
+                        device.get("device_id"), type(exc).__name__)
+            sealed = None
+        if sealed:
+            direct["enc"] = sealed
+        return direct
 
     def _provider_token(self):
         value, made = self._jwt
@@ -596,14 +644,17 @@ class APNs:
         if self.dry_run:
             log.info("dry run, would send %s to %s through %s with topic %s", kind, device_label(device), host, topic)
             return True
-        flags = [arg for name, value in self._apple_headers(topic, kind, collapse_id) for arg in ("-H", f"{name}: {value}")]
-        # The body goes in on stdin so it never shows up in the process list.
-        command = ["curl", "-sS", "--http2", "-o", "-", "-w", "\n%{http_code}", *flags, "-d", "@-",
-                   f"https://{host}/3/device/{token}"]
+        # The headers carry the provider token, so curl reads them from stdin with the body. Neither the
+        # token nor the device token ever shows up in the process list.
+        url = f"https://{host}/3/device/{urllib.parse.quote(str(token), safe='')}"
+        config = curl_config(url, self._apple_headers(topic, kind, collapse_id), json.dumps(payload))
+        command = ["curl", "-sS", "--http2", "-o", "-", "-w", "\n%{http_code}", "-K", "-"]
         try:
-            done = subprocess.run(command, input=json.dumps(payload), capture_output=True, text=True, timeout=30)
+            done = subprocess.run(command, input=config, capture_output=True, text=True, timeout=30)
         except Exception as exc:  # noqa: BLE001
-            log.warning("running curl for APNs failed: %s", exc)
+            # Never log the exception itself: a timeout carries the whole command.
+            reason = "timed out" if isinstance(exc, subprocess.TimeoutExpired) else "could not be run"
+            log.warning("curl for APNs %s", reason)
             return False
         # curl prints the body, then a newline and the status code (see -w above).
         body, _, code = (done.stdout or "").rpartition("\n")
