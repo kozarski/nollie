@@ -179,8 +179,9 @@ import Testing
             named: "night-shift-share-solid", width: NightShiftShareView.width)
     }
 
-    /// System control's two cards: a screen action asking whether the bot may use this Mac, and
-    /// the one after a turn that stopped because it was off.
+    /// System control's cards: a screen action asking whether the bot may use this Mac, the one
+    /// after a turn that stopped because it was off, that one after turning it on failed, and
+    /// what an HTML card shows when it can't be drawn safely.
     @Test func theSystemControlCards() {
         let a = ApprovalRequest(requestId: "r", sessionId: "s",
                                 command: "computer_use: click at (489, 65)",
@@ -191,6 +192,9 @@ import Testing
                 .padding(.horizontal, 16).padding(.vertical, 14)
                 .background(Ink.card, in: .rect(cornerRadius: 18, style: .continuous))
             SystemControlAskCard(botName: "Nollie", onTurnOn: {}, onDismiss: {})
+            SystemControlAskCard(botName: "Nollie", startsFailed: true, onTurnOn: {}, onDismiss: {})
+            CardNotDrawn(html: "<h1>Weekly plan</h1>\n<p>Three things for Monday.</p>")
+                .background(Ink.card, in: .rect(cornerRadius: 12, style: .continuous))
         }
         .padding(16)
         attach(cards, named: "system-control", width: 390)

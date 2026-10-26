@@ -88,10 +88,20 @@ struct ThreadApprovalCard: View {
 /// action. Says so, and offers one tap to turn it on and carry on.
 struct SystemControlAskCard: View {
     var botName: String
-    var onTurnOn: () -> Void
+    /// Turns it on. Throws when it didn't work, and the card says so and lets the person try again.
+    var onTurnOn: () async throws -> Void
     var onDismiss: () -> Void
 
     @State private var working: Bool = false
+    @State private var failed: Bool
+
+    /// `startsFailed` is for pictures of the failure line.
+    init(botName: String, startsFailed: Bool = false, onTurnOn: @escaping () async throws -> Void, onDismiss: @escaping () -> Void) {
+        self.botName = botName
+        self.onTurnOn = onTurnOn
+        self.onDismiss = onDismiss
+        _failed = State(initialValue: startsFailed)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -101,7 +111,15 @@ struct SystemControlAskCard: View {
                 .foregroundStyle(Ink.cardText)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 6)
-                .padding(.bottom, 12)
+                .padding(.bottom, failed ? 6 : 12)
+            if failed {
+                Text("Couldn't turn it on. Try again.")
+                    .font(Ink.cardBody)
+                    .foregroundStyle(Ink.warnText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 12)
+                    .accessibilityIdentifier("systemControl.failed")
+            }
             SideBySideOrStacked { fill in buttons(fill: fill) }
         }
         .inkCard()
@@ -121,9 +139,8 @@ struct SystemControlAskCard: View {
     }
 
     @ViewBuilder private func buttons(fill: Bool) -> some View {
-        Button(working ? "Turning it on…" : "Turn on and carry on") {
-            working = true
-            onTurnOn()
+        Button(working ? "Turning it on…" : (failed ? "Try again" : "Turn on and carry on")) {
+            Task { await turnOn() }
         }
         .buttonStyle(InkPillStyle(fill: fill))
         .disabled(working)
@@ -131,6 +148,16 @@ struct SystemControlAskCard: View {
         Button("Not now", action: onDismiss)
             .buttonStyle(OutlinePillStyle(fill: fill))
             .accessibilityIdentifier("systemControl.notNow")
+    }
+}
+
+extension SystemControlAskCard {
+    /// Busy only while the switch is being written, whatever the outcome.
+    private func turnOn() async {
+        working = true
+        failed = false
+        defer { working = false }
+        do { try await onTurnOn() } catch { failed = true }
     }
 }
 

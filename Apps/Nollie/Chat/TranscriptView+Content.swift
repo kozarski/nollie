@@ -50,12 +50,11 @@ extension TranscriptView {
         .id("system-control-stop")
     }
 
-    private func turnOnSystemControl() {
-        Task {
-            let enabled = await SystemControl.shared.set(true, profile: chat.profileName, rt: chat.runtime)
-            guard enabled else { return }
-            _ = await chat.send("System control is on now. Carry on.")
+    private func turnOnSystemControl() async throws {
+        guard await SystemControl.shared.set(true, profile: chat.profileName, rt: chat.runtime) else {
+            throw SystemControlFailure()
         }
+        _ = await chat.send("System control is on now. Carry on.")
     }
 
     /// Deliberately transition-free: the streaming reply that follows draws an identical bubble
