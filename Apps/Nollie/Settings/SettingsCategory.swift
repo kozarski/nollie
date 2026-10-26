@@ -2,8 +2,8 @@ import Foundation
 
 /// The small set of top-level settings. Search also finds the controls grouped inside each page.
 enum SettingsCategory: String, CaseIterable, Identifiable {
-    case bots, appearance, speech, notifications, privacy = "icloud", signIns = "signins", siri = "voice", connection = "gateways", away,
-         keepAwake = "awake", about, advanced
+    case bots, appearance, speech, notifications, privacy = "icloud", signIns = "signins", cards, siri = "voice",
+         connection = "gateways", away, keepAwake = "awake", about, advanced
 
     var id: String { rawValue }
     var title: String {
@@ -14,6 +14,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .notifications: "Notifications"
         case .privacy: "Privacy"
         case .signIns: "Sign-ins"
+        case .cards: "Cards"
         case .siri: "Siri & Shortcuts"
         case .connection: "Connection"
         case .away: "Away from home"
@@ -30,6 +31,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .notifications: "bell.badge"
         case .privacy: "hand.raised.fill"
         case .signIns: "key.fill"
+        case .cards: "creditcard.fill"
         case .siri: "app.connected.to.app.below.fill"
         case .connection: "network"
         case .away: "globe"
@@ -46,6 +48,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .notifications: "alert permission sound haptics background"
         case .privacy: "security lock face id touch id approvals permissions camera microphone photos local network notifications accessibility screen recording"
         case .signIns: "password passwords login log in username website site keychain one-time code"
+        case .cards: "card cards credit debit pay payment buy buying checkout shop money visa mastercard"
         case .siri: DeviceWords.isMac ? "shortcuts spotlight siri" : "shortcuts spotlight siri stop lock screen live activity"
         case .connection: "setup set up connect gateway sign in models local cloud import"
         case .away: "tailscale remote outside travel anywhere network wifi cellular exit node"

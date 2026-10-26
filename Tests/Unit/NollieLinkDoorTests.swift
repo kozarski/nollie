@@ -209,6 +209,8 @@ struct NollieLinkDoorTests {
             ("POST", "/api/plugins/nollie-workflow/rehearsals/rehearsal-career-3f2a9c-e-81/keep-off", false),
             ("POST", "/api/plugins/nollie-workflow/sign-ins/requests/0123456789abcdef0123456789abcdef/claim", false),
             ("GET", "/api/plugins/nollie-workflow/apple-data/bots", false), ("PUT", "/api/plugins/nollie-workflow/apple-data/bots", false),
+            ("GET", "/api/plugins/nollie-workflow/payments/cards", false),
+            ("GET", "/api/plugins/nollie-workflow/payments/bots", false), ("PUT", "/api/plugins/nollie-workflow/payments/bots", false),
             ("GET", "/nollie/live", true), ("POST", "/nollie/stop", false),
             ("POST", "/api/plugins/nollie-computer/take-over", false), ("POST", "/api/plugins/nollie-computer/hand-back", false),
             ("GET", "/nollie/link/hosts", false), ("POST", "/nollie/link/away/on", false), ("POST", "/nollie/link/away/off", false),
@@ -281,6 +283,18 @@ struct NollieLinkDoorTests {
             ("POST", "/api/plugins/nollie-workflow/apple-data/requests/abc/prepare", false),
             ("POST", "/api/plugins/nollie-workflow/apple-data/requests/abc/answer", false),
             ("POST", "/api/plugins/nollie-workflow/apple-data/bots", false),
+            // Saved cards: a phone reads the labels and sets a helper's switch; it never sends cards, words a
+            // payment, starts a fill or reads the requests and history.
+            ("PUT", "/api/plugins/nollie-workflow/payments/cards", false),
+            ("GET", "/api/plugins/nollie-workflow/payments/requests", false),
+            ("GET", "/api/plugins/nollie-workflow/payments/requests/abc", false),
+            ("POST", "/api/plugins/nollie-workflow/payments/requests/abc/prepare", false),
+            ("POST", "/api/plugins/nollie-workflow/payments/requests/abc/refuse", false),
+            ("POST", "/api/plugins/nollie-workflow/payments/requests/abc/start", false),
+            ("POST", "/api/plugins/nollie-workflow/payments/requests/abc/result", false),
+            ("POST", "/api/plugins/nollie-workflow/payments/requests/abc/clear", false),
+            ("GET", "/api/plugins/nollie-workflow/payments/history", false),
+            ("POST", "/api/plugins/nollie-workflow/payments/bots", false),
             // The live picture: the door's own socket, a GET upgrade at exactly one path.
             ("GET", "/nollie/live", false), ("HEAD", "/nollie/live", false), ("POST", "/nollie/live", false),
             ("PUT", "/nollie/live", false), ("PATCH", "/nollie/live", false), ("DELETE", "/nollie/live", false),

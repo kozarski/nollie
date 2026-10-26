@@ -24,6 +24,21 @@ after your yes. The helper is never told the password, and while it is typed eve
 preview of a computer pauses. If a site shows the password in plain text afterwards, a later screenshot could
 still catch it.
 
+**Saved cards never reach a helper.** A helper you've allowed to pay ("Can pay with my cards" in its settings,
+off to start) can ask to pay at a checkout. Your card number and expiry date stay in your Mac's Keychain,
+behind Touch ID or your Mac's password for every read, on this Mac only and never in iCloud. The helper, its
+chat, the logs and Papertrail only ever see "Visa ending 4242". Fixed rules decide when you are asked, not
+the helper: the first payment on each site always asks, on the buy card with Face ID. Every payment asks
+unless you turn on "Skip the card on sites I've paid" with a limit you choose, and even then a site's first
+payment asks. A total in a currency you don't pay in is refused, and private helpers can never pay. Each
+time, you type the security code on your Mac (it is never kept), Nollie reads the checkout itself to check
+the total you said yes to is on screen, then fills the card in and presses Return. Pictures of every computer
+pause from the moment it types until Nollie sees the number has gone from the screen. If the checkout keeps
+showing the number (a declined card, say), pictures stay paused until it's gone. Once typed, the number is
+in a page on a computer the helper controls; a helper that set out to could read it back from there. A
+look-alike page that shows the same total would get the card too: before you say yes, look at the helper's
+screen when you can.
+
 **Your phone talks only to your Mac.** Nollie Link is a TLS 1.3 connection from your iPhone straight to your
 Mac, with no Nollie server in between. The phone trusts your Mac's own key, which it learns from the QR code
 you scan, so nobody else on the Wi-Fi can pretend to be your Mac or read the traffic. The link code works

@@ -58,6 +58,7 @@ struct ProfileAppsTab: View {
         #endif
         if !state.isHidden, !AskFirstModel.isPrivateBot(state.name) {
             AppleDataSection(profileName: state.name)
+            PaymentSwitchSection(profileName: state.name)
         }
     }
 }

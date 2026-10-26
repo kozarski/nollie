@@ -14,6 +14,7 @@ from night_support import NAME, load
 
 # The Mac's calendar, reminders and contacts, registered in this order for every bot that is not private.
 APPLE_TOOLS = list(load("apple_data").TOOLS)
+PAYMENT_TOOLS = ["request_payment", "payment_cards"]
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -188,18 +189,18 @@ class RegisterTests(unittest.TestCase):
         self.assertIn("pre_tool_call", hooks)
         # Not installed yet: no follow-through. Saved sign-ins and the Mac's calendar, reminders and contacts
         # load for every bot that is not private.
-        self.assertEqual((tools, started), (["request_sign_in", *APPLE_TOOLS], []))
+        self.assertEqual((tools, started), (["request_sign_in", *APPLE_TOOLS, *PAYMENT_TOOLS], []))
         (self.home / "nollie-workflow").mkdir(exist_ok=True)
         load("workflow_core").atomic_write(self.home / "nollie-workflow/state.json", load("workflow_core").initial_state())
         hooks, tools, started = self.register("default")
         self.assertEqual((tools, started),
-                         (["nollie_followup", "request_sign_in", *APPLE_TOOLS], [self.home.resolve()]))
+                         (["nollie_followup", "request_sign_in", *APPLE_TOOLS, *PAYMENT_TOOLS], [self.home.resolve()]))
         # The picture pause and Ask first, then the recorder's guard and its record of the call.
         self.assertEqual(hooks.count("pre_tool_call"), 4)
 
     def test_other_profiles_get_papertrail_and_the_recorder_but_not_the_board(self):
         hooks, tools, started = self.register("career")
-        self.assertEqual((tools, started), (["request_sign_in", *APPLE_TOOLS], []))
+        self.assertEqual((tools, started), (["request_sign_in", *APPLE_TOOLS, *PAYMENT_TOOLS], []))
         self.assertEqual(hooks.count("pre_tool_call"), 4)
         # The recordings Ask first's pause keeps track of, its memory of the latest screen, Papertrail, and the
         # recorder.

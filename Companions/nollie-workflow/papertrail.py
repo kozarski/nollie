@@ -30,6 +30,7 @@ from urllib.parse import urlsplit
 import weakref
 
 from .apple_data import READS as LOCAL_READS
+from .sign_ins import normalize_site
 
 KEEP_DAYS = 35
 MAX_ENTRIES = 200
@@ -62,6 +63,8 @@ SERVICE_NAME = re.compile(r"[a-z0-9][a-z0-9._-]{0,63}\Z")
 PLATFORM_NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,31}\Z")
 HOST_TEXT = re.compile(r"[A-Za-z0-9._:%\[\]-]{1,255}\Z")
 UNSAFE_ID = re.compile(r"[^A-Za-z0-9._:/@+=-]")
+PAYMENT_TOOL = "request_payment"
+PAID_CARD = re.compile(r"ending ([0-9]{4})\Z")
 TOKEN_FIELDS = (("in", "input_tokens"), ("out", "output_tokens"), ("cache", "cache_read_tokens"),
                 ("think", "reasoning_tokens"))
 
@@ -306,8 +309,8 @@ class Recorder:
                             ended_at=None, usage=None, **_):
         self._safely(self._call, "helper", aux_task, provider, base_url, model, turn_id, session_id, ended_at, usage)
 
-    def post_tool_call(self, tool_name="", args=None, status="", session_id="", turn_id="", **_):
-        self._safely(self._tool, tool_name, args, status, turn_id, session_id)
+    def post_tool_call(self, tool_name="", args=None, status="", session_id="", turn_id="", result=None, **_):
+        self._safely(self._tool, tool_name, args, status, turn_id, session_id, result)
 
     def post_approval_response(self, choice="", pattern_key="", pattern_keys=None, session_id="", turn_id="",
                                session_key="", **_):
@@ -367,8 +370,10 @@ class Recorder:
         return self._line(route="mac", source="approval", choice=choice, ask=ask, turn=_id(turn),
                           session=_id(session))
 
-    def _tool(self, tool_name, args, status, turn, session):
+    def _tool(self, tool_name, args, status, turn, session, result=None):
         name = str(tool_name or "")
+        if name == PAYMENT_TOOL:
+            return self._payment(args, status, turn, session, result)
         if name in LOCAL_READS and status != "blocked":
             # The Mac's calendar, reminders or contacts, read in place. It stays here; what the model then
             # sends is the turn's own model call.
@@ -388,6 +393,23 @@ class Recorder:
         return self._line(route="online", source="tool", provider=service, tool=name, turn=_id(turn),
                           session=_id(session), searches=int(name in SEARCH_TOOLS), pages=pages,
                           images=int(name in IMAGE_TOOLS))
+
+    def _payment(self, args, status, turn, session, result):
+        """A card filled in and sent to a site: the site and the card's last four digits, nothing else."""
+        if status == "blocked":
+            return None
+        try:
+            answer = json.loads(result) if isinstance(result, str) else result
+        except ValueError:
+            return None
+        if not isinstance(answer, dict) or answer.get("status") != "paid":
+            return None
+        site = normalize_site((args or {}).get("site") if isinstance(args, dict) else None)
+        card = PAID_CARD.search(str(answer.get("card") or ""))
+        if site is None:
+            return None
+        return self._line(route="online", source="tool", tool=PAYMENT_TOOL, host=site, turn=_id(turn),
+                          session=_id(session), paid=1, card=card.group(1) if card else "")
 
     def _settings(self):
         """The bot's config.yaml, read lazily and cached until it changes."""
@@ -558,6 +580,9 @@ def _calls(path, since):
                         backup=line.get("backup") is True)
             if call["source"] == "approval" and (call["choice"] not in CHOICES or not call["turn"]):
                 continue
+            card = line.get("card")
+            call.update(paid=_count(line.get("paid")),
+                        card=card if isinstance(card, str) and re.fullmatch(r"[0-9]{4}", card) else "")
             yield call
 
 
@@ -641,6 +666,9 @@ def _entry(key, group, provider_name, titles=None):
         "searches": sum(call["searches"] for call in left),
         "pages": sum(call["pages"] for call in left),
         "images": sum(call["images"] for call in left),
+        # Cards filled in and sent to a site: the site and the card's last four digits only.
+        "payments": [{"site": call["host"], "card": call["card"] or None} for call in left
+                     if call["source"] == "tool" and call["paid"] and call["host"]],
         # What the turn read on this Mac before its words went out: "calendar", "reminders", "contacts".
         "local_reads": sorted({LOCAL_READS[call["tool"]] for call in group
                                if call["source"] == "tool" and call["tool"] in LOCAL_READS}),

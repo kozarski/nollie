@@ -28,6 +28,7 @@ _sleep = __import__(_name + ".sleep_watch", fromlist=["gaps"])
 _sign_ins = __import__(_name + ".sign_ins", fromlist=["Store"])
 _apple = __import__(_name + ".apple_data", fromlist=["Store"])
 _memory = __import__(_name + ".memory", fromlist=["Memory"])
+_payments = __import__(_name + ".payments", fromlist=["Store"])
 _cron_followups = __import__(_name + ".hermes_support.ollie_cron_followups", fromlist=["ready"])
 NO_STORE = {"Cache-Control": "no-store"}
 router = APIRouter()
@@ -603,3 +604,187 @@ def memory_switch(body: MemorySwitch, bot: str = "default", on_this_mac: bool = 
     except Exception:
         raise HTTPException(503, "That can't be changed right now.", headers=NO_STORE) from None
     return memory_answer(memory, bot)
+
+
+# Paying with saved cards. The Mac app sends its cards as labels (never a number), reads open requests, words each
+# card by its own rules or refuses it, says when it starts typing, how it went and when the number has gone from the
+# screen. A phone may read the labels and a helper's switch, and change the switch.
+
+def payment_store():
+    return _payments.Store(home())
+
+
+def payment_bot(bot):
+    """The store and the bot, once the bot is known and not private."""
+    store = payment_store()
+    target = store.root.parent.parent
+    if not isinstance(bot, str) or not _private.PROFILE_NAME.match(bot):
+        raise HTTPException(422, "Send a bot's Hermes profile name.", headers=NO_STORE)
+    if _core.private_identity(bot, apple_private(target)):
+        raise HTTPException(403, "Private bots never pay.", headers=NO_STORE)
+    bot_home(bot, target)
+    return store
+
+
+@router.get("/payments/cards")
+def payment_cards():
+    try:
+        cards = payment_store().cards()
+    except (OSError, ValueError):
+        raise HTTPException(503, "The cards cannot be read.", headers=NO_STORE) from None
+    return JSONResponse({"cards": cards}, headers=NO_STORE)
+
+
+class PaymentCards(BaseModel):
+    model_config = {"extra": "forbid"}
+    cards: list[dict]
+
+
+@router.put("/payments/cards")
+def save_payment_cards(body: PaymentCards):
+    """Labels only: brand, last four digits and the name on the card."""
+    try:
+        cards = payment_store().save_cards(body.cards)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc), headers=NO_STORE) from None
+    except OSError:
+        raise HTTPException(503, "The cards cannot be written.", headers=NO_STORE) from None
+    return JSONResponse({"cards": cards}, headers=NO_STORE)
+
+
+def payment_switch(store, bot):
+    try:
+        on = bot in store.bots()
+    except (OSError, ValueError):
+        raise HTTPException(503, "The switch cannot be read.", headers=NO_STORE) from None
+    return JSONResponse({"bot": bot, "on": on}, headers=NO_STORE)
+
+
+@router.get("/payments/bots")
+def payment_bot_switch(bot: str = "default"):
+    return payment_switch(payment_bot(bot), bot)
+
+
+class PaymentSwitch(BaseModel):
+    model_config = {"extra": "forbid"}
+    bot: str
+    on: bool
+
+
+@router.put("/payments/bots")
+def save_payment_bot_switch(body: PaymentSwitch):
+    store = payment_bot(body.bot)
+    try:
+        store.set_bot(body.bot, body.on)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc), headers=NO_STORE) from None
+    except OSError:
+        raise HTTPException(503, "The switch cannot be saved.", headers=NO_STORE) from None
+    return payment_switch(store, body.bot)
+
+
+def payment_public(record):
+    return {k: record.get(k) for k in ("id", "bot", "site", "total", "currency", "card", "computer", "state", "ask",
+                                       "approver", "created_at")}
+
+
+@router.get("/payments/requests")
+def payment_requests():
+    store = payment_store()
+    private = apple_private(store.root.parent.parent)
+    try:
+        found = store.open_requests()
+        bots = store.bots()
+    except (OSError, ValueError):
+        raise HTTPException(503, "Payments cannot be read.", headers=NO_STORE) from None
+    return JSONResponse({
+        "requests": [payment_public(r) for r in found if not _private.excluded(r.get("bot"), private)],
+        "bots": [b for b in bots if not _private.excluded(b, private)],
+    }, headers=NO_STORE)
+
+
+def payment_request(request_id, step):
+    store = payment_store()
+    private = apple_private(store.root.parent.parent)
+    try:
+        record = store.get(request_id)
+        if _private.excluded(record.get("bot"), private):
+            raise LookupError(request_id)
+        record = step(store) if step else record
+    except LookupError:
+        raise HTTPException(404, "There is no such request.", headers=NO_STORE) from None
+    except _payments.Conflict:
+        raise HTTPException(409, "This payment has moved on.", headers=NO_STORE) from None
+    except ValueError as exc:
+        raise HTTPException(422, str(exc), headers=NO_STORE) from None
+    except OSError:
+        raise HTTPException(503, "Payments cannot be read.", headers=NO_STORE) from None
+    return JSONResponse(payment_public(record), headers=NO_STORE)
+
+
+@router.get("/payments/requests/{request_id}")
+def get_payment_request(request_id: str):
+    return payment_request(request_id, None)
+
+
+class PaymentWords(BaseModel):
+    model_config = {"extra": "forbid"}
+    words: str
+    card: str
+    ask: bool
+
+
+@router.post("/payments/requests/{request_id}/prepare")
+def prepare_payment(request_id: str, body: PaymentWords):
+    """The Mac's words for the card, the card it will use, and whether its rules ask the person."""
+    return payment_request(request_id, lambda store: store.prepare(request_id, body.words, body.card, body.ask))
+
+
+class PaymentRefusal(BaseModel):
+    model_config = {"extra": "forbid"}
+    reason: str
+    expected: str | None = None
+
+
+@router.post("/payments/requests/{request_id}/refuse")
+def refuse_payment(request_id: str, body: PaymentRefusal):
+    return payment_request(request_id, lambda store: store.refuse(request_id, body.reason, body.expected))
+
+
+@router.post("/payments/requests/{request_id}/start")
+def start_payment(request_id: str):
+    """The Mac is about to type. Only once, and only while the helper still waits."""
+    return payment_request(request_id, lambda store: store.start(request_id))
+
+
+class PaymentReport(BaseModel):
+    model_config = {"extra": "forbid"}
+    outcome: str
+    reason: str | None = None
+    showing: bool = False
+
+
+@router.post("/payments/requests/{request_id}/result")
+def report_payment(request_id: str, body: PaymentReport):
+    """How it went, in fixed words only: never a card number."""
+    return payment_request(request_id, lambda store: store.report(request_id, body.outcome, body.reason, body.showing))
+
+
+@router.post("/payments/requests/{request_id}/clear")
+def clear_payment(request_id: str):
+    """The card number has gone from the screen."""
+    return payment_request(request_id, lambda store: store.clear(request_id))
+
+
+@router.get("/payments/history")
+def payment_history(days: str = "30"):
+    if not re.fullmatch(r"[0-9]{1,2}", days) or not 1 <= int(days) <= _payments.KEEP_HISTORY_DAYS:
+        raise HTTPException(422, f"Send days from 1 to {_payments.KEEP_HISTORY_DAYS}.", headers=NO_STORE)
+    store = payment_store()
+    private = apple_private(store.root.parent.parent)
+    try:
+        entries = store.history(int(days), private)
+    except (OSError, ValueError):
+        raise HTTPException(503, "The payment history cannot be read.", headers=NO_STORE) from None
+    return JSONResponse({"entries": [e for e in entries if not _private.excluded(e.get("bot"), private)]},
+                        headers=NO_STORE)

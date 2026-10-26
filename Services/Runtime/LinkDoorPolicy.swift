@@ -121,6 +121,10 @@ enum LinkDoorPolicy {
         Rule(["POST"], "/api/plugins/nollie-workflow/sign-ins/requests/*/claim"),
         // A helper's Calendar, Reminders and Contacts switches. The requests and their answers stay on the Mac.
         Rule(["GET", "PUT"], "/api/plugins/nollie-workflow/apple-data/bots"),
+        // Saved cards: the labels ("Visa ending 4242") and a helper's "Can pay" switch. The requests,
+        // their answers and the history stay on the Mac, which alone fills a card in.
+        Rule(["GET"], "/api/plugins/nollie-workflow/payments/cards"),
+        Rule(["GET", "PUT"], "/api/plugins/nollie-workflow/payments/bots"),
         // Watch: Take over and Hand back, after Face ID on the phone. The add-on still refuses
         // private bots; the door allows nothing but `?profile=` on these (see `allowsQuery`).
         Rule(["POST"], "/api/plugins/nollie-computer/take-over"),

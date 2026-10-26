@@ -1,5 +1,5 @@
-"""Papertrail for the main bot and the bots chosen for it, the Night shift recorder, saved sign-ins and the Mac's
-Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
+"""Papertrail for the main bot and the bots chosen for it, the Night shift recorder, saved sign-ins, saved cards and
+the Mac's Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
 keeps a typed password out of screenshots, load in every bot that is not private. Nothing loads for a private bot.
 """
 
@@ -27,6 +27,7 @@ def register(ctx):
     _register_night_shift(ctx, profile, home)
     _register_sign_ins(ctx, profile, home)
     _register_apple_data(ctx, profile, home)
+    _register_payments(ctx, profile, home)
 
 
 def _register_papertrail(ctx, profile, default_home):
@@ -109,6 +110,27 @@ def _register_apple_data(ctx, profile, default_home):
     except Exception as exc:
         logging.getLogger("nollie-workflow").warning("Calendar, Reminders and Contacts did not start: %s",
                                                      type(exc).__name__)
+
+
+def _register_payments(ctx, profile, default_home):
+    """request_payment and payment_cards, in the nollie_payments toolset, shown only while the helper's switch is
+    on. The Private list is checked again on every call."""
+    import logging
+    try:
+        from pathlib import Path
+        from . import private_bots
+        try:
+            private = private_bots.names(default_home) | private_bots.carried_over_names()
+        except (OSError, ValueError):
+            return  # A damaged Private list: no payments anywhere until it is repaired.
+        if not profile or private_bots.excluded(profile, private):
+            return
+        from hermes_constants import get_hermes_home
+        from .payments import register as register_payments
+        watch = private_bots.Watch(default_home, profile, Path(get_hermes_home()).resolve().name)
+        register_payments(ctx, default_home, profile, watch)
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("Paying with saved cards did not start: %s", type(exc).__name__)
 
 
 def _register_ask_first(ctx, profile, default_home):

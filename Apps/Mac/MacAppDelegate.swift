@@ -13,6 +13,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
         { MacKeepAwake.shared.start() },         // stays awake for the crew, when that is on
         { SignInCenter.shared.start() },         // saved sign-ins for the add-on
         { AppleDataCenter.shared.start() },      // helpers' Calendar, Reminders and Contacts requests
+        { CardCenter.shared.start() },           // saved cards: payments a helper asks for
     ]
 
     func applicationDidFinishLaunching(_ notification: Notification) {

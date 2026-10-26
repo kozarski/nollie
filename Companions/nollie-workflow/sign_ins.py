@@ -342,16 +342,29 @@ COMPUTER_TOOLS = frozenset(("computer_use",))
 CAPTURE_COMMANDS = re.compile(r"(?i)\b(cua|screencapture|ffmpeg|avfoundation|vncsnapshot|vncviewer|xwd|scrot|"
                               r"gnome-screenshot|grim|import\s+-window|screenshot|cua-driver|cliclick|osascript|"
                               r"peekaboo)\b")
-PAUSED = ("Paused for a moment: Nollie is typing a saved sign-in, so pictures of computers and actions on them "
-          "wait until it's done. Try again in about {seconds} seconds.")
+PAUSED = ("Paused for a moment: Nollie is typing a saved sign-in or card, so pictures of computers and actions on "
+          "them wait until it's done. Try again in about {seconds} seconds.")
+
+
+# Saved cards (payments.py) use the same pause: a card number may be on screen while its request is
+# being typed, while the Mac still sees the number there, and for SETTLE after.
+PAYMENT_FOLDER = "payments"
+PAYMENT_STATES = ("waiting", "prepared", "approved", "filling", "showing", "done")
+PAYMENT_TYPING = ("filling", "showing")
 
 
 def typing_now(main_home, clock=time.time):
-    """Requests that may have a password on screen now: being typed, or finished less than SETTLE ago.
+    """Requests that may have a password or a card number on screen now: being typed, or finished less
+    than SETTLE ago.
 
     Read without the lock, so a hook can ask on every call. A request file that can't be read counts
-    as typing (fails closed), and so does a sign-ins folder that is a link."""
-    root = Path(main_home) / "nollie-workflow" / FOLDER
+    as typing (fails closed), and so does a sign-ins or payments folder that is a link."""
+    workflow = Path(main_home) / "nollie-workflow"
+    return (_typing_in(workflow / FOLDER, STATES, TYPING, clock)
+            + _typing_in(workflow / PAYMENT_FOLDER, PAYMENT_STATES, PAYMENT_TYPING, clock))
+
+
+def _typing_in(root, states, typing, clock):
     folder = root / "requests"
     now = clock()
     try:
@@ -366,7 +379,7 @@ def typing_now(main_home, clock=time.time):
             record = json.loads(path.read_text())
             state, created = record.get("state"), record.get("created_at")
             updated = record.get("updated_at")
-            if not isinstance(created, int) or not isinstance(updated, int) or state not in STATES:
+            if not isinstance(created, int) or not isinstance(updated, int) or state not in states:
                 raise ValueError("damaged")
         except (OSError, ValueError, UnicodeDecodeError, AttributeError):
             try:
@@ -376,7 +389,7 @@ def typing_now(main_home, clock=time.time):
                 continue
             found.append({"bot": None, "computer": None, "until": None})
             continue
-        if state in TYPING and now - created <= REQUEST_LIFETIME:
+        if state in typing and now - created <= REQUEST_LIFETIME:
             found.append({"bot": record.get("bot"), "computer": record.get("computer"), "until": None})
         elif state == "done":
             quiet = record.get("quiet_until")

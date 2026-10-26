@@ -684,6 +684,81 @@ def memory_rest(method: str, base: str, query: dict, payload) -> tuple[int, obje
     return ok(memory_view(bot))
 
 
+# Paying with saved cards, as nollie-workflow serves them (/api/plugins/nollie-workflow/payments/...): the
+# cards the Mac sent as labels (brand, last four digits, name; never a number), each helper's "Can pay with my
+# cards" switch (all off to start), and the history. Only a payment provider's published test card shows.
+# POST /api/_mock/payments sets the fixture: {"reset": true}, "cards" (a list of labels), "bot" with "on".
+# A prompt starting "ask first pay" plays a helper asking to pay: Ask first's buy card with the Mac's words.
+PAYMENT_BRANDS = ("visa", "mastercard", "amex", "discover", "diners", "jcb", "unionpay", "maestro", "card")
+PAYMENT_CARDS_SEED = [dict(id="demo-visa", brand="visa", last4="4242", holder="Sam Example"),
+                      dict(id="demo-mastercard", brand="mastercard", last4="4444", holder="Sam Example")]
+PAYMENTS: dict = {}
+
+
+def payments_reset() -> None:
+    PAYMENTS.clear()
+    now = int(time.time())
+    PAYMENTS.update(cards=[dict(c) for c in PAYMENT_CARDS_SEED], bots=set(),
+                    history=[dict(at=now - 5400, bot="default", site="shop.example.com", total="48.99",
+                                  currency="GBP", card="4242", outcome="paid", approver="card")])
+
+
+payments_reset()
+
+
+def payments_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    fields = payload if isinstance(payload, dict) else {}
+    if base == "/api/_mock/payments" and method == "POST":
+        if fields.get("reset"):
+            payments_reset()
+        if isinstance(fields.get("cards"), list):
+            PAYMENTS["cards"] = [dict(c) for c in fields["cards"] if isinstance(c, dict)]
+        if isinstance(fields.get("bot"), str) and isinstance(fields.get("on"), bool):
+            (PAYMENTS["bots"].add if fields["on"] else PAYMENTS["bots"].discard)(fields["bot"])
+        return ok(dict(ok=True))
+    prefix = "/api/plugins/nollie-workflow/payments"
+    if base != prefix and not base.startswith(prefix + "/"):
+        return None
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+    rest = base.removeprefix(prefix).strip("/").split("/")
+    if rest == ["cards"]:
+        if method == "GET":
+            return ok(dict(cards=PAYMENTS["cards"]))
+        if method != "PUT":
+            return refuse(405, "Method Not Allowed")
+        cards = fields.get("cards")
+        if set(fields) != {"cards"} or not isinstance(cards, list) or len(cards) > 20:
+            return refuse(422, "Send a list of at most 20 cards.")
+        for card in cards:
+            if (not isinstance(card, dict) or set(card) - {"id", "brand", "last4", "holder"}
+                    or card.get("brand") not in PAYMENT_BRANDS or not re.fullmatch(r"[0-9]{4}", str(card.get("last4")))):
+                return refuse(422, "Each card is an id, a brand, the last four digits and a name.")
+        PAYMENTS["cards"] = [dict(c) for c in cards]
+        return ok(dict(cards=PAYMENTS["cards"]))
+    if rest == ["bots"]:
+        if method not in ("GET", "PUT"):
+            return refuse(405, "Method Not Allowed")
+        bot = unquote(query.get("bot", "default")) if method == "GET" else fields.get("bot")
+        if not isinstance(bot, str) or not PRIVATE_PROFILE_NAME.fullmatch(bot):
+            return refuse(422, "Send a bot's Hermes profile name.")
+        if private_identity(bot) or set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names():
+            return refuse(403, "Private bots never pay.")
+        if bot not in PROFILES and bot not in CREATED_PROFILES:
+            return refuse(404, "No such bot.")
+        if method == "PUT":
+            if set(fields) != {"bot", "on"} or not isinstance(fields.get("on"), bool):
+                return refuse(422, "Send on as true or false.")
+            (PAYMENTS["bots"].add if fields["on"] else PAYMENTS["bots"].discard)(bot)
+        return ok(dict(bot=bot, on=bot in PAYMENTS["bots"]))
+    if rest == ["requests"] and method == "GET":
+        return ok(dict(requests=[], bots=sorted(b for b in PAYMENTS["bots"] if not private_identity(b))))
+    if rest == ["history"] and method == "GET":
+        entries = [e for e in PAYMENTS["history"] if not private_identity(e["bot"])]
+        return ok(dict(entries=sorted(entries, key=lambda e: -e["at"])))
+    return refuse(404, "Not Found")
+
+
 # Helpers' own computers, as nollie-computer serves them (GET and POST
 # /api/plugins/nollie-computer/own-computer). Every bot starts with its switch off and Cua ready.
 # Turning one on shows "getting ready" for OWN_COMPUTERS["ready_after"] seconds, then Ready.
@@ -3153,6 +3228,7 @@ def process_request(connection, request):
         ("quiet", lambda: ask_first_rest(method, base, query, body)),
         ("quiet", lambda: apple_data_rest(method, base, query, body)),
         ("quiet", lambda: memory_rest(method, base, query, body)),
+        ("quiet", lambda: payments_rest(method, base, query, body)),
         ("quiet", lambda: link_rest(method, base, body)),
     ]
     answer = None
@@ -3654,11 +3730,48 @@ class Gateway:
         await self.stream_words(s, "\n\n" + reply)
         await self.settle(s, prompt, layout, intro + "\n\n" + reply)
 
+    # A payment with a saved card, as the workflow add-on's request_payment asks: the Mac's own words for it,
+    # on Ask first's buy card, so Face ID guards the yes. Only a payment provider's published test card.
+    ASK_FIRST_PAY = ("Pay \u00a348.99 to shop.example.com with Visa ending 4242.\n"
+                     "First payment to this site.\n"
+                     "You type the security code on your Mac.")
+
+    async def _pay_turn(self, s, prompt):
+        """"ask first pay": the helper asks to pay at a checkout, which waits for a yes. Allow once pays; Deny
+        does not. The card number never appears: the reply names the card by its last four digits."""
+        tool = "request_payment"
+        intro = "The checkout shows \u00a348.99. I'll ask to pay with your saved card."
+        await self.begin_message(s)
+        await self.stream_words(s, intro)
+        call = f"pay-{int(time.time() * 1000)}"
+        args = dict(site="shop.example.com", total="48.99", currency="GBP", computer="local:dev")
+        await self.event("tool.start", s.sid, dict(tool_id=call, name=tool, args=args))
+        began = time.time()
+        rule = f"plugin_rule:nollie-ask-first:buy:{uuid.uuid4().hex}"
+        answer = await self.ask("approval", s.sid, dict(
+            request_id=f"req-{uuid.uuid4().hex[:8]}", command=f"<{tool}> (plugin approval rule)",
+            description=self.ASK_FIRST_PAY, pattern_key=rule, pattern_keys=[rule], tool_name=tool,
+            choices=["once", "session", "always", "deny"], allow_session=True, allow_permanent=True))
+        if answer is None or answer.get("choice", "deny") == "deny":
+            reply, layout = "Okay, I didn't pay.", [intro, "Okay, I didn't pay."]
+        else:
+            done = ("Nollie filled in Visa ending 4242 and pressed Return to pay \u00a348.99 on shop.example.com. "
+                    "Take a screenshot to check the page.")
+            await self.event("tool.complete", s.sid, dict(tool_id=call, name=tool,
+                                                       duration_s=round(time.time() - began, 2), summary="paid",
+                                                       result=json.dumps(dict(status="paid", message=done,
+                                                                              card="Visa ending 4242"))))
+            reply, layout = "Paid. The order page is up.", [intro, 1, "Paid. The order page is up."]
+        await self.stream_words(s, "\n\n" + reply)
+        await self.settle(s, prompt, layout, intro + "\n\n" + reply)
+
     async def _ask_first_turn(self, s, prompt):
         """"ask first email" or "ask first click": the bot tries to send, Ask first holds it for a
         yes, and the reply says what happened. Allow once sends it. Deny does not."""
         if "calendar" in prompt.lower():
             return await self._calendar_turn(s, prompt)
+        if prompt.strip().lower().startswith("ask first pay"):
+            return await self._pay_turn(s, prompt)
         click = "click" in prompt.lower()
         tool = "computer_use" if click else "mcp__gmail__send_email"
         intro = "I'll press Send on the draft." if click else "I'll send Sam a note about lunch."

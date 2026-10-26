@@ -45,6 +45,9 @@ SIGN_IN_TYPING = ("approved", "filling")
 SIGN_IN_STATES = ("asking", "approved", "filling", "done")
 SIGN_IN_LIFETIME = 3600
 SIGN_IN_SETTLE = 10.0
+# Saved cards (nollie-workflow's payments.py) pause pictures the same way while a card number may show.
+PAYMENT_TYPING = ("filling", "showing")
+PAYMENT_STATES = ("waiting", "prepared", "approved", "filling", "showing", "done")
 PAUSED = "Paused while Nollie types a saved sign-in."
 
 
@@ -70,11 +73,16 @@ def private_names():
 
 
 def sign_in_typing(home, now):
-    """True while a saved sign-in may be on a screen, by the same rules as nollie-workflow's typing_now.
+    """True while a saved sign-in or card may be on a screen, by the same rules as nollie-workflow's typing_now.
 
     A request being typed (and not past its lifetime), one finished less than SETTLE ago, a damaged
     recent request file and a linked folder all count. Fails closed."""
-    root = Path(home) / "nollie-workflow" / "sign-ins"
+    workflow = Path(home) / "nollie-workflow"
+    return (_typing_in(workflow / "sign-ins", SIGN_IN_STATES, SIGN_IN_TYPING, now)
+            or _typing_in(workflow / "payments", PAYMENT_STATES, PAYMENT_TYPING, now))
+
+
+def _typing_in(root, states, typing, now):
     folder = root / "requests"
     try:
         if root.is_symlink() or folder.is_symlink():
@@ -86,7 +94,7 @@ def sign_in_typing(home, now):
         try:
             record = json.loads(path.read_text())
             state, created, updated = record.get("state"), record.get("created_at"), record.get("updated_at")
-            if type(created) is not int or type(updated) is not int or state not in SIGN_IN_STATES:
+            if type(created) is not int or type(updated) is not int or state not in states:
                 raise ValueError("damaged")
         except (OSError, ValueError, UnicodeDecodeError, AttributeError):
             try:
@@ -95,7 +103,7 @@ def sign_in_typing(home, now):
             except OSError:
                 pass
             continue
-        if state in SIGN_IN_TYPING and now - created <= SIGN_IN_LIFETIME:
+        if state in typing and now - created <= SIGN_IN_LIFETIME:
             return True
         if state == "done":
             quiet = record.get("quiet_until")

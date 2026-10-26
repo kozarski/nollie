@@ -5,7 +5,7 @@ import UserNotifications
 /// The rows in a few groups, with air between them instead of lines.
 private let settingsGroups: [[SettingsCategory]] = [
     [.bots, .appearance, .speech],
-    [.notifications, .privacy, .signIns, .siri],
+    [.notifications, .privacy, .signIns, .cards, .siri],
     [.connection, .away, .keepAwake],
     [.about, .advanced],
 ]
@@ -131,6 +131,7 @@ private struct SettingsDestination: View {
         case .notifications: NotificationsView().untitledPage()
         case .privacy: PrivacyView().untitledPage()
         case .signIns: signIns
+        case .cards: cards
         case .siri: SiriSettingsView().untitledPage()
         case .connection: GatewaysView(includesSetup: true).untitledPage()
         case .away: AwayFromHomeView().untitledPage()
@@ -145,6 +146,15 @@ private struct SettingsDestination: View {
         KeepAwakeView().untitledPage()
         #else
         EmptyView()
+        #endif
+    }
+
+    /// The Mac adds and removes cards; the iPhone shows them and says where to add one.
+    @ViewBuilder private var cards: some View {
+        #if os(macOS)
+        CardsSettingsView().untitledPage()
+        #else
+        PhoneCardsView().untitledPage()
         #endif
     }
 

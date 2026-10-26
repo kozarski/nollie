@@ -35,6 +35,19 @@ public struct Papertrail: Decodable, Equatable, Sendable {
         public var localReads: [String]?
         /// Why it went, as the add-on kept it. Nil for entries kept before 1.1: the app then says it wasn't kept.
         public var why: Why?
+        /// Cards Nollie filled in and sent to a site in this reply: the site and the last four digits only.
+        public var payments: [Payment]?
+
+        /// One card sent to a site.
+        public struct Payment: Decodable, Equatable, Sendable {
+            public var site: String
+            public var card: String?
+
+            public init(site: String, card: String?) {
+                self.site = site
+                self.card = card
+            }
+        }
 
         public init(id: String, at: Double, route: String? = "online", provider: String? = nil, providerName: String? = nil,
                     host: String? = nil, model: String? = nil, services: [String]? = nil, inputTokens: Int? = nil,
@@ -185,6 +198,11 @@ public extension Papertrail.Entry {
         if let n = searches, n > 0 { parts.append(Papertrail.count(n, "search", "searches")) }
         if let n = pages, n > 0 { parts.append(Papertrail.count(n, "page", "pages")) }
         if let n = images, n > 0 { parts.append(Papertrail.count(n, "picture", "pictures")) }
+        for payment in payments ?? [] {
+            // "paid shop.example.com, card ending 4242"
+            let card = payment.card.map { spoken ? ", card ending \($0.map(String.init).joined(separator: " "))" : ", card ending \($0)" } ?? ""
+            parts.append("paid \(payment.site)\(card)")
+        }
         if parts.isEmpty, let n = calls, n > 0 { parts.append(Papertrail.count(n, "request", "requests")) }
         let read = AppleDataArea.allCases.filter { localReads?.contains($0.rawValue) ?? false }.map { $0.title.lowercased() }
         if !read.isEmpty {

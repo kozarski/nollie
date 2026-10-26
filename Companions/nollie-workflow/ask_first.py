@@ -162,6 +162,9 @@ EXEMPT = frozenset(("memory", "todo", "todo_list", "session_search", "request_si
 APPLE_DATA = frozenset(("calendar_events", "calendar_search", "calendar_add_event", "calendar_change_event",
                         "calendar_delete_event", "reminder_lists", "reminders_open", "reminder_add",
                         "reminder_complete", "reminder_delete", "contacts_search", "contact_add", "contact_change"))
+# Paying with a saved card (payments.py). The tool always asks by the Mac's fixed rules, on Ask first's own buy card,
+# so these rules would only ask a second time. payment_cards only lists "Visa ending 4242".
+PAYMENTS = frozenset(("request_payment", "payment_cards"))
 # Hermes tools that only look things up.
 LOOKS = frozenset(("web_search", "web_extract", "read_file", "search_files", "skill_view", "skills_list",
                    "browser_snapshot", "browser_get_images", "browser_vision", "browser_navigate", "browser_back",
@@ -1415,7 +1418,7 @@ def classify(tool, args, *, screen=None, read_file=_read_script):
             return Action(kind, _summary(f"{len(found)} actions at once:", [a.summary for a in found],
                                           limit=None if has_command else SUMMARY_LIMIT),
                           next((a.button for a in found if a.button), None), has_command=has_command)
-    if tool in EXEMPT or tool in LOOKS or tool in APPLE_DATA:
+    if tool in EXEMPT or tool in LOOKS or tool in APPLE_DATA or tool in PAYMENTS:
         return None
     screen = screen or NoScreen()
     last = _last(tool)

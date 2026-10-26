@@ -315,7 +315,7 @@ class ReaderTests(unittest.TestCase):
             "provider": SUBSCRIPTION, "provider_name": None, "host": None, "model": "claude-sonnet-5-5",
             "calls": 4, "helpers": ["title_generation"], "services": ["exa"], "input_tokens": 18005,
             "output_tokens": 901, "cache_read_tokens": 52000, "reasoning_tokens": 0,
-            "searches": 1, "pages": 3, "images": 0, "local_reads": []})
+            "searches": 1, "pages": 3, "images": 0, "payments": [], "local_reads": []})
         self.assertEqual((second["id"], second["route"], second["host"], second["provider"]),
                          ("t-1", "network", "http://192.168.1.9:8000", "custom"))
 

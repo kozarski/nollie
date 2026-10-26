@@ -33,7 +33,7 @@ prompt for a kind at a time.
 | **Speaking replies** | Read replies aloud, the play button on a reply, and talk mode use the system's on-device voices (`AVSpeechSynthesizer`). | No permission. | n/a |
 | **Photos, add only** (iPhone, iPad) | Save to Photos from the picture viewer and video cards. | The first Save to Photos tap. Settings › Privacy › Permissions. | The viewer explains and offers Open Settings (`PhotoSaveFailure`). Share and copy still work. |
 | **Downloads folder** (Mac) | Save to Downloads from the picture viewer. | The first Save to Downloads click (macOS asks about the folder). | The viewer says it was not saved. |
-| **Face ID / Touch ID / passcode** | App lock, approving from a notification, saved sign-ins and remembered sign-ins. | When the lock switch is turned on, on the first saved sign-in use, or on a locked reply. Never at launch unless the lock is on. | The lock falls back to the passcode. Saved sign-ins need the device owner. |
+| **Face ID / Touch ID / passcode** | App lock, approving from a notification, saved sign-ins and remembered sign-ins, and saved cards: showing or adding a card, turning on a helper's "Can pay with my cards", and reading a card to pay. | When the lock switch is turned on, on the first saved sign-in use, or on a locked reply. Cards: Show cards and Save in Settings › Cards, the helper's switch, and Pay on the Mac's pay sheet. Never at launch unless the lock is on. | The lock falls back to the passcode. Saved sign-ins and cards need the device owner: nothing is shown, saved or paid. |
 | **Live Activities** (iPhone) | The Lock Screen card and Stop while a helper uses the Mac. | iOS asks the first time a card is started, which is when a Mac task begins. There is no app prompt. Settings › Privacy › Permissions shows the switch. | No Lock Screen card. Stop in the app and in notifications still works. |
 | **Siri and Shortcuts** | New chat, open a chat, what is my bot doing, Stop. | App Intents have no prompt. Settings › Siri & Shortcuts. | n/a |
 | **Accessibility** (Mac download) | Letting a bot click and type in the apps the person approves (Nollie Computer). | Turning on Nollie Computer in the bot's Computer page opens the Mac permissions window, which has the Allow rows. Also when a task starts without it. Never in setup. | A bot cannot use the Mac. The task fails with a plain message and the window opens again. |
@@ -43,6 +43,11 @@ prompt for a kind at a time.
 | **Contacts** (Mac, both editions) | Helpers can look people up by name (name, phone numbers, email addresses and birthday only), and add or change a contact after a yes. | The Contacts switch, as above. | As above, for Contacts. |
 | **Background items** (Mac download) | Nollie Runtime (`SMAppService.agent`) keeps the assistant and the iPhone door running. The alert helper (`SMAppService.loginItem`) checks for finished work while Nollie is closed. | Finishing Mac setup registers the runtime; the "Check while closed" switch registers the helper. macOS shows a "Background items added" banner, and a Login Items approval if it needs one. | The page says it needs approval and opens Login Items (`openApprovalSettings`). |
 | **Keychain / iCloud** | Gateway secrets, device credentials and iCloud alerts. | Keychain access is silent. iCloud alerts ask only after the person turns them on. | iCloud alerts stay off. |
+
+Saved cards add no system permission. The Mac reads the helper's checkout with its own text
+recognition (Vision, on the device) from a picture Cua's command line hands it; it needs no Screen
+Recording, and the picture stays in memory for one reading. The pay sheet, a small window of its own,
+appears only when a helper's payment is waiting for its security code.
 
 Things that look like permissions but are not: the Photos picker (`PhotosPicker`) and file
 importer run out of process and need no permission. Picking a folder to import on the Mac is the
