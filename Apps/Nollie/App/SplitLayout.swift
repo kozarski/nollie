@@ -22,7 +22,8 @@ struct SplitLayout: Equatable {
 
     /// About a third for the list, within comfortable limits.
     static let listShare: CGFloat = 1.0 / 3.0
-    static let listMin: CGFloat = 300
+    /// The list was made for phones, so it keeps a phone's width at least; narrower, its rows and header crowd.
+    static let listMin: CGFloat = 340
     static let listMax: CGFloat = 420
 
     /// The columns for `width`. `fold` is the crease's span across the width, when one is in use.

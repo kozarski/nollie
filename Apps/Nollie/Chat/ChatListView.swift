@@ -99,7 +99,9 @@ struct ChatListView: View {
             .background(InteractivePopEnabler())
             .modifier(PathWatcher(list: self))
             #if !os(macOS)
-            .toolbar { listToolbar }
+            .toolbar { if !opensBeside { listToolbar } }
+            .toolbar(opensBeside ? .hidden : .automatic, for: .navigationBar)
+            .safeAreaInset(edge: .top, spacing: 0) { if opensBeside { besideHeader } }
             #endif
             .modifier(ComposeRequests(list: self))
             .sheet(isPresented: $showNewBot) { if let runtime { NewBotSheet(runtime: runtime).sheetFrame().withAppModel() } }

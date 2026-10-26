@@ -279,3 +279,39 @@ struct BotRowButtonStyle: ButtonStyle {
             .contentShape(.rect)
     }
 }
+
+#if os(iOS)
+/// A quiet row in the sidebar for a place or an action (Board, New bot, Settings): its symbol where
+/// a bot's face would be, so the words line up with the bots' names.
+struct SidebarActionRow<Trailing: View>: View {
+    var title: String
+    var symbol: String
+    var action: () -> Void
+    @ViewBuilder var trailing: Trailing
+
+    init(title: String, symbol: String, action: @escaping () -> Void, @ViewBuilder trailing: () -> Trailing = { EmptyView() }) {
+        self.title = title
+        self.symbol = symbol
+        self.action = action
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: symbol)
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(Ink.text2)
+                    .frame(width: Ink.rowAvatar)
+                    .accessibilityHidden(true)
+                Text(title).font(.body.weight(.medium)).foregroundStyle(Ink.text)
+                Spacer(minLength: 0)
+                trailing
+            }
+            .inset(h: 12, v: 10)
+            .frame(minHeight: 44)
+        }
+        .buttonStyle(BotRowButtonStyle())
+    }
+}
+#endif

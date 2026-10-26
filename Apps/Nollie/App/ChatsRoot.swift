@@ -61,9 +61,9 @@ struct ChatsRoot: View {
     // MARK: Columns
 
     private var listColumn: some View {
-        NavigationStack {
-            ChatListView(detailPath: $path)
-        }
+        // No stack of its own: beside a chat the list draws its own header, and a navigation stack
+        // here kept the window's right-hand inset (the open iPhone Duo's status bar), squeezing the rows.
+        ChatListView(detailPath: $path)
         .environment(\.chatOpensBeside, true)
         .frame(width: layout.list.width)
         .frame(maxHeight: .infinity)

@@ -37,7 +37,7 @@ extension ChatListView {
         .scrollDismissesKeyboard(.immediately)
         .overlay(alignment: .bottom) { SummaryProgressStrip().padding(.bottom, 6) }
         .safeAreaInset(edge: .top, spacing: 0) { topBars(runtime) }
-        // Beside a chat, search and New chat wait at the foot of the list, in reach of a thumb.
+        // Beside a chat, Settings sits at the foot of the sidebar.
         .safeAreaInset(edge: .bottom, spacing: 0) { if opensBeside { besideFoot } }
         .background((showingBots && searchText.isEmpty ? Ink.canvas : Color(.systemGroupedBackground)).ignoresSafeArea())
         #endif
@@ -70,7 +70,16 @@ extension ChatListView {
                 #if os(iOS)
                 if !pins.isEmpty { pinnedFaces(pins, front: ordered.first?.name, open: openName, runtime: runtime) }
                 #endif
+                #if os(iOS)
+                if opensBeside, runtime.kanban.isPresent { BoardToolbarButton(asRow: true) }
+                #endif
                 ForEach(rows) { botRow($0, runtime: runtime, selected: openName == $0.name) }
+                #if os(iOS)
+                if opensBeside {
+                    SidebarActionRow(title: "New bot", symbol: "plus") { model.newBotRequest = UUID() }
+                        .accessibilityIdentifier("chats.newBot")
+                }
+                #endif
             }
             .inset(h: 8, v: 2)
         }
@@ -114,23 +123,11 @@ extension ChatListView {
         .accessibilityAddTraits(open == bot.name ? .isSelected : [])
     }
 
-    /// The foot of the list beside a chat: search, and a pill for a new chat.
+    /// The foot of the sidebar: Settings, where the Mac keeps it.
     private var besideFoot: some View {
-        HStack(spacing: 10) {
-            InkSearchField(text: $searchText, prompt: "Search", focused: $searchFocused) {
-                if model.runtime != nil { PapertrailSearchButton() }
-            }
-            .clipShape(.capsule)
-            Button { model.newChatSheetRequest = UUID() } label: {
-                Label("New chat", systemImage: "square.and.pencil")
-                    .font(.body.weight(.semibold))
-                    .lineLimit(1)
-            }
-            .buttonStyle(.glass)
-            .fixedSize()
-            .accessibilityIdentifier("chats.newChat")
-        }
-        .padding(EdgeInsets(top: 8, leading: 16, bottom: 10, trailing: 16))
+        SidebarActionRow(title: "Settings", symbol: "gearshape") { model.selectedTab = .settings }
+            .accessibilityIdentifier("chats.settings")
+            .inset(h: 8, v: 6)
     }
     #endif
 
@@ -227,11 +224,7 @@ extension ChatListView {
                 .padding(EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20))
             }
             #endif
-            #if os(iOS)
-            if !opensBeside { searchField }
-            #else
             searchField
-            #endif
             if let waiting = model.needsSignIn {
                 GatewaySignInBanner(connection: waiting)
                     .padding(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
@@ -251,6 +244,37 @@ extension ChatListView {
     }
 
     #if !os(macOS)
+    /// Beside a chat the list is a sidebar with its own header: the title and one button, New chat.
+    /// Board, New bot and Settings are rows in the sidebar itself, as the Mac's sidebar has them.
+    var besideHeader: some View {
+        HStack(spacing: 10) {
+            if selecting {
+                doneButton.buttonStyle(.glass)
+            } else {
+                Text(listTitle)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(Ink.text)
+                    .lineLimit(1)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            Spacer(minLength: 0)
+            if selecting {
+                HStack(spacing: 8) { selectionActions }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+            } else {
+                Button { model.newChatSheetRequest = UUID() } label: { Label("New chat", systemImage: "square.and.pencil") }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                    .accessibilityIdentifier("chats.newChat")
+            }
+        }
+        .controlSize(.large)
+        .padding(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 16))
+    }
+
     /// The conversations keep their own navigation while Board and Settings open above them.
     @ToolbarContentBuilder var listToolbar: some ToolbarContent {
         let hasBoard = runtime?.kanban.isPresent == true

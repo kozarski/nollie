@@ -44,6 +44,8 @@ struct BoardReviewSummary {
 
 /// The same Board entry in the phone toolbar and the Mac sidebar.
 struct BoardToolbarButton: View {
+    /// Drawn as a sidebar row (wide iPhone and iPad) rather than a bar button.
+    var asRow = false
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("kanban.column") private var columnRaw = KanbanStatus.ready.rawValue
@@ -80,22 +82,49 @@ struct BoardToolbarButton: View {
     }
 
     var body: some View {
-        Button {
-            if let board = summary.boardToOpen(current: store?.selectedBoard) { store?.select(board: board) }
-            if summary.count > 0 { columnRaw = KanbanStatus.review.rawValue }
-            model.selectedTab = .kanban
-        } label: {
+        styled
+        .accessibilityLabel("Board")
+        .accessibilityValue(summary.count > 0 ? reviewDescription : "No tasks needing your help")
+        .accessibilityHint(summary.count > 0 ? "Opens tasks that need your help" : "Opens the Board")
+        .accessibilityIdentifier("chats.board")
+        .task(id: refreshKey) { await refreshCounts() }
+    }
+
+    private func open() {
+        if let board = summary.boardToOpen(current: store?.selectedBoard) { store?.select(board: board) }
+        if summary.count > 0 { columnRaw = KanbanStatus.review.rawValue }
+        model.selectedTab = .kanban
+    }
+
+    @ViewBuilder private var countBadge: some View {
+        if summary.count > 0 {
+            Text(summary.count, format: .number)
+                .font(.caption2.weight(.bold))
+                .monospacedDigit()
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .foregroundStyle(.white)
+                .background(.blue, in: .capsule)
+                .accessibilityIdentifier("chats.board.reviewCount")
+        }
+    }
+
+    @ViewBuilder private var styled: some View {
+        #if os(iOS)
+        if asRow {
+            SidebarActionRow(title: "Board", symbol: "rectangle.split.3x1", action: open) { countBadge }
+        } else {
+            bar
+        }
+        #else
+        bar
+        #endif
+    }
+
+    private var bar: some View {
+        Button(action: open) {
             HStack(spacing: 5) {
-                if summary.count > 0 {
-                    Text(summary.count, format: .number)
-                        .font(.caption2.weight(.bold))
-                        .monospacedDigit()
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .foregroundStyle(.white)
-                        .background(.blue, in: .capsule)
-                        .accessibilityIdentifier("chats.board.reviewCount")
-                }
+                countBadge
                 Image(systemName: "rectangle.split.3x1")
             }
         }
@@ -105,11 +134,6 @@ struct BoardToolbarButton: View {
         #else
         .tint(summary.count > 0 ? .blue : .primary)
         #endif
-        .accessibilityLabel("Board")
-        .accessibilityValue(summary.count > 0 ? reviewDescription : "No tasks needing your help")
-        .accessibilityHint(summary.count > 0 ? "Opens tasks that need your help" : "Opens the Board")
-        .accessibilityIdentifier("chats.board")
-        .task(id: refreshKey) { await refreshCounts() }
     }
 
     private struct AttentionCounts: Decodable { let counts: [String: Int] }

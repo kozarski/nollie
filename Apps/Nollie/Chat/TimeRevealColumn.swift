@@ -17,6 +17,9 @@ struct TimeRevealColumn<Content: View>: View {
     var body: some View {
         content
             .offset(x: -reveal * Self.travel)
+            // The times wait just past the trailing edge. Where the window has room there (beside the
+            // status bar on an open iPhone Duo) they would show, so only the column's own width is drawn.
+            .mask { Rectangle().padding(.vertical, -200) }
             #if os(iOS)
             .background { TimeRevealPan(reveal: $reveal, enabled: enabled) }
             #endif
