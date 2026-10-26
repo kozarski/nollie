@@ -3,6 +3,7 @@ import Foundation
 import Testing
 import UserNotifications
 @testable import Nollie
+import NollieCore
 
 /// Holds a request open, as a system prompt on screen would, until the test lets it finish.
 @MainActor
@@ -138,12 +139,19 @@ struct PermissionCenterTests {
 
     @Test func theMacDownloadAsksForTheMacOnlyPermissionsInSettings() {
         let mac = PermissionKind.listed(isMac: true, direct: true)
-        #expect(mac == [.notifications, .localNetwork, .microphone, .accessibility, .screenRecording])
+        #expect(mac == [.notifications, .localNetwork, .microphone, .accessibility, .screenRecording, .calendar, .reminders, .contacts])
         #expect(!mac.contains(.camera))
     }
 
     @Test func theStoreMacHasNoLinkAndNoComputer() {
-        #expect(PermissionKind.listed(isMac: true, direct: false) == [.notifications, .microphone])
+        #expect(PermissionKind.listed(isMac: true, direct: false) == [.notifications, .microphone, .calendar, .reminders, .contacts])
+    }
+
+    @Test func calendarRemindersAndContactsAreTheMacsAndNeverAskedInSetup() {
+        let mac: [PermissionKind] = [.calendar, .reminders, .contacts]
+        #expect(!PermissionKind.listed(isMac: false, direct: true).contains { mac.contains($0) })
+        #expect(!PermissionKind.inSetup.contains { mac.contains($0) })
+        #expect(AppleDataArea.allCases.map(PermissionKind.init) == mac)
     }
 
     @Test func thePhoneNeverListsTheMacPermissions() {

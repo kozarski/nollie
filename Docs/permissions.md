@@ -15,6 +15,7 @@ The code is in `Apps/Nollie/Permissions/`:
 | `LocalNetworkAccess.swift` | Local Network, the one permission the system will not let an app read |
 | `PermissionRow.swift` | The one row style used by setup, Settings and the Mac switch |
 | `PermissionsSettingsView.swift` | Settings › Privacy › Permissions |
+| `PermissionClients+AppleData.swift` | Calendar, Reminders and Contacts on the Mac (EventKit and Contacts) |
 
 `PermissionCenter.refresh()` only reads and never prompts. `PermissionCenter.ask(_:)` is the only
 way to prompt, runs from an Allow button, skips anything already answered, and shows at most one
@@ -37,6 +38,9 @@ prompt for a kind at a time.
 | **Siri and Shortcuts** | New chat, open a chat, what is my bot doing, Stop. | App Intents have no prompt. Settings › Siri & Shortcuts. | n/a |
 | **Accessibility** (Mac download) | Letting a bot click and type in the apps the person approves (Nollie Computer). | Turning on Nollie Computer in the bot's Computer page opens the Mac permissions window, which has the Allow rows. Also when a task starts without it. Never in setup. | A bot cannot use the Mac. The task fails with a plain message and the window opens again. |
 | **Screen Recording** (Mac download) | Letting a bot see those apps; the live picture of a helper's computer. | Same window as Accessibility. The Watch picture checks first (`CGPreflightScreenCaptureAccess`) and never prompts. | Same as Accessibility. Watch shows no picture. macOS may ask to reopen Nollie. |
+| **Calendar** (Mac, both editions) | Helpers the person chooses can see the calendar, and add, change or delete an event after a yes on a card. Full access: add-only access can't read. | The moment the Calendar switch is turned on in Bot settings › Apps on the Mac that runs Hermes. Also Allow in Settings › Privacy › Permissions. Turning it on from the iPhone never asks the phone; the iPhone says "Allow Calendar in Nollie on your Mac." | The switch stays off and says "Allow Calendar for Nollie in System Settings." with Open Settings. A helper is told Calendar isn't allowed on the Mac. |
+| **Reminders** (Mac, both editions) | The same for reminder lists and open reminders: add, complete or delete after a yes. | The Reminders switch, as above. | As above, for Reminders. |
+| **Contacts** (Mac, both editions) | Helpers can look people up by name (name, phone numbers, email addresses and birthday only), and add or change a contact after a yes. | The Contacts switch, as above. | As above, for Contacts. |
 | **Background items** (Mac download) | Nollie Runtime (`SMAppService.agent`) keeps the assistant and the iPhone door running. The alert helper (`SMAppService.loginItem`) checks for finished work while Nollie is closed. | Finishing Mac setup registers the runtime; the "Check while closed" switch registers the helper. macOS shows a "Background items added" banner, and a Login Items approval if it needs one. | The page says it needs approval and opens Login Items (`openApprovalSettings`). |
 | **Keychain / iCloud** | Gateway secrets, device credentials and iCloud alerts. | Keychain access is silent. iCloud alerts ask only after the person turns them on. | iCloud alerts stay off. |
 
@@ -53,6 +57,10 @@ person's own choice in the open panel.
   row. The camera is asked in the scanner and Local Network on the link screen.
 - **Using the Mac** (Mac download): the Nollie Computer switch opens the walkthrough
   (`ComputerPermissionsView`), which uses the same row.
+- **Bot settings › Apps** (Mac): turning on a helper's Calendar, Reminders or Contacts switch shows the
+  system prompt then and there, with the usage string as its one line ("Nollie lets the helpers you
+  choose see your calendar. Nothing changes without your yes."). A no leaves the switch off. Setup never
+  asks for these.
 - **Settings › Privacy › Permissions**: every row for this device, its state, and Open Settings when
   declined.
 

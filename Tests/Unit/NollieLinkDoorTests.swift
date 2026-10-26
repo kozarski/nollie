@@ -208,6 +208,7 @@ struct NollieLinkDoorTests {
             ("POST", "/api/plugins/nollie-workflow/rehearsals/rehearsal-career-3f2a9c-e-81/turn-on", false),
             ("POST", "/api/plugins/nollie-workflow/rehearsals/rehearsal-career-3f2a9c-e-81/keep-off", false),
             ("POST", "/api/plugins/nollie-workflow/sign-ins/requests/0123456789abcdef0123456789abcdef/claim", false),
+            ("GET", "/api/plugins/nollie-workflow/apple-data/bots", false), ("PUT", "/api/plugins/nollie-workflow/apple-data/bots", false),
             ("GET", "/nollie/live", true), ("POST", "/nollie/stop", false),
             ("POST", "/api/plugins/nollie-computer/take-over", false), ("POST", "/api/plugins/nollie-computer/hand-back", false),
             ("GET", "/nollie/link/hosts", false), ("POST", "/nollie/link/away/on", false), ("POST", "/nollie/link/away/off", false),
@@ -274,6 +275,11 @@ struct NollieLinkDoorTests {
             ("POST", "/api/plugins/nollie-workflow/sign-ins/requests/abc/result", false),
             ("GET", "/api/plugins/nollie-workflow/sign-ins/requests/abc/claim", false),
             ("GET", "/api/plugins/nollie-workflow/sign-ins/history", false),
+            // Calendar, Reminders and Contacts: a phone sees and sets the switches; requests and answers are the Mac's.
+            ("GET", "/api/plugins/nollie-workflow/apple-data/requests", false), ("PUT", "/api/plugins/nollie-workflow/apple-data/mac", false),
+            ("POST", "/api/plugins/nollie-workflow/apple-data/requests/abc/prepare", false),
+            ("POST", "/api/plugins/nollie-workflow/apple-data/requests/abc/answer", false),
+            ("POST", "/api/plugins/nollie-workflow/apple-data/bots", false),
             // The live picture: the door's own socket, a GET upgrade at exactly one path.
             ("GET", "/nollie/live", false), ("HEAD", "/nollie/live", false), ("POST", "/nollie/live", false),
             ("PUT", "/nollie/live", false), ("PATCH", "/nollie/live", false), ("DELETE", "/nollie/live", false),

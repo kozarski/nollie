@@ -117,6 +117,8 @@ enum LinkDoorPolicy {
         // A saved sign-in card: the phone may only say it is the one answering. Sites, the
         // requests list, the Mac's start and result, and the history stay on the Mac.
         Rule(["POST"], "/api/plugins/nollie-workflow/sign-ins/requests/*/claim"),
+        // A helper's Calendar, Reminders and Contacts switches. The requests and their answers stay on the Mac.
+        Rule(["GET", "PUT"], "/api/plugins/nollie-workflow/apple-data/bots"),
         // Watch: Take over and Hand back, after Face ID on the phone. The add-on still refuses
         // private bots; the door allows nothing but `?profile=` on these (see `allowsQuery`).
         Rule(["POST"], "/api/plugins/nollie-computer/take-over"),

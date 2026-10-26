@@ -60,6 +60,12 @@
 		     content keys) beside NSAllowsArbitraryLoads makes the system ignore the latter, and
 		     plain http to a Tailscale or LAN host was refused on the Mac (ATS error -1022). -->
 	</dict>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Nollie lets the helpers you choose see your calendar. Nothing changes without your yes.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Nollie lets the helpers you choose see your reminders. Nothing changes without your yes.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Nollie lets the helpers you choose find people in your contacts. Nothing changes without your yes.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a photo to attach to a chat with your Hermes agent.</string>
 	<key>NSBonjourServices</key>

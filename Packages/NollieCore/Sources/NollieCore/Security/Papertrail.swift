@@ -31,6 +31,8 @@ public struct Papertrail: Decodable, Equatable, Sendable {
         public var searches: Int?
         public var pages: Int?
         public var images: Int?
+        /// What the reply read on the Mac before its words went out: "calendar", "reminders", "contacts".
+        public var localReads: [String]?
 
         public init(id: String, at: Double, route: String? = "online", provider: String? = nil, providerName: String? = nil,
                     host: String? = nil, model: String? = nil, services: [String]? = nil, inputTokens: Int? = nil,
@@ -132,7 +134,7 @@ public extension Papertrail.Entry {
     /// and adding them would make a short reply look many times its size.
     var tokens: Int { (inputTokens ?? 0) + (outputTokens ?? 0) }
 
-    /// "18k tokens · 2 searches · 3 pages", "1 picture".
+    /// "18k tokens · 2 searches · 3 pages", "1 picture", "4k tokens · read your calendar".
     var amountText: String { amountParts().joined(separator: " · ") }
 
     /// The same for VoiceOver: "18 thousand tokens, 2 searches, 3 pages".
@@ -145,6 +147,11 @@ public extension Papertrail.Entry {
         if let n = pages, n > 0 { parts.append(Papertrail.count(n, "page", "pages")) }
         if let n = images, n > 0 { parts.append(Papertrail.count(n, "picture", "pictures")) }
         if parts.isEmpty, let n = calls, n > 0 { parts.append(Papertrail.count(n, "request", "requests")) }
+        let read = AppleDataArea.allCases.filter { localReads?.contains($0.rawValue) ?? false }.map { $0.title.lowercased() }
+        if !read.isEmpty {
+            let names = read.count == 1 ? read[0] : read.dropLast().joined(separator: ", ") + " and " + read[read.count - 1]
+            parts.append("read your " + names)
+        }
         return parts
     }
 }

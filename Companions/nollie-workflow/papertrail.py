@@ -25,6 +25,8 @@ import time
 from urllib.parse import urlsplit
 import weakref
 
+from .apple_data import READS as LOCAL_READS
+
 KEEP_DAYS = 35
 MAX_ENTRIES = 200
 WINDOW_SECONDS = 600
@@ -261,6 +263,10 @@ class Recorder:
 
     def _tool(self, tool_name, args, status, turn, session):
         name = str(tool_name or "")
+        if name in LOCAL_READS and status != "blocked":
+            # The Mac's calendar, reminders or contacts, read in place. It stays here; what the model then
+            # sends is the turn's own model call.
+            return self._line(route="mac", source="tool", tool=name, turn=_id(turn), session=_id(session))
         if status == "blocked" or name not in SEARCH_TOOLS | PAGE_TOOLS | IMAGE_TOOLS:
             return None  # A blocked call sent nothing; other tools are not online services.
         pages = 0
@@ -491,6 +497,9 @@ def _entry(key, group, provider_name):
         "searches": sum(call["searches"] for call in left),
         "pages": sum(call["pages"] for call in left),
         "images": sum(call["images"] for call in left),
+        # What the turn read on this Mac before its words went out: "calendar", "reminders", "contacts".
+        "local_reads": sorted({LOCAL_READS[call["tool"]] for call in group
+                               if call["source"] == "tool" and call["tool"] in LOCAL_READS}),
     }
 
 

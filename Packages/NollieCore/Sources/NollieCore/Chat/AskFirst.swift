@@ -8,6 +8,8 @@ public struct AskFirstAsk: Equatable, Sendable {
 
     public enum Kind: String, CaseIterable, Sendable {
         case send, buy, post, delete, unsure
+        /// A change to the person's calendar, reminders or contacts on their Mac (the add-on's apple_data).
+        case calendar, reminders, contacts
     }
 
     public var kind: Kind

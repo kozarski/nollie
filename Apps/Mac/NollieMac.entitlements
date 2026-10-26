@@ -16,6 +16,11 @@
 	<true/>
 	<key>com.apple.security.device.audio-input</key>
 	<true/>
+	<!-- Calendar, Reminders and Contacts, for the helpers the person turns them on for. -->
+	<key>com.apple.security.personal-information.calendars</key>
+	<true/>
+	<key>com.apple.security.personal-information.addressbook</key>
+	<true/>
 	<!-- Files chosen in open/save panels and dropped into the composer. -->
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>

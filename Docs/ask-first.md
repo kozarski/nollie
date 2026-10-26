@@ -90,6 +90,14 @@ helper says it is clicking only words the card; it never lets a click through.
 
 While a saved sign-in is being typed, Ask first never takes a screenshot: the click is held instead.
 
+## Calendar, Reminders and Contacts
+
+Adding, changing, completing or deleting anything in the Mac's calendar, reminders or contacts always
+waits for a yes, whatever this switch says. Those tools ask for themselves with the Mac's own words for
+the change, so these rules leave them alone (`APPLE_DATA`) and nothing is asked twice. Their cards use
+the kinds `calendar`, `reminders` and `contacts`: "Scout wants to change your calendar". See
+[Calendar, Reminders and Contacts](calendar-reminders-contacts.md).
+
 ## What it can't see
 
 Ask first reads names, arguments and screens. It can't know what a page means.
@@ -131,5 +139,6 @@ Ask first reads names, arguments and screens. It can't know what a page means.
 | Tests | `Companions/nollie-workflow/tests/test_ask_first.py`, `test_screen_text.py`, `test_night_plumbing.py`, `Companions/nollie-computer/tests/test_ask_first.py`, `Companions/nollie-crew/tests/`, `Tools/runtime-helper/test_managed_addons.py`, `Tests/Unit/AskFirstTests.swift`, `AskFirstSettingsTests.swift`, `Tests/UI/AskFirstUITests.swift` |
 
 The approval reaches the app as an ordinary Hermes plugin approval: `pattern_key`
-`plugin_rule:nollie-ask-first:<kind>:<id>` (kind `send`, `buy`, `post`, `delete` or `unsure`; a fresh
+`plugin_rule:nollie-ask-first:<kind>:<id>` (kind `send`, `buy`, `post`, `delete`, `unsure`, or `calendar`,
+`reminders` and `contacts` from the Mac's data tools; a fresh
 32-character id) and the whole action in `description`, with the check line last when there is one.

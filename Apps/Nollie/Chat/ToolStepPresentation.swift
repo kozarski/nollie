@@ -51,6 +51,8 @@ struct ToolStepPresentation: Sendable {
 
     private enum Action: Hashable {
         case read, write, edit, find, command, searchWeb, readWeb, computer, signIn, unknown(String)
+        /// The Mac's calendar, reminders or contacts: a look, or a change that waits for a yes.
+        case appleData(AppleDataArea, change: Bool)
 
         init(_ name: String) {
             let pieces = name.components(separatedBy: "__")
@@ -68,6 +70,10 @@ struct ToolStepPresentation: Sendable {
             case "computer_use": self = .computer
             case "request_sign_in": self = .signIn
             default:
+                if let tool = AppleDataTool(rawValue: name) {
+                    self = .appleData(tool.area, change: tool.isWrite)
+                    return
+                }
                 if name.lowercased().hasPrefix("mcp__cua__"), key.hasPrefix("computer_") || key.hasPrefix("space_") {
                     self = .computer
                 } else {
@@ -93,6 +99,10 @@ struct ToolStepPresentation: Sendable {
             case .readWeb: words = ("Read page", "Reading page", "Read page")
             case .computer: words = ("Use computer", "Using computer", "Used computer")
             case .signIn: words = ("Sign in", "Signing in", "Asked to sign in")
+            case let .appleData(area, change):
+                let what = "your " + area.title.lowercased()
+                words = change ? ("Change \(what)", "Changing \(what)", "Asked to change \(what)")
+                               : ("Look at \(what)", "Looking at \(what)", "Looked at \(what)")
             case .unknown(let name): words = (name, "Running \(name)", name)
             }
             switch status {
@@ -114,6 +124,7 @@ struct ToolStepPresentation: Sendable {
             case .readWeb: words = ("Web pages", "Reading pages", "Read pages")
             case .computer: words = ("Computer steps", "Using the computer", "Used the computer")
             case .signIn: words = ("Sign-ins", "Signing in", "Asked to sign in")
+            case let .appleData(area, _): words = (area.title, area.title, area.title)
             case .unknown(let name): words = (name, name, name)
             }
             if statuses.contains(.failed) { return words.neutral }
@@ -129,6 +140,7 @@ struct ToolStepPresentation: Sendable {
             case .searchWeb, .readWeb: "globe"
             case .computer: "desktopcomputer"
             case .signIn: "key"
+            case let .appleData(area, _): area.symbol
             case .unknown: "gearshape"
             }
         }

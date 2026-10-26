@@ -39,6 +39,7 @@ extension PermissionCenter {
             clients[.accessibility] = PermissionClient.computer(.accessibility)
             clients[.screenRecording] = PermissionClient.computer(.screenRecording)
         }
+        for kind in [PermissionKind.calendar, .reminders, .contacts] { clients[kind] = PermissionClient.appleData(kind) }
         #endif
         return PermissionCenter(clients: clients)
     }

@@ -95,6 +95,11 @@ password for every read. A helper asks through the workflow add-on and Hermes's 
 types the sign-in into the helper's computer and the helper hears only how it went. Pictures of every
 computer pause while it is typed. See [Saved sign-ins](saved-sign-ins.md).
 
+Helpers can look at the calendar, reminders and contacts on the Mac that runs Hermes, for the
+helpers the person turns them on for. Nollie on the Mac reads them itself (EventKit and Contacts), and
+words any change for a card before making it only after the yes. See
+[Calendar, Reminders and Contacts](calendar-reminders-contacts.md).
+
 Ask first holds every tool call or computer action that sends, buys, posts or deletes for the person's
 yes, by fixed rules in a Hermes hook of the workflow add-on; unattended runs hold it for Night shift.
 See [Ask first](ask-first.md).

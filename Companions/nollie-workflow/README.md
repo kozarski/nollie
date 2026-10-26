@@ -185,6 +185,15 @@ Ask first doesn't look at a screen then either, and the computer preview pauses 
 answers only once the pause is over. A request file that can't be read, or a linked sign-ins folder,
 counts as typing.
 
+## Calendar, Reminders and Contacts
+
+`apple_data.py` gives every bot that is not private tools for the Mac's calendar, reminders and contacts,
+one toolset per area (`nollie_calendar`, `nollie_reminders`, `nollie_contacts`), shown only while that
+helper's switch is on (`apple-data/bots.json`, set from Bot settings). Each call is a request file that
+Nollie on the Mac answers. A change is worded by the Mac first, asked through Hermes's approval gate with
+those words every time, and made by the Mac only after the yes; unattended runs are held. Routes, files and
+the rules are in [Calendar, Reminders and Contacts](../../Docs/calendar-reminders-contacts.md).
+
 ## Stop or roll back
 
 ```sh

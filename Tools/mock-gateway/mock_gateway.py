@@ -460,6 +460,44 @@ def ask_first_rest(method: str, base: str, query: dict, payload) -> tuple[int, o
     return ok(dict(profile=profile, enabled=ASK_FIRST.get(profile, True)))
 
 
+# The Mac's Calendar, Reminders and Contacts, as nollie-workflow serves a helper's switches
+# (GET and PUT /api/plugins/nollie-workflow/apple-data/bots). Every switch starts off, and the Mac has
+# allowed all three. POST /api/_mock/apple-data sets the fixture: {"reset": true} forgets every switch,
+# "bot" with "on" (a list of calendar, reminders, contacts), and "mac" ({"calendar": "not_asked", ...}).
+APPLE_AREAS = ("calendar", "reminders", "contacts")
+APPLE_DATA: dict = {"bots": {}, "mac": {area: "allowed" for area in APPLE_AREAS}}
+
+
+def apple_data_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    fields = payload if isinstance(payload, dict) else {}
+    if base == "/api/_mock/apple-data" and method == "POST":
+        if fields.get("reset"):
+            APPLE_DATA["bots"].clear()
+            APPLE_DATA["mac"] = {area: "allowed" for area in APPLE_AREAS}
+        if isinstance(fields.get("bot"), str) and isinstance(fields.get("on"), list):
+            APPLE_DATA["bots"][fields["bot"]] = [a for a in APPLE_AREAS if a in fields["on"]]
+        if isinstance(fields.get("mac"), dict):
+            APPLE_DATA["mac"].update({k: v for k, v in fields["mac"].items() if k in APPLE_AREAS})
+        return ok(dict(ok=True))
+    if base != "/api/plugins/nollie-workflow/apple-data/bots":
+        return None
+    if method not in ("GET", "PUT"):
+        return refuse(405, "Method Not Allowed")
+    bot = unquote(query.get("bot", "default")) if method == "GET" else fields.get("bot")
+    if not isinstance(bot, str) or not PRIVATE_PROFILE_NAME.fullmatch(bot):
+        return refuse(422, "Send a bot's Hermes profile name.")
+    if private_identity(bot) or set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names():
+        return refuse(403, "Calendar, Reminders and Contacts are not used by private bots.")
+    if bot not in PROFILES and bot not in CREATED_PROFILES:
+        return refuse(404, "No such bot.")
+    if method == "PUT":
+        on = fields.get("on")
+        if not isinstance(on, list) or set(fields) != {"bot", "on"} or any(a not in APPLE_AREAS for a in on):
+            return refuse(422, "Choose from calendar, reminders and contacts.")
+        APPLE_DATA["bots"][bot] = [a for a in APPLE_AREAS if a in on]
+    return ok(dict(bot=bot, on=APPLE_DATA["bots"].get(bot, []), mac=dict(APPLE_DATA["mac"])))
+
+
 # Helpers' own computers, as nollie-computer serves them (GET and POST
 # /api/plugins/nollie-computer/own-computer). Every bot starts with its switch off and Cua ready.
 # Turning one on shows "getting ready" for OWN_COMPUTERS["ready_after"] seconds, then Ready.
@@ -2857,6 +2895,7 @@ def process_request(connection, request):
         ("normal", lambda: computer_control_rest(method, base, query)),
         ("quiet", lambda: own_computer_rest(method, base, query, body)),
         ("quiet", lambda: ask_first_rest(method, base, query, body)),
+        ("quiet", lambda: apple_data_rest(method, base, query, body)),
         ("quiet", lambda: link_rest(method, base, body)),
     ]
     answer = None
@@ -3327,9 +3366,42 @@ class Gateway:
     ASK_FIRST_CLICK = ("Press “Send” on its computer.\n"
                        "You're about to press “Send”.")
 
+    # A calendar change, as the workflow add-on's apple_data tool asks: the Mac's own words for it,
+    # under Ask first's rule with the area as the kind.
+    ASK_FIRST_CALENDAR = "Add \u201cDentist\u201d on Tue 3 Nov, 10:00 to Home calendar?\nUntil 11:00"
+
+    async def _calendar_turn(self, s, prompt):
+        """"ask first calendar": the helper adds an event to the Mac's calendar, which waits for a yes.
+        Allow once adds it. Deny does not."""
+        tool = "calendar_add_event"
+        intro = "I'll put the dentist in your calendar."
+        await self.begin_message(s)
+        await self.stream_words(s, intro)
+        call = f"calendar-{int(time.time() * 1000)}"
+        args = dict(title="Dentist", start="2026-11-03T10:00", end="2026-11-03T11:00")
+        await self.event("tool.start", s.sid, dict(tool_id=call, name=tool, args=args))
+        began = time.time()
+        rule = f"plugin_rule:nollie-ask-first:calendar:{uuid.uuid4().hex}"
+        answer = await self.ask("approval", s.sid, dict(
+            request_id=f"req-{uuid.uuid4().hex[:8]}", command=f"<{tool}> (plugin approval rule)",
+            description=self.ASK_FIRST_CALENDAR, pattern_key=rule, pattern_keys=[rule], tool_name=tool,
+            choices=["once", "session", "always", "deny"], allow_session=True, allow_permanent=True))
+        if answer is None or answer.get("choice", "deny") == "deny":
+            reply, layout = "Okay, I left your calendar as it was.", [intro, "Okay, I left your calendar as it was."]
+        else:
+            done = "Added \u201cDentist\u201d on Tue 3 Nov, 10:00 to Home calendar."
+            await self.event("tool.complete", s.sid, dict(tool_id=call, name=tool,
+                                                       duration_s=round(time.time() - began, 2), summary="added",
+                                                       result=json.dumps(dict(status="done", message=done))))
+            reply, layout = "It's in your calendar.", [intro, 1, "It's in your calendar."]
+        await self.stream_words(s, "\n\n" + reply)
+        await self.settle(s, prompt, layout, intro + "\n\n" + reply)
+
     async def _ask_first_turn(self, s, prompt):
         """"ask first email" or "ask first click": the bot tries to send, Ask first holds it for a
         yes, and the reply says what happened. Allow once sends it. Deny does not."""
+        if "calendar" in prompt.lower():
+            return await self._calendar_turn(s, prompt)
         click = "click" in prompt.lower()
         tool = "computer_use" if click else "mcp__gmail__send_email"
         intro = "I'll press Send on the draft." if click else "I'll send Sam a note about lunch."

@@ -43,7 +43,8 @@ struct ProfileComputerTab: View {
     }
 }
 
-/// Apps: the way to what it can use, which is built-in tools, connections and skills for this bot.
+/// Apps: the way to what it can use, which is built-in tools, connections and skills for this bot, and
+/// the Mac's Calendar, Reminders and Contacts.
 struct ProfileAppsTab: View {
     var state: ProfileCardState
     var openOnMac: () -> Void
@@ -55,6 +56,9 @@ struct ProfileAppsTab: View {
         #else
         GlassLink("Apps & access", symbol: "square.stack.3d.up", id: "profile.apps") { ToolsView(profileName: state.name) }
         #endif
+        if !state.isHidden, !AskFirstModel.isPrivateBot(state.name) {
+            AppleDataSection(profileName: state.name)
+        }
     }
 }
 

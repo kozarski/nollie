@@ -70,6 +70,9 @@ Hermes reads no more; none when `urls` is not a list) and
 `browser_navigate` counts one page; `image_generate` counts one picture. These always count as online.
 Searches answered from Hermes's 20-minute search memo are still counted, so search counts can run a little
 high. Calls with `status` `blocked` are not counted (nothing was sent).
+The Mac's calendar, reminders and contacts tools (`calendar_events`, `calendar_search`, `reminder_lists`,
+`reminders_open`, `contacts_search`) are recorded as route `mac`: a read that stayed on this Mac. An entry
+that left lists them in `local_reads` (`["calendar"]`), and the row says "read your calendar".
 
 ## Recording (Companions/nollie-workflow)
 

@@ -4,6 +4,8 @@ import Observation
 /// Every system permission Nollie can need, in the order a person meets them.
 enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
     case notifications, localNetwork, camera, microphone, photos, liveActivities, accessibility, screenRecording
+    /// The Mac's own Calendar, Reminders and Contacts, for the helpers the person turns them on for.
+    case calendar, reminders, contacts
 
     var id: String { rawValue }
 
@@ -17,6 +19,9 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .liveActivities: "Live Activities"
         case .accessibility: "Accessibility"
         case .screenRecording: "Screen Recording"
+        case .calendar: "Calendar"
+        case .reminders: "Reminders"
+        case .contacts: "Contacts"
         }
     }
 
@@ -33,6 +38,9 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .liveActivities: "Shows on the Lock Screen while a helper uses your Mac."
         case .accessibility: "Lets Nollie click and type in the apps you approve."
         case .screenRecording: "Lets Nollie see those apps, so it knows where to click."
+        case .calendar: "Helpers you choose can see your calendar. Changes wait for your yes."
+        case .reminders: "Helpers you choose can see your reminders. Changes wait for your yes."
+        case .contacts: "Helpers you choose can find your contacts. Changes wait for your yes."
         }
     }
 
@@ -46,6 +54,9 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .liveActivities: "lock.iphone"
         case .accessibility: "hand.point.up.left"
         case .screenRecording: "rectangle.dashed.badge.record"
+        case .calendar: "calendar"
+        case .reminders: "checklist"
+        case .contacts: "person.crop.circle"
         }
     }
 
@@ -61,6 +72,8 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
             if direct { kinds.append(.localNetwork) }
             kinds.append(.microphone)
             if direct { kinds += [.accessibility, .screenRecording] }
+            // Asked by a helper's switch in Bot settings, never in setup.
+            kinds += [.calendar, .reminders, .contacts]
             return kinds
         }
         return [.notifications, .localNetwork, .camera, .microphone, .photos, .liveActivities]

@@ -18,6 +18,9 @@ struct AskFirstCardBody: View {
         case .post: "\(who) wants to post something"
         case .delete: "\(who) wants to delete something"
         case .unsure: "\(who) wants to do something"
+        case .calendar: "\(who) wants to change your calendar"
+        case .reminders: "\(who) wants to change your reminders"
+        case .contacts: "\(who) wants to change your contacts"
         }
     }
 
@@ -28,6 +31,9 @@ struct AskFirstCardBody: View {
         case .post: "megaphone.fill"
         case .delete: "trash.fill"
         case .unsure: "questionmark.circle.fill"
+        case .calendar: "calendar"
+        case .reminders: "checklist"
+        case .contacts: "person.crop.circle.fill"
         }
     }
 

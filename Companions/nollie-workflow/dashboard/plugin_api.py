@@ -25,6 +25,7 @@ _posts = __import__(_name + ".posts", fromlist=["PostStore"])
 _night = __import__(_name + ".night_service", fromlist=["turn_on"])
 _shift = __import__(_name + ".night_shift", fromlist=["without_private"])
 _sign_ins = __import__(_name + ".sign_ins", fromlist=["Store"])
+_apple = __import__(_name + ".apple_data", fromlist=["Store"])
 _cron_followups = __import__(_name + ".hermes_support.ollie_cron_followups", fromlist=["ready"])
 NO_STORE = {"Cache-Control": "no-store"}
 router = APIRouter()
@@ -344,3 +345,138 @@ def sign_in_history(days: str = "30"):
         raise HTTPException(503, "The sign-in history cannot be read.", headers=NO_STORE) from None
     return JSONResponse({"entries": [e for e in entries if not _private.excluded(e.get("bot"), private)]},
                         headers=NO_STORE)
+
+
+# Calendar, Reminders and Contacts on the Mac. Each helper's switches (read and set from the iPhone too),
+# what the Mac says about its own permissions, and the open requests only the Mac answers: it reads, words a
+# change, and makes a change only once the tool has the person's yes.
+
+def apple_store():
+    return _apple.Store(home())
+
+
+def apple_private(target):
+    try:
+        return _private.read(target)[0] | _private.carried_over_names()
+    except (OSError, ValueError):
+        raise HTTPException(503, "The Private list cannot be read.", headers=NO_STORE) from None
+
+
+def apple_bot(bot):
+    """The store and the bot, once the bot is known and not private."""
+    store = apple_store()
+    target = store.root.parent.parent
+    if not isinstance(bot, str) or not _private.PROFILE_NAME.match(bot):
+        raise HTTPException(422, "Send a bot's Hermes profile name.", headers=NO_STORE)
+    if _core.private_identity(bot, apple_private(target)):
+        raise HTTPException(403, "Calendar, Reminders and Contacts are not used by private bots.", headers=NO_STORE)
+    bot_home(bot, target)
+    return store
+
+
+def apple_switches(store, bot):
+    try:
+        on = store.bots().get(bot, [])
+    except (OSError, ValueError):
+        raise HTTPException(503, "The switches cannot be read.", headers=NO_STORE) from None
+    return JSONResponse({"bot": bot, "on": on, "mac": store.mac()}, headers=NO_STORE)
+
+
+@router.get("/apple-data/bots")
+def apple_data_bot(bot: str = "default"):
+    return apple_switches(apple_bot(bot), bot)
+
+
+class AppleSwitches(BaseModel):
+    model_config = {"extra": "forbid"}
+    bot: str
+    on: list[str]
+
+
+@router.put("/apple-data/bots")
+def save_apple_data_bot(body: AppleSwitches):
+    store = apple_bot(body.bot)
+    try:
+        store.set_bot(body.bot, body.on)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc), headers=NO_STORE) from None
+    except OSError:
+        raise HTTPException(503, "The switches cannot be saved.", headers=NO_STORE) from None
+    return apple_switches(store, body.bot)
+
+
+class AppleAccess(BaseModel):
+    model_config = {"extra": "forbid"}
+    access: dict[str, str]
+
+
+@router.put("/apple-data/mac")
+def save_apple_data_mac(body: AppleAccess):
+    """The Mac's own permissions, as it reads them. Only which ones are allowed: nothing from the apps."""
+    try:
+        access = apple_store().save_mac(body.access)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc), headers=NO_STORE) from None
+    except OSError:
+        raise HTTPException(503, "That cannot be saved.", headers=NO_STORE) from None
+    return JSONResponse({"access": access}, headers=NO_STORE)
+
+
+def apple_public(record):
+    return {k: record.get(k) for k in ("id", "bot", "tool", "area", "write", "args", "state", "created_at")}
+
+
+@router.get("/apple-data/requests")
+def apple_data_requests():
+    store = apple_store()
+    private = apple_private(store.root.parent.parent)
+    try:
+        found = store.open_requests()
+        bots = store.bots()
+    except (OSError, ValueError):
+        raise HTTPException(503, "Requests cannot be read.", headers=NO_STORE) from None
+    return JSONResponse({
+        "requests": [apple_public(r) for r in found if not _private.excluded(r.get("bot"), private)],
+        "bots": {b: on for b, on in bots.items() if not _private.excluded(b, private)},
+    }, headers=NO_STORE)
+
+
+def apple_request(request_id, step):
+    store = apple_store()
+    private = apple_private(store.root.parent.parent)
+    try:
+        record = store.get(request_id)
+        if _private.excluded(record.get("bot"), private):
+            raise LookupError(request_id)
+        record = step(store)
+    except LookupError:
+        raise HTTPException(404, "There is no such request.", headers=NO_STORE) from None
+    except _apple.Conflict:
+        raise HTTPException(409, "This request has moved on.", headers=NO_STORE) from None
+    except ValueError as exc:
+        raise HTTPException(422, str(exc), headers=NO_STORE) from None
+    except OSError:
+        raise HTTPException(503, "Requests cannot be read.", headers=NO_STORE) from None
+    return JSONResponse(apple_public(record), headers=NO_STORE)
+
+
+class AppleCard(BaseModel):
+    model_config = {"extra": "forbid"}
+    card: str
+
+
+@router.post("/apple-data/requests/{request_id}/prepare")
+def prepare_apple_data(request_id: str, body: AppleCard):
+    """The Mac's words for a change it has not made yet. The tool asks the person with exactly these."""
+    return apple_request(request_id, lambda store: store.prepare(request_id, body.card))
+
+
+class AppleAnswer(BaseModel):
+    model_config = {"extra": "forbid"}
+    result: dict | None = None
+    error: str | None = None
+
+
+@router.post("/apple-data/requests/{request_id}/answer")
+def answer_apple_data(request_id: str, body: AppleAnswer):
+    return apple_request(request_id, lambda store: store.answer(request_id, body.result, body.error))

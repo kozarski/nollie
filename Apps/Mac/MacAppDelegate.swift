@@ -11,6 +11,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
         { ContinuityMenuFilter.start() }, // Continuity Camera is limited to places a photo can be dropped
         { MacSleepAway.shared.start() },         // sleep and wake are this Mac's away and back
         { SignInCenter.shared.start() },         // saved sign-ins for the add-on
+        { AppleDataCenter.shared.start() },      // helpers' Calendar, Reminders and Contacts requests
     ]
 
     func applicationDidFinishLaunching(_ notification: Notification) {

@@ -22,7 +22,9 @@ ASK_FIRST = "ask_first"
 
 # Nollie's own look-only list. It never grows from Hermes metadata.
 LOOK_ONLY = frozenset(("read_file", "search_files", "session_search", "skill_view", "skills_list",
-                       "web_search", "todo", "browser_snapshot", "browser_get_images"))
+                       "web_search", "todo", "browser_snapshot", "browser_get_images",
+                       # The Mac's calendar, reminders and contacts, read in place (apple_data.READS).
+                       "calendar_events", "calendar_search", "reminder_lists", "reminders_open", "contacts_search"))
 LOOK_AT_URL = frozenset(("web_extract", "vision_analyze"))
 URL_KEYS = ("urls", "url", "image_url")
 

@@ -157,6 +157,11 @@ EXEMPT = frozenset(("memory", "todo", "todo_list", "session_search", "request_si
                     "kanban_comment", "kanban_request_review", "kanban_request_changes", "kanban_complete",
                     "kanban_block", "kanban_unblock", "kanban_heartbeat", "kanban_attach", "kanban_attach_url",
                     "kanban_link", "kanban_create", "kanban_schedule"))
+# Calendar, Reminders and Contacts on the Mac (apple_data.py). Every change asks in the tool itself,
+# always, with the words the Mac gives it, so these rules would only ask a second time. Reads ask nothing.
+APPLE_DATA = frozenset(("calendar_events", "calendar_search", "calendar_add_event", "calendar_change_event",
+                        "calendar_delete_event", "reminder_lists", "reminders_open", "reminder_add",
+                        "reminder_complete", "reminder_delete", "contacts_search", "contact_add", "contact_change"))
 # Hermes tools that only look things up.
 LOOKS = frozenset(("web_search", "web_extract", "read_file", "search_files", "skill_view", "skills_list",
                    "browser_snapshot", "browser_get_images", "browser_vision", "browser_navigate", "browser_back",
@@ -1410,7 +1415,7 @@ def classify(tool, args, *, screen=None, read_file=_read_script):
             return Action(kind, _summary(f"{len(found)} actions at once:", [a.summary for a in found],
                                           limit=None if has_command else SUMMARY_LIMIT),
                           next((a.button for a in found if a.button), None), has_command=has_command)
-    if tool in EXEMPT or tool in LOOKS:
+    if tool in EXEMPT or tool in LOOKS or tool in APPLE_DATA:
         return None
     screen = screen or NoScreen()
     last = _last(tool)

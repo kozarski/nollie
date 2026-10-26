@@ -1,5 +1,5 @@
-"""Papertrail for the main bot and the bots chosen for it, the Night shift recorder and saved sign-ins for every
-bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
+"""Papertrail for the main bot and the bots chosen for it, the Night shift recorder, saved sign-ins and the Mac's
+Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
 keeps a typed password out of screenshots, load in every bot that is not private. Nothing loads for a private bot.
 """
 
@@ -26,6 +26,7 @@ def register(ctx):
             start(home, ctx)
     _register_night_shift(ctx, profile, home)
     _register_sign_ins(ctx, profile, home)
+    _register_apple_data(ctx, profile, home)
 
 
 def _register_papertrail(ctx, profile, default_home):
@@ -86,6 +87,28 @@ def _register_sign_ins(ctx, profile, default_home):
         register_sign_ins(ctx, default_home, profile, watch)
     except Exception as exc:
         logging.getLogger("nollie-workflow").warning("Saved sign-ins did not start: %s", type(exc).__name__)
+
+
+def _register_apple_data(ctx, profile, default_home):
+    """Calendar, Reminders and Contacts, each in its own toolset and shown only while its switch is on. The
+    Private list is checked again on every call."""
+    import logging
+    try:
+        from pathlib import Path
+        from . import private_bots
+        try:
+            private = private_bots.names(default_home) | private_bots.carried_over_names()
+        except (OSError, ValueError):
+            return  # A damaged Private list: none of it anywhere until it is repaired.
+        if not profile or private_bots.excluded(profile, private):
+            return
+        from hermes_constants import get_hermes_home
+        from .apple_data import register as register_apple_data
+        watch = private_bots.Watch(default_home, profile, Path(get_hermes_home()).resolve().name)
+        register_apple_data(ctx, default_home, profile, watch)
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("Calendar, Reminders and Contacts did not start: %s",
+                                                     type(exc).__name__)
 
 
 def _register_ask_first(ctx, profile, default_home):
