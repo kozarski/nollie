@@ -131,10 +131,12 @@ class Writer:
         self._save_drops()
 
     def flush(self, seconds=EXIT_DRAIN_SECONDS, clock=time.monotonic):
-        """At exit: write what is still queued, for at most ``seconds``. Never raises.
+        """At exit: write what is still queued and wait for a write the background thread has begun,
+        for at most ``seconds``. Never raises.
 
         A Board worker is a short process, and its last lines (often the run's end) are queued
-        just before it exits.
+        just before it exits. The thread takes a line off the queue before it writes it, so an
+        empty queue is not enough: the count of unfinished lines has to reach zero.
         """
         deadline = clock() + seconds
         try:
@@ -142,7 +144,10 @@ class Writer:
                 try:
                     item = self.queue.get_nowait()
                 except queue.Empty:
-                    break
+                    if self.queue.unfinished_tasks == 0:
+                        break
+                    time.sleep(0.005)
+                    continue
                 try:
                     self.write(item)
                 except Exception:

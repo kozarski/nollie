@@ -517,6 +517,37 @@ class ExitTests(RecorderCase):
         self.assertIsNone(broken.flush())
         self.assertTrue(broken.queue.empty())
 
+    def test_flush_waits_for_a_write_the_thread_has_begun(self):
+        import threading
+        import time
+        rec = self.make()
+        rec.writer = recorder.Writer(self.root, self.profile, private=rec.is_private)
+        started, release = threading.Event(), threading.Event()
+        write = rec.writer.write
+
+        def slow(item):
+            started.set()
+            release.wait(10)
+            write(item)
+        rec.writer.write = slow
+        rec.writer.put({"v": 1, "at": AT, "run": "r", "event": "end", "outcome": "done"})
+        self.assertTrue(started.wait(5))
+        self.assertTrue(rec.writer.queue.empty())  # Taken off the queue, not yet on disk.
+        # Out of patience: it gives up on time and leaves the write alone.
+        began = time.monotonic()
+        rec.writer.flush(seconds=0.2)
+        self.assertGreaterEqual(time.monotonic() - began, 0.2)
+        self.assertEqual(self.lines(rec), [])
+        # With time to spare it waits for the write to finish.
+        done = threading.Thread(target=rec.writer.flush, args=(10.0,))
+        done.start()
+        done.join(0.3)
+        self.assertTrue(done.is_alive())
+        release.set()
+        done.join(5)
+        self.assertFalse(done.is_alive())
+        self.assertEqual([line["event"] for line in self.lines(rec)], ["end"])
+
     def test_register_flushes_at_exit_and_on_unload(self):
         import atexit
         import sys
