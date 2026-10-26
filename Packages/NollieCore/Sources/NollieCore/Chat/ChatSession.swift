@@ -250,12 +250,17 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
     /// anyone still waiting on the person's answer, with no value, so nothing is decided on the
     /// person's behalf. A chat a screen still holds stays readable but does nothing more.
     func dispose() {
+        let wasRunning = isRunning
+        // No answer is coming any more, so the chat stops looking busy: no typing, no status, and
+        // whatever the bot had said so far stands as a finished bubble.
+        sealStreamingForTool()
+        (isRunning, isSubmitting, statusLine) = (false, false, nil)
         for task in [resumeTask, approvalPollTask, activityEndTask] { task?.cancel() }
         (resumeTask, approvalPollTask, activityEndTask) = (nil, nil, nil)
         let waiting = inlineAnswers
         inlineAnswers = [:]
         for waiter in waiting.values { waiter.resume(returning: nil) }
-        if isRunning { activity.end(for: self, phase: "done") }
+        if wasRunning { activity.end(for: self, phase: "done") }
         isResuming = false
     }
 
@@ -320,6 +325,8 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
         stale = failure != nil
         guard let failure else {
             if bannerIsReconnect { banner = nil; bannerIsReconnect = false }
+            // Messages kept back while the line was down go now, unless a turn is still running.
+            drainQueue()
             return
         }
         if failure is CancellationError { return }

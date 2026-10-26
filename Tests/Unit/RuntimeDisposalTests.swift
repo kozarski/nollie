@@ -94,6 +94,27 @@ import Testing
         #expect(held.chats.isEmpty)
     }
 
+    @Test func aChatStillOnScreenStopsLookingBusy() async throws {
+        let held = try ChatFixtures.runtime(named: "dispose-typing")
+        held.socketEnabled = false
+        let chat = ChatSession(runtime: held, storedID: "stored-6", title: nil)
+        chat.runtimeID = "live-6"
+        chat.gatewayStandIn = { _, _ in ["status": "ok"] }
+        held.registry.add(chat)
+        await chat.send("Hello")
+        chat.handle(event: ChatFixtures.event(for: chat, "message.delta", ["text": "Half a rep"]))
+        try #require(chat.isRunning && chat.statusLine != nil)
+        try #require(chat.items.contains { if case .assistant(_, _, true) = $0.kind { true } else { false } })
+
+        await held.dispose()
+        #expect(!chat.isRunning, "no typing dots for an answer that can't come")
+        #expect(chat.statusLine == nil)
+        #expect(!chat.isSubmitting)
+        #expect(!chat.items.contains { if case .assistant(_, _, true) = $0.kind { true } else { false } },
+                "what the bot had said stands as a finished bubble")
+        #expect(chat.items.contains { if case .assistant("Half a rep", _, false) = $0.kind { true } else { false } })
+    }
+
     @Test func stoppingAloneKeepsTheChatsForARestart() async throws {
         let held = try ChatFixtures.runtime(named: "dispose-stop")
         held.socketEnabled = false

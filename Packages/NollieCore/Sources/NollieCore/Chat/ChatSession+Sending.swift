@@ -84,7 +84,9 @@ extension ChatSession {
             isRunning = false
             statusLine = nil
             addFailure(error.localizedDescription)
-            drainQueue()
+            // The gateway refusing this message says nothing about the next, so that one may go. A
+            // lost line would fail the rest too: they stay queued and go once the chat is back.
+            if error is RPCError { drainQueue() }
         }
     }
 
