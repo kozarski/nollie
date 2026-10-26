@@ -110,6 +110,8 @@ import Testing
     }
 
     @Test func namesReadWithACapitalAndThePrivateBotIsKnown() {
+        // The process's list, set here: unpinned, the simulator's Keychain decides, and one it can't read counts as private.
+        PrivateBots.useForTesting(PrivateBots(names: ["private", "moss"], settled: true))
         #expect(ProfileInfo(name: "career").shownName == "Career")
         #expect(ProfileInfo(name: "default", displayName: "Nollie").shownName == "Nollie")
         #expect(ProfileInfo(name: "moss", provider: "ollama").isPrivateBot(on: UUID()), "a local model keeps its words on the Mac")

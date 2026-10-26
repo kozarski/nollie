@@ -58,6 +58,7 @@ struct ProfileMemoryTab: View {
         .sheet(item: $draft) { opened in
             MemoryEditor(draft: opened, label: state.label, memory: memory)
                 .sheetFrame()
+                .withAppModel()
         }
     }
 

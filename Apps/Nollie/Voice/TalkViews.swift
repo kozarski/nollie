@@ -19,7 +19,7 @@ struct TalkModeButton: View {
         .accessibilityHint("A spoken conversation. Replies are read aloud.")
         .testID("composer.talk")
         .sheet(isPresented: $asking) {
-            VoicePermissionSheet(bot: chat.profileName, onAllowed: begin)
+            VoicePermissionSheet(bot: chat.profileName, onAllowed: begin).withAppModel()
         }
     }
 
