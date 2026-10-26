@@ -110,32 +110,28 @@ final class NotificationService: UNNotificationServiceExtension {
             gate.finish()
             return
         }
-        let fields: [String: JSONValue]
+        let alert: PushRelay.SealedAlert
         do {
-            fields = try PushRelay.decrypt(sealed, keyBase64: credentials.payloadKey)
+            alert = try PushRelay.openAlert(sealed, keyBase64: credentials.payloadKey)
         } catch {
             Self.note("decrypt failed")
             gate.finish()
             return
         }
         Self.note("decrypted OK")
-        if let title = fields["title"]?.stringValue { content.title = title }
-        if let subtitle = fields["subtitle"]?.stringValue { content.subtitle = subtitle }
-        if let body = fields["body"]?.stringValue { content.body = body }
-        if let category = fields["category"]?.stringValue { content.categoryIdentifier = category }
-        if let thread = fields["thread_id"]?.stringValue, !thread.isEmpty { content.threadIdentifier = thread }
-        if fields["interruption"]?.stringValue == "time-sensitive" { content.interruptionLevel = .timeSensitive }
-        var profile = ""
-        var connection: UUID?
-        if let hermes = fields["hermes"]?.objectValue {
+        if let title = alert.title { content.title = title }
+        if let subtitle = alert.subtitle { content.subtitle = subtitle }
+        if let body = alert.body { content.body = body }
+        if let category = alert.category { content.categoryIdentifier = category }
+        if let thread = alert.threadID { content.threadIdentifier = thread }
+        if alert.timeSensitive { content.interruptionLevel = .timeSensitive }
+        if let hermes = alert.routing {
             var info = content.userInfo
             info["hermes"] = hermes.mapValues { $0.foundationValue }
             content.userInfo = info
-            profile = hermes["profile"]?.stringValue ?? ""
-            connection = hermes["connection_id"]?.stringValue.flatMap { UUID(uuidString: $0) }
         }
         gate.updateRouting(content.userInfo)
-        Self.present(content, profile: profile, connection: connection, gate: gate)
+        Self.present(content, profile: alert.profile, connection: alert.connectionID, gate: gate)
     }
 
     // MARK: Presenting as a message

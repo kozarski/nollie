@@ -18,6 +18,8 @@ spec.loader.exec_module(companion)
 BEARER = "PROVIDER-TOKEN-SECRET"
 DEVICE_TOKEN = "d3v1c3t0k3n" * 5
 TITLE, BODY, TEXT, THREAD = "Scout", "The invoice is ready", "Invoice 7 totals 1200", "line from the chat"
+# The app puts a key in every device file it writes.
+KEY = base64.b64encode(bytes(range(32))).decode()
 
 
 def envelope():
@@ -37,7 +39,12 @@ def sender():
 
 
 def device(**more):
-    return {"device_id": "phone-1", "platform": "ios", "apns_token": DEVICE_TOKEN, **more}
+    return {"device_id": "phone-1", "platform": "ios", "apns_token": DEVICE_TOKEN, "payload_key": KEY, **more}
+
+
+def opened(sealed, key=KEY):
+    raw = base64.b64decode(sealed)
+    return json.loads(AESGCM(base64.b64decode(key)).decrypt(raw[:12], raw[12:], None))
 
 
 class Curl:
@@ -100,38 +107,56 @@ class SecretsStayOffTheCommandLine(unittest.TestCase):
         self.assertEqual(curl.calls, [])
 
 
-class DirectAlertsAreGeneric(unittest.TestCase):
-    def sent(self, target):
+class DirectAlertsAreSealed(unittest.TestCase):
+    def sent(self, target, note=None):
         curl = Curl()
         with patch.object(companion.subprocess, "run", curl):
-            self.assertTrue(sender().send(target, envelope()))
+            self.assertTrue(sender().send(target, note or envelope()))
         config = curl.calls[0][1]
         line = next(row for row in config.splitlines() if row.startswith("data-binary = "))
         return json.loads(json.loads(line[len("data-binary = "):]))
 
-    def test_without_a_payload_key_only_the_generic_words_go(self):
+    def test_the_real_words_go_sealed_with_the_devices_key(self):
         payload = self.sent(device())
-        self.assertEqual(payload["aps"]["alert"], {"title": "Nollie", "body": "New message"})
-        self.assertEqual(payload["aps"]["mutable-content"], 1)
-        self.assertNotIn("enc", payload)
-        wire = json.dumps(payload)
-        for words in (TITLE, BODY, TEXT, THREAD, "reply"):
-            self.assertNotIn(words, wire)
-        self.assertEqual(payload["hermes"], {"gateway": "https://gw.example", "session_id": "s-1", "profile": "career"})
-
-    def test_with_a_payload_key_the_real_words_go_sealed(self):
-        key = base64.b64encode(os.urandom(32)).decode()
-        payload = self.sent(device(payload_key=key))
         self.assertEqual(payload["aps"]["alert"], {"title": "Nollie", "body": "New message"})
         self.assertEqual(payload["aps"]["mutable-content"], 1)
         wire = json.dumps(payload["aps"]) + json.dumps(payload["hermes"])
         for words in (TITLE, BODY, TEXT, THREAD):
             self.assertNotIn(words, wire)
-        raw = base64.b64decode(payload["enc"])
-        opened = json.loads(AESGCM(base64.b64decode(key)).decrypt(raw[:12], raw[12:], None))
-        self.assertEqual((opened["title"], opened["body"], opened["category"]), (TITLE, BODY, "HERMES_TURN"))
-        self.assertEqual(opened["hermes"]["text"], TEXT)
-        self.assertEqual(opened["thread_id"], "s-1")
+        inside = opened(payload["enc"])
+        self.assertEqual((inside["title"], inside["body"], inside["category"]), (TITLE, BODY, "HERMES_TURN"))
+        self.assertEqual(inside["hermes"]["text"], TEXT)
+        self.assertEqual(inside["thread_id"], "s-1")
+
+    def test_the_buttons_and_routing_work_without_the_extension(self):
+        note = envelope()
+        note["aps"]["category"] = "HERMES_APPROVAL"
+        note["hermes"].update(kind="approval", request_id="rq-9")
+        payload = self.sent(device(), note)
+        self.assertEqual(payload["aps"]["category"], "HERMES_APPROVAL")
+        self.assertEqual(payload["hermes"], {"kind": "approval", "gateway": "https://gw.example", "session_id": "s-1",
+                                             "profile": "career", "request_id": "rq-9"})
+
+    def test_the_devices_own_connection_is_named_so_the_right_private_list_counts(self):
+        connection = "6F1B3C2A-9D4E-4F5A-8B7C-1D2E3F4A5B6C"
+        payload = self.sent(device(connection_id=connection))
+        self.assertEqual(payload["hermes"]["connection_id"], connection)
+        self.assertEqual(opened(payload["enc"])["hermes"]["connection_id"], connection)
+        target = device(connection_id=connection, relay={"url": "https://r.example", "install_id": "i", "secret": "s"})
+        request = sender()._relay_request(target, "alert", envelope(), "c", None)
+        self.assertEqual(opened(request["enc"])["hermes"]["connection_id"], connection)
+
+    def test_a_device_file_from_an_older_app_without_a_key_gets_only_the_generic_words(self):
+        payload = self.sent(device(payload_key=None))
+        self.assertEqual(payload["aps"]["alert"], {"title": "Nollie", "body": "New message"})
+        self.assertEqual(payload["aps"]["mutable-content"], 1)
+        self.assertEqual(payload["aps"]["category"], "HERMES_TURN")
+        self.assertNotIn("enc", payload)
+        wire = json.dumps(payload)
+        for words in (TITLE, BODY, TEXT, THREAD):
+            self.assertNotIn(words, wire)
+        self.assertEqual(payload["hermes"], {"kind": "reply", "gateway": "https://gw.example", "session_id": "s-1",
+                                             "profile": "career"})
 
     def test_a_key_that_cannot_seal_falls_back_to_the_generic_words(self):
         with self.assertLogs("hermes-push", "WARNING"):
@@ -153,9 +178,52 @@ class DirectAlertsAreGeneric(unittest.TestCase):
         target = device(payload_key=key, relay={"url": "https://r.example", "install_id": "i", "secret": "s"})
         request = sender()._relay_request(target, "alert", envelope(), "c", None)
         self.assertEqual(set(request), {"push_type", "enc", "collapse_id", "thread_id", "interruption"})
-        raw = base64.b64decode(request["enc"])
-        opened = json.loads(AESGCM(base64.b64decode(key)).decrypt(raw[:12], raw[12:], None))
-        self.assertEqual((opened["title"], opened["body"]), (TITLE, BODY))
+        inside = opened(request["enc"], key)
+        self.assertEqual((inside["title"], inside["body"]), (TITLE, BODY))
+
+
+class SealedAlertsFitApplesLimit(unittest.TestCase):
+    """Apple refuses a payload over 4 KB, and text outside ASCII takes more room than it looks."""
+
+    def long_envelope(self, text, body=BODY, thread=()):
+        note = envelope()
+        note["aps"]["alert"]["body"] = body
+        note["hermes"].update(text=text, thread=list(thread))
+        companion.trim_for_apple(note["hermes"])
+        return note
+
+    def check_fits(self, note):
+        payload = companion.APNs._direct_alert(device(), note)
+        self.assertLessEqual(len(json.dumps(payload).encode()), companion.APPLE_LIMIT)
+        self.assertIn("enc", payload)
+        return opened(payload["enc"])
+
+    def test_a_long_reply_in_another_script_still_fits_once_sealed(self):
+        for letter in ("字", "é", "🦊"):
+            text = letter * 3000
+            inside = self.check_fits(self.long_envelope(text, thread=[letter * 200] * 5))
+            self.assertTrue(inside["hermes"]["text"])
+            self.assertTrue(text.startswith(inside["hermes"]["text"]))
+
+    def test_a_long_body_is_shortened_too(self):
+        inside = self.check_fits(self.long_envelope("short", body="長" * 2000))
+        self.assertTrue(inside["body"])
+        self.assertLess(len(inside["body"]), 2000)
+
+    def test_the_words_are_sealed_as_they_are_measured(self):
+        content = {"title": "Moss", "body": "🦊 voilà", "hermes": {"text": "字" * 10}}
+        sealed = companion.seal_for_device(device(), content)
+        self.assertEqual(len(base64.b64decode(sealed)), len(companion.packed(content)) + companion.SEAL_OVERHEAD)
+        self.assertEqual(opened(sealed), content)
+
+    def test_the_trim_measures_what_is_sealed(self):
+        hermes = {"text": "字" * 2000}
+        companion.trim_for_apple(hermes)
+        self.assertLessEqual(len(companion.packed(hermes)), 2300)
+
+    def test_short_words_are_left_whole(self):
+        self.assertEqual(opened(companion.seal_for_device(device(), {"body": BODY, "hermes": {"text": TEXT}})),
+                         {"body": BODY, "hermes": {"text": TEXT}})
 
 
 if __name__ == "__main__":

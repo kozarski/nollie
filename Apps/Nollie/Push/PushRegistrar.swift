@@ -207,7 +207,9 @@ final class PushRegistrar: PushRegistrationSyncing {
         runtime.profileHome.map { $0 + "/push/devices/" + installID + ".json" }
     }
 
-    private func deviceRecord(token: String, runtime: GatewayRuntime) -> [String: JSONValue] {
+    /// The device file. `sealing` is the key the gateway seals alerts with, plus the relay link if any.
+    func deviceRecord(token: String, runtime: GatewayRuntime,
+                      sealing: [String: JSONValue] = PushRelay.deviceFileFields()) -> [String: JSONValue] {
         let connection = runtime.connection
         var fields: [String: JSONValue] = [
             "schema": 1,
@@ -223,7 +225,7 @@ final class PushRegistrar: PushRegistrationSyncing {
         #if os(iOS)
         fields["mute_desktop_origin"] = .bool(UserDefaults.standard.bool(forKey: Self.muteDesktopOriginKey))
         #endif
-        return fields.merging(PushRelay.deviceFileFields()) { _, relay in relay }
+        return fields.merging(sealing) { _, relay in relay }
     }
 
     /// Publishes this device's file for the companion to read.

@@ -398,10 +398,15 @@ def message_text(row):
     return body.strip() if isinstance(body, str) else ""
 
 
+def packed(content):
+    """The bytes that get sealed. Sizes are measured on these too, so the two always agree."""
+    return json.dumps(content, separators=(",", ":"), ensure_ascii=False).encode()
+
+
 def trim_for_apple(hermes, limit=2300):
     """Apple caps a payload at 4 KB and the encrypted part is ours. Shed thread lines, then shorten text."""
     def size():
-        return len(json.dumps(hermes, ensure_ascii=False).encode())
+        return len(packed(hermes))
 
     while size() > limit:
         thread = hermes.get("thread")
@@ -460,30 +465,64 @@ CATEGORY_BY_KIND = {"approval": "HERMES_APPROVAL", "clarify": "HERMES_CLARIFY", 
                     "settled": "HERMES_INFO"}
 
 
-def seal_for_device(device, content):
-    """Encrypt with the AES-256-GCM key this install made. The relay forwards the bytes unread and the
-    app's notification extension decrypts them."""
+APPLE_LIMIT = 4096             # bytes Apple takes in one alert payload
+SEAL_OVERHEAD = 12 + 16        # the nonce in front and the tag behind
+
+
+def fit_for_sealing(content, room):
+    """A copy of `content` short enough that, sealed and in base64, it takes at most `room` bytes.
+    Thread lines go first, then the reply text is shortened, then the body."""
+    most = room // 4 * 3 - SEAL_OVERHEAD
+    fitted = dict(content)
+    hermes = fitted["hermes"] = dict(fitted.get("hermes") or {})
+    while len(packed(fitted)) > most:
+        thread, text, body = hermes.get("thread"), hermes.get("text") or "", fitted.get("body") or ""
+        if thread:
+            hermes["thread"] = thread[1:]
+            if not hermes["thread"]:
+                del hermes["thread"]
+        elif len(text) > 80:
+            hermes["text"] = text[:len(text) - max(40, len(text) // 4)]
+        elif len(body) > 80:
+            fitted["body"] = body[:len(body) - max(40, len(body) // 4)]
+        else:
+            break
+    return fitted
+
+
+def seal_for_device(device, content, room=APPLE_LIMIT - 512):
+    """Encrypt with the AES-256-GCM key this install made, shortened first to fit in `room`. The relay
+    forwards the bytes unread and the app's notification extension decrypts them."""
     if not device.get("payload_key"):
         return None
     nonce = os.urandom(12)
-    plain = json.dumps(content, separators=(",", ":")).encode()
+    plain = packed(fit_for_sealing(content, room))
     cipher = AESGCM(base64.b64decode(device["payload_key"])).encrypt(nonce, plain, None)
     return base64.b64encode(nonce + cipher).decode()
 
 
-def alert_fields(payload):
+def device_routing(device, payload):
+    """The payload's routing block, naming the connection the device uses for this gateway, so the
+    app reads that gateway's Private list and opens the chat there."""
+    hermes = dict(payload.get("hermes", {}))
+    if device.get("connection_id"):
+        hermes["connection_id"] = str(device["connection_id"])
+    return hermes
+
+
+def alert_fields(payload, device=None):
     """What the app opens: the alert words, the category and the routing block. Only ever sent sealed."""
     aps = payload.get("aps", {})
     inner = dict(aps.get("alert") or {})
     inner.update(category=aps.get("category", "HERMES_TURN"), thread_id=aps.get("thread-id", ""),
-                 interruption=aps.get("interruption-level", "active"), hermes=payload.get("hermes", {}))
+                 interruption=aps.get("interruption-level", "active"), hermes=device_routing(device or {}, payload))
     return inner
 
 
 # What a lock screen shows if the app's extension can't, or won't, open the real words.
 GENERIC_ALERT = {"title": "Nollie", "body": "New message"}
-# The only routing a direct push carries in the clear: opaque ids, never words from the chat.
-OPEN_ROUTING = ("session_id", "profile", "gateway", "request_id")
+# The only routing a direct push carries in the clear: opaque ids and the kind, never words from the chat.
+OPEN_ROUTING = ("kind", "session_id", "profile", "gateway", "request_id", "connection_id")
 
 _APPLE_FIXED_HEADERS = {"apns-priority": "10", "apns-expiration": "0", "content-type": "application/json"}
 
@@ -550,7 +589,7 @@ class APNs:
             return {"push_type": "sound", "thread_id": thread, "collapse_id": collapse_id}
         if kind != "alert":
             return {"push_type": kind}
-        inner = alert_fields(payload)
+        inner = alert_fields(payload, device)
         sealed = seal_for_device(device, inner)
         if sealed is None:
             log.warning("device %s uses a relay but has no payload_key: skipped", device.get("device_id"))
@@ -590,23 +629,29 @@ class APNs:
     def _direct_alert(device, payload):
         """A direct alert reads the same on the lock screen as a relayed one: generic words and
         mutable-content, with the real ones sealed for the app's extension, which checks Hide details,
-        App Lock and Private bots before it opens them. With no key to seal with, nothing real goes."""
-        aps, hermes = payload.get("aps", {}), payload.get("hermes", {})
+        App Lock and Private bots before it opens them. With no key to seal with, nothing real goes.
+        Every device file carries a key; the fallback is for files written by older apps."""
+        aps, hermes = payload.get("aps", {}), device_routing(device, payload)
         if not aps.get("alert") or hermes.get("kind") == "test":
             return payload          # the test words are fixed and hold nothing from a chat
-        outer = {"alert": dict(GENERIC_ALERT), "mutable-content": 1,
+        # The category stays in the clear, so Approve, Deny and Reply still show if the extension runs out of time.
+        outer = {"alert": dict(GENERIC_ALERT), "mutable-content": 1, "category": aps.get("category", "HERMES_TURN"),
                  "thread-id": aps.get("thread-id", ""), "interruption-level": aps.get("interruption-level", "active")}
         if aps.get("sound"):
             outer["sound"] = aps["sound"]
         direct = {"aps": outer, "hermes": {name: hermes[name] for name in OPEN_ROUTING if hermes.get(name)}}
+        room = APPLE_LIMIT - len(json.dumps({**direct, "enc": ""}).encode())
         try:
-            sealed = seal_for_device(device, alert_fields(payload))
+            sealed = seal_for_device(device, alert_fields(payload, device), room)
         except Exception as exc:  # noqa: BLE001
             log.warning("could not seal an alert for %s (%s): sending the generic words only",
                         device.get("device_id"), type(exc).__name__)
             sealed = None
-        if sealed:
+        if sealed and len(sealed) <= room:
             direct["enc"] = sealed
+        elif sealed:
+            log.warning("an alert for %s would not fit even shortened: sending the generic words only",
+                        device.get("device_id"))
         return direct
 
     def _provider_token(self):

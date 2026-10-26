@@ -1,8 +1,8 @@
 import CryptoKit
 import Foundation
 
-/// Support for encrypted notifications from earlier installs. No relay is contacted any more
-/// (`url` is nil), but the keys saved back then still open the payloads sent with them.
+/// The key that opens encrypted notifications. No relay is contacted any more (`url` is nil), but the
+/// gateway still seals each alert it sends straight to Apple with this install's key.
 public enum PushRelay {
     /// What an install keeps to talk to a relay and to open what the gateway seals for it.
     public struct Credentials: Codable, Sendable, Equatable {
@@ -83,16 +83,25 @@ public enum PushRelay {
         return text.trimmingCharacters(in: CharacterSet(charactersIn: "="))
     }
 
-    /// What goes into the device file the gateway's relay reads. Empty while no relay is used.
+    /// What goes into the device file: the key the gateway seals alerts with, and the relay link when
+    /// there is a relay. The key goes only once it is in the Keychain, where the notification extension
+    /// reads it, so the gateway never seals with a key nothing can open.
     public static func deviceFileFields() -> [String: JSONValue] {
-        guard let address = url?.absoluteString else { return [:] }
         let mine = credentials()
-        let relay: [String: JSONValue] = [
-            "url": .string(address),
-            "install_id": .string(mine.installID),
-            "secret": .string(mine.secret),
-        ]
-        return ["payload_key": .string(mine.payloadKey), "relay": .object(relay)]
+        guard Keychain.getCodable(Credentials.self, account: credentialsAccount) == mine else { return [:] }
+        return deviceFileFields(mine, relay: url)
+    }
+
+    static func deviceFileFields(_ mine: Credentials, relay address: URL?) -> [String: JSONValue] {
+        var fields: [String: JSONValue] = ["payload_key": .string(mine.payloadKey)]
+        if let address {
+            fields["relay"] = .object([
+                "url": .string(address.absoluteString),
+                "install_id": .string(mine.installID),
+                "secret": .string(mine.secret),
+            ])
+        }
+        return fields
     }
 
     // MARK: Registering
@@ -156,5 +165,28 @@ public enum PushRelay {
         let key = SymmetricKey(data: parts[0])
         let plain = try AES.GCM.open(AES.GCM.SealedBox(combined: parts[1]), using: key)
         return try JSONDecoder().decode(JSONValue.self, from: plain).objectValue ?? [:]
+    }
+
+    /// A sealed alert once opened: the real words, the category with its buttons, and the routing
+    /// the app needs to open the chat. Relayed and direct alerts seal the same fields.
+    public struct SealedAlert: Equatable, Sendable {
+        public var title, subtitle, body, category, threadID: String?
+        public var timeSensitive: Bool
+        public var routing: [String: JSONValue]?
+
+        public init(fields: [String: JSONValue]) {
+            let text = { (name: String) in fields[name]?.stringValue }
+            (title, subtitle, body, category) = (text("title"), text("subtitle"), text("body"), text("category"))
+            threadID = text("thread_id").flatMap { $0.isEmpty ? nil : $0 }
+            timeSensitive = text("interruption") == "time-sensitive"
+            routing = fields["hermes"]?.objectValue
+        }
+
+        public var profile: String { routing?["profile"]?.stringValue ?? "" }
+        public var connectionID: UUID? { routing?["connection_id"]?.stringValue.flatMap { UUID(uuidString: $0) } }
+    }
+
+    public static func openAlert(_ encBase64: String, keyBase64: String) throws -> SealedAlert {
+        SealedAlert(fields: try decrypt(encBase64, keyBase64: keyBase64))
     }
 }
