@@ -90,7 +90,7 @@ enum ComputerSessionCheck {
             }
             guard var facts = facts(row: row, root: lineage.last!, callID: callID, host: peer.host) else { return .failure(.init(message: unknown)) }
             facts.lineage = lineage
-            if ComputerOtherControl.isPrivate(facts.profile) || facts.profile != peer.profile { return .failure(.init(message: unknown)) }
+            if ComputerOtherControl.isPrivate(facts.profile, connection: AppModel.shared.runtime?.connection.id) || facts.profile != peer.profile { return .failure(.init(message: unknown)) }
             if peer.host == .dashboard, !ownChat(lineage, facts.profile) { return .failure(.init(message: notOpenHere)) }
             return .success(facts)
         } catch HermesAPIError.http(let status, _) where status == 404 {
@@ -431,7 +431,7 @@ enum ComputerOtherControl {
         for entry in listed?["profiles"]?.arrayValue ?? [] {
             if let name = entry["name"]?.stringValue { homes[name] = entry["path"]?.stringValue ?? "" }
         }
-        let all = Set(homes.keys).union(rt.profiles.map(\.name)).filter { !isPrivate($0) }
+        let all = Set(homes.keys).union(rt.profiles.map(\.name)).filter { !isPrivate($0, connection: rt.connection.id) }
         var read: [String: Bool] = [:]
         for profile in all.sorted() {
             if let on = await SystemControl.shared.hermesCouldDrive(profile, rt, home: homes[profile]) { read[profile] = on }
@@ -447,7 +447,12 @@ enum ComputerOtherControl {
     @MainActor static var readAt: Date?
     static let freshFor: TimeInterval = 12
 
-    static func isPrivate(_ profile: String) -> Bool { PrivateBots.isPrivate(profile) || profile.lowercased() == "private" }
+    /// Whether a bot is private on a gateway. Where no gateway is known, a bot private on any of them counts.
+    static func isPrivate(_ profile: String, connection: UUID?) -> Bool {
+        PrivateBots.isPrivate(profile, connection: connection) || profile.lowercased() == "private"
+    }
+
+    static func isPrivate(_ profile: String) -> Bool { isPrivate(profile, connection: nil) }
 
     /// The gates as last read, and whether a driver was seen: for the once-a-second check.
     @MainActor static func quickCheck(driverRunning: Bool) -> String? {

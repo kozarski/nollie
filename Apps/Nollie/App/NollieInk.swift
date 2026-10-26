@@ -229,11 +229,9 @@ extension ProfileInfo {
         return first.uppercased() + name.dropFirst()
     }
 
-    /// A bot marked Private in Bot settings, or one that runs only on this Mac (a local model):
-    /// its rows say so instead of showing what it last said.
-    var isPrivateBot: Bool { isPrivateBot(on: nil) }
-
-    /// The same, on one gateway. Without one, a bot private on any gateway counts.
+    /// A bot marked Private in Bot settings on this gateway, or one that runs only on this Mac (a
+    /// local model): its rows say so instead of showing what it last said. Without a gateway, a bot
+    /// private on any gateway counts.
     func isPrivateBot(on connection: UUID?) -> Bool {
         let local: Set<String> = ["ollama", "llamacpp", "llama.cpp", "llama-cpp", "lmstudio", "lm-studio", "mlx", "local"]
         if let p = provider?.lowercased(), local.contains(p) { return true }

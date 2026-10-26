@@ -237,7 +237,8 @@ public final class KanbanStore {
                 guard let self, let runtime = self.runtime, !runtime.isAway else { return nil }
                 let client = runtime.api
                 let bots = Set(runtime.profiles.map(\.name))
-                return await KanbanActivity.read(boards: self.boards.map(\.slug), profiles: bots) { slug in
+                return await KanbanActivity.read(boards: self.boards.map(\.slug), profiles: bots,
+                                                 connection: runtime.connection.id) { slug in
                     try await KanbanAPI(api: client, board: slug).workers().workers
                 }
             },

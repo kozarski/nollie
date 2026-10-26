@@ -112,8 +112,8 @@ import Testing
     @Test func namesReadWithACapitalAndThePrivateBotIsKnown() {
         #expect(ProfileInfo(name: "career").shownName == "Career")
         #expect(ProfileInfo(name: "default", displayName: "Nollie").shownName == "Nollie")
-        #expect(ProfileInfo(name: "moss", provider: "ollama").isPrivateBot, "a local model keeps its words on the Mac")
-        #expect(!ProfileInfo(name: "career", provider: "openrouter").isPrivateBot)
+        #expect(ProfileInfo(name: "moss", provider: "ollama").isPrivateBot(on: UUID()), "a local model keeps its words on the Mac")
+        #expect(!ProfileInfo(name: "career", provider: "openrouter").isPrivateBot(on: UUID()))
     }
 
     @MainActor @Test func notesKeepTheirEntriesApart() {

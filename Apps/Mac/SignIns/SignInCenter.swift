@@ -14,7 +14,9 @@ final class SignInCenter {
     let store: SavedSignInStore
     @ObservationIgnored var filler: any SignInFilling = SignInFillRouter()
     @ObservationIgnored var runtime: () -> (any SignInGateway)? = { AppModel.shared.runtime }
-    @ObservationIgnored var isPrivate: (String) -> Bool = { PrivateBots.isPrivate($0) || $0.lowercased() == "private" }
+    @ObservationIgnored var isPrivate: (String) -> Bool = {
+        PrivateBots.isPrivate($0, connection: AppModel.shared.runtime?.connection.id) || $0.lowercased() == "private"
+    }
     /// How long to wait for Hermes to pass a yes on before giving up on a fill.
     @ObservationIgnored var approvalWait: Duration = .seconds(20)
     @ObservationIgnored var pollEvery: Duration = .seconds(2)

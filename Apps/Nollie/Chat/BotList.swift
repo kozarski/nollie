@@ -166,7 +166,7 @@ struct BotListRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(profile.shownName)
         .accessibilityValue([pinned ? "Pinned" : nil, presence.needsYou ? "needs your OK" : nil, presence.working ? BotActivity.line(presence) : nil,
-                             unread ? "new message" : nil, profile.isPrivateBot ? nil : entry.lastText].compactMap { $0 }.joined(separator: ", "))
+                             unread ? "new message" : nil, isPrivate ? nil : entry.lastText].compactMap { $0 }.joined(separator: ", "))
         .accessibilityHint("Opens your chat with \(profile.shownName).")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("bots.row.\(profile.name)")
@@ -184,7 +184,7 @@ struct BotListRow: View {
                 Text(BotActivity.line(presence))
                     .foregroundStyle(Ink.text3)
                     .contentTransition(.opacity)
-            } else if profile.isPrivateBot {
+            } else if isPrivate {
                 HStack(spacing: 5) {
                     Image(systemName: "lock.fill").font(.system(size: 10, weight: .semibold))
                     Text("Private, stays on this Mac")
@@ -199,6 +199,8 @@ struct BotListRow: View {
         .lineLimit(1)
         .truncationMode(.tail)
     }
+
+    private var isPrivate: Bool { profile.isPrivateBot(on: runtime.connection.id) }
 
     private var lastLine: String {
         if let t = entry.lastText, !t.isEmpty { return t }

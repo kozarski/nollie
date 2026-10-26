@@ -25,9 +25,10 @@ public struct KanbanActivity: Equatable, Sendable {
         return assignee?.isEmpty == false ? assignee : (profile?.isEmpty == false ? profile : nil)
     }
 
-    public static func read(boards: [String], profiles: Set<String>, now: Date = Date(),
+    /// `connection` is the gateway the boards are on, whose Private list counts.
+    public static func read(boards: [String], profiles: Set<String>, connection: UUID? = nil, now: Date = Date(),
                             load: @escaping @Sendable (String) async throws -> [KanbanWorker]) async -> Self {
-        let slugs = Set(boards).filter { !$0.isEmpty && !PrivateBots.isPrivate($0) }
+        let slugs = Set(boards).filter { !$0.isEmpty && !PrivateBots.isPrivate($0, connection: connection) }
         guard !slugs.isEmpty else { return Self() }
         return await withTaskGroup(of: (Set<String>, Bool).self) { group in
             for slug in slugs {
@@ -38,7 +39,7 @@ public struct KanbanActivity: Equatable, Sendable {
                         let owners = workers.compactMap { worker -> String? in
                             guard worker.taskStatus == "running", (worker.workerPid ?? 0) > 0,
                                   !worker.taskId.isEmpty, let owner = owner(of: worker),
-                                  !PrivateBots.isPrivate(owner), profiles.contains(owner) else { return nil }
+                                  !PrivateBots.isPrivate(owner, connection: connection), profiles.contains(owner) else { return nil }
                             return owner
                         }
                         return (Set(owners), true)

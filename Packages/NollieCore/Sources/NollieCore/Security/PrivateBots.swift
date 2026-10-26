@@ -31,10 +31,19 @@ public struct PrivateBots: Codable, Equatable, Sendable {
         public private(set) var pending: Bool
         /// Counts the person's choices, so an acknowledgement only clears the choice it was for.
         public private(set) var revision: Int
+        /// The bots turned Private here that the gateway hasn't heard about yet. Sending them again
+        /// adds them to the gateway's list as it is then, so another device's changes stay.
+        /// Nil in a list saved by an older build.
+        public private(set) var waiting: Set<String>?
+        /// Where this list was kept: the gateway's address and, once known, which Hermes it is. A
+        /// gateway paired again comes back under a new connection and finds its list by these.
+        public private(set) var gateways: Set<String>?
 
-        public init(names: Set<String> = [], settled: Bool = false, pending: Bool = false, revision: Int = 0) {
+        public init(names: Set<String> = [], settled: Bool = false, pending: Bool = false, revision: Int = 0,
+                    waiting: Set<String>? = nil, gateways: Set<String>? = nil) {
             self.names = Set(names.map(PrivateBots.key))
             (self.settled, self.pending, self.revision) = (settled, pending, revision)
+            (self.waiting, self.gateways) = (waiting.map { Set($0.map(PrivateBots.key)) }, gateways)
         }
 
         public func contains(_ profile: String) -> Bool {
@@ -46,7 +55,16 @@ public struct PrivateBots: Codable, Equatable, Sendable {
         /// The person's choice for one bot. It waits for the gateway's yes before it counts as shared.
         public func setting(_ profile: String, private on: Bool) -> Policy {
             var copy = self
-            if on { copy.names.insert(PrivateBots.key(profile)) } else { copy.names.remove(PrivateBots.key(profile)) }
+            let name = PrivateBots.key(profile)
+            var waiting = copy.waiting ?? []
+            if on {
+                copy.names.insert(name)
+                waiting.insert(name)
+            } else {
+                copy.names.remove(name)
+                waiting.remove(name)
+            }
+            copy.waiting = waiting
             copy.settled = true
             copy.pending = true
             copy.revision += 1
@@ -64,7 +82,21 @@ public struct PrivateBots: Codable, Equatable, Sendable {
         /// The gateway has the list as it stood at `revision`. A newer choice is still waiting.
         public func acknowledged(revision: Int) -> Policy {
             var copy = self
-            if copy.revision == revision { copy.pending = false }
+            if copy.revision == revision { (copy.pending, copy.waiting) = (false, nil) }
+            return copy
+        }
+
+        /// What to send the gateway for a waiting choice: its list as it is now, plus the bots turned
+        /// Private here. Nothing another device made private is dropped on the way.
+        public func merging(into gateway: Set<String>) -> Set<String> {
+            Set(gateway.map(PrivateBots.key)).union(waiting ?? names)
+        }
+
+        /// The same list, noted as kept at these gateway addresses.
+        public func kept(at places: Set<String>) -> Policy {
+            guard !places.isSubset(of: gateways ?? []) else { return self }
+            var copy = self
+            copy.gateways = (gateways ?? []).union(places)
             return copy
         }
 
@@ -81,17 +113,24 @@ public struct PrivateBots: Codable, Equatable, Sendable {
 
     // MARK: Looking up
 
-    /// A gateway's list. One with none of its own yet starts from the older shared list.
-    public func policy(for connection: UUID) -> Policy {
-        connections?[connection.uuidString] ?? Policy(names: names, settled: settled)
+    /// A gateway's list. One with none of its own yet starts from the list it had under an earlier
+    /// connection at one of `places` (it was paired again), else from the older shared list.
+    public func policy(for connection: UUID, at places: Set<String> = []) -> Policy {
+        if let own = connections?[connection.uuidString] { return own }
+        let before = places.isEmpty ? [] : (connections ?? [:])
+            .filter { !($0.value.gateways ?? []).isDisjoint(with: places) }
+            .sorted { ($0.value.revision, $0.key) > ($1.value.revision, $1.key) }
+        return before.first?.value ?? legacy
     }
 
-    /// Whether a bot is private on a gateway. With no gateway named, it is private if any gateway's
-    /// list says so: not knowing which one is asking is answered with the stricter side.
+    private var legacy: Policy { Policy(names: names, settled: settled) }
+
+    /// Whether a bot is private on a gateway. With no gateway named, it is private if any list
+    /// says so, the older shared one included, since a gateway may still be going by it: not knowing
+    /// which one is asking is answered with the stricter side.
     public func isPrivate(_ profile: String, connection: UUID?) -> Bool {
         if let connection { return policy(for: connection).contains(profile) }
-        if let connections, !connections.isEmpty { return connections.values.contains { $0.contains(profile) } }
-        return Policy(names: names, settled: settled).contains(profile)
+        return legacy.contains(profile) || (connections ?? [:]).values.contains { $0.contains(profile) }
     }
 
     public func replacing(_ policy: Policy, for connection: UUID) -> PrivateBots {
@@ -218,19 +257,21 @@ public final class PrivateBotsStore: @unchecked Sendable {
         }
     }
 
-    /// A gateway's list, or nil when the saved lists can't be read.
-    public func policy(for connection: UUID, fresh: Bool = true) -> PrivateBots.Policy? {
+    /// A gateway's list, or nil when the saved lists can't be read. `places` finds the list a gateway
+    /// paired again had before (see `PrivateBots.policy(for:at:)`).
+    public func policy(for connection: UUID, at places: Set<String> = [], fresh: Bool = true) -> PrivateBots.Policy? {
         switch reading(fresh: fresh) {
-        case .saved(let bots): return bots.policy(for: connection)
+        case .saved(let bots): return bots.policy(for: connection, at: places)
         case .nothingSaved: return PrivateBots().policy(for: connection)
         case .unreadable: return nil
         }
     }
 
     /// Changes one gateway's list. It reads afresh first, so another process's change is kept, and
-    /// it won't write over a list it couldn't read.
+    /// it won't write over a list it couldn't read. The list is noted as kept at `places`.
     @discardableResult
-    public func change(_ connection: UUID, _ edit: (PrivateBots.Policy) -> PrivateBots.Policy) throws -> PrivateBots.Policy {
+    public func change(_ connection: UUID, at places: Set<String> = [],
+                       _ edit: (PrivateBots.Policy) -> PrivateBots.Policy) throws -> PrivateBots.Policy {
         lock.lock(); defer { lock.unlock() }
         let current: PrivateBots
         switch pinned ?? load() {
@@ -238,7 +279,7 @@ public final class PrivateBotsStore: @unchecked Sendable {
         case .nothingSaved: current = PrivateBots()
         case .unreadable: throw Failure()
         }
-        let updated = edit(current.policy(for: connection))
+        let updated = edit(current.policy(for: connection, at: places)).kept(at: places)
         let bots = current.replacing(updated, for: connection)
         try write(bots)
         if pinned != nil { pinned = .saved(bots) } else { cached = (.saved(bots), Date()) }
@@ -282,26 +323,33 @@ public struct PrivateBotsSyncError: LocalizedError, Equatable {
 extension GatewayRuntime {
     static let privateBotsPath = "/api/plugins/nollie-workflow/private-bots"
 
+    /// Where this gateway's Private list is kept: its address and, once known, which Hermes it is.
+    var privatePlaces: Set<String> {
+        Set([connection.gateway.description, connection.gatewayIdentity.map { "hermes:" + $0 }].compactMap { $0 })
+    }
+
     /// Takes the gateway's list when it has one; otherwise gives it this device's (after the
-    /// one-time carry-over). A gateway without the add-on leaves the device's list as it is. A
-    /// choice the gateway never acknowledged is sent again first, and the gateway's own list
-    /// can't replace it until it is.
+    /// one-time carry-over). Either way the gateway now has a list of its own on this device, even
+    /// one without the add-on. A choice the gateway never acknowledged is sent again first, on top
+    /// of what the gateway holds now, and the gateway's own list can't replace it until it is.
     func syncPrivateBots(profiles: [String], store: PrivateBotsStore = .shared) async {
-        let id = connection.id
-        guard let start = store.policy(for: id) else { return }
+        let (id, places) = (connection.id, privatePlaces)
+        guard let start = store.policy(for: id, at: places) else { return }
         let base = start.adoptingLegacyNames(from: profiles)
         if base.pending {
             let sent = base.revision
-            if (try? await tell(base.names)) != nil {
-                _ = try? store.change(id) { $0.adoptingLegacyNames(from: profiles).acknowledged(revision: sent) }
+            if let list = try? await sendWaiting(base) {
+                _ = try? store.change(id, at: places) {
+                    $0.adoptingLegacyNames(from: profiles).acknowledged(revision: sent).taking(list)
+                }
             }
             return
         }
         if let reply: PrivateBotsReply = try? await api.get(Self.privateBotsPath), reply.saved == true {
-            _ = try? store.change(id) { $0.adoptingLegacyNames(from: profiles).taking(Set(reply.profiles)) }
+            _ = try? store.change(id, at: places) { $0.adoptingLegacyNames(from: profiles).taking(Set(reply.profiles)) }
         } else {
             _ = try? await tell(base.names)
-            if base != start { _ = try? store.change(id) { $0.adoptingLegacyNames(from: profiles) } }
+            _ = try? store.change(id, at: places) { $0.adoptingLegacyNames(from: profiles) }
         }
     }
 
@@ -309,25 +357,29 @@ extension GatewayRuntime {
     /// here at once and is kept even when the gateway can't be reached (then this throws, and
     /// `retryPrivateSync` or the next sync tries again). Turning it off waits for the gateway's yes.
     public func setPrivate(_ profile: String, _ on: Bool, store: PrivateBotsStore = .shared) async throws {
-        let id = connection.id
+        let (id, places) = (connection.id, privatePlaces)
         if on {
-            let chosen = try store.change(id) { $0.setting(profile, private: true) }
+            let chosen = try store.change(id, at: places) { $0.setting(profile, private: true) }
+            let list: Set<String>
             do {
-                try await tell(chosen.names)
+                list = try await sendWaiting(chosen)
             } catch {
                 throw PrivateBotsSyncError(kind: .notTold, detail: error.localizedDescription)
             }
-            try store.change(id) { $0.acknowledged(revision: chosen.revision) }
+            try store.change(id, at: places) { $0.acknowledged(revision: chosen.revision).taking(list) }
         } else {
-            guard let now = store.policy(for: id) else { throw PrivateBotsStore.Failure() }
+            guard let now = store.policy(for: id, at: places) else { throw PrivateBotsStore.Failure() }
             let wanted = now.setting(profile, private: false)
             do {
-                try await tell(wanted.names)
+                var list = try await gatewayList() ?? wanted.names
+                list = wanted.merging(into: list)
+                list.remove(PrivateBots.key(profile))
+                try await tell(list)
             } catch {
                 throw PrivateBotsSyncError(kind: .notChanged, detail: error.localizedDescription)
             }
             // The gateway has it. The list may have moved on while we waited, so the choice is made again on top of it.
-            try store.change(id) { current in
+            try store.change(id, at: places) { current in
                 let chosen = current.setting(profile, private: false)
                 return chosen.acknowledged(revision: chosen.revision)
             }
@@ -336,19 +388,39 @@ extension GatewayRuntime {
 
     /// Whether the last choice on this gateway is still waiting for the gateway's yes.
     public func privateSyncPending(store: PrivateBotsStore = .shared) -> Bool {
-        store.policy(for: connection.id)?.pending == true
+        store.policy(for: connection.id, at: privatePlaces)?.pending == true
     }
 
-    /// Sends a waiting choice again.
+    /// Sends a waiting choice again, on top of the gateway's list as it is now, since another
+    /// device may have changed it in the meantime.
     public func retryPrivateSync(store: PrivateBotsStore = .shared) async throws {
-        let id = connection.id
-        guard let waiting = store.policy(for: id), waiting.pending else { return }
+        let (id, places) = (connection.id, privatePlaces)
+        guard let waiting = store.policy(for: id, at: places), waiting.pending else { return }
+        let list: Set<String>
         do {
-            try await tell(waiting.names)
+            list = try await sendWaiting(waiting)
         } catch {
             throw PrivateBotsSyncError(kind: .notTold, detail: error.localizedDescription)
         }
-        try store.change(id) { $0.acknowledged(revision: waiting.revision) }
+        try store.change(id, at: places) { $0.acknowledged(revision: waiting.revision).taking(list) }
+    }
+
+    /// Reads the gateway's list as it is now, then sends it back with the bots this device turned
+    /// Private added. Returns what was sent.
+    private func sendWaiting(_ policy: PrivateBots.Policy) async throws -> Set<String> {
+        let list = try await gatewayList().map(policy.merging(into:)) ?? policy.names
+        try await tell(list)
+        return list
+    }
+
+    /// The gateway's list, or nil when it has none yet or no add-on to keep one.
+    private func gatewayList() async throws -> Set<String>? {
+        do {
+            let reply: PrivateBotsReply = try await api.get(Self.privateBotsPath)
+            return reply.saved == true ? Set(reply.profiles.map(PrivateBots.key)) : nil
+        } catch HermesAPIError.http(let status, _) where status == 404 {
+            return nil
+        }
     }
 
     /// Sends the whole list. Returns once the gateway says it kept it; a gateway without the

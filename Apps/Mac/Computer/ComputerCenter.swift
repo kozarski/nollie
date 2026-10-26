@@ -115,7 +115,7 @@ final class ComputerCenter {
     /// After the person's yes: whether the request's call is still the one waiting in Hermes.
     @ObservationIgnored var stillPending: (ComputerStartRequest, String) async -> Bool = ComputerSessionCheck.stillPending
     /// Whether a profile is private: its chats are never read or shown.
-    @ObservationIgnored var isPrivate: (String) -> Bool = { PrivateBots.isPrivate($0) || $0.lowercased() == "private" }
+    @ObservationIgnored var isPrivate: (String) -> Bool = { ComputerOtherControl.isPrivate($0, connection: AppModel.shared.runtime?.connection.id) }
     /// Touch ID or the Mac's password, behind every Allow: no other process can answer it.
     @ObservationIgnored var authenticate: (String) async -> Bool = ComputerOwnerCheck.authenticate
     /// The running app's pid, for an approved app: only the copy the person approved, never another

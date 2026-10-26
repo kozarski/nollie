@@ -194,7 +194,7 @@ import Testing
         let gateway = PrivateGateway()
         PrivateGatewayStub.use(gateway)
         defer { PrivateGatewayStub.reset() }
-        let first = try runtime(), second = try runtime()
+        let first = try runtime(), second = try runtime(at: "https://other.invalid")
         let store = PrivateBotsStore.inMemory()
         try await first.setPrivate("default", true, store: store)
         #expect(store.isPrivate("default", connection: first.connection.id, fresh: true))
@@ -205,12 +205,112 @@ import Testing
         #expect(store.isPrivate("default", connection: first.connection.id, fresh: true))
     }
 
+    // MARK: Gateways still going by the older list
+
+    @Test func notNamingAGatewayAlsoCountsTheOlderSharedList() {
+        // The first gateway has its own list now; another one may still be going by the older list.
+        let bots = PrivateBots(names: ["scout"], settled: true)
+            .replacing(PrivateBots.Policy(names: [], settled: true), for: one)
+        #expect(bots.isPrivate("scout", connection: two))
+        #expect(bots.isPrivate("scout", connection: nil), "a bot private on a gateway without its own list never reads as public")
+        #expect(!bots.isPrivate("scout", connection: one))
+    }
+
+    @MainActor @Test func aGatewayWithoutTheAddOnGetsAListOfItsOwn() async throws {
+        let gateway = PrivateGateway()
+        gateway.hasAddOn = false
+        PrivateGatewayStub.use(gateway)
+        defer { PrivateGatewayStub.reset() }
+        let rt = try runtime()
+        let store = PrivateBotsStore.inMemory(PrivateBots(names: ["scout"], settled: true))
+        await rt.syncPrivateBots(profiles: ["default", "scout"], store: store)
+        guard case .saved(let bots) = store.reading(fresh: true) else { Issue.record("nothing saved"); return }
+        let own = try #require(bots.connections?[rt.connection.id.uuidString])
+        #expect(own.contains("scout"))
+        #expect(bots.isPrivate("scout", connection: nil))
+    }
+
+    @MainActor @Test func aGatewayPairedAgainKeepsItsChoices() async throws {
+        let gateway = PrivateGateway()
+        gateway.hasAddOn = false
+        PrivateGatewayStub.use(gateway)
+        defer { PrivateGatewayStub.reset() }
+        let store = PrivateBotsStore.inMemory()
+        let before = try runtime()
+        try await before.setPrivate("scout", true, store: store)
+        try await before.setPrivate("default", true, store: store)
+        try await before.setPrivate("default", false, store: store)
+
+        // The same gateway comes back under a new connection.
+        let again = try runtime()
+        #expect(again.connection.id != before.connection.id)
+        await again.syncPrivateBots(profiles: ["default", "scout"], store: store)
+        #expect(store.isPrivate("scout", connection: again.connection.id, fresh: true))
+        #expect(!store.isPrivate("default", connection: again.connection.id, fresh: true), "a bot made public stays public")
+
+        // Another gateway at another address starts from the older list, not this one's.
+        let elsewhere = try runtime(at: "https://elsewhere.invalid")
+        await elsewhere.syncPrivateBots(profiles: ["default", "scout"], store: store)
+        #expect(!store.isPrivate("scout", connection: elsewhere.connection.id, fresh: true))
+    }
+
+    // MARK: Another device's changes
+
+    @MainActor @Test func aRetryAddsToWhatTheGatewayHoldsNow() async throws {
+        let gateway = PrivateGateway()
+        gateway.list = ["career"]
+        PrivateGatewayStub.use(gateway)
+        defer { PrivateGatewayStub.reset() }
+        let rt = try runtime()
+        let store = PrivateBotsStore.inMemory()
+        await rt.syncPrivateBots(profiles: ["default", "career", "scout", "forager"], store: store)
+        gateway.failPuts = true
+        _ = await #expect(throws: PrivateBotsSyncError.self) { try await rt.setPrivate("scout", true, store: store) }
+
+        // Hours later: another device made forager private and career public.
+        gateway.list = ["forager"]
+        gateway.failPuts = false
+        try await rt.retryPrivateSync(store: store)
+        #expect(gateway.list == ["forager", "scout"], "the other device's choices stay, and this one's is added")
+        #expect(!rt.privateSyncPending(store: store))
+        #expect(store.isPrivate("forager", connection: rt.connection.id, fresh: true))
+        #expect(!store.isPrivate("career", connection: rt.connection.id, fresh: true))
+    }
+
+    @MainActor @Test func aSyncThatSendsAWaitingChoiceKeepsTheOtherDevicesToo() async throws {
+        let gateway = PrivateGateway()
+        PrivateGatewayStub.use(gateway)
+        defer { PrivateGatewayStub.reset() }
+        let rt = try runtime()
+        let store = PrivateBotsStore.inMemory()
+        gateway.failPuts = true
+        _ = await #expect(throws: PrivateBotsSyncError.self) { try await rt.setPrivate("scout", true, store: store) }
+        gateway.list = ["forager"]
+        gateway.failPuts = false
+        await rt.syncPrivateBots(profiles: ["default", "scout", "forager"], store: store)
+        #expect(gateway.list == ["forager", "scout"])
+        #expect(store.isPrivate("forager", connection: rt.connection.id, fresh: true))
+    }
+
+    @MainActor @Test func turningOneBotOffLeavesAnotherDevicesChoices() async throws {
+        let gateway = PrivateGateway()
+        gateway.list = ["scout"]
+        PrivateGatewayStub.use(gateway)
+        defer { PrivateGatewayStub.reset() }
+        let rt = try runtime()
+        let store = PrivateBotsStore.inMemory()
+        await rt.syncPrivateBots(profiles: ["default", "scout", "forager"], store: store)
+        gateway.list = ["forager", "scout"]
+        try await rt.setPrivate("scout", false, store: store)
+        #expect(gateway.list == ["forager"])
+    }
+
     // MARK: Pieces
 
-    @MainActor private func runtime() throws -> GatewayRuntime {
+    @MainActor private func runtime(at address: String = "https://private.invalid") throws -> GatewayRuntime {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [PrivateGatewayStub.self]
-        let connection = GatewayConnection(name: "private-unit", gateway: try GatewayURL.normalize("https://private.invalid"), authMode: .sessionToken)
+        let connection = GatewayConnection(name: "private-unit", gateway: try GatewayURL.normalize(address), authMode: .sessionToken)
         return GatewayRuntime(connection: connection, store: ConnectionStore(),
                               backend: GatewayBackend(urlSession: URLSession(configuration: configuration)))
     }
