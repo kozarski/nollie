@@ -75,7 +75,8 @@ public struct PendingCard: Hashable, Identifiable, Sendable {
 @MainActor
 @Observable
 public final class ChatSession: @MainActor Identifiable, ChatIdentity {
-    /// Held strongly on purpose: a chat a screen keeps open must outlive a switch of gateway.
+    /// Held strongly on purpose: a chat a screen keeps open must outlive a switch of gateway. The loop
+    /// this makes with the runtime's list of open chats is cut by `GatewayRuntime.dispose()`.
     public let runtime: GatewayRuntime
     @ObservationIgnored let log = Logger(subsystem: NollieLog.subsystem, category: "chat")
     @ObservationIgnored let activity: any TurnActivityReporting
@@ -241,6 +242,21 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
         activityEndTask = Delay.run(after: .seconds(2)) { [weak self] in
             if let me = self, !me.isRunning { me.activity.end(for: me, phase: phase) }
         }
+    }
+
+    // MARK: Letting go
+
+    /// The gateway this chat belongs to is being let go for good. Stops the chat's own work and frees
+    /// anyone still waiting on the person's answer, with no value, so nothing is decided on the
+    /// person's behalf. A chat a screen still holds stays readable but does nothing more.
+    func dispose() {
+        for task in [resumeTask, approvalPollTask, activityEndTask] { task?.cancel() }
+        (resumeTask, approvalPollTask, activityEndTask) = (nil, nil, nil)
+        let waiting = inlineAnswers
+        inlineAnswers = [:]
+        for waiter in waiting.values { waiter.resume(returning: nil) }
+        if isRunning { activity.end(for: self, phase: "done") }
+        isResuming = false
     }
 
     // MARK: Opening

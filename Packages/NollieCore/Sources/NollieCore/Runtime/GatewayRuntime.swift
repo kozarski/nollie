@@ -126,6 +126,8 @@ public final class GatewayRuntime {
     public let kanban = KanbanStore()
 
     var globalEventTask: Task<Void, Never>? = nil
+    /// True after `dispose()`. A disposed runtime does not start again or open chats.
+    public private(set) var isDisposed = false
 
     // MARK: Creating
 
@@ -196,6 +198,7 @@ public final class GatewayRuntime {
     // MARK: Start and stop
 
     public func start() async {
+        guard !isDisposed else { return }
         managedLifecycleGeneration = UUID()
         projects.attach(self)
         kanban.attach(self)
@@ -237,6 +240,19 @@ public final class GatewayRuntime {
         awaitingManagedStartup = false
         managedLifecycleGeneration = UUID()
         await socket.disconnect()
+    }
+
+    /// Lets this gateway go for good, such as when the person switches to another or removes it.
+    /// Unlike `stop()`, which a restart follows, nothing comes back: the open chats are released
+    /// (and their work and waiting answers ended), so the runtime, its transcripts and its sign-in
+    /// are freed once no screen holds them. A chat a screen still holds stays readable only.
+    public func dispose() async {
+        isDisposed = true
+        let open = registry.all
+        registry = ChatRegistry<ChatSession>()
+        needsAttention = []
+        for chat in open { chat.dispose() }
+        await stop()
     }
 
     public func reconnectNow() async {

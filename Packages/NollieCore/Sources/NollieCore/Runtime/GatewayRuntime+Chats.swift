@@ -30,10 +30,12 @@ extension GatewayRuntime {
     /// chat under that bot.
     @discardableResult
     public func openChat(storedID: String, title: String? = nil, profile: String? = nil, waitForResume: Bool = false) async throws -> ChatSession {
+        try refuseIfDisposed()
         let already = chatForStored(storedID)
         if let already { return await revive(already, waiting: waitForResume) }
 
         let owner = try await botHolding(storedID, hint: profile)
+        try refuseIfDisposed()
         // Someone else may have opened the same chat while the gateway was being asked.
         if let raced = chatForStored(storedID) { return await revive(raced, waiting: waitForResume) }
 
@@ -71,10 +73,17 @@ extension GatewayRuntime {
     /// `profile` names the bot when it differs from the selected one, so the list on screen stays put.
     @discardableResult
     public func newChat(cwd: String? = .none, profile: String? = .none) async throws -> ChatSession {
+        try refuseIfDisposed()
         let started = ChatSession(runtime: self, storedID: nil, title: nil, profile: profile)
         try await started.create(cwd: cwd)
+        try refuseIfDisposed()
         registry.add(started)
         return started
+    }
+
+    /// A disposed runtime keeps no chats. One added after disposal would never be released.
+    private func refuseIfDisposed() throws {
+        if isDisposed { throw HermesAPIError.transport("This gateway is closed.") }
     }
 
     public func closeChat(_ chat: ChatSession) {
