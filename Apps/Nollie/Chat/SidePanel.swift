@@ -79,7 +79,7 @@ private struct SheetOrSidePanel<Sheet: View, Panel: View>: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .sheet(isPresented: asSheet, content: sheet)
+            .sheet(isPresented: asSheet) { sheet().withAppModel() }
             .onChange(of: isPresented) { _, shown in
                 guard shown, let host else { return }
                 host.show(id, content: panel)
