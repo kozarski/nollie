@@ -355,16 +355,19 @@ final class AppModel {
             }
         }
         guard activationGeneration == generation, ifCurrent(), !Task.isCancelled else { return }
-        // The old gateway is gone for good now, so let go of its chats and anything they were waiting on.
-        await runtime?.dispose()
-        guard activationGeneration == generation, ifCurrent(), !Task.isCancelled else { return }
 
+        let old = runtime
         store.activeConnectionID = connection.id
         let fresh = GatewayRuntime(connection: connection, store: store, backend: backend)
         wire(fresh, for: connection)
         activationError = nil
         runtime = fresh
         ChatGoals.shared.attach(fresh)
+        // The old gateway is gone for good now, so let go of its chats and anything they were waiting on.
+        // That happens only once the new one is in place, so nothing is left holding a runtime that is done.
+        await old?.dispose()
+        // A newer switch may have taken over while the old one was let go.
+        guard runtime === fresh else { return }
         await fresh.start()
         if demo == nil { await push.registerForRemoteNotificationsIfAuthorized() }
     }
