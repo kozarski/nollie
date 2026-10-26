@@ -75,8 +75,7 @@ MARKETING_VERSION="${MARKETING_VERSION:-$(sed -n 's/.*MARKETING_VERSION = \(.*\)
 
 # Each build number is one more than the biggest small number already recorded for this app in App
 # Store Connect, which turns down any number it has seen. Early builds had date-style numbers (up to
-# 2609240140), and those are skipped. Beta versions started at 1.0.1 (1.0 covered the date-numbered
-# builds), continued with 1.2 and 1.3, and the App Store release is 2.0. BUILD_NUMBER overrides all of this.
+# 2609240140), and those are skipped. BUILD_NUMBER overrides all of this.
 next_build_number() {
     local token
     token="$(with_key swift Tools/release/asc-jwt.swift)" || return 1
