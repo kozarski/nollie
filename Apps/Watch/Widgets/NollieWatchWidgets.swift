@@ -67,7 +67,7 @@ struct CrewWidget: Widget {
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Helpers")
-        .description("Who is working now.")
+        .description("Who is working, and what waits for your yes.")
         .supportedFamilies([.accessoryRectangular, .accessoryCircular, .accessoryInline, .accessoryCorner])
     }
 }
@@ -77,28 +77,38 @@ struct CrewWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
     private var count: Int { entry.helpers.count }
+    private var waits: Bool { entry.waiting > 0 }
     private var headline: String {
-        entry.waiting > 0 && count == 0 ? "\(entry.waiting) waiting" : WatchWords.count(count)
+        waits && count == 0 ? WatchWords.waiting(entry.waiting) : WatchWords.count(count)
+    }
+    /// Something waiting for a yes shows first: a raised hand, then who is working.
+    private var symbol: String {
+        waits ? "hand.raised.fill" : count > 0 ? "person.2.fill" : "moon.zzz.fill"
+    }
+    private var spoken: String {
+        [WatchWords.count(count), waits ? WatchWords.waiting(entry.waiting) : nil].compactMap { $0 }.joined(separator: ", ")
     }
 
     var body: some View {
         switch family {
         case .accessoryCircular:
             VStack(spacing: 0) {
-                Image(systemName: count > 0 ? "person.2.fill" : "moon.zzz.fill")
+                // The symbol names the number: a raised hand counts what waits, two people who works.
+                Image(systemName: symbol)
                     .font(.footnote)
-                Text("\(count)")
+                Text("\(waits ? entry.waiting : count)")
                     .font(.title2.weight(.semibold))
                     .contentTransition(.numericText())
             }
             .widgetAccentable()
-            .accessibilityLabel(WatchWords.count(count))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(spoken)
         case .accessoryInline:
-            Label(headline, systemImage: count > 0 ? "person.2.fill" : "moon.zzz.fill")
+            Label(waits && count > 0 ? "\(WatchWords.count(count)), \(entry.waiting) waiting" : headline, systemImage: symbol)
         case .accessoryCorner:
-            Image(systemName: count > 0 ? "person.2.fill" : "moon.zzz.fill")
+            Image(systemName: symbol)
                 .font(.title3)
-                .widgetLabel(headline)
+                .widgetLabel(waits && count > 0 ? "\(count) working, \(entry.waiting) waiting" : headline)
                 .widgetAccentable()
         default:
             rectangular
@@ -107,7 +117,7 @@ struct CrewWidgetView: View {
 
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Label("Nollie", systemImage: "person.2.fill")
+            Label("Nollie", systemImage: waits ? "hand.raised.fill" : "person.2.fill")
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .widgetAccentable()
@@ -125,14 +135,14 @@ struct CrewWidgetView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Who, or how long since the phone last said.
+    /// What waits for a yes, else who, or how long since the phone last said.
     private var detail: String? {
+        if waits, count > 0 { return WatchWords.waiting(entry.waiting) }
         if entry.stale, let made = entry.snapshot?.made {
             return "\(WatchWords.lastSeen) \(made.formatted(date: .omitted, time: .shortened))"
         }
         let names = entry.helpers.map(\.name)
-        if !names.isEmpty { return names.formatted(.list(type: .and)) }
-        return entry.waiting > 0 && count > 0 ? "\(entry.waiting) waiting" : nil
+        return names.isEmpty ? nil : names.formatted(.list(type: .and))
     }
 }
 

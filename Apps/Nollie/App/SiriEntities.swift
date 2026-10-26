@@ -47,7 +47,10 @@ enum SiriCatalog {
 
     static func rememberBots(_ profiles: [ProfileInfo]) {
         let table = profiles.map { [$0.name, $0.label] }
+        guard table != rows(botsKey, width: 2) else { return }
         UserDefaults.standard.set(table, forKey: botsKey)
+        // Phrases that name a helper ("Ask Scout in Nollie") learn the new names.
+        NollieShortcuts.updateAppShortcutParameters()
     }
 
     static func bots() -> [BotEntity] {

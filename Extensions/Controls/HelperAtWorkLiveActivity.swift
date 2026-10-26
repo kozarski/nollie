@@ -1,3 +1,4 @@
+#if os(iOS)
 import ActivityKit
 import AppIntents
 import SwiftUI
@@ -203,3 +204,4 @@ private struct HelperAvatar: View {
             .accessibilityHidden(true)
     }
 }
+#endif

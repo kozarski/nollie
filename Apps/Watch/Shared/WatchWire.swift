@@ -223,6 +223,9 @@ enum WatchWords {
         n == 0 ? nobodyWorking : "\(n) \(n == 1 ? "helper" : "helpers") working"
     }
 
+    /// "1 waiting for you": approvals that need a yes or no.
+    static func waiting(_ n: Int) -> String { "\(n) waiting for you" }
+
     /// What a helper is doing, under its name.
     static func doing(_ place: HelperWorkPlace?) -> String {
         switch place {

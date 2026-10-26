@@ -1,23 +1,19 @@
 import SwiftUI
 import NollieCore
 
-/// What to say to Siri, as symbol and words, in the order they show.
-private enum SiriLines {
+/// What to say to Siri, as symbol and words, in the order they show. Each works with no setup.
+enum SiriLines {
     static let common: [(symbol: String, words: String)] = [
+        ("bubble.left.and.text.bubble.right.fill", "Ask Nollie"),
+        ("eye.fill", "What is Nollie doing"),
+        ("stop.circle.fill", "Stop Nollie"),
         ("square.and.pencil", "New chat in Nollie"),
         ("bubble.left.fill", "Open my Travel chat in Nollie"),
-        ("eye.fill", "What is my bot doing in Nollie"),
     ]
-    static let phoneOnly = (symbol: "stop.circle.fill", words: "Stop Nollie on my Mac")
     static let approval = (symbol: "checkmark.shield.fill", words: "Answer the approval in Nollie")
 
     static func shown(approvals: Bool) -> [(symbol: String, words: String)] {
-        var lines = common
-        #if os(iOS)
-        lines.append(phoneOnly)
-        #endif
-        if approvals { lines.append(approval) }
-        return lines
+        approvals ? common + [approval] : common
     }
 }
 
