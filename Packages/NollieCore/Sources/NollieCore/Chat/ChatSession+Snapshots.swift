@@ -191,7 +191,10 @@ extension ChatSession {
         }
         book.fetched = Set(items.map(\.id))
         items += added
-        if let waiting = r["queued"]?.text("user"), !waiting.isEmpty { queue = [QueuedMessage(text: waiting)] }
+        // Messages with files stay: the gateway only knows the words.
+        if let waiting = r["queued"]?.text("user"), !waiting.isEmpty {
+            queue = queue.filter { !$0.attachments.isEmpty } + [QueuedMessage(text: waiting)]
+        }
 
         applyCards(answeredAt: answeredAt, of: r, listedAt: listedAt)
         startTurnSurface()

@@ -12,42 +12,64 @@ extension ChatSession {
     /// Sends what the person wrote, with any staged attachments. A busy bot gets it queued. Returns
     /// text for the composer to prefill when a slash command asks for that, or a sentence to show
     /// when the chat could not be opened.
+    ///
+    /// The message is fixed before anything waits: its words and the files staged at this moment
+    /// belong to it alone. A second send while the first is still uploading cannot take them, and
+    /// files the person stages afterwards are left for the next message.
     @discardableResult
     public func send(_ rawText: String) async -> String? {
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if text.isEmpty && staged.isEmpty { return nil }
+        let files = staged
+        if text.isEmpty && files.isEmpty { return nil }
+        staged = []
         await awaitResume()
-        if let failure = resumeError { return "This chat could not be opened on the gateway: " + failure }
+        if let failure = resumeError {
+            staged = files + staged
+            return "This chat could not be opened on the gateway: " + failure
+        }
         composerHistory += text.isEmpty ? [] : [text]
 
-        if text.hasPrefix("/") && staged.isEmpty {
+        if text.hasPrefix("/") && files.isEmpty {
             return await dispatchSlash(text)
-        } else if isRunning {
-            queue.append(QueuedMessage(text: text))
+        } else if isRunning || isSubmitting {
+            queue.append(QueuedMessage(text: text, attachments: files))
         } else {
-            await submit(text: text, queued: false)
+            await submit(text: text, attachments: files, queued: false)
         }
         return nil
     }
 
-    func submit(text: String, queued: Bool) async {
+    /// Uploads a message's files and hands it to the gateway. One message at a time: `isSubmitting`
+    /// is set before the first wait, so a send during the upload queues behind this one. A file the
+    /// gateway refused goes back to the staged strip to try again.
+    func submit(text: String, attachments: [AttachmentPreview] = [], queued: Bool) async {
+        isSubmitting = true
         interruptCause = nil
         var outgoing = text
         var sent: [AttachmentPreview] = []
-        for file in staged {
+        var refused: [AttachmentPreview] = []
+        for file in attachments {
             do {
                 if let reference = try await upload(file) {
                     outgoing += (outgoing.isEmpty ? "" : "\n") + reference
                 }
                 sent.append(file)
             } catch {
+                refused.append(file)
                 addFailure(Self.attachmentFailure(name: file.name, kind: file.kind, error: error))
             }
         }
-        staged = []
+        staged = refused + staged
+        if text.isEmpty && sent.isEmpty {
+            // Every file was refused and there are no words: nothing to send.
+            isSubmitting = false
+            drainQueue()
+            return
+        }
         addRow(.user(text: text, attachments: sent))
         startedHere = true
         (isRunning, statusLine) = (true, "Sending…")
+        isSubmitting = false
         do {
             var params: [String: JSONValue] = ["text": .string(outgoing)]
             if queued { params["queued"] = true }
@@ -62,6 +84,7 @@ extension ChatSession {
             isRunning = false
             statusLine = nil
             addFailure(error.localizedDescription)
+            drainQueue()
         }
     }
 
@@ -89,6 +112,9 @@ extension ChatSession {
     }
 
     public func removeQueued(_ id: UUID) {
+        for gone in queue where gone.id == id {
+            for file in gone.attachments { if let url = file.localURL { try? FileManager.default.removeItem(at: url) } }
+        }
         queue = queue.filter { $0.id != id }
     }
 

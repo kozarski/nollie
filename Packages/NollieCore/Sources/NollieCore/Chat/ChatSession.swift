@@ -5,13 +5,22 @@ import OSLog
 /// How long a chat's call to the gateway may take, unless it says otherwise.
 let chatCallTimeout: Double = 2 * 60
 
-/// A message written while the bot is busy, waiting its turn.
+/// A message written while the bot is busy, waiting its turn. It owns the files that were staged
+/// when the person sent it, so a later message can never take them.
 public struct QueuedMessage: Identifiable, Hashable, Sendable {
     public var id = UUID()
     public var text: String
+    public var attachments: [AttachmentPreview]
 
-    public init(text: String) {
+    public init(text: String, attachments: [AttachmentPreview] = []) {
         self.text = text
+        self.attachments = attachments
+    }
+
+    /// What the queue shows: the words, or a count of files when there are none.
+    public var summary: String {
+        guard text.isEmpty, !attachments.isEmpty else { return text }
+        return attachments.count == 1 ? "1 file" : "\(attachments.count) files"
     }
 }
 
@@ -126,6 +135,9 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
     @ObservationIgnored var inlineAnswers: [String: CheckedContinuation<JSONValue?, Never>] = [:]
     @ObservationIgnored var catalogCache: CommandsCatalog?
     @ObservationIgnored var startedHere = false
+    /// A message is being uploaded and handed to the gateway. Anything sent meanwhile is queued, so
+    /// messages go one at a time, each with its own files.
+    @ObservationIgnored var isSubmitting = false
     @ObservationIgnored var adoptingTurn = false
     @ObservationIgnored var summarizedRowShown = false
     @ObservationIgnored var bannerIsReconnect = false

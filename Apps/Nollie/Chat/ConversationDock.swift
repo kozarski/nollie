@@ -105,7 +105,7 @@ struct QueueStrip: View {
 
     private func row(_ message: QueuedMessage) -> some View {
         HStack {
-            Text(message.text).font(.subheadline).lineLimit(2)
+            Text(message.summary).font(.subheadline).lineLimit(2)
             Spacer()
             PlainButton { editing = message } label: { Image(systemName: "pencil") }
             PlainButton(role: .destructive) { chat.removeQueued(message.id) } label: { Image(systemName: "trash") }

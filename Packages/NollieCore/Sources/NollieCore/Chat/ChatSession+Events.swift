@@ -386,8 +386,10 @@ extension ChatSession {
     }
 
     func drainQueue() {
-        guard !isRunning, let next = queue.first else { return }
+        guard !isRunning, !isSubmitting, let next = queue.first else { return }
         queue.removeFirst()
-        Task { [self] in await submit(text: next.text, queued: true) }
+        // Marked now, not when the task starts, so a send in between queues behind this one.
+        isSubmitting = true
+        Task { [self] in await submit(text: next.text, attachments: next.attachments, queued: true) }
     }
 }
