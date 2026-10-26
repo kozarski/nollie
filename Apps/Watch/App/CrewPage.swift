@@ -36,6 +36,7 @@ struct CrewPage: View {
                         NoteLine(text: WatchWords.openPhone)
                     }
                 }
+                .scenePadding(.horizontal)
             }
         }
     }

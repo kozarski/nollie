@@ -48,6 +48,7 @@ struct ApprovalPage: View {
                     NoteLine(text: note)
                 }
             }
+            .scenePadding(.horizontal)
         }
         .confirmationDialog(WatchWords.allowAgain, isPresented: $askingAgain) {
             Button(WatchWords.allowOnce) { send(.once) }
