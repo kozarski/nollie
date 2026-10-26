@@ -10,6 +10,7 @@ struct AskFirstCardBody: View {
     var locked = false
     /// "once" or "deny".
     var onChoice: (String) -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var who: String { botName.isEmpty ? "Your bot" : botName }
 
@@ -51,7 +52,8 @@ struct AskFirstCardBody: View {
                 Spacer(minLength: 0)
             }
             .font(Ink.cardTitle)
-            // All of it, as it will happen. Long text scrolls inside its block rather than being cut.
+            // All of it, as it will happen. Long text scrolls inside its block rather than being cut;
+            // at the accessibility text sizes the block shows it all and the chat scrolls instead.
             ScrollView(.vertical) {
                 Text(ask.summary)
                     .font(Ink.cardBody)
@@ -63,7 +65,7 @@ struct AskFirstCardBody: View {
                     .accessibilityIdentifier("approval.askFirst.summary")
             }
             .scrollBounceBehavior(.basedOnSize)
-            .frame(maxHeight: 180)
+            .frame(maxHeight: typeSize.isAccessibilitySize ? nil : 180)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 6)
             .padding(.bottom, ask.check == nil ? 12 : 10)

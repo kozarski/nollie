@@ -215,6 +215,8 @@ struct ReplyListenButton: View {
         PlainButton(action: { ReplyVoice.shared.toggle(SpokenReply.plain(text), key: key, owner: owner) }) {
             Image(systemName: speaking ? "stop.fill" : "play.fill")
                 .font(.footnote.weight(.semibold))
+                // The circle keeps its size, so the symbol stops growing where it would spill out.
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .foregroundStyle(Ink.text2)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(square: 30)

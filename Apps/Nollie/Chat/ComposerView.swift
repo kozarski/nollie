@@ -17,6 +17,7 @@ struct ComposerView: View {
     @State private var attachTappedAt: Date?
     /// The Appearance setting that makes the on-screen Return send. Off, it adds a line.
     @AppStorage(ChatStyle.returnSends) private var returnSends = false
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     @Bindable var chat: ChatSession
     @Binding var text: String
@@ -216,7 +217,7 @@ struct ComposerView: View {
     // MARK: The words
 
     private var field: some View {
-        ComposerTextView(text: $text, placeholder: "Message \(botName)", focused: $focused,
+        ComposerTextView(text: $text, placeholder: placeholder, focused: $focused,
                          accessibilityID: "composer.text",
                          onSend: sendFromField,
                          onPasteData: { data, name, type in intake.pasted(data, name: name, type: type) },
@@ -236,6 +237,11 @@ struct ComposerView: View {
         } else {
             longTextOffer = false
         }
+    }
+
+    /// "Message Nollie", or just "Message" at the accessibility text sizes, where the name would be cut off.
+    private var placeholder: String {
+        typeSize.isAccessibilitySize ? "Message" : "Message \(botName)"
     }
 
     /// The name in the placeholder, such as "Message Nollie".

@@ -16,6 +16,7 @@ struct ApprovalCardView: View {
     /// The bot's profile. Kept for callers, though the card itself draws no face.
     var profile: String? = nil
     var onChoice: (String) -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
     /// Receives a screen action's answer (true means System control goes on). Without it, screen
     /// actions get the usual answers.
     var onSystemControl: ((Bool) -> Void)? = nil
@@ -181,7 +182,7 @@ struct ApprovalCardView: View {
                 .inset(h: 14, v: 10)
         }
         .scrollBounceBehavior(.basedOnSize)
-        .frame(maxHeight: 180)
+        .frame(maxHeight: typeSize.isAccessibilitySize ? nil : 180)
         .fixedSize(horizontal: false, vertical: true)
         .background(Ink.code, in: .rect(cornerRadius: 16, style: .continuous))
         .accessibilityLabel("Command: \(command)")

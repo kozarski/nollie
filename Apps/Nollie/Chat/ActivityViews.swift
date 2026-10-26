@@ -19,6 +19,7 @@ struct ToolRunRow: View, Equatable {
     var maxBubble: CGFloat = .infinity
     private let hold = DisclosureHold()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var steps: [ToolActivity] {
         items.compactMap { entry in
@@ -101,12 +102,17 @@ struct ToolRunRow: View, Equatable {
 
     private var headerRow: some View {
         HStack(spacing: 9) {
-            HStack(spacing: 5) {
-                ForEach(ToolStepPresentation.symbols(steps), id: \.self) { Glyph($0, .callout) }
+            // At the accessibility sizes the symbols give their room to the words, which wrap whole.
+            if !typeSize.isAccessibilitySize {
+                HStack(spacing: 5) {
+                    ForEach(ToolStepPresentation.symbols(steps), id: \.self) { Glyph($0, .callout) }
+                }
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
             }
-            .foregroundStyle(.secondary)
-            .accessibilityHidden(true)
-            Text(title).font(.subheadline.weight(.medium)).lineLimit(2)
+            Text(title).font(.subheadline.weight(.medium))
+                .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+                .fixedSize(horizontal: false, vertical: true)
             if isOpen { Spacer(minLength: 6) }
             trailingMark.accessibilityHidden(true)
             Text("\(steps.count)").quiet(.caption.monospacedDigit()).accessibilityHidden(true)
