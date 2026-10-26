@@ -2,13 +2,14 @@ import Foundation
 
 /// The small set of top-level settings. Search also finds the controls grouped inside each page.
 enum SettingsCategory: String, CaseIterable, Identifiable {
-    case bots, appearance, notifications, privacy = "icloud", signIns = "signins", siri = "voice", connection = "gateways", away, about, advanced
+    case bots, appearance, speech, notifications, privacy = "icloud", signIns = "signins", siri = "voice", connection = "gateways", away, about, advanced
 
     var id: String { rawValue }
     var title: String {
         switch self {
         case .bots: "Bots"
         case .appearance: "Appearance"
+        case .speech: "Voice"
         case .notifications: "Notifications"
         case .privacy: "Privacy"
         case .signIns: "Sign-ins"
@@ -23,6 +24,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         switch self {
         case .bots: "person.crop.square"
         case .appearance: "circle.lefthalf.filled"
+        case .speech: "speaker.wave.2.fill"
         case .notifications: "bell.badge"
         case .privacy: "hand.raised.fill"
         case .signIns: "key.fill"
@@ -37,6 +39,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         switch self {
         case .bots: "bot avatar character face colour color look name default motion tilt"
         case .appearance: "theme dark light text font reading transcript glass summaries titles previews"
+        case .speech: "speak speech read aloud talk talking listen hands-free"
         case .notifications: "alert permission sound haptics background"
         case .privacy: "security lock face id touch id approvals permissions camera microphone photos local network notifications accessibility screen recording"
         case .signIns: "password passwords login log in username website site keychain one-time code"

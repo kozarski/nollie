@@ -4,7 +4,7 @@ import UserNotifications
 
 /// The rows in a few groups, with air between them instead of lines.
 private let settingsGroups: [[SettingsCategory]] = [
-    [.bots, .appearance],
+    [.bots, .appearance, .speech],
     [.notifications, .privacy, .signIns, .siri],
     [.connection, .away],
     [.about, .advanced],
@@ -127,6 +127,7 @@ private struct SettingsDestination: View {
         switch category {
         case .bots: BotsSettingsView()
         case .appearance: AppearanceView().untitledPage()
+        case .speech: VoiceSettingsView().untitledPage()
         case .notifications: NotificationsView().untitledPage()
         case .privacy: PrivacyView().untitledPage()
         case .signIns: signIns

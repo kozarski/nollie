@@ -28,7 +28,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
             DeviceWords.isMac ? "Lets your iPhone find this Mac on your Wi-Fi."
                               : "Lets Nollie find your Mac on your Wi-Fi."
         case .camera: "Reads the code on your Mac, and takes photos for a chat."
-        case .microphone: "Lets you dictate a message or record a voice memo."
+        case .microphone: "Lets you talk with your bots, dictate and record voice memos."
         case .photos: "Saves a picture from a chat to your Photos."
         case .liveActivities: "Shows on the Lock Screen while a helper uses your Mac."
         case .accessibility: "Lets Nollie click and type in the apps you approve."

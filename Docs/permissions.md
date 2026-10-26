@@ -27,8 +27,9 @@ prompt for a kind at a time.
 | **Notifications** (iPhone, iPad, Mac) | Replies, approvals and finished work. A yes also registers the device for push. | Mac setup, step "Allow a few things" (Allow button). iPhone setup, the Ready step right after connecting (Allow button). Also from Settings › Notifications, Settings › Privacy › Permissions, the iCloud alerts switch and the companion offer sheet. Always from a button. | Nothing arrives while Nollie is closed. Chats still work. Settings shows "Open Settings". |
 | **Local Network** (iPhone, iPad, Mac download) | Finding and reaching the Mac over Wi-Fi (Bonjour `_nollie._tcp`, the Mac's door) and a Hermes dashboard on the home network. | Mac setup, same step (Allow button). iPhone: on the link or pairing confirmation, with a line saying the phone will ask; the system prompt appears when Link or Connect is pressed. Settings › Privacy › Permissions. | The phone cannot find the Mac at home. The link screen says so and offers Open Settings. A Mac reached over Tailscale still works. |
 | **Camera** (iPhone, iPad) | Reading the pairing code on the Mac, and taking a photo for a chat. | Scanner: a line says why and an "Allow camera" button asks, so opening the scanner shows nothing by itself. Photo for a chat: the system prompt appears when Camera is chosen in the attach menu. | The scanner shows Open Settings and "Connect manually" stays. Photos can still be picked from the library. |
-| **Microphone** (iPhone, iPad, Mac) | Dictation and voice memos. | The first press of the mic button (`MicCapture.start`). Settings › Privacy › Permissions. | The mic button says access was denied. Typing works. |
-| **Speech recognition** | Dictation is turned into words on the device with the system's `SpeechAnalyzer`, which has no permission of its own. `NSSpeechRecognitionUsageDescription` is kept for older paths. | Never prompts today. | n/a |
+| **Microphone** (iPhone, iPad, Mac) | Talk mode, dictation and voice memos. | Talk: the first press of the composer's Talk button opens a sheet with the bot, one line on why ("I listen while you talk. Your voice stays on this iPhone, and only your words are sent.") and Allow microphone, which shows the system prompt (`VoicePermissionSheet`). Dictation and memos: the first press of the mic button (`MicCapture.start`). Settings › Privacy › Permissions. | The Talk sheet says the mic is off and offers Open Settings. The mic button says access was denied. Typing, the play button and Read replies aloud still work. |
+| **Speech recognition** | Talk mode and dictation are turned into words on the device with the system's `SpeechAnalyzer` (`DeviceTranscriber`), which has no permission of its own. The first use in a language may fetch Apple's speech model. `NSSpeechRecognitionUsageDescription` is kept for older paths. | Never prompts today. | n/a |
+| **Speaking replies** | Read replies aloud, the play button on a reply, and talk mode use the system's on-device voices (`AVSpeechSynthesizer`). | No permission. | n/a |
 | **Photos, add only** (iPhone, iPad) | Save to Photos from the picture viewer and video cards. | The first Save to Photos tap. Settings › Privacy › Permissions. | The viewer explains and offers Open Settings (`PhotoSaveFailure`). Share and copy still work. |
 | **Downloads folder** (Mac) | Save to Downloads from the picture viewer. | The first Save to Downloads click (macOS asks about the folder). | The viewer says it was not saved. |
 | **Face ID / Touch ID / passcode** | App lock, approving from a notification, saved sign-ins and remembered sign-ins. | When the lock switch is turned on, on the first saved sign-in use, or on a locked reply. Never at launch unless the lock is on. | The lock falls back to the passcode. Saved sign-ins need the device owner. |
@@ -72,6 +73,15 @@ Audited start paths:
 - Local Network is not read at all until the person has pressed Allow once. After that a short quiet
   look is used (the answer is already given, so it shows no prompt).
 - Face ID appears at launch only when the person turned the app lock on.
+
+## Voice stays on the device
+
+Talk mode records to a temporary file, reads it with on-device speech recognition and deletes it;
+only the words go to the bot, as a typed message would. Replies are spoken by the system's voices on
+the device. Nothing new leaves it, so voice adds nothing to Papertrail. Hermes has its own voice
+routes (`/api/audio/transcribe`, `/api/audio/speak`) that can use cloud providers; Nollie does not use them.
+While a card is up talk mode shuts the mic and sends nothing: approvals are answered with a tap,
+never by voice (`TalkLoop`, `TalkRules`).
 
 ## Local Network on the Mac
 

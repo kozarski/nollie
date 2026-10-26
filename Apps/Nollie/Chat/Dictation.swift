@@ -24,6 +24,8 @@ final class DictationController {
     private var capture: MicCapture?
 
     func start() {
+        // A reply being read aloud would talk over the recording.
+        ReplyVoice.shared.stop()
         Task {
             do {
                 let stem = "dictation-\(UUID().uuidString)"

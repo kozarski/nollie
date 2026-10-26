@@ -69,8 +69,8 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Let your iPhone find this Mac on your Wi-Fi, and connect to a Hermes dashboard on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Dictate a message, or record a voice memo to attach.</string>
+	<string>Talk with your bots, dictate a message, or record a voice memo to attach.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Turn what you dictate into words on this Mac.</string>
+	<string>Turn what you say into words, on this Mac.</string>
 </dict>
 </plist>

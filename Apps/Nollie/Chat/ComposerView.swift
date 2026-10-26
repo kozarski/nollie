@@ -45,7 +45,7 @@ struct ComposerView: View {
             if !quote.isEmpty {
                 ReplyQuoteStrip(quote: quote) { withAnimation(.snappy) { quote = "" } }
             }
-            capsule
+            if TalkMode.shared.isOn(in: chat) { TalkBar(namespace: namespace) } else { capsule }
             if chat.isRunning && !text.isEmpty { steerStrip }
         }
         .overlay(alignment: .topLeading) { panelOverlay }
@@ -54,6 +54,7 @@ struct ComposerView: View {
         .modifier(DropAndImport(chat: chat, importFile: { intake.file($0) }))
         .modifier(lifecycle)
         .modifier(attachHooks)
+        .modifier(VoiceHooks(chat: chat))
         .sheet(isPresented: $showHistory) { historySheet().withAppModel() }
     }
 
@@ -89,6 +90,7 @@ struct ComposerView: View {
         HStack(alignment: .bottom, spacing: 10) {
             plusButton
             middle.spread()
+            if text.isEmpty && chat.staged.isEmpty && !dictation.isListening && !dictation.isTranscribing { TalkModeButton(chat: chat) }
             ComposerEndButton(chat: chat, text: text, dictation: dictation,
                               onSend: { await send() }, onDictated: dictated)
         }

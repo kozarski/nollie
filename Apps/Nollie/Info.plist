@@ -65,11 +65,11 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save a picture from a chat to your Photos.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Dictate a message, or record a voice memo to attach.</string>
+	<string>Talk with your bots, dictate a message, or record a voice memo to attach.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Turn what you dictate into words on this device.</string>
+	<string>Turn what you say into words, on this device.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<!-- One window on the iPad. Every window shares the one app model, so a

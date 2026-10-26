@@ -39,6 +39,7 @@ struct ReplyLine: View {
                 Spacer(minLength: wide ? 0 : 40)
             } else {
                 finished
+                if botShown, let bot { ReplyListenButton(text: text, key: item.id, owner: bot) }
                 Spacer(minLength: wide ? 0 : 24)
             }
         }

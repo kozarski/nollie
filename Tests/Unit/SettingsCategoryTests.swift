@@ -5,13 +5,13 @@ struct SettingsCategoryTests {
     @Test func normalSettingsHasOneHomeForEachGroup() {
         #if os(macOS)
         #expect(SettingsCategory.visible(developerMode: false) == [
-            .bots, .appearance, .notifications, .privacy, .signIns, .siri, .connection, .about
+            .bots, .appearance, .speech, .notifications, .privacy, .signIns, .siri, .connection, .about
         ])
         #expect(SettingsCategory.visible(developerMode: false, matching: "password") == [.signIns])
         #else
         // Saved sign-ins are the Mac's alone: the iPhone never holds a password.
         #expect(SettingsCategory.visible(developerMode: false) == [
-            .bots, .appearance, .notifications, .privacy, .siri, .connection, .about
+            .bots, .appearance, .speech, .notifications, .privacy, .siri, .connection, .about
         ])
         #expect(SettingsCategory.visible(developerMode: false, matching: "password").isEmpty)
         #endif
@@ -22,7 +22,8 @@ struct SettingsCategoryTests {
     @Test func groupedControlsRemainDiscoverable() {
         for (query, expected) in [("Security", SettingsCategory.privacy), ("Face ID", .privacy),
                                    ("Siri", .siri), ("Spotlight", .siri), ("Models", .connection),
-                                   ("Set up", .connection), ("Summaries", .appearance)] {
+                                   ("Set up", .connection), ("Summaries", .appearance),
+                                   ("Voice", .speech), ("Read aloud", .speech), ("Talk", .speech)] {
             #expect(SettingsCategory.visible(developerMode: false, matching: query) == [expected])
         }
     }
