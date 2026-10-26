@@ -111,6 +111,7 @@ private struct SummariesHero: View {
 private struct SummariesAdvancedPage: View {
     private var parts = SummaryParts()
     @State private var forgotten = false
+    @AppStorage(QuickAnswers.enabledKey) private var quickAnswers = true
 
     /// Which parts are on, in a few words: "All three on", "Titles only", "Titles and previews".
     private var heroTitle: String {
@@ -142,6 +143,12 @@ private struct SummariesAdvancedPage: View {
                 }
                 .disabled(!available)
                 PageNote("The status line says what a working bot is trying to get done.")
+            }
+            VStack(spacing: 14) {
+                GlassSwitch("Quick answers", isOn: $quickAnswers, id: "summaries.quickAnswers")
+                    .disabled(!available)
+                PageNote(DeviceWords.isMac ? "Answers on \(DeviceWords.this) during setup. Talk only."
+                                           : "Answers on \(DeviceWords.this) when your Mac is out of reach. Talk only.")
             }
             GlassButton("Forget every summary", symbol: "trash", value: forgotten ? "Forgotten" : nil,
                         role: .destructive, id: "summaries.forget") {
