@@ -47,7 +47,7 @@ struct BotMenuItems: View {
 
     /// One menu row: its words, symbol, test id and what it does. `key` adds a Command shortcut
     /// where `shortcuts` is on.
-    private func row(_ title: String, _ symbol: String, id: String, key: Character? = nil,
+    private func row(_ title: LocalizedStringKey, _ symbol: String, id: String, key: Character? = nil,
                      action: @escaping () -> Void) -> some View {
         Button(action: action) { Label(title, systemImage: symbol) }
             .modifier(MenuKey(key: key ?? " ", on: shortcuts && key != nil))
@@ -341,7 +341,7 @@ struct BotHistoryRow: View {
 
     private var isRun: Bool { (session.source ?? "").lowercased() == "cron" || session.id.hasPrefix("cron_") }
     private var title: String {
-        if isMain { return "Main chat" }
+        if isMain { return String(localized: "Main chat") }
         return MainChatCard.shownTitle(session.displayTitle)
     }
 

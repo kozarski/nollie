@@ -38,7 +38,7 @@ struct AppleDataSection: View {
             PageHeading(keptHere ? "On this Mac" : "From your Mac")
             GlassStack {
                 ForEach(AppleDataArea.allCases) { area in
-                    GlassSwitch(area.title, isOn: Binding(get: { setting.isOn(area) }, set: { on in
+                    GlassSwitch(.verbatim(area.title), isOn: Binding(get: { setting.isOn(area) }, set: { on in
                         guard let runtime else { return }
                         let door = AppleDataModel.door(runtime: runtime, permissions: model.permissions)
                         Task { await setting.set(area, on: on, bot: profileName, door: door) }
@@ -61,7 +61,7 @@ struct AppleDataSection: View {
             PageNote("Allow \(area.title) in Nollie on your Mac.", symbol: "desktopcomputer", id: "profile.appleData.needsMac")
         }
         if let error = setting.error {
-            PageNote(error, symbol: "exclamationmark.triangle.fill", tint: .orange, id: "profile.appleData.problem")
+            PageNote(.verbatim(error), symbol: "exclamationmark.triangle.fill", tint: .orange, id: "profile.appleData.problem")
             GlassButton("Try again", symbol: "arrow.clockwise", id: "profile.appleData.retry") {
                 guard let runtime else { return }
                 Task { await setting.load(bot: profileName, door: AppleDataModel.door(runtime: runtime, permissions: model.permissions)) }

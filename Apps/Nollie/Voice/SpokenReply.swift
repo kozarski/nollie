@@ -4,8 +4,8 @@ import NollieCore
 /// What of a reply is read aloud, and how it reads. Markdown marks, links and pictures are for
 /// the eye, so they become plain words; code and tables are left on screen with a short mention.
 enum SpokenReply {
-    static let codeOnScreen = "There's some code on screen."
-    static let tableOnScreen = "There's a table on screen."
+    static let codeOnScreen = String(localized: "There's some code on screen.", comment: "Read aloud in place of code")
+    static let tableOnScreen = String(localized: "There's a table on screen.", comment: "Read aloud in place of a table")
 
     /// The reply of the latest turn: the bot's finished words after the person's last message,
     /// ready to speak. Empty when there is nothing to read (only tools ran, or it was cut short).
@@ -67,7 +67,7 @@ enum SpokenReply {
 
     /// "https://www.bbc.co.uk/news" reads as "bbc.co.uk".
     static func site(of address: String) -> String {
-        guard let host = URL(string: address)?.host() else { return "a link" }
+        guard let host = URL(string: address)?.host() else { return String(localized: "a link", comment: "Read aloud in place of a web address") }
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
 

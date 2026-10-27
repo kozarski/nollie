@@ -11,14 +11,14 @@ struct WeeklyNoteSettingsView: View {
     /// "4 new", when something is.
     private var newCount: String? {
         guard let count = weekly.note?.news.count, count > 0 else { return nil }
-        return "\(count) new"
+        return String(localized: "\(count) new", comment: "How many new things are in this week's note")
     }
 
     var body: some View {
         SettingsPage("weekly.page") {
             PageHero(symbol: on ? "calendar.badge.checkmark" : WeeklyInk.symbol,
-                     title: on ? WeeklyNoteDays.evenings(weekday) : "Off",
-                     line: "A short note on your helpers' week.",
+                     title: .verbatim(on ? WeeklyNoteDays.evenings(weekday) : String(localized: "Off", comment: "The weekly note is switched off")),
+                     line: LocalizedStringResource("A short note on your helpers' week."),
                      tint: on ? WeeklyInk.tint : Ink.text2, id: "weekly.settings.hero")
             FactStrip(facts: [Fact(symbol: "person.2.fill", word: "What they did"),
                               Fact(symbol: "arrow.up.right.circle.fill", word: "What left"),
@@ -53,8 +53,16 @@ enum WeeklyNoteDays {
     }
 
     /// "Sunday evenings".
+    /// One whole phrase per day, since languages say this in their own way.
     static func evenings(_ weekday: Int, calendar: Calendar = .current) -> String {
-        let names = calendar.weekdaySymbols
-        return names[(1...7).contains(weekday) ? weekday - 1 : 0] + " evenings"
+        switch (1...7).contains(weekday) ? weekday : 1 {
+        case 2: String(localized: "Monday evenings")
+        case 3: String(localized: "Tuesday evenings")
+        case 4: String(localized: "Wednesday evenings")
+        case 5: String(localized: "Thursday evenings")
+        case 6: String(localized: "Friday evenings")
+        case 7: String(localized: "Saturday evenings")
+        default: String(localized: "Sunday evenings")
+        }
     }
 }

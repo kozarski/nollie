@@ -1,5 +1,16 @@
 import SwiftUI
 
+extension LocalizedStringResource {
+    /// Words already worked out in code (a name, a sentence built with `String(localized:)`), shown as they are.
+    /// Our views take `LocalizedStringResource`, so a literal is looked up in the catalog and this passes the rest.
+    static func verbatim(_ text: String) -> LocalizedStringResource {
+        // A table that does not exist: the lookup misses and the text itself is shown.
+        LocalizedStringResource(String.LocalizationValue(text), table: "Verbatim")
+    }
+
+    static func verbatim(_ text: String?) -> LocalizedStringResource? { text.map { verbatim($0) } }
+}
+
 /// Runs `work` again and again, `seconds` apart, until the surrounding task is cancelled. The
 /// first run comes after the first pause, so call it after an initial read.
 @MainActor
@@ -17,7 +28,11 @@ struct Placeholder: View {
     let symbol: String
     var detail: String?
 
-    init(_ title: String, symbol: String, detail: String? = nil) {
+    init(_ title: LocalizedStringResource, symbol: String, detail: LocalizedStringResource? = nil) {
+        self.init(verbatim: String(localized: title), symbol: symbol, detail: detail.map { String(localized: $0) })
+    }
+
+    fileprivate init(verbatim title: String, symbol: String, detail: String? = nil) {
         self.title = title
         self.symbol = symbol
         self.detail = detail
@@ -39,7 +54,11 @@ extension View {
     }
 
     /// A small centred title in the navigation bar.
-    func inlineTitle(_ title: String) -> some View {
+    func inlineTitle(_ title: LocalizedStringResource) -> some View {
+        inlineTitle(verbatim: String(localized: title))
+    }
+
+    fileprivate func inlineTitle(verbatim title: String) -> some View {
         navigationTitle(title).navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -47,7 +66,11 @@ extension View {
 extension View {
     /// A one-button alert that shows `message` while it is set, and clears it on OK. `showing`
     /// lets a page hold the alert back for a moment.
-    func noticeAlert(_ title: String, _ message: Binding<String?>, showing: Bool = true) -> some View {
+    func noticeAlert(_ title: LocalizedStringResource, _ message: Binding<String?>, showing: Bool = true) -> some View {
+        noticeAlert(verbatim: String(localized: title), message, showing: showing)
+    }
+
+    fileprivate func noticeAlert(verbatim title: String, _ message: Binding<String?>, showing: Bool = true) -> some View {
         alert(
             title,
             isPresented: Binding(

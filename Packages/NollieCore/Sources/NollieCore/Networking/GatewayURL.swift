@@ -11,11 +11,11 @@ public enum GatewayURLError: LocalizedError, Equatable {
 public extension GatewayURLError {
     var errorDescription: String? {
         switch self {
-        case .invalid: return "That doesn't look like a web address."
-        case .missingHost: return "The URL has no host."
-        case .empty: return "Enter your Hermes dashboard address (the one from `hermes serve`)."
-        case .containsQuery: return "Leave off everything after the question mark. The dashboard's base address is enough."
-        case .unsupportedScheme(let name): return "“\(name)” isn't supported here. Start the address with https:// or http://."
+        case .invalid: return String(localized: "That doesn't look like a web address.", table: "Core")
+        case .missingHost: return String(localized: "The URL has no host.", table: "Core")
+        case .empty: return String(localized: "Enter your Hermes dashboard address (the one from `hermes serve`).", table: "Core")
+        case .containsQuery: return String(localized: "Leave off everything after the question mark. The dashboard's base address is enough.", table: "Core")
+        case .unsupportedScheme(let name): return String(localized: "“\(name)” isn't supported here. Start the address with https:// or http://.", table: "Core", comment: "The value is a web address scheme, such as ftp")
         }
     }
 }

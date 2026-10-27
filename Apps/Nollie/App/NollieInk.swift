@@ -353,11 +353,11 @@ private struct HeaderIconFace<Label: View>: View {
 /// there is text. A tap anywhere else in the capsule puts the cursor in the field.
 struct InkSearchField<Trailing: View>: View {
     @Binding var text: String
-    var prompt = "Search"
+    var prompt = String(localized: "Search")
     var focused: FocusState<Bool>.Binding
     private let trailing: Trailing
 
-    init(text: Binding<String>, prompt: String = "Search", focused: FocusState<Bool>.Binding,
+    init(text: Binding<String>, prompt: String = String(localized: "Search"), focused: FocusState<Bool>.Binding,
          @ViewBuilder trailing: () -> Trailing = { EmptyView() }) {
         _text = text
         self.prompt = prompt

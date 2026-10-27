@@ -57,7 +57,7 @@ private struct ApprovalCard: View {
     let answer: (String) -> Void
 
     var body: some View {
-        Text("Allow this?").font(Ink.cardTitle).foregroundStyle(Ink.text)
+        Text("Allow this?", comment: "Safety: approval card title; keep exact meaning").font(Ink.cardTitle).foregroundStyle(Ink.text)
         if let description, !description.isEmpty {
             Text(description).font(Ink.cardBody).foregroundStyle(Ink.cardText)
         }
@@ -73,16 +73,22 @@ private struct ApprovalCard: View {
                 .background(Ink.code, in: .rect(cornerRadius: 14, style: .continuous))
         }
         HStack(spacing: 10) {
-            Button("Allow once") { answer("once") }
+            Button(String(localized: "Allow once", comment: "Safety: approval card button; allows this one time")) { answer("once") }
                 .buttonStyle(InkPillStyle())
                 .accessibilityIdentifier("card.allowOnce")
-            Button("Deny") { answer("deny") }
+            Button(String(localized: "Deny", comment: "Safety: approval card button; refuses the request")) { answer("deny") }
                 .buttonStyle(OutlinePillStyle())
                 .accessibilityIdentifier("card.deny")
             if choices.contains("session") || choices.contains("always") {
                 Menu {
-                    if choices.contains("session") { Button("Allow in this chat") { answer("session") } }
-                    if choices.contains("always") { Button("Always allow") { answer("always") } }
+                    if choices.contains("session") {
+                        Button(String(localized: "Allow in this chat",
+                                      comment: "Safety: approval card choice; allows it for the rest of this chat")) { answer("session") }
+                    }
+                    if choices.contains("always") {
+                        Button(String(localized: "Always allow",
+                                      comment: "Safety: approval card choice; allows it from now on")) { answer("always") }
+                    }
                 } label: {
                     Image(systemName: "ellipsis").frame(height: 20)
                 }
@@ -113,7 +119,7 @@ private struct ClarifyCard: View {
         }
         ForEach(questions, id: \.id) { question in
             VStack(alignment: .leading, spacing: 10) {
-                Text(question.text.isEmpty ? "A question" : question.text)
+                Text(question.text.isEmpty ? String(localized: "A question") : question.text)
                     .font(Ink.cardTitle)
                     .foregroundStyle(Ink.text)
                     .fixedSize(horizontal: false, vertical: true)
@@ -186,7 +192,7 @@ private struct ValueCard: View {
     @State private var value = ""
 
     var body: some View {
-        Text(prompt.isEmpty ? "Needs a value" : prompt)
+        Text(prompt.isEmpty ? String(localized: "Needs a value") : prompt)
             .font(Ink.cardTitle)
             .foregroundStyle(Ink.text)
             .fixedSize(horizontal: false, vertical: true)

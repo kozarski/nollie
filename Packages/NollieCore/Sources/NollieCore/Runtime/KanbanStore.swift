@@ -152,7 +152,7 @@ public final class KanbanStore {
 
     /// The plugin's client, or a thrown error when there is no gateway yet.
     private func connectedAPI() throws -> KanbanAPI {
-        guard let api else { throw HermesAPIError.transport("No gateway") }
+        guard let api else { throw HermesAPIError.transport(String(localized: "No gateway", table: "Core")) }
         return api
     }
 

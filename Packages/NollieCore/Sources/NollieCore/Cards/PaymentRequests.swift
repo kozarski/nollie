@@ -80,7 +80,9 @@ public struct PaymentCardLabel: Codable, Equatable, Sendable, Identifiable {
         self.id = id; self.brand = brand; self.last4 = last4; self.holder = holder
     }
 
+    /// In English: the add-on and the helper read it. `shownLabel` is the same on screen.
     public var label: String { "\(brand.name) ending \(last4)" }
+    public var shownLabel: String { brand.shownLabel(last4: last4) }
 }
 
 /// A helper's "Can pay with my cards" switch.

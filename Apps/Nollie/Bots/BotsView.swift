@@ -167,13 +167,15 @@ struct BotCard: View {
 
     /// The model without the provider in front of it.
     private var modelName: String {
-        profile.model.map { String($0.split(separator: "/").last ?? Substring($0)) } ?? "no model"
+        profile.model.map { String($0.split(separator: "/").last ?? Substring($0)) } ?? Self.noModel
     }
 
+    private static let noModel = String(localized: "no model", comment: "A bot with no model set")
+
     private var spokenLabel: String {
-        var words = ["\(profile.label), \(profile.model ?? "no model")"]
-        if isActive { words.append("active") }
-        if working { words.append("working") }
+        var words = [String(localized: "\(profile.label), \(profile.model ?? Self.noModel)", comment: "VoiceOver: a bot's name, then its model")]
+        if isActive { words.append(String(localized: "active", comment: "VoiceOver: the bot in use")) }
+        if working { words.append(String(localized: "working", comment: "VoiceOver: the bot is busy")) }
         return words.joined(separator: ", ")
     }
 
@@ -206,7 +208,7 @@ struct BotCard: View {
         Circle()
             .fill(Color.nollie)
             .frame(square: 6)
-            .accessibilityLabel("active")
+            .accessibilityLabel(Text("active", comment: "VoiceOver: the bot in use"))
     }
 }
 

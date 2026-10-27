@@ -8,15 +8,15 @@ struct BoardEmpty {
     let detail: String
 
     static let noGateway = BoardEmpty(
-        title: "No gateway", symbol: "antenna.radiowaves.left.and.right.slash",
-        detail: "Add a gateway in Settings and its board will show up here.")
+        title: String(localized: "No gateway"), symbol: "antenna.radiowaves.left.and.right.slash",
+        detail: String(localized: "Add a gateway in Settings and its board will show up here."))
 
     static let pluginOff = BoardEmpty(
-        title: "Kanban is off on this gateway", symbol: "rectangle.split.3x1",
-        detail: "Switch on the kanban plugin in the gateway dashboard (under Plugins) and the Board will appear.")
+        title: String(localized: "Kanban is off on this gateway"), symbol: "rectangle.split.3x1",
+        detail: String(localized: "Switch on the kanban plugin in the gateway dashboard (under Plugins) and the Board will appear."))
 
     static func unreadable(_ problem: String) -> BoardEmpty {
-        BoardEmpty(title: "Could not read the board", symbol: "exclamationmark.triangle", detail: problem)
+        BoardEmpty(title: String(localized: "Could not read the board"), symbol: "exclamationmark.triangle", detail: problem)
     }
 
     var view: some View {
@@ -112,8 +112,9 @@ struct BoardStatusBar: View {
     /// How the board is being kept fresh, as words, a symbol and how loudly to say it.
     private var freshness: (words: String, symbol: String, tone: HierarchicalShapeStyle, spoken: String?) {
         store.liveConnected
-            ? ("Live", "dot.radiowaves.left.and.right", .secondary, "Live updates on")
-            : ("Reading every minute", "clock", .tertiary, nil)
+            ? (String(localized: "Live", comment: "The Board updates live"), "dot.radiowaves.left.and.right", .secondary,
+               String(localized: "Live updates on"))
+            : (String(localized: "Reading every minute"), "clock", .tertiary, nil)
     }
 
     var body: some View {
@@ -143,7 +144,7 @@ struct BoardPicker: View {
     private func label(for entry: KanbanBoardMeta) -> String {
         let summary = BoardReviewSummary(boards: [entry], selectedBoard: store.selectedBoard, loadedBoard: store.board)
         let waiting = summary.entries.first { $0.slug == entry.slug }?.count ?? 0
-        return waiting > 0 ? "\(entry.displayName) (\(waiting) needing your help)" : entry.displayName
+        return waiting > 0 ? String(localized: "\(entry.displayName) (\(waiting) needing your help)", comment: "A board, then how many of its tasks need the person") : entry.displayName
     }
 
     var body: some View {
@@ -158,7 +159,7 @@ struct BoardPicker: View {
                 }
             }
         } label: {
-            Label(store.selectedBoardMeta?.displayName ?? "Board", systemImage: "square.stack")
+            Label(store.selectedBoardMeta?.displayName ?? String(localized: "Board"), systemImage: "square.stack")
         }
         .accessibilityLabel("Choose a board")
         .help("Choose a board")

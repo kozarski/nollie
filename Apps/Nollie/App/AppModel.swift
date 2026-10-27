@@ -428,13 +428,13 @@ final class AppModel {
                         installationID: reply.snapshot.installationID,
                         enabledInstallationID: reply.snapshot.enabledInstallationID)
                 else {
-                    throw HermesAPIError.transport("Nollie's background service is not ready. The connection will retry.")
+                    throw HermesAPIError.transport(String(localized: "Nollie's background service is not ready. The connection will retry."))
                 }
                 runtime.lastError = nil
                 return updated.gateway
             } catch {
                 guard self.runtime === runtime, !Task.isCancelled else { throw SocketError.cancelled }
-                let waiting = "Waiting for Nollie's background service. The connection will retry."
+                let waiting = String(localized: "Waiting for Nollie's background service. The connection will retry.")
                 runtime.lastError = waiting
                 throw HermesAPIError.transport(waiting)
             }

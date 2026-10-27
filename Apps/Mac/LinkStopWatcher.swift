@@ -53,7 +53,7 @@ final class LinkStopWatcher {
 
     private func tell(device: String, key: String, paused: Int) {
         let content = UNMutableNotificationContent()
-        content.title = "Stopped from \(device)"
+        content.title = String(localized: "Stopped from \(device)", comment: "Safety: notification; a device name, like Corey's iPhone")
         content.body = Self.summary(paused: paused)
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "nollie.link.stop.\(key)", content: content, trigger: nil))
     }

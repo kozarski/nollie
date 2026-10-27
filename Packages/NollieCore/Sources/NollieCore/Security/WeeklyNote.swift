@@ -220,29 +220,30 @@ public enum WeeklyAction: Hashable, Sendable {
     /// The button's one word or two.
     public var label: String {
         switch self {
-        case .pause: "Pause"
-        case .resume: "Resume"
-        case .remove, .removeApp: "Remove"
+        case .pause: String(localized: "Pause", table: "Core", comment: "A button that pauses a schedule")
+        case .resume: String(localized: "Resume", table: "Core", comment: "A button that resumes a schedule")
+        case .remove: String(localized: "Remove", table: "Core", comment: "Safety: a button that deletes a schedule after asking")
+        case .removeApp: String(localized: "Remove", table: "Core", comment: "Safety: a button that takes a connected app away from a helper, after asking")
         // The web tools are search and pages together, so the button says so.
-        case .webOff: "Turn off web"
-        case .webOn: "Turn on web"
-        case .appOff, .macOff: "Turn off"
-        case .appOn, .macOn: "Turn on"
-        case .mute: "Mute"
-        case .unmute: "Unmute"
+        case .webOff: String(localized: "Turn off web", table: "Core")
+        case .webOn: String(localized: "Turn on web", table: "Core")
+        case .appOff, .macOff: String(localized: "Turn off", table: "Core", comment: "A button")
+        case .appOn, .macOn: String(localized: "Turn on", table: "Core", comment: "A button")
+        case .mute: String(localized: "Mute", table: "Core", comment: "A button that mutes a helper's banners")
+        case .unmute: String(localized: "Unmute", table: "Core", comment: "A button")
         }
     }
 
     /// What the line says once it is done.
     public var done: String {
         switch self {
-        case .pause: "Paused"
-        case .resume: "Resumed"
-        case .remove, .removeApp: "Removed"
-        case .appOff, .webOff, .macOff: "Off"
-        case .appOn, .webOn, .macOn: "On"
-        case .mute: "Muted"
-        case .unmute: "Unmuted"
+        case .pause: String(localized: "Paused", table: "Core", comment: "A schedule's state")
+        case .resume: String(localized: "Resumed", table: "Core", comment: "A schedule's state")
+        case .remove, .removeApp: String(localized: "Removed", table: "Core", comment: "A schedule's or a connected app's state")
+        case .appOff, .webOff, .macOff: String(localized: "Off", table: "Core", comment: "A switch state")
+        case .appOn, .webOn, .macOn: String(localized: "On", table: "Core", comment: "A switch state")
+        case .mute: String(localized: "Muted", table: "Core", comment: "A helper's banners are muted on every device")
+        case .unmute: String(localized: "Unmuted", table: "Core", comment: "A state")
         }
     }
 
@@ -393,15 +394,13 @@ public struct WeeklyNote: Equatable, Sendable {
     /// The note's one line: "3 helpers busy. 2 new things." or "A quiet week."
     public var headline: String {
         guard !helpers.isEmpty else {
-            if !unread.isEmpty { return "Couldn't read the week." }
-            return quiet.isEmpty ? "No helpers to tell about." : "A quiet week."
+            if !unread.isEmpty { return String(localized: "Couldn't read the week.", table: "Core") }
+            return quiet.isEmpty ? String(localized: "No helpers to tell about.", table: "Core")
+                : String(localized: "A quiet week.", table: "Core")
         }
-        let busy = helpers.count == 1 ? "1 helper busy." : "\(helpers.count) helpers busy."
-        switch news.count {
-        case 0: return busy
-        case 1: return busy + " 1 new thing."
-        default: return busy + " \(news.count) new things."
-        }
+        let busy = String(localized: "\(helpers.count) helpers busy.", table: "Core")
+        guard !news.isEmpty else { return busy }
+        return WeeklyWords.sentences(busy, String(localized: "\(news.count) new things.", table: "Core"))
     }
 
     /// The Watch's few lines: each helper, with what it did and what went online.
@@ -409,14 +408,22 @@ public struct WeeklyNote: Equatable, Sendable {
         helpers.map { helper in
             var parts: [String] = []
             let runs = helper.did.filter { $0.kind == .schedule }.reduce(0) { $0 + $1.count }
-            if runs > 0 { parts.append(runs == 1 ? "1 run" : "\(runs) runs") }
+            if runs > 0 { parts.append(String(localized: "\(runs) runs", table: "Core")) }
             let tasks = helper.did.filter { $0.kind == .board }.reduce(0) { $0 + $1.count }
-            if tasks > 0 { parts.append(tasks == 1 ? "1 task" : "\(tasks) tasks") }
+            if tasks > 0 { parts.append(String(localized: "\(tasks) tasks", table: "Core")) }
             let asked = helper.did.filter { $0.kind == .asked }.reduce(0) { $0 + $1.count }
-            if asked > 0 { parts.append("asked \(WeeklyWords.times(asked))") }
-            if helper.online > 0 { parts.append("online \(WeeklyWords.times(helper.online))") }
+            if asked == 2 {
+                parts.append(String(localized: "asked twice", table: "Core", comment: "A helper asked the person twice this week"))
+            } else if asked > 0 {
+                parts.append(String(localized: "asked \(asked) times", table: "Core", comment: "A helper asked the person this many times this week"))
+            }
+            if helper.online == 2 {
+                parts.append(String(localized: "online twice", table: "Core", comment: "A helper went online twice this week"))
+            } else if helper.online > 0 {
+                parts.append(String(localized: "online \(helper.online) times", table: "Core", comment: "A helper went online this many times this week"))
+            }
             let new = helper.did.filter(\.isNew).count + helper.left.filter(\.isNew).count
-            if new > 0 { parts.append("\(new) new") }
+            if new > 0 { parts.append(String(localized: "\(new) new", table: "Core", comment: "How many new things a helper had this week")) }
             return (helper.name, parts.joined(separator: " · "))
         }
     }
@@ -474,10 +481,12 @@ public struct WeeklyNote: Equatable, Sendable {
         }
         for change in (record.changes ?? []).filter({ $0.kind == "app_removed" && $0.at >= record.since }) {
             did.append(Line(id: "\(bot)/change/\(Int(change.at))/\(change.name)", kind: .change, symbol: "trash",
-                            text: "You removed \u{201C}\(change.name)\u{201D}", subject: change.name))
+                            text: String(localized: "You removed \u{201C}\(change.name)\u{201D}", table: "Core",
+                                         comment: "Safety: the weekly note, a connected app the person took away; the app's name"),
+                            subject: change.name))
         }
         if input.macOn == true {
-            did.append(Line(id: "\(bot)/mac", kind: .mac, symbol: "macbook", text: "Can use your Mac", actions: [.macOff(bot: bot)]))
+            did.append(Line(id: "\(bot)/mac", kind: .mac, symbol: "macbook", text: String(localized: "Can use your Mac", table: "Core"), actions: [.macOff(bot: bot)]))
         }
         // What left: each place, most used first, with a tap where one is real.
         var left: [Line] = []
@@ -519,57 +528,72 @@ private extension WeeklyNote.Helper {
 
 // MARK: Words
 
-/// The note's sentences. Each is fixed, filled only with counts and names from the records.
+/// The note's sentences. Each is fixed, filled only with counts and names from the records. Each count is said in a
+/// whole sentence of its own (with twice as its own line), so every language can say it its own way.
 public enum WeeklyWords {
-    /// "once", "twice", "3 times".
-    public static func times(_ n: Int) -> String {
-        switch n {
-        case 1: "once"
-        case 2: "twice"
-        default: "\(n) times"
-        }
+    /// Two sentences one after the other: "1 helper busy. 3 new things."
+    static func sentences(_ first: String, _ second: String) -> String {
+        String(localized: "\(first) \(second)", table: "Core", comment: "Two whole sentences one after the other")
+    }
+
+    /// A count of times said alone at the start of a line: "Once", "Twice", "3 times".
+    static func times(_ n: Int) -> String {
+        n == 2 ? String(localized: "Twice", table: "Core", comment: "How many times, alone at the start of a line")
+            : String(localized: "\(n) times", table: "Core", comment: "How many times, alone at the start of a line")
+    }
+
+    /// A label and how often: "Model · 31 times", "Commands · twice".
+    static func labelTimes(_ label: String, _ n: Int) -> String {
+        n == 2 ? String(localized: "\(label) · twice", table: "Core", comment: "What went somewhere, and that it went twice")
+            : String(localized: "\(label) · \(n) times", table: "Core", comment: "What went somewhere, and how many times")
     }
 
     /// The schedule's own name, or "A schedule" when it has none to show.
     static func schedule(_ schedule: WeekRecord.Schedule, isNew: Bool) -> String {
-        schedule.name ?? (isNew ? "A new schedule" : "A schedule")
+        schedule.name ?? (isNew ? String(localized: "A new schedule", table: "Core") : String(localized: "A schedule", table: "Core"))
     }
 
     /// "Ran 6 times · 1 didn't finish · Paused".
     static func runs(_ schedule: WeekRecord.Schedule) -> String? {
         var parts: [String] = []
         if let runs = schedule.runs, runs.total > 0 {
-            parts.append("Ran \(times(runs.total))")
+            parts.append(runs.total == 2 ? String(localized: "Ran twice", table: "Core", comment: "A schedule ran twice this week")
+                : String(localized: "Ran \(runs.total) times", table: "Core", comment: "A schedule ran this many times this week"))
             let missed = runs.failed + runs.unfinished
-            if missed > 0 { parts.append(missed == 1 ? "1 didn't finish" : "\(missed) didn't finish") }
+            if missed > 0 { parts.append(String(localized: "\(missed) didn't finish", table: "Core", comment: "How many of a schedule's runs didn't finish")) }
         }
-        if schedule.paused { parts.append("Paused") }
+        if schedule.paused { parts.append(String(localized: "Paused", table: "Core", comment: "A schedule's state")) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     static func board(_ board: WeekRecord.Board) -> String {
-        if board.done > 0 { return board.done == 1 ? "Finished 1 Board task" : "Finished \(board.done) Board tasks" }
+        if board.done > 0 { return String(localized: "Finished \(board.done) Board tasks", table: "Core") }
         let other = board.stopped + board.failed
-        return other == 1 ? "Worked on 1 Board task" : "Worked on \(other) Board tasks"
+        return String(localized: "Worked on \(other) Board tasks", table: "Core")
     }
 
     static func boardDetail(_ board: WeekRecord.Board) -> String? {
         var parts: [String] = []
-        if board.stopped > 0 { parts.append("\(board.stopped) stopped") }
-        if board.failed > 0 { parts.append("\(board.failed) gave up") }
+        if board.stopped > 0 { parts.append(String(localized: "\(board.stopped) stopped", table: "Core", comment: "How many Board tasks were stopped")) }
+        if board.failed > 0 { parts.append(String(localized: "\(board.failed) gave up", table: "Core", comment: "How many Board tasks the helper gave up on")) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     static func asked(_ total: Int, more: Bool) -> String {
-        "Asked you \(times(total))" + (more ? ", more than usual" : "")
+        switch (total, more) {
+        case (2, false): String(localized: "Asked you twice", table: "Core")
+        case (2, true): String(localized: "Asked you twice, more than usual", table: "Core")
+        case (_, false): String(localized: "Asked you \(total) times", table: "Core")
+        case (_, true): String(localized: "Asked you \(total) times, more than usual", table: "Core")
+        }
     }
 
     /// "Yes 3 · No 1 · Always 1", in the order people say them.
     static func answered(_ answers: WeekRecord.Answers) -> String {
         var parts: [String] = []
-        if answers.yes > 0 { parts.append("Yes \(answers.yes)") }
-        if answers.always > 0 { parts.append("Always \(answers.always)") }
-        if answers.deny > 0 { parts.append("No \(answers.deny)") }
+        if answers.yes > 0 { parts.append(String(localized: "Yes \(answers.yes)", table: "Core", comment: "How many times the person said yes")) }
+        if answers.always > 0 { parts.append(String(localized: "Always \(answers.always)", table: "Core", comment: "How many times the person said always allow")) }
+        if answers.deny > 0 { parts.append(String(localized: "No \(answers.deny)", table: "Core", comment: "How many times the person said no")) }
         return parts.joined(separator: " · ")
     }
 
@@ -581,20 +605,24 @@ public enum WeeklyWords {
     }
 
     static func leftLine(_ record: WeekRecord, name: String) -> String {
-        guard record.papertrail != false else { return "Papertrail isn't on for \(name) yet." }
-        guard let replies = record.replies else { return "Nothing seen leaving." }
-        var parts: [String] = []
-        if replies.online > 0 {
-            parts.append("Went online \(times(replies.online)).")
+        guard record.papertrail != false else {
+            return String(localized: "Papertrail isn't on for \(name) yet.", table: "Core", comment: "Safety: Papertrail line; keep exact meaning")
+        }
+        let nothing = String(localized: "Nothing seen leaving.", table: "Core", comment: "Safety: Papertrail line; keep exact meaning")
+        guard let replies = record.replies else { return nothing }
+        let went: String
+        if replies.online == 2 {
+            went = String(localized: "Went online twice.", table: "Core", comment: "Safety: Papertrail line; keep exact meaning")
+        } else if replies.online > 0 {
+            went = String(localized: "Went online \(replies.online) times.", table: "Core", comment: "Safety: Papertrail line; keep exact meaning")
         } else if replies.left > 0 {
-            parts.append("Stayed on your network.")
+            went = String(localized: "Stayed on your network.", table: "Core", comment: "Safety: Papertrail line; keep exact meaning")
         } else {
-            parts.append("Nothing seen leaving.")
+            went = nothing
         }
-        if replies.stayed > 0 {
-            parts.append(replies.stayed == 1 ? "1 reply stayed on your Mac." : "\(replies.stayed) replies stayed on your Mac.")
-        }
-        return parts.joined(separator: " ")
+        guard replies.stayed > 0 else { return went }
+        return sentences(went, String(localized: "\(replies.stayed) replies stayed on your Mac.", table: "Core",
+                                      comment: "Safety: Papertrail line; keep exact meaning"))
     }
 
     static func placeSymbol(_ kind: String) -> String {
@@ -620,12 +648,12 @@ public enum WeeklyWords {
             if let provider = place.provider, let known = Papertrail.providerLabel(provider.lowercased()) { return known }
             if let label = place.label?.trimmingCharacters(in: .whitespaces), !label.isEmpty { return label }
             if let host = place.host, let name = URLComponents(string: host)?.host ?? Optional(host), !name.isEmpty { return name }
-            return "Its model"
-        case "search": return place.service.flatMap(Papertrail.serviceLabel) ?? "Web search"
-        case "pages": return "Web pages"
-        case "pictures": return "Pictures"
-        case "icloud": return "Your iCloud"
-        default: return place.host ?? "Somewhere online"
+            return String(localized: "Its model", table: "Core", comment: "Where a helper's words went: its own model")
+        case "search": return place.service.flatMap(Papertrail.serviceLabel) ?? String(localized: "Web search", table: "Core")
+        case "pages": return String(localized: "Web pages", table: "Core")
+        case "pictures": return String(localized: "Pictures", table: "Core", comment: "A place things went: a picture service")
+        case "icloud": return String(localized: "Your iCloud", table: "Core")
+        default: return place.host ?? String(localized: "Somewhere online", table: "Core")
         }
     }
 
@@ -633,19 +661,21 @@ public enum WeeklyWords {
     static func placeDetail(_ place: WeekRecord.Place) -> String {
         let n = place.count
         switch place.kind {
-        case "model": return "Model · \(times(n))"
-        case "search": return n == 1 ? "1 search" : "\(n) searches"
-        case "pages": return n == 1 ? "1 page read" : "\(n) pages read"
-        case "pictures": return n == 1 ? "1 asked for" : "\(n) asked for"
-        case "paid": return "Paid \(times(n))"
-        case "icloud": return n == 1 ? "1 note to your iPhone" : "\(n) notes to your iPhone"
-        case "terminal": return "Commands · \(times(n))"
-        case "code": return "Code · \(times(n))"
-        case "mcp": return "Connected app · \(times(n))"
-        case "reader": return "Pages read · \(times(n))"
-        case "hermes": return "The assistant itself · \(times(n))"
-        case "direct": return "Around the door · \(times(n))"
-        default: return "A program · \(times(n))"
+        case "model": return labelTimes(String(localized: "Model", table: "Core", comment: "What went somewhere: words to a model"), n)
+        case "search": return String(localized: "\(n) searches", table: "Core")
+        case "pages": return String(localized: "\(n) pages read", table: "Core")
+        case "pictures": return String(localized: "\(n) asked for", table: "Core", comment: "How many pictures a helper asked for")
+        case "paid":
+            return n == 2 ? String(localized: "Paid twice", table: "Core", comment: "Safety: payment count; keep exact meaning")
+                : String(localized: "Paid \(n) times", table: "Core", comment: "Safety: payment count; keep exact meaning")
+        case "icloud": return String(localized: "\(n) notes to your iPhone", table: "Core")
+        case "terminal": return labelTimes(String(localized: "Commands", table: "Core", comment: "What went somewhere: terminal commands"), n)
+        case "code": return labelTimes(String(localized: "Code", table: "Core", comment: "What went somewhere: code a helper ran"), n)
+        case "mcp": return labelTimes(String(localized: "Connected app", table: "Core"), n)
+        case "reader": return labelTimes(String(localized: "Pages read", table: "Core"), n)
+        case "hermes": return labelTimes(String(localized: "The assistant itself", table: "Core"), n)
+        case "direct": return labelTimes(String(localized: "Around the door", table: "Core", comment: "A program that went online without passing Nollie's network door"), n)
+        default: return labelTimes(String(localized: "A program", table: "Core"), n)
         }
     }
 
@@ -656,15 +686,16 @@ public enum WeeklyWords {
         switch line.kind {
         case .place:
             let service = line.symbol == placeSymbol("search") || line.symbol == placeSymbol("mcp")
-            said.text = service ? "\(helper) used something new" : "\(helper) reached a new place"
+            said.text = service ? String(localized: "\(helper) used something new", table: "Core")
+                : String(localized: "\(helper) reached a new place", table: "Core")
             said.detail = [line.text, line.detail].compactMap { $0 }.joined(separator: " · ")
         case .schedule:
-            said.text = "\(helper) has a new schedule"
-            said.detail = [line.subject.map { "\u{201C}\($0)\u{201D}" }, line.detail].compactMap { $0 }.joined(separator: " · ")
+            said.text = String(localized: "\(helper) has a new schedule", table: "Core")
+            said.detail = [line.subject.map { String(localized: "\u{201C}\($0)\u{201D}", table: "Core", comment: "A schedule's name in quotation marks") }, line.detail].compactMap { $0 }.joined(separator: " · ")
             if said.detail?.isEmpty == true { said.detail = nil }
         case .asked:
-            said.text = "\(helper) asked more than usual"
-            said.detail = [times(line.count).prefix(1).uppercased() + times(line.count).dropFirst(), line.detail]
+            said.text = String(localized: "\(helper) asked more than usual", table: "Core")
+            said.detail = [times(line.count), line.detail]
                 .compactMap { $0 }.joined(separator: " · ")
         case .board, .mac, .change:
             break
@@ -675,8 +706,10 @@ public enum WeeklyWords {
     /// What Papertrail can't see, in a few words. Nil when the filter is on or nothing was said.
     public static func filter(_ state: String?) -> String? {
         switch state {
-        case "off": "Papertrail's filter is off, so a program that skips Nollie's door could go unseen."
-        case "none": "This setup has no door, so Papertrail sees model calls, searches and pages only."
+        case "off": String(localized: "Papertrail's filter is off, so a program that skips Nollie's door could go unseen.", table: "Core",
+                           comment: "Safety: what Papertrail can't see; keep exact meaning")
+        case "none": String(localized: "This setup has no door, so Papertrail sees model calls, searches and pages only.", table: "Core",
+                            comment: "Safety: what Papertrail can't see; keep exact meaning")
         default: nil
         }
     }

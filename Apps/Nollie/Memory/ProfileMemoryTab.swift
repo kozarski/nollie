@@ -121,7 +121,7 @@ struct ProfileMemoryTab: View {
 
     @ViewBuilder private var filled: some View {
         CardHeadline(symbol: "brain.head.profile", tint: memory.isOn ? state.tint : Ink.text2,
-                     title: "What \(state.label) knows about you", line: headlineLine, id: "profile.memory.hero")
+                     title: LocalizedStringResource("What \(state.label) knows about you"), line: .verbatim(headlineLine), id: "profile.memory.hero")
         onSwitch
         addButton(prominent: false)
         ForEach(HelperMemoryKind.allCases) { kind in
@@ -134,9 +134,8 @@ struct ProfileMemoryTab: View {
     }
 
     private var headlineLine: String {
-        guard memory.isOn else { return "Off. It won't use these." }
-        let count = memory.shownCount
-        return count == 1 ? "1 thing" : "\(count) things"
+        guard memory.isOn else { return String(localized: "Off. It won't use these.", comment: "Memory is switched off") }
+        return String(localized: "\(memory.shownCount) things", comment: "How many things a bot remembers")
     }
 
     private var onSwitch: some View {
@@ -195,7 +194,7 @@ struct ProfileMemoryTab: View {
             PageNote("Private. Shown only on this Mac.", symbol: "lock.fill", tint: .purple, id: "profile.memory.private")
         }
         if let problem = memory.problem {
-            PageNote(problem, symbol: "exclamationmark.triangle.fill", tint: .orange, id: "profile.memory.problem")
+            PageNote(.verbatim(problem), symbol: "exclamationmark.triangle.fill", tint: .orange, id: "profile.memory.problem")
         }
     }
 

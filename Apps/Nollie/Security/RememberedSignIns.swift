@@ -29,13 +29,15 @@ final class SystemDeviceOwnerAuthenticator: DeviceOwnerAuthenticating {
     var methodName: String {
         let probe = LAContext()
         _ = probe.canEvaluatePolicy(Self.policy, error: nil)
+        // Also matched on (`RememberedSignInCopy`, the sign-in symbols), so it stays in English. Show
+        // `RememberedSignInCopy.shownMethod(_:)`.
         let byBiometry: [LABiometryType: String] = [.faceID: "Face ID", .touchID: "Touch ID", .opticID: "Optic ID"]
         return byBiometry[probe.biometryType] ?? (DeviceWords.isMac ? "Password" : "Passcode")
     }
 
     func authenticate(reason: String) async -> LAContext? {
         let session = LAContext()
-        session.localizedCancelTitle = "Not Now"
+        session.localizedCancelTitle = String(localized: "Not Now", comment: "Safety: cancels a Face ID check")
         guard let passed = try? await session.evaluatePolicy(Self.policy, localizedReason: reason), passed else {
             return nil
         }
@@ -74,21 +76,48 @@ final class DemoDeviceOwnerAuthenticator: DeviceOwnerAuthenticating {
 
 /// Phrases describing what guards a saved sign-in on this device.
 enum RememberedSignInCopy {
-    /// Phrasings produced: the passcode alone, Touch ID with your password, Face ID with the passcode.
-    static func guardedBy(_ method: String) -> String {
-        guard !DeviceWords.isMac else { return method == "Touch ID" ? "Touch ID or your password" : "your password" }
-        return method == "Passcode" ? "the passcode" : "\(method) or the passcode"
+    /// `methodName` as the person reads it: Face ID, Touch ID and Optic ID as they are, the rest in their language.
+    static func shownMethod(_ method: String) -> String {
+        switch method {
+        case "Passcode": String(localized: "Passcode", comment: "The device passcode, as a way to sign in")
+        case "Password": String(localized: "Password", comment: "The Mac's login password, as a way to sign in")
+        default: method
+        }
     }
 
-    /// Shown under the switch when it is on.
+    /// Phrasings produced: the passcode alone, Touch ID with your password, Face ID with the passcode.
+    /// `method` is a `methodName`, matched in English.
+    static func guardedBy(_ method: String) -> String {
+        guard !DeviceWords.isMac else {
+            return method == "Touch ID"
+                ? String(localized: "Touch ID or your password", comment: "In the middle of a sentence: what can sign you back in")
+                : String(localized: "your password", comment: "In the middle of a sentence: what can sign you back in")
+        }
+        return method == "Passcode"
+            ? String(localized: "the passcode", comment: "In the middle of a sentence: what can sign you back in")
+            : String(localized: "\(method) or the passcode", comment: "In the middle of a sentence; %@ is Face ID, Touch ID or Optic ID")
+    }
+
+    /// Shown under the switch when it is on. One whole sentence per case, so each language can build its own.
     static func kept(_ method: String) -> String {
-        let place = DeviceWords.isMac ? "this Mac's" : DeviceWords.this + "'s"
-        return "Kept in \(place) Keychain behind \(guardedBy(method)), so Nollie signs in again by itself when the session ends. Never synced to iCloud."
+        if DeviceWords.isMac {
+            return method == "Touch ID"
+                ? String(localized: "Kept in this Mac's Keychain behind Touch ID or your password, so Nollie signs in again by itself when the session ends. Never synced to iCloud.")
+                : String(localized: "Kept in this Mac's Keychain behind your password, so Nollie signs in again by itself when the session ends. Never synced to iCloud.")
+        }
+        let device = DeviceWords.device
+        return method == "Passcode"
+            ? String(localized: "Kept in this \(device)'s Keychain behind the passcode, so Nollie signs in again by itself when the session ends. Never synced to iCloud.",
+                     comment: "%@ is iPhone or iPad")
+            : String(localized: "Kept in this \(device)'s Keychain behind \(method) or the passcode, so Nollie signs in again by itself when the session ends. Never synced to iCloud.",
+                     comment: "The first %@ is iPhone or iPad, the second Face ID, Touch ID or Optic ID")
     }
 
     /// Appears beneath the switch on a device with no passcode.
     static var needsPasscode: String {
-        "Remembering a sign-in needs a " + (DeviceWords.isMac ? "login password on this Mac." : "passcode on \(DeviceWords.this).")
+        DeviceWords.isMac ? String(localized: "Remembering a sign-in needs a login password on this Mac.")
+                          : String(localized: "Remembering a sign-in needs a passcode on \(DeviceWords.this).",
+                                   comment: "%@ is a phrase like this iPhone")
     }
 }
 
@@ -102,10 +131,11 @@ enum RememberedSignInError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .gone: DeviceWords.This + " no longer remembers a sign-in for this gateway. Enter it again."
-        case .cancelled: "That check did not finish. Try once more, or type the sign-in."
-        case .moved: "The gateway's address changed since you saved this sign-in, so it has been cleared. Please enter it again."
-        case .rejected: "The gateway turned down the saved sign-in, so it has been cleared. Please enter the current one."
+        case .gone: String(localized: "\(DeviceWords.This) no longer remembers a sign-in for this gateway. Enter it again.",
+                           comment: "%@ is a phrase like This iPhone")
+        case .cancelled: String(localized: "That check did not finish. Try once more, or type the sign-in.")
+        case .moved: String(localized: "The gateway's address changed since you saved this sign-in, so it has been cleared. Please enter it again.")
+        case .rejected: String(localized: "The gateway turned down the saved sign-in, so it has been cleared. Please enter the current one.")
         }
     }
 }
@@ -313,7 +343,7 @@ final class RememberedSignInCoordinator {
     }
 
     private func attempt(_ connection: GatewayConnection, access: CloudflareAccess) async throws -> GatewaySecrets {
-        let reason = "Sign in to " + connection.name
+        let reason = String(localized: "Sign in to \(connection.name)", comment: "Safety: why Face ID is asked; %@ is a gateway's name")
         guard let context = await authenticator.authenticate(reason: reason) else {
             throw RememberedSignInError.cancelled
         }

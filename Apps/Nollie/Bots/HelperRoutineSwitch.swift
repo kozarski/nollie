@@ -74,13 +74,13 @@ final class HelperRoutineSwitch {
                 let reply = try await calls.create(profile, payload)
                 let made = ScheduledWork.decode(reply)
                 if made?.name != routine.jobName(for: helper) || ScheduledWork.owner(reply).map({ $0 != profile }) == true {
-                    problem = "That wasn't confirmed. Check Schedules."
+                    problem = String(localized: "That wasn't confirmed. Check Schedules.")
                 }
             } else {
                 return
             }
         } catch {
-            problem = on ? "It didn't turn on. Try again." : "It didn't turn off. Try again."
+            problem = on ? String(localized: "It didn't turn on. Try again.") : String(localized: "It didn't turn off. Try again.")
         }
         // What the gateway says now is the answer, also when the reply was lost on the way.
         await load(profile: profile, calls)

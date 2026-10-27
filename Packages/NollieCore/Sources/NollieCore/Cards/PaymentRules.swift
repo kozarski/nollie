@@ -251,12 +251,15 @@ public struct PaymentPlan: Equatable, Sendable {
     }
 }
 
-/// The card's words: what, where and with which card, then what the person will be asked on the Mac.
+/// The card's words: what, where and with which card, then what the person will be asked on the Mac. Shown on the
+/// approval card only, so in the person's language; the amount keeps its fixed form.
 public enum PaymentWords {
     public static func card(total: Decimal, currency: String, site: String, card: SavedCard, firstOnSite: Bool) -> String {
-        var lines = ["Pay \(PaymentMoney.text(total, currency)) to \(site) with \(card.label)."]
-        if firstOnSite { lines.append("First payment to this site.") }
-        lines.append("You type the security code on your Mac.")
+        let amount = PaymentMoney.text(total, currency), label = card.shownLabel
+        var lines = [String(localized: "Pay \(amount) to \(site) with \(label).", table: "Core",
+                            comment: "Safety: a payment the person is asked to approve: amount, site and card; keep exact meaning")]
+        if firstOnSite { lines.append(String(localized: "First payment to this site.", table: "Core", comment: "Safety: payment; keep exact meaning")) }
+        lines.append(String(localized: "You type the security code on your Mac.", table: "Core", comment: "Safety: payment; keep exact meaning"))
         return lines.joined(separator: "\n")
     }
 }

@@ -54,12 +54,16 @@ enum LocalNotifier {
         // Under Settings, Security, "Confirm approvals" decides what the buttons do. On: they launch the
         // app and the card checks once more. Off: the answer goes straight from the notification.
         let opensApp: UNNotificationActionOptions = ApprovalConfirm.isOn ? [.foreground] : []
-        let approve = UNNotificationAction(identifier: approveOnceAction, title: "Allow once",
+        let approve = UNNotificationAction(identifier: approveOnceAction,
+                                           title: String(localized: "Allow once", comment: "Safety: approval button; keep exact meaning"),
                                            options: approveOptions(confirm: ApprovalConfirm.isOn, ownerCheck: ApprovalOwnerCheck.isOn()))
         // Saying no is always safe, so Deny never asks to unlock, here or mirrored on the Watch.
-        let deny = UNNotificationAction(identifier: denyAction, title: "Deny", options: opensApp.union(.destructive))
-        let reply = UNTextInputNotificationAction(identifier: replyAction, title: "Reply", options: replyOptions,
-                                                  textInputButtonTitle: "Send", textInputPlaceholder: "Message")
+        let deny = UNNotificationAction(identifier: denyAction, title: String(localized: "Deny", comment: "Safety: approval button; keep exact meaning"),
+                                        options: opensApp.union(.destructive))
+        let reply = UNTextInputNotificationAction(identifier: replyAction, title: String(localized: "Reply", comment: "A notification button"),
+                                                  options: replyOptions,
+                                                  textInputButtonTitle: String(localized: "Send", comment: "Sends a reply typed in a notification"),
+                                                  textInputPlaceholder: String(localized: "Message", comment: "The reply box's hint in a notification"))
         let layout: [(String, [UNNotificationAction])] = [
             (approvalCategory, [approve, deny]), (clarifyCategory, []), (turnCategory, [reply]),
             (errorCategory, []), ("HERMES_ENC", []), ("HERMES_TEST", []),
@@ -142,26 +146,28 @@ enum LocalNotifier {
             case .card(let card) where card.approval != nil:
                 let approval = card.approval!
                 let described = approval.description ?? ""
-                self.init(title: bot + " · approval needed",
-                          body: described.isEmpty ? (approval.command ?? "A command needs your okay") : described,
+                self.init(title: String(localized: "\(bot) · approval needed", comment: "Safety: a notification title; %@ is the bot"),
+                          body: described.isEmpty
+                              ? (approval.command ?? String(localized: "A command needs your okay", comment: "Safety: an approval notification"))
+                              : described,
                           category: LocalNotifier.approvalCategory)
             case .card(let card) where card.clarify != nil:
                 let ask = card.clarify!
-                self.init(title: bot + " · question",
-                          body: ask.question ?? ask.questions?.first?.question ?? "Hermes needs an answer",
+                self.init(title: String(localized: "\(bot) · question", comment: "A notification title; %@ is the bot"),
+                          body: ask.question ?? ask.questions?.first?.question ?? String(localized: "Hermes needs an answer"),
                           category: LocalNotifier.clarifyCategory)
             case .card(let card):
-                self.init(title: bot + " · input needed",
-                          body: card.valuePrompt?.prompt ?? "Hermes is asking for a value",
+                self.init(title: String(localized: "\(bot) · input needed", comment: "A notification title; %@ is the bot"),
+                          body: card.valuePrompt?.prompt ?? String(localized: "Hermes is asking for a value"),
                           category: LocalNotifier.clarifyCategory)
             case .finished(let error?) where !error.isEmpty:
-                self.init(title: bot + " · turn failed", body: error, category: LocalNotifier.errorCategory)
+                self.init(title: String(localized: "\(bot) · turn failed", comment: "A notification title; %@ is the bot"), body: error, category: LocalNotifier.errorCategory)
             case .finished:
                 let lastReply = chat.items.last { item in
                     if case .assistant = item.kind { return true }
                     return false
                 }
-                var text = "Turn finished"
+                var text = String(localized: "Turn finished", comment: "A notification when a reply has no words to show")
                 if case .assistant(let said, _, _)? = lastReply?.kind { text = String(said.prefix(180)) }
                 self.init(title: bot, body: text, category: LocalNotifier.turnCategory)
             }
@@ -240,7 +246,7 @@ enum LocalNotifier {
         if !showsPreview(policy: NotificationPreviewPolicy.load(), profile: profile, connection: connection) {
             content.title = "Nollie"
             content.subtitle = ""
-            content.body = "There’s an update waiting for you in Nollie."
+            content.body = String(localized: "There’s an update waiting for you in Nollie.")
         }
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
     }

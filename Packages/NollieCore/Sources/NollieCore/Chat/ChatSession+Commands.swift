@@ -27,13 +27,27 @@ extension ChatSession {
         return fetched
     }
 
-    /// Why a command the gateway marks as not for the app is not run, in words for the person.
-    private static func reason(forDesktopFlag flag: String) -> String {
-        let reasons = ["terminal": "it needs the terminal",
-                       "settings": "use Settings instead",
-                       "composer-voice": "use the mic button instead",
-                       "messaging": "it is part of the messaging setup"]
-        return reasons[flag] ?? "the app cannot run it"
+    /// Why a command the gateway marks as not for the app is not run, in words for the person: "/voice: use the mic
+    /// button instead."
+    private static func notRun(_ name: String, desktopFlag flag: String) -> String {
+        switch flag {
+        case "terminal": String(localized: "/\(name): it needs the terminal.", table: "Core", comment: "A slash command the app does not run")
+        case "settings": String(localized: "/\(name): use Settings instead.", table: "Core", comment: "A slash command the app does not run")
+        case "composer-voice": String(localized: "/\(name): use the mic button instead.", table: "Core", comment: "A slash command the app does not run")
+        case "messaging": String(localized: "/\(name): it is part of the messaging setup.", table: "Core", comment: "A slash command the app does not run")
+        default: String(localized: "/\(name): the app cannot run it.", table: "Core", comment: "A slash command the app does not run")
+        }
+    }
+
+    /// "/name done", when a command printed nothing.
+    private static func done(_ name: String) -> String {
+        String(localized: "/\(name) done", table: "Core", comment: "A slash command finished and printed nothing")
+    }
+
+    /// "/name: what went wrong".
+    private static func failed(_ name: String, _ error: Error) -> String {
+        let why = error.localizedDescription
+        return String(localized: "/\(name): \(why)", table: "Core", comment: "A slash command, then the error it met")
     }
 
     /// Executes a typed `/command`. Some commands belong to this app: approve, stop, title, model,
@@ -47,7 +61,7 @@ extension ChatSession {
 
         if catalogCache == nil { _ = await commandsCatalog() }
         if let flag = catalogCache?.commands?["/" + typed.name]?.desktop, flag != "hidden" {
-            addNote("/\(typed.name): \(Self.reason(forDesktopFlag: flag)).", symbol: "info.circle")
+            addNote(Self.notRun(typed.name, desktopFlag: flag), symbol: "info.circle")
             return nil
         }
         do {
@@ -59,12 +73,12 @@ extension ChatSession {
             if let warning = answer.text("warning"), !warning.isEmpty {
                 printed = printed.isEmpty ? warning : warning + "\n\n" + printed
             }
-            addNote(printed.isEmpty ? "/\(typed.name) done" : printed)
+            addNote(printed.isEmpty ? Self.done(typed.name) : printed)
             return nil
         } catch let failure as RPCError where Self.needsCommandDispatch(failure) {
             return await dispatchViaCommand(typed, depth: depth)
         } catch {
-            addFailure("/\(typed.name): \(error.localizedDescription)")
+            addFailure(Self.failed(typed.name, error))
             return nil
         }
     }
@@ -83,7 +97,7 @@ extension ChatSession {
         let approval = cards.first { $0.method == "approval" }
         switch typed.name {
         case "approve":
-            if let approval { await respond(card: approval, result: ["choice": "once"]) } else { banner = "No approval is waiting." }
+            if let approval { await respond(card: approval, result: ["choice": "once"]) } else { banner = String(localized: "No approval is waiting.", table: "Core") }
         case "deny":
             if let approval { await respond(card: approval, result: ["choice": "deny"]) }
         case "stop":
@@ -91,7 +105,7 @@ extension ChatSession {
         case "title", "rename":
             guard let name = typed.given else { return false }
             await rename(name)
-            addNote("Renamed to \(name)", symbol: "pencil")
+            addNote(String(localized: "Renamed to \(name)", table: "Core", comment: "A chat was renamed"), symbol: "pencil")
         case "model":
             guard let model = typed.given else { return false }
             await switchModel(model)
@@ -99,9 +113,9 @@ extension ChatSession {
             guard let effort = typed.given else { return false }
             do {
                 try await setReasoning(effort)
-                addNote("Reasoning set to \(effort)", symbol: "brain")
+                addNote(String(localized: "Reasoning set to \(effort)", table: "Core", comment: "The value is the gateway's effort word, such as high"), symbol: "brain")
             } catch {
-                addFailure("/\(typed.name): \(error.localizedDescription)")
+                addFailure(Self.failed(typed.name, error))
             }
         case "new", "reset", "clear":
             // This chat stays put; a new chat with the same bot opens in front of it.
@@ -121,7 +135,7 @@ extension ChatSession {
         guard let catalog = known else { return }
         let groups = (catalog.categories ?? []).map { group in
             let lines = (group.pairs ?? []).map { "  " + $0.joined(separator: "  ") }
-            return ([group.name ?? "Commands"] + lines).joined(separator: "\n")
+            return ([group.name ?? String(localized: "Commands", table: "Core", comment: "A heading over slash commands")] + lines).joined(separator: "\n")
         }
         if groups.isEmpty {
             addNote(catalog.allPairs.map { "/\($0.name)  \($0.description)" }.joined(separator: "\n"), symbol: "questionmark.circle")
@@ -137,7 +151,7 @@ extension ChatSession {
             let result: CommandDispatchResult = try await ask("command.dispatch", params).decode()
             return await carryOut(result, for: typed, depth: depth)
         } catch {
-            addFailure("/\(typed.name): \(error.localizedDescription)")
+            addFailure(Self.failed(typed.name, error))
             return nil
         }
     }
@@ -146,7 +160,7 @@ extension ChatSession {
     private func carryOut(_ result: CommandDispatchResult, for typed: SlashInvocation, depth: Int) async -> String? {
         switch result.type {
         case "exec", "plugin":
-            addNote(result.display ?? result.output ?? result.notice ?? "/\(typed.name) done")
+            addNote(result.display ?? result.output ?? result.notice ?? Self.done(typed.name))
         case "send", "skill":
             if let message = result.message { await submit(text: message, queued: false) }
         case "prefill":
@@ -158,7 +172,8 @@ extension ChatSession {
                 let rest = typed.argument.map { " " + $0 } ?? ""
                 return await dispatchSlash("/" + target + rest, depth: depth + 1)
             }
-            banner = "/\(typed.name) points at /\(result.target ?? typed.name), which loops back to /\(typed.name)."
+            let name = typed.name, target = result.target ?? typed.name
+            banner = String(localized: "/\(name) points at /\(target), which loops back to /\(name).", table: "Core")
             return nil
         default:
             if let text = result.notice ?? result.display { addNote(text, symbol: "info.circle") }
@@ -173,9 +188,9 @@ extension ChatSession {
     private func switchModel(_ model: String) async {
         do {
             try await setModel(provider: nil, model: model)
-            addNote("Model set to \(model)", symbol: "cpu")
+            addNote(String(localized: "Model set to \(model)", table: "Core"), symbol: "cpu")
         } catch {
-            addFailure("/model: \(error.localizedDescription)")
+            addFailure(Self.failed("model", error))
         }
     }
 
@@ -197,7 +212,7 @@ extension ChatSession {
         if let fresh = try? answer["info"]?.decode(SessionLiveInfo.self) { info = fresh }
         let warning = (answer.text("warning") ?? "").trimmingCharacters(in: .whitespaces)
         if !warning.isEmpty { banner = warning }
-        if answer.flag("deferred") { banner = "The new model starts with your next message." }
+        if answer.flag("deferred") { banner = String(localized: "The new model starts with your next message.", table: "Core") }
     }
 
     /// Changes one setting and ignores what the gateway says back.

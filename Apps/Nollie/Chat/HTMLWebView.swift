@@ -93,9 +93,9 @@ final class CardWebView: WKWebView {
 
     override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
         guard let actions else { return super.willOpenMenu(menu, with: event) }
-        var entries: [(title: String, action: Selector)] = [("Open Full Screen", #selector(chooseFull))]
-        if actions.showSource != nil { entries.append(("Show Source", #selector(chooseSource))) }
-        entries.append(("Copy HTML", #selector(chooseCopy)))
+        var entries: [(title: String, action: Selector)] = [(String(localized: "Open Full Screen"), #selector(chooseFull))]
+        if actions.showSource != nil { entries.append((String(localized: "Show Source"), #selector(chooseSource))) }
+        entries.append((String(localized: "Copy HTML"), #selector(chooseCopy)))
         menu.removeAllItems()
         for entry in entries {
             menu.addItem(withTitle: entry.title, action: entry.action, keyEquivalent: "").target = self

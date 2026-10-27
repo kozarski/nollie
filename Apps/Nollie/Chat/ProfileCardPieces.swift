@@ -15,18 +15,19 @@ enum CardThinks: Equatable {
 
     static var macWords: String {
         #if os(macOS)
-        "On this Mac"
+        String(localized: "On this Mac", comment: "Where a bot's model runs")
         #else
-        "On your Mac"
+        String(localized: "On your Mac", comment: "Where a bot's model runs")
         #endif
     }
 
     var stance: CardStance {
         switch self {
-        case .mac: CardStance(symbol: "desktopcomputer", title: Self.macWords, line: "Private and free.", tint: .green)
-        case .plan(let name): CardStance(symbol: "person.crop.circle.badge.checkmark", title: name, line: "Uses the plan you pay for.", tint: .blue)
-        case .key(let name): CardStance(symbol: "key.fill", title: "Uses an API key", line: name, tint: .indigo)
-        case .unset: CardStance(symbol: "questionmark.circle", title: "Pick how it thinks", line: nil, tint: .orange)
+        case .mac: CardStance(symbol: "desktopcomputer", title: Self.macWords, line: String(localized: "Private and free."), tint: .green)
+        case .plan(let name):
+            CardStance(symbol: "person.crop.circle.badge.checkmark", title: name, line: String(localized: "Uses the plan you pay for."), tint: .blue)
+        case .key(let name): CardStance(symbol: "key.fill", title: String(localized: "Uses an API key"), line: name, tint: .indigo)
+        case .unset: CardStance(symbol: "questionmark.circle", title: String(localized: "Pick how it thinks"), line: nil, tint: .orange)
         }
     }
 
@@ -42,18 +43,24 @@ enum CardComputer {
     var stance: CardStance {
         switch self {
         case .usingMac:
-            CardStance(symbol: "cursorarrow.rays", title: "Using your Mac", line: "Turn the switch off to stop it.", tint: .orange)
+            CardStance(symbol: "cursorarrow.rays", title: String(localized: "Using your Mac", comment: "Safety: a bot is using the Mac's apps right now"),
+                       line: String(localized: "Turn the switch off to stop it.", comment: "Safety: how to stop a bot using the Mac"), tint: .orange)
         case .canUseMac:
-            CardStance(symbol: "cursorarrow.rays", title: "Can use your Mac", line: "Asks in the chat first, never on schedules.", tint: .green)
+            CardStance(symbol: "cursorarrow.rays", title: String(localized: "Can use your Mac", comment: "Safety: a bot may use the Mac's apps"),
+                       line: String(localized: "Asks in the chat first, never on schedules.", comment: "Safety: when a bot may use the Mac; keep exact meaning"), tint: .green)
         case .ownComputer(let gettingReady):
-            CardStance(symbol: "macwindow", title: "Has its own computer",
-                       line: gettingReady ? "Getting it ready." : "Your files stay out of reach.", tint: .green)
+            CardStance(symbol: "macwindow", title: String(localized: "Has its own computer"),
+                       line: gettingReady ? String(localized: "Getting it ready.")
+                                          : String(localized: "Your files stay out of reach.", comment: "Safety: a bot on its own computer cannot reach the person's files"),
+                       tint: .green)
         case .handsOff:
-            CardStance(symbol: "hand.raised.fill", title: "Hands off your Mac", line: "It can't click or type in your apps.", tint: .blue)
+            CardStance(symbol: "hand.raised.fill", title: String(localized: "Hands off your Mac", comment: "Safety: a bot may not use the Mac's apps"),
+                       line: String(localized: "It can't click or type in your apps.", comment: "Safety: what a hands-off bot cannot do"), tint: .blue)
         case .checking:
-            CardStance(symbol: "ellipsis.circle", title: "Checking", line: nil, tint: Ink.text2)
+            CardStance(symbol: "ellipsis.circle", title: String(localized: "Checking"), line: nil, tint: Ink.text2)
         case .unknown:
-            CardStance(symbol: "wifi.exclamationmark", title: "Couldn't check", line: "Your Mac didn't answer this time.", tint: .orange)
+            CardStance(symbol: "wifi.exclamationmark", title: String(localized: "Couldn't check"),
+                       line: String(localized: "Your Mac didn't answer this time."), tint: .orange)
         }
     }
 }
@@ -67,6 +74,21 @@ struct CardHeadline: View {
     var line: String? = nil
     /// The title's identifier; the line's is the same with `.lead` in place of `.hero`.
     var id: String
+
+    init(symbol: String, tint: Color, title: LocalizedStringResource, titleTint: Color = Ink.text,
+         line: LocalizedStringResource? = nil, id: String) {
+        self.init(verbatim: symbol, tint: tint, title: String(localized: title), titleTint: titleTint,
+                  line: line.map { String(localized: $0) }, id: id)
+    }
+
+    fileprivate init(verbatim symbol: String, tint: Color, title: String, titleTint: Color = Ink.text, line: String? = nil, id: String) {
+        self.symbol = symbol
+        self.tint = tint
+        self.title = title
+        self.titleTint = titleTint
+        self.line = line
+        self.id = id
+    }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -134,6 +156,16 @@ struct CardFact: Identifiable {
     var value: String
     var monospaced = false
     var id: String { title }
+
+    init(title: LocalizedStringResource, value: String, monospaced: Bool = false) {
+        self.init(verbatim: String(localized: title), value: value, monospaced: monospaced)
+    }
+
+    fileprivate init(verbatim title: String, value: String, monospaced: Bool = false) {
+        self.title = title
+        self.value = value
+        self.monospaced = monospaced
+    }
 }
 
 struct CardFacts: View {
@@ -159,11 +191,12 @@ struct CardFacts: View {
 /// "Saved description." in green, or what went wrong in orange.
 struct CardNote: View {
     var words: String
+    /// A save went through. Passed alongside the words, which are in the person's language.
+    var saved: Bool
     var id: String? = nil
 
     var body: some View {
-        let saved = words.hasPrefix("Saved")
-        PageNote(words, symbol: saved ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
+        PageNote(.verbatim(words), symbol: saved ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
                  tint: saved ? .green : .orange, id: id)
     }
 }

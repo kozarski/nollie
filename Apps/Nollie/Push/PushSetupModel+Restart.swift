@@ -56,7 +56,7 @@ extension PushSetupModel {
     func checkRestartNow(runtime rt: GatewayRuntime) async {
         await checkCompanion(runtime: rt)
         guard let since = restartBegan ?? restartAskedAt, reportedSince(since) else {
-            restartError = "Not back yet. The companion has not checked in since the restart started."
+            restartError = String(localized: "Not back yet. The companion has not checked in since the restart started.")
             return
         }
         stopWaitingForRestart()
@@ -66,7 +66,7 @@ extension PushSetupModel {
 
     /// Closes the maintenance line as finished and reconnects this app to the gateway.
     private func markBackUp(_ rt: GatewayRuntime) async {
-        rt.maintenance.finishEarly("Restarting gateway: back up")
+        rt.maintenance.finishEarly(String(localized: "Restarting gateway: back up"))
         await rt.reconnectNow()
     }
 
@@ -80,7 +80,7 @@ extension PushSetupModel {
     private func waitForRestart(runtime rt: GatewayRuntime) async {
         restarting = true
         restartBegan = Date()
-        restartStage = "Asking the gateway to restart"
+        restartStage = String(localized: "Asking the gateway to restart")
         restartError = nil
         defer { (restarting, restartBegan, restartStage) = (false, nil, "") }
         if updateNeedsRestart { return await finishUpdateAfterRestart(runtime: rt) }
@@ -97,7 +97,7 @@ extension PushSetupModel {
         var call = Task { await rt.maintenance.restartGateway(runtime: rt, profile: profile) }
         var renewed = false
 
-        restartStage = "Waiting for the companion to report back"
+        restartStage = String(localized: "Waiting for the companion to report back")
         var callFailed = false
         let found = await poll(times: 40) {
             if case .failed(let why) = rt.maintenance.phase {
@@ -118,7 +118,7 @@ extension PushSetupModel {
         if Task.isCancelled { return restartStage = "" }
         if !back, case .failed = rt.maintenance.phase {
             // Even if the request errored, the restart may have gone through: the session ends with the old process.
-            restartStage = "The restart call failed. Checking whether the gateway came back anyway"
+            restartStage = String(localized: "The restart call failed. Checking whether the gateway came back anyway")
             back = await poll(times: 20) {
                 await checkCompanion(runtime: rt)
                 return reportedSince(began)
@@ -127,14 +127,13 @@ extension PushSetupModel {
         }
         if !back {
             // A dashboard that never replies must not keep the page spinning forever.
-            restartStage = "Giving the gateway one more half minute"
+            restartStage = String(localized: "Giving the gateway one more half minute")
             _ = await poll(times: 30, every: .seconds(1)) { !rt.maintenance.isBusy }
             if Task.isCancelled { return restartStage = "" }
             if rt.maintenance.isBusy {
                 call.cancel()
-                rt.maintenance.finishEarly("Gateway restart: still waiting for an answer")
-                restartError = "The gateway has not reported back yet. It may still be restarting. "
-                    + "Check now looks again, or finish later and come back."
+                rt.maintenance.finishEarly(String(localized: "Gateway restart: still waiting for an answer"))
+                restartError = String(localized: "The gateway has not reported back yet. It may still be restarting. Check now looks again, or finish later and come back.")
                 return
             }
         } else {
@@ -143,7 +142,7 @@ extension PushSetupModel {
         // The companion decides. If it checks in now, the restart took place, regardless of what the request said.
         await checkCompanion(runtime: rt)
         if companionHealthy, let beat = heartbeat, -Date(timeIntervalSince1970: beat.updatedAt).timeIntervalSinceNow < 90 {
-            if case .failed = rt.maintenance.phase { rt.maintenance.finishEarly("Restarting gateway: back up") }
+            if case .failed = rt.maintenance.phase { rt.maintenance.finishEarly(String(localized: "Restarting gateway: back up")) }
             (restartError, restartPending) = (nil, false)
         } else if case .failed(let why) = rt.maintenance.phase {
             restartError = why

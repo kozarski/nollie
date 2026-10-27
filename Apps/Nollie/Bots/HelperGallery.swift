@@ -94,7 +94,7 @@ final class HelperGallery {
             let reply = try await calls.add(helper.request)
             guard reply.ok == true, reply.status == "added", let profile = reply.profile, !profile.isEmpty,
                   let token = reply.undo else {
-                problem = reply.error ?? "\(helper.name) wasn't added. Try again."
+                problem = reply.error ?? String(localized: "\(helper.shownName) wasn't added. Try again.")
                 return nil
             }
             // The look belongs to the new bot before it first appears anywhere.
@@ -104,7 +104,7 @@ final class HelperGallery {
             return profile
         } catch {
             // A lost answer is safe to try again: a second add of the same name is refused.
-            problem = Self.words(error) ?? "\(helper.name) wasn't confirmed. Try again."
+            problem = Self.words(error) ?? String(localized: "\(helper.shownName) wasn't confirmed. Try again.")
             return nil
         }
     }
@@ -118,7 +118,7 @@ final class HelperGallery {
         do {
             let reply = try await calls.undo(entry.token)
             guard reply.ok == true else {
-                problem = reply.error ?? reply.note ?? "That didn't go through. Try again."
+                problem = reply.error ?? reply.note ?? String(localized: "That didn't go through. Try again.")
                 return nil
             }
             added.removeAll { $0.helper == helper.id }
@@ -126,7 +126,7 @@ final class HelperGallery {
             room += 1
             return entry.profile
         } catch {
-            problem = Self.words(error) ?? "That didn't go through. Try again."
+            problem = Self.words(error) ?? String(localized: "That didn't go through. Try again.")
             return nil
         }
     }

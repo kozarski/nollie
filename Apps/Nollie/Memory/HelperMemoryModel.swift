@@ -108,7 +108,7 @@ final class HelperMemoryModel {
         } catch {
             guard self.operation == operation, !Task.isCancelled else { return }
             if memory == nil { phase = .failed }
-            problem = "Couldn't read this. Try again."
+            problem = String(localized: "Couldn't read this. Try again.")
         }
     }
 
@@ -148,7 +148,7 @@ final class HelperMemoryModel {
             }
             return .changed(kept)
         } catch HelperMemoryError.refused(let words) {
-            return .refused(words.isEmpty ? "Your helper can't keep that." : words)
+            return .refused(words.isEmpty ? String(localized: "Your helper can't keep that.") : words)
         } catch {
             return .failed
         }
@@ -205,7 +205,7 @@ final class HelperMemoryModel {
         } catch {
             leaving.removeAll { $0 == waiting }
             await load(door)
-            problem = "Couldn't forget that. Try again."
+            problem = String(localized: "Couldn't forget that. Try again.")
         }
     }
 
@@ -220,7 +220,7 @@ final class HelperMemoryModel {
             problem = nil
         } catch {
             memory = was
-            problem = "Couldn't change that. Try again."
+            problem = String(localized: "Couldn't change that. Try again.")
         }
     }
 

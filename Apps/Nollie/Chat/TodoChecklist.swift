@@ -49,7 +49,9 @@ struct TodoChecklist: View {
 
     private var tally: String {
         let left = items.count - shown.count
-        return "\(doneCount) of \(items.count) done" + (left > 0 ? ", \(left) more" : "")
+        return left > 0
+            ? String(localized: "\(doneCount) of \(items.count) done, \(left) more", comment: "A todo list's tally; more are not shown")
+            : String(localized: "\(doneCount) of \(items.count) done", comment: "A todo list's tally")
     }
 
     var body: some View {

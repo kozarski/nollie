@@ -46,9 +46,9 @@ final class FileFetch {
     /// The line under the file name: a problem, progress, the size, or how to get it.
     var status: String {
         if let problem { return problem }
-        if downloading { return "Downloading…" }
+        if downloading { return String(localized: "Downloading…") }
         guard let copy, let bytes = try? FileManager.default.attributesOfItem(atPath: copy.path)[.size] as? Int else {
-            return "\(DeviceWords.Tap) to download"
+            return DeviceWords.isMac ? String(localized: "Click to download") : String(localized: "Tap to download")
         }
         return ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
     }
@@ -62,7 +62,7 @@ final class FileFetch {
     func download(runtime: GatewayRuntime?) async {
         if downloading { return }
         guard let runtime else {
-            problem = "There is no gateway connected right now."
+            problem = String(localized: "There is no gateway connected right now.")
             return
         }
         downloading = true
@@ -228,17 +228,17 @@ enum FileFetchFailure {
     static func describe(_ error: Error, name: String) -> String {
         switch error {
         case HermesAPIError.http(401, _), HermesAPIError.http(403, _):
-            return "The gateway would not let Nollie open \(name)."
+            return String(localized: "The gateway would not let Nollie open \(name).", comment: "A file's name follows open")
         case HermesAPIError.http(404, _):
-            return "\(name) is gone from the gateway."
+            return String(localized: "\(name) is gone from the gateway.", comment: "A file's name comes first")
         case HermesAPIError.http(413, _):
-            return "\(name) is too big for the gateway to send."
+            return String(localized: "\(name) is too big for the gateway to send.", comment: "A file's name comes first")
         case HermesAPIError.transport:
-            return "Nollie could not get to the gateway to fetch \(name)."
+            return String(localized: "Nollie could not get to the gateway to fetch \(name).", comment: "A file's name follows fetch")
         case let failure as URLError where offlineCodes.contains(failure.code):
-            return "You are offline. \(name) can download once the gateway is back."
+            return String(localized: "You are offline. \(name) can download once the gateway is back.", comment: "A file's name")
         default:
-            return "\(name) did not download: \(error.localizedDescription)"
+            return String(localized: "\(name) did not download: \(error.localizedDescription)", comment: "A file's name, then the reason")
         }
     }
 }

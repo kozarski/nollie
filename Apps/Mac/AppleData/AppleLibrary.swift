@@ -5,7 +5,8 @@ import NollieCore
 
 /// The person's calendars and reminders (EventKit) and contacts (Contacts), read and changed by
 /// Nollie itself, so macOS names Nollie when it asks. Nothing here asks: `access` only reads, and
-/// `request` is called by the switch in Bot settings and nowhere else.
+/// `request` is called by the switch in Bot settings and nowhere else. Its refusals go back to the
+/// bot's model, so they stay in English.
 final class AppleLibrary: AppleDataLibrary, @unchecked Sendable {
     private let lock = NSLock()
     private var eventStore: EKEventStore?

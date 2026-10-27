@@ -80,8 +80,9 @@ final class RemovalRunner {
             try? await Task.sleep(for: .milliseconds(180))
             return nil
         }
-        if step.url != nil, !RemovalPlan.permits(step, in: places) {
-            return "Nollie left \(step.url?.lastPathComponent ?? "something") alone, because it isn't Nollie's to remove."
+        if let url = step.url, !RemovalPlan.permits(step, in: places) {
+            return String(localized: "Nollie left \(url.lastPathComponent) alone, because it isn't Nollie's to remove.",
+                          comment: "Safety: Remove Nollie, a step it refused; the placeholder is a file or folder name; keep exact meaning")
         }
         switch step {
         case .stopRuntime: return await services.stopRuntime()
@@ -109,14 +110,16 @@ final class RemovalRunner {
         guard Disk.exists(url) else { return nil }
         // removeItem deletes links inside as links; it never follows them.
         do { try fileManager.removeItem(at: url); return nil } catch {
-            return "Couldn't delete \(url.lastPathComponent). You can delete it in Finder."
+            return String(localized: "Couldn't delete \(url.lastPathComponent). You can delete it in Finder.",
+                          comment: "Safety: Remove Nollie, what stayed; the placeholder is a file or folder name; keep exact meaning")
         }
     }
 
     /// A dated copy first, then the new text written beside the file and moved over it.
     private func tidy(_ config: URL) -> String? {
         guard let data = Disk.readSmallFile(config, maximum: 1_000_000), let text = String(data: data, encoding: .utf8) else {
-            return "Couldn't read your Hermes settings, so they still list Nollie's add-ons."
+            return String(localized: "Couldn't read your Hermes settings, so they still list Nollie's add-ons.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
         }
         guard let updated = HermesPluginList.removing(RemovalPlan.addOnNames, from: text) else { return nil }
         let stamp = Self.stamp.string(from: Date())
@@ -127,11 +130,13 @@ final class RemovalRunner {
         guard fileManager.createFile(atPath: backup.path, contents: data, attributes: [.posixPermissions: 0o600]),
               fileManager.createFile(atPath: temporary.path, contents: Data(updated.utf8), attributes: [.posixPermissions: mode]) else {
             try? fileManager.removeItem(at: temporary)
-            return "Couldn't update your Hermes settings, so they still list Nollie's add-ons."
+            return String(localized: "Couldn't update your Hermes settings, so they still list Nollie's add-ons.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
         }
         guard rename(temporary.path, config.path) == 0 else {
             try? fileManager.removeItem(at: temporary)
-            return "Couldn't update your Hermes settings, so they still list Nollie's add-ons."
+            return String(localized: "Couldn't update your Hermes settings, so they still list Nollie's add-ons.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
         }
         return nil
     }

@@ -44,7 +44,7 @@ extension GatewayRuntime {
 
         guard let host = await resolver.resolve(link, lastGood: connection.gateway.host) else {
             try Task.checkCancellation()
-            let message = "Can't reach \(link.macName). At home, check that it's awake. Away, both need Tailscale."
+            let message = String(localized: "Can't reach \(link.macName). At home, check that it's awake. Away, both need Tailscale.", table: "Core")
             linkUnreachable = message
             lastError = message
             throw HermesAPIError.transport(message)

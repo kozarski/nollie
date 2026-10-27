@@ -136,7 +136,7 @@ struct MemberHelperCard: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
             }
-            Button(action: newChat) { PageActionLabel("New chat", symbol: "square.and.pencil") }
+            Button(action: newChat) { PageActionLabel(LocalizedStringResource("New chat"), symbol: "square.and.pencil") }
                 .pageAction(tint: .teal)
                 .accessibilityLabel("New chat with \(helper.name)")
                 .testID("member.newChat")
@@ -166,7 +166,7 @@ struct MemberChatRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(chat.title.flatMap { $0.isEmpty ? nil : $0 } ?? "New chat")
+            Text(chat.title.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "New chat"))
                 .font(.body.weight(.medium)).foregroundStyle(Ink.text)
                 .lineLimit(2)
             Spacer(minLength: 8)

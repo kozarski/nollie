@@ -443,7 +443,7 @@ public struct HermesConversationPosts: ConversationPostSource {
         let body = try GatewayJSON.parse(answer.body)
         // The updated post, on its own or under `post`.
         guard let post = ConversationPost(wire: body["post"] ?? body), post.id == postId else {
-            throw answer.status == 409 ? HermesAPIError.http(status: 409, detail: "") : HermesAPIError.decoding("no post in the answer")
+            throw answer.status == 409 ? HermesAPIError.http(status: 409, detail: "") : HermesAPIError.decoding(String(localized: "no post in the answer", table: "Core", comment: "After: The gateway sent something unexpected:"))
         }
         return post
     }

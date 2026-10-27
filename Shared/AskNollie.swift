@@ -42,7 +42,7 @@ enum AskNollieTarget: String, AppEnum {
 
 /// The Ask Nollie control's words. Shared so tests can hold them to the copy rules.
 enum AskNollieWords {
-    static let control = "Ask Nollie"
-    static let controlDescription = "Opens your main chat, ready to type."
+    static let control = String(localized: "Ask Nollie")
+    static let controlDescription = String(localized: "Opens your main chat, ready to type.")
     static let controlSymbol = "bubble.left.fill"
 }

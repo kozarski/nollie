@@ -95,7 +95,7 @@ final class PushSetupModel {
     // MARK: Wizard progress
 
     var registering = false
-    var registerOutcome: String?
+    var registerOutcome: (failed: Bool, text: String)?
     var installing = false
     var installingPlugin = false
     var uploadedAt: Date?
@@ -219,20 +219,21 @@ final class PushSetupModel {
     }
 
     var startAdvice: String {
-        if companionHealthy { return "You're connected. Head on to the overview." }
-        if companionSignInRejected { return "The gateway turned down the companion's sign-in. Sign in again, then install it. Your Apple key and progress are kept." }
-        if signInNeedsInstall { return "The new sign-in is saved. Install it so the companion can reconnect." }
-        if waitingForSignInHeartbeat { return "Waiting for the companion to check the new sign-in." }
-        if restartPending { return "Installed, but the gateway has not restarted yet, and nothing works until it does. Restart it below." }
+        if companionHealthy { return String(localized: "You're connected. Head on to the overview.") }
+        if companionSignInRejected { return String(localized: "The gateway turned down the companion's sign-in. Sign in again, then install it. Your Apple key and progress are kept.") }
+        if signInNeedsInstall { return String(localized: "The new sign-in is saved. Install it so the companion can reconnect.") }
+        if waitingForSignInHeartbeat { return String(localized: "Waiting for the companion to check the new sign-in.") }
+        if restartPending { return String(localized: "Installed, but the gateway has not restarted yet, and nothing works until it does. Restart it below.") }
         guard let beat = heartbeat else {
-            return installedVersion == nil ? "Install the plugin in step 4 first." : "No heartbeat yet. Restart the gateway so Hermes loads the plugin, then give it a few seconds."
+            return installedVersion == nil ? String(localized: "Install the plugin in step 4 first.")
+                : String(localized: "No heartbeat yet. Restart the gateway so Hermes loads the plugin, then give it a few seconds.")
         }
-        if Date().timeIntervalSince1970 - beat.updatedAt > Self.heartbeatSeconds * 6 { return "The companion stopped sending heartbeats. Restart the gateway." }
-        if runningOlderCode || !installedScriptMatches { return "The gateway is still running an older companion than the installed one. Restart it." }
+        if Date().timeIntervalSince1970 - beat.updatedAt > Self.heartbeatSeconds * 6 { return String(localized: "The companion stopped sending heartbeats. Restart the gateway.") }
+        if runningOlderCode || !installedScriptMatches { return String(localized: "The gateway is still running an older companion than the installed one. Restart it.") }
         if beat.connected == false, let why = beat.error, why != "connecting…" {
-            return "The companion is up but cannot reach the gateway: \(why). Go back, fix the address or sign-in, and install again. It switches within ten seconds, no restart needed."
+            return String(localized: "The companion is up but cannot reach the gateway: \(why). Go back, fix the address or sign-in, and install again. It switches within ten seconds, no restart needed.")
         }
-        return "Connecting…"
+        return String(localized: "Connecting…", comment: "The companion is connecting to the gateway")
     }
 
     // MARK: Credentials
@@ -248,9 +249,15 @@ final class PushSetupModel {
     func credentialText(for rt: GatewayRuntime) -> String {
         let credential = credential(for: rt)
         if case .ready(let provider) = credential {
-            return (companionHealthy ? "connected" : "sign-in saved") + (provider.map { " via \($0)" } ?? "")
+            switch (companionHealthy, provider) {
+            case (true, let provider?): return String(localized: "connected via \(provider)", comment: "The companion's sign-in; %@ is the sign-in provider")
+            case (false, let provider?): return String(localized: "sign-in saved via \(provider)", comment: "The companion's sign-in; %@ is the sign-in provider")
+            case (true, nil): return String(localized: "connected", comment: "The companion's sign-in")
+            case (false, nil): return String(localized: "sign-in saved", comment: "The companion's sign-in")
+            }
         }
-        return credential == .sessionToken ? "gateway session token" : "not signed in"
+        return credential == .sessionToken ? String(localized: "gateway session token", comment: "How the companion signs in")
+                                           : String(localized: "not signed in", comment: "The companion's sign-in")
     }
 
     func appleReady(push: PushRegistrar) -> Bool {
@@ -408,7 +415,7 @@ final class PushSetupModel {
             companionCheckedAt = Date()
         }
         guard let home = rt.profileHome else {
-            companionCheckError = "The gateway did not say where its home folder is."
+            companionCheckError = String(localized: "The gateway did not say where its home folder is.")
             return
         }
         do {

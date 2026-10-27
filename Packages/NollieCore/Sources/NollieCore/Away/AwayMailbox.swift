@@ -200,7 +200,7 @@ public final class AwayDesk {
             cards[id] = nil
             await post(.closed(card: id, outcome: outcome), to: phone)
         case .stop:
-            let paused = await handler.stop(device: phones[phone]?.name ?? "your iPhone")
+            let paused = await handler.stop(device: phones[phone]?.name ?? String(localized: "your iPhone", table: "Core", comment: "As in: You said yes at 14:02 on your iPhone"))
             await post(.stopped(request: letter.id, paused: paused), to: phone)
         case .status:
             await post(.helpers(request: letter.id, helpers: await handler.helpers()), to: phone)

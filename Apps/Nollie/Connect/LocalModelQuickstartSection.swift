@@ -30,21 +30,21 @@ enum LocalModelStage: Equatable {
     }
     var title: String {
         switch self {
-        case .getting, .finishing: "Getting your model"
-        case .paused: "Download paused"
-        case .didntFinish: "Didn't finish"
-        case .unsure: "Check your download"
+        case .getting, .finishing: String(localized: "Getting your model")
+        case .paused: String(localized: "Download paused")
+        case .didntFinish: String(localized: "Didn't finish")
+        case .unsure: String(localized: "Check your download")
         case .readyToTry, .ready: ModelPlace.here
         }
     }
     var line: String? {
         switch self {
         case .getting(let words), .paused(let words): words
-        case .finishing: "Almost ready."
-        case .didntFinish: "Downloaded parts are kept."
-        case .unsure: "It may still be going."
-        case .readyToTry: "Ready to try."
-        case .ready: "Ready."
+        case .finishing: String(localized: "Almost ready.")
+        case .didntFinish: String(localized: "Downloaded parts are kept.")
+        case .unsure: String(localized: "It may still be going.")
+        case .readyToTry: String(localized: "Ready to try.")
+        case .ready: String(localized: "Ready.", comment: "The downloaded model is ready")
         }
     }
     var tint: Color {
@@ -125,7 +125,7 @@ final class LocalModelDownload {
         let whole = formatter.string(fromByteCount: Int64(clamping: total))
         formatter.includesUnit = false
         let done = formatter.string(fromByteCount: Int64(clamping: min(job.doneBytes, total)))
-        return "\(done) of \(whole)"
+        return String(localized: "\(done) of \(whole)", comment: "Download progress, such as 1.4 of 3.5 GB")
     }
 }
 
@@ -182,7 +182,7 @@ struct LocalModelQuickstartSection: View {
                 if [.starting, .installing, .paused, .checkingSelection].contains(setup.state) { progress(setup) }
                 controls(setup)
                 if [.selected, .checkingReply, .ready].contains(setup.state) { done(setup) }
-                if let message = setup.message { PageNote(message, id: "models.local.message") }
+                if let message = setup.message { PageNote(.verbatim(message), id: "models.local.message") }
                 if [.starting, .installing, .paused].contains(setup.state) {
                     PageNote("Closing this page won't stop the download.")
                 }
@@ -214,7 +214,7 @@ struct LocalModelQuickstartSection: View {
     private func offer(_ entry: LocalModelCatalogEntry) -> some View {
         VStack(spacing: 14) {
             LocalModelCapsule(symbol: "cpu", tint: .accentColor, title: entry.displayName,
-                              line: entry.id == snapshot.recommended?.id ? "Recommended for this Mac" : "Fits this Mac",
+                              line: entry.id == snapshot.recommended?.id ? String(localized: "Recommended for this Mac") : String(localized: "Fits this Mac"),
                               value: entry.downloadLabel, chosen: true)
                 .testID("models.local.recommendation")
             Button { proposed = entry; confirming = true } label: {
@@ -233,7 +233,7 @@ struct LocalModelQuickstartSection: View {
         let paused = setup.state == .paused
         let tint: Color = paused ? .orange : .blue
         let words = LocalModelDownload.progressWords(setup.job)
-            ?? (setup.state == .checkingSelection ? "Almost ready" : "Getting ready")
+            ?? (setup.state == .checkingSelection ? String(localized: "Almost ready") : String(localized: "Getting ready"))
         let large = typeSize.isAccessibilitySize
         let layout = large ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(spacing: 14))
         return layout {
@@ -282,12 +282,12 @@ struct LocalModelQuickstartSection: View {
     @ViewBuilder private func done(_ setup: LocalModelQuickstart) -> some View {
         let entry = LocalModelDownload.entry(for: setup.selectedModel, in: snapshot)
         let line: String = switch setup.state {
-        case .ready: "Answered a first reply."
-        case .checkingReply: "Waiting for its first reply."
-        default: "Chosen for new chats."
+        case .ready: String(localized: "Answered a first reply.")
+        case .checkingReply: String(localized: "Waiting for its first reply.")
+        default: String(localized: "Chosen for new chats.")
         }
         LocalModelCapsule(symbol: setup.state == .ready ? "checkmark.circle.fill" : "cpu", tint: .green,
-                          title: entry?.displayName ?? "Your model", line: line)
+                          title: entry?.displayName ?? String(localized: "Your model"), line: line)
             .testID("models.local.status")
         if setup.state == .selected {
             PageNote("To check it answers, try a first reply under Advanced.")

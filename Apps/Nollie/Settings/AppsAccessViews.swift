@@ -34,50 +34,87 @@ enum BotAccessPresentation {
     }
 
     private static let builtInToolsets: [String: ToolsetCopy] = [
-        "web": .init(title: "Web research", description: "Search the web and read pages."),
-        "search": .init(title: "Web search", description: "Find information on the web."),
-        "x_search": .init(title: "Search X", description: "Find public posts and conversations on X."),
-        "vision": .init(title: "Understand images", description: "Read and describe images."),
-        "video": .init(title: "Understand videos", description: "Review and describe video content."),
-        "image_gen": .init(title: "Create images", description: "Make images from your descriptions."),
-        "video_gen": .init(title: "Create videos", description: "Make and edit videos with a configured service."),
-        "computer_use": .init(title: "Computer control", description: "See a screen and use its mouse and keyboard when access is allowed."),
-        "terminal": .init(title: "Run commands", description: "Run programs and manage processes on the assistant's computer."),
-        "skills": .init(title: "Skills", description: "Read and manage instructions for common tasks."),
-        "browser": .init(title: "Use websites", description: "Open pages, click controls and fill in forms."),
-        "cronjob": .init(title: "Scheduled tasks", description: "Create, update, pause and run scheduled tasks."),
-        "file": .init(title: "Files", description: "Find, read and change files the assistant can access."),
-        "tts": .init(title: "Read aloud", description: "Turn text into spoken audio."),
-        "todo": .init(title: "Plan tasks", description: "Keep track of the steps in a piece of work."),
-        "memory": .init(title: "Memory", description: "Remember useful details between conversations."),
-        "context_engine": .init(title: "Conversation context", description: "Use the configured service for conversation context."),
-        "session_search": .init(title: "Past conversations", description: "Find and recall earlier conversations."),
-        "connections": .init(title: "App connections", description: "Find connected services and use their available actions."),
-        "project": .init(title: "Project workspaces", description: "Create and switch between supported workspaces."),
-        "bot_room": .init(title: "Group conversations", description: "Take part in supported group conversations."),
-        "desktop_ui": .init(title: "Desktop controls", description: "Use controls provided by a supported desktop client."),
-        "onboarding": .init(title: "Setup guidance", description: "Show setup guidance in supported clients."),
-        "catalog": .init(title: "Add capabilities", description: "Request skills and extensions through supported approval controls."),
-        "clarify": .init(title: "Ask questions", description: "Ask you for details or a choice before continuing."),
-        "code_execution": .init(title: "Run scripts", description: "Run scripts that combine several tool actions."),
-        "code": .init(title: "Run scripts", description: "Run scripts that combine several tool actions."),
-        "delegation": .init(title: "Delegate work", description: "Ask helper assistants to work on parts of a task."),
-        "kanban": .init(title: "Board tasks", description: "Update assigned work, request review and report progress."),
-        "discord": .init(title: "Discord", description: "Read and participate in connected Discord conversations."),
-        "discord_admin": .init(title: "Manage Discord", description: "Manage channels, roles and messages where the account allows it."),
-        "yuanbao": .init(title: "Yuanbao", description: "Use connected Yuanbao conversations and group actions."),
-        "feishu_doc": .init(title: "Lark documents", description: "Read documents available through the connected account."),
-        "feishu_drive": .init(title: "Lark comments", description: "Read and add comments on connected documents."),
-        "debugging": .init(title: "Troubleshooting", description: "Use commands, files and web research to investigate problems."),
-        "safe": .init(title: "Research and images", description: "Use web research, image analysis and image creation."),
-        "coding": .init(title: "Coding", description: "Use files, commands and research to work on code.")
+        "web": .init(title: String(localized: "Web research", comment: "A bot capability"),
+                     description: String(localized: "Search the web and read pages.")),
+        "search": .init(title: String(localized: "Web search", comment: "A bot capability"),
+                     description: String(localized: "Find information on the web.")),
+        "x_search": .init(title: String(localized: "Search X", comment: "A bot capability"),
+                     description: String(localized: "Find public posts and conversations on X.")),
+        "vision": .init(title: String(localized: "Understand images", comment: "A bot capability"),
+                     description: String(localized: "Read and describe images.")),
+        "video": .init(title: String(localized: "Understand videos", comment: "A bot capability"),
+                     description: String(localized: "Review and describe video content.")),
+        "image_gen": .init(title: String(localized: "Create images", comment: "A bot capability"),
+                     description: String(localized: "Make images from your descriptions.")),
+        "video_gen": .init(title: String(localized: "Create videos", comment: "A bot capability"),
+                     description: String(localized: "Make and edit videos with a configured service.")),
+        "computer_use": .init(title: String(localized: "Computer control", comment: "A bot capability"),
+                     description: String(localized: "See a screen and use its mouse and keyboard when access is allowed.")),
+        "terminal": .init(title: String(localized: "Run commands", comment: "A bot capability"),
+                     description: String(localized: "Run programs and manage processes on the assistant's computer.")),
+        "skills": .init(title: String(localized: "Skills", comment: "A bot capability"),
+                     description: String(localized: "Read and manage instructions for common tasks.")),
+        "browser": .init(title: String(localized: "Use websites", comment: "A bot capability"),
+                     description: String(localized: "Open pages, click controls and fill in forms.")),
+        "cronjob": .init(title: String(localized: "Scheduled tasks", comment: "A bot capability"),
+                     description: String(localized: "Create, update, pause and run scheduled tasks.")),
+        "file": .init(title: String(localized: "Files", comment: "A bot capability"),
+                     description: String(localized: "Find, read and change files the assistant can access.")),
+        "tts": .init(title: String(localized: "Read aloud", comment: "A bot capability"),
+                     description: String(localized: "Turn text into spoken audio.")),
+        "todo": .init(title: String(localized: "Plan tasks", comment: "A bot capability"),
+                     description: String(localized: "Keep track of the steps in a piece of work.")),
+        "memory": .init(title: String(localized: "Memory", comment: "A bot capability"),
+                     description: String(localized: "Remember useful details between conversations.")),
+        "context_engine": .init(title: String(localized: "Conversation context", comment: "A bot capability"),
+                     description: String(localized: "Use the configured service for conversation context.")),
+        "session_search": .init(title: String(localized: "Past conversations", comment: "A bot capability"),
+                     description: String(localized: "Find and recall earlier conversations.")),
+        "connections": .init(title: String(localized: "App connections", comment: "A bot capability"),
+                     description: String(localized: "Find connected services and use their available actions.")),
+        "project": .init(title: String(localized: "Project workspaces", comment: "A bot capability"),
+                     description: String(localized: "Create and switch between supported workspaces.")),
+        "bot_room": .init(title: String(localized: "Group conversations", comment: "A bot capability"),
+                     description: String(localized: "Take part in supported group conversations.")),
+        "desktop_ui": .init(title: String(localized: "Desktop controls", comment: "A bot capability"),
+                     description: String(localized: "Use controls provided by a supported desktop client.")),
+        "onboarding": .init(title: String(localized: "Setup guidance", comment: "A bot capability"),
+                     description: String(localized: "Show setup guidance in supported clients.")),
+        "catalog": .init(title: String(localized: "Add capabilities", comment: "A bot capability"),
+                     description: String(localized: "Request skills and extensions through supported approval controls.")),
+        "clarify": .init(title: String(localized: "Ask questions", comment: "A bot capability"),
+                     description: String(localized: "Ask you for details or a choice before continuing.")),
+        "code_execution": .init(title: String(localized: "Run scripts", comment: "A bot capability"),
+                     description: String(localized: "Run scripts that combine several tool actions.")),
+        "code": .init(title: String(localized: "Run scripts", comment: "A bot capability"),
+                     description: String(localized: "Run scripts that combine several tool actions.")),
+        "delegation": .init(title: String(localized: "Delegate work", comment: "A bot capability"),
+                     description: String(localized: "Ask helper assistants to work on parts of a task.")),
+        "kanban": .init(title: String(localized: "Board tasks", comment: "A bot capability"),
+                     description: String(localized: "Update assigned work, request review and report progress.")),
+        "discord": .init(title: String(localized: "Discord", comment: "A bot capability"),
+                     description: String(localized: "Read and participate in connected Discord conversations.")),
+        "discord_admin": .init(title: String(localized: "Manage Discord", comment: "A bot capability"),
+                     description: String(localized: "Manage channels, roles and messages where the account allows it.")),
+        "yuanbao": .init(title: String(localized: "Yuanbao", comment: "A bot capability"),
+                     description: String(localized: "Use connected Yuanbao conversations and group actions.")),
+        "feishu_doc": .init(title: String(localized: "Lark documents", comment: "A bot capability"),
+                     description: String(localized: "Read documents available through the connected account.")),
+        "feishu_drive": .init(title: String(localized: "Lark comments", comment: "A bot capability"),
+                     description: String(localized: "Read and add comments on connected documents.")),
+        "debugging": .init(title: String(localized: "Troubleshooting", comment: "A bot capability"),
+                     description: String(localized: "Use commands, files and web research to investigate problems.")),
+        "safe": .init(title: String(localized: "Research and images", comment: "A bot capability"),
+                     description: String(localized: "Use web research, image analysis and image creation.")),
+        "coding": .init(title: String(localized: "Coding", comment: "A bot capability"),
+                     description: String(localized: "Use files, commands and research to work on code."))
     ]
 
     static func connectionTest(_ result: JSONValue) -> String {
-        guard result["ok"]?.boolValue == true else { return "Connection check failed. Check its setup and try again." }
+        guard result["ok"]?.boolValue == true else { return String(localized: "Connection check failed. Check its setup and try again.") }
         let count = result["tools"]?.arrayValue?.count ?? result["tool_count"]?.intValue
-        if let count, count >= 0 { return "Connection checked. \(count) tools available." }
-        return "Connection checked."
+        if let count, count >= 0 { return String(localized: "Connection checked. \(count) tools available.") }
+        return String(localized: "Connection checked.")
     }
 }
 
@@ -128,7 +165,9 @@ struct ToolsView: View {
                         toolRows(groups.more)
                         skillsLink
                     } label: {
-                        LabeledContent("More capabilities", value: loaded && error == nil ? "\(groups.more.filter(\.enabled).count) on" : "")
+                        LabeledContent("More capabilities", value: loaded && error == nil
+                                       ? String(localized: "\(groups.more.filter(\.enabled).count) on", comment: "How many capabilities are switched on")
+                                       : "")
                             .testID("apps.more")
                     }
                 }
@@ -178,7 +217,7 @@ struct ToolsView: View {
             toolsets = result; error = nil; loaded = true
         } catch {
             guard !Task.isCancelled, model.runtime === rt, profile == target else { return }
-            self.error = "Couldn't check this bot's tools. Try again."; loaded = true
+            self.error = String(localized: "Couldn't check this bot's tools. Try again."); loaded = true
         }
     }
 
@@ -191,7 +230,7 @@ struct ToolsView: View {
             let _: JSONValue = try await rt.api.send("PUT", "/api/tools/toolsets/\(t.name)", profile: target, json: ["enabled": .bool(enabled)])
             guard !Task.isCancelled, model.runtime === rt, profile == target else { return }
             await load()
-        } catch { if model.runtime === rt, profile == target { self.error = "Couldn't change this tool. Try again." } }
+        } catch { if model.runtime === rt, profile == target { self.error = String(localized: "Couldn't change this tool. Try again.") } }
     }
 }
 
@@ -250,7 +289,7 @@ struct SkillsView: View {
             let result: [SkillInfo] = try await rt.api.get("/api/skills", profile: target)
             guard !Task.isCancelled, model.runtime === rt, profile == target else { return }
             skills = result; error = nil
-        } catch { if !Task.isCancelled, model.runtime === rt, profile == target { self.error = "Couldn't check this bot's skills. Try again." } }
+        } catch { if !Task.isCancelled, model.runtime === rt, profile == target { self.error = String(localized: "Couldn't check this bot's skills. Try again.") } }
     }
 
     private func toggle(_ s: SkillInfo, _ enabled: Bool, expectedScope: String) async {
@@ -261,7 +300,7 @@ struct SkillsView: View {
             let _: JSONValue = try await rt.api.send("PUT", "/api/skills/toggle", profile: target, json: ["name": .string(s.name), "enabled": .bool(enabled)])
             guard !Task.isCancelled, model.runtime === rt, profile == target else { return }
             await load()
-        } catch { if model.runtime === rt, profile == target { self.error = "Couldn't change this skill. Try again." } }
+        } catch { if model.runtime === rt, profile == target { self.error = String(localized: "Couldn't change this skill. Try again.") } }
     }
 }
 
@@ -306,7 +345,7 @@ struct MCPView: View {
                     }
                         .testID("apps.connection.\(s.name).remove")
                     if developerMode {
-                        LabeledContent("Transport", value: s.transport ?? (s.url == nil ? "Local process" : "HTTP"))
+                        LabeledContent("Transport", value: s.transport ?? (s.url == nil ? String(localized: "Local process", comment: "How a connection runs") : "HTTP"))
                         if let raw = s.url, let host = URLComponents(string: raw)?.host { LabeledContent("Host", value: host) }
                         if let command = s.command { LabeledContent("Program", value: URL(fileURLWithPath: command).lastPathComponent) }
                     }
@@ -340,7 +379,7 @@ struct MCPView: View {
             guard !Task.isCancelled, model.runtime === rt, profile == target else { return }
             servers = Self.parse(raw)
             error = nil; loaded = true
-        } catch { if !Task.isCancelled, model.runtime === rt, profile == target { self.error = "Couldn't check this bot's connections. Try again."; loaded = true } }
+        } catch { if !Task.isCancelled, model.runtime === rt, profile == target { self.error = String(localized: "Couldn't check this bot's connections. Try again."); loaded = true } }
     }
 
     static func parse(_ raw: JSONValue) -> [MCPServerInfo] {
@@ -366,7 +405,7 @@ struct MCPView: View {
             guard !Task.isCancelled, model.runtime === rt, profile == target else { return }
             testResult = nil
             await load()
-        } catch { if model.runtime === rt, profile == target { self.error = "Couldn't change this connection. Try again." } }
+        } catch { if model.runtime === rt, profile == target { self.error = String(localized: "Couldn't change this connection. Try again.") } }
     }
 
     private func test(_ s: MCPServerInfo, expectedScope: String) async {
@@ -377,8 +416,9 @@ struct MCPView: View {
         do {
             let r: JSONValue = try await rt.api.send("POST", "/api/mcp/servers/\(s.name)/test", profile: target, body: EmptyBody())
             guard !Task.isCancelled, model.runtime === rt, profile == target, !model.lock.isLocked else { return }
-            testResult = "\(s.name): \(BotAccessPresentation.connectionTest(r))"
-        } catch { if model.runtime === rt, profile == target { testResult = "Couldn't check this connection. Try again." } }
+            testResult = String(localized: "\(s.name): \(BotAccessPresentation.connectionTest(r))",
+                                comment: "A connection's name, then how its check went")
+        } catch { if model.runtime === rt, profile == target { testResult = String(localized: "Couldn't check this connection. Try again.") } }
     }
 
     private func remove(_ s: MCPServerInfo, expectedScope: String) async {
@@ -390,6 +430,6 @@ struct MCPView: View {
             guard !Task.isCancelled, model.runtime === rt, profile == target else { return }
             testResult = nil
             await load()
-        } catch { if model.runtime === rt, profile == target { self.error = "Couldn't remove this connection. Try again." } }
+        } catch { if model.runtime === rt, profile == target { self.error = String(localized: "Couldn't remove this connection. Try again.") } }
     }
 }

@@ -255,15 +255,16 @@ extension TalkMode {
 /// What talk mode says and shows.
 enum TalkWords {
     /// Spoken when a card comes up. It never reads the card or says what will happen.
-    static let needsYou = "This needs you. Have a look on screen."
+    static let needsYou = String(localized: "This needs you. Have a look on screen.",
+                                 comment: "Safety: spoken when a card waits; it never says what the card does")
 
     static func state(_ phase: TalkLoop.Phase) -> String {
         switch phase {
-        case .off: "Talk"
-        case .listening: "Listening"
-        case .transcribing, .waiting: "Thinking"
-        case .speaking: "Speaking"
-        case .needsYou: "Tap to answer"
+        case .off: String(localized: "Talk", comment: "Talk mode, a spoken conversation")
+        case .listening: String(localized: "Listening", comment: "What talk mode is doing now")
+        case .transcribing, .waiting: String(localized: "Thinking", comment: "What the bot is doing now")
+        case .speaking: String(localized: "Speaking", comment: "What talk mode is doing now")
+        case .needsYou: String(localized: "Tap to answer", comment: "Talk mode: a card waits for you")
         }
     }
 }

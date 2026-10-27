@@ -26,7 +26,7 @@ final class NewChatDraft {
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let target = folder.appendingPathComponent("\(UUID().uuidString)-\(name)")
         do { try data.write(to: target) } catch {
-            problem = "Could not stage \(name)."
+            problem = String(localized: "Could not stage \(name).", comment: "A file's name; staging means getting it ready to send")
             return
         }
         let card = AttachmentPreview(id: target.lastPathComponent, name: name, kind: kind, localURL: target, byteCount: data.count)

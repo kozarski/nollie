@@ -36,18 +36,22 @@ enum WatchCards {
     static func approval(card: PendingCard, request: ApprovalRequest, chatID: String, profile: String,
                          connectionID: UUID, botName: String, avatar: String, privateBot: Bool,
                          asksAgain: Bool) -> WatchWire.Approval {
-        let who = botName.isEmpty ? "Your bot" : botName
-        var words = Words(title: "\(who) needs your OK", body: aboutLine(request), symbol: "checkmark.shield.fill")
+        let who = botName.isEmpty ? String(localized: "Your bot", comment: "Stands in for a bot with no name, at the start of a sentence") : botName
+        var words = Words(title: String(localized: "\(who) needs your OK", comment: "Safety: an approval on the Watch; keep exact meaning"),
+                          body: aboutLine(request), symbol: "checkmark.shield.fill")
         if privateBot {
             // A private bot's request is never shown off the phone.
-            words = Words(title: "A helper needs your OK", body: "", symbol: "lock.fill")
+            words = Words(title: String(localized: "A helper needs your OK", comment: "Safety: an approval on the Watch; keep exact meaning"),
+                          body: "", symbol: "lock.fill")
         } else if let ask = SignInAsk(request) {
-            words = Words(title: "\(who) wants to sign in to \(ask.site)", body: "", symbol: "key.fill")
+            words = Words(title: String(localized: "\(who) wants to sign in to \(ask.site)",
+                                        comment: "Safety: a sign-in approval on the Watch; the second %@ is a website"),
+                          body: "", symbol: "key.fill")
         } else if let ask = AskFirstAsk(request) {
             let card = AskFirstCardBody(ask: ask, botName: botName, onChoice: { _ in })
             words = Words(title: card.title, body: ask.summary, symbol: symbol(for: ask.kind), check: ask.check)
         } else if (request.patternKey ?? "").hasPrefix("cua:") {
-            words = Words(title: "\(who) wants to use your Mac", body: ApprovalCardView.screenLine(request.patternKey ?? ""),
+            words = Words(title: String(localized: "\(who) wants to use your Mac", comment: "Safety: a Mac control approval on the Watch"), body: ApprovalCardView.screenLine(request.patternKey ?? ""),
                           symbol: "cursorarrow.rays")
         } else if let command = request.command, !command.isEmpty {
             words.command = command
@@ -74,9 +78,12 @@ enum WatchCards {
     static func aboutLine(_ request: ApprovalRequest) -> String {
         if let said = request.description, !said.isEmpty { return said }
         if let tool = request.toolName, !tool.isEmpty, tool != "terminal" {
-            return "Use \(tool.replacingOccurrences(of: "_", with: " "))."
+            return String(localized: "Use \(tool.replacingOccurrences(of: "_", with: " ")).",
+                          comment: "Safety: what an approval allows; %@ is a tool's name")
         }
-        return (request.command ?? "").isEmpty ? "Go ahead with this." : "Run a command."
+        return (request.command ?? "").isEmpty
+            ? String(localized: "Go ahead with this.", comment: "Safety: what an approval allows")
+            : String(localized: "Run a command.", comment: "Safety: what an approval allows")
     }
 
     static func symbol(for kind: AskFirstAsk.Kind) -> String {

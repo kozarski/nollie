@@ -109,15 +109,28 @@ public enum QuickAnswerRules {
 
     /// What the person sees when the request goes to the helper. Fixed text, never the model's.
     public static func helperLine(_ reason: Reason, place: Place) -> String {
-        let can = switch place {
-        case .macAway: "Nollie on your Mac can"
-        case .macSetup: "Once setup is done, Nollie can"
-        case .phoneSetup: "Once Nollie is set up on your Mac, it can"
-        }
-        switch reason {
-        case .action: return "Quick answers just talk. \(can) do that, and it asks before sending or buying anything."
-        case .yourStuff: return "Quick answers can't see your calendar, mail or files. \(can) help with that."
-        case .lookUp: return "Quick answers can't look things up online. \(can) help with that."
+        switch (reason, place) {
+        case (.action, .macAway):
+            String(localized: "Quick answers just talk. Nollie on your Mac can do that, and it asks before sending or buying anything.", table: "Core",
+                   comment: "Safety: Nollie asks before sending or buying; keep exact meaning")
+        case (.action, .macSetup):
+            String(localized: "Quick answers just talk. Once setup is done, Nollie can do that, and it asks before sending or buying anything.", table: "Core",
+                   comment: "Safety: Nollie asks before sending or buying; keep exact meaning")
+        case (.action, .phoneSetup):
+            String(localized: "Quick answers just talk. Once Nollie is set up on your Mac, it can do that, and it asks before sending or buying anything.", table: "Core",
+                   comment: "Safety: Nollie asks before sending or buying; keep exact meaning")
+        case (.yourStuff, .macAway):
+            String(localized: "Quick answers can't see your calendar, mail or files. Nollie on your Mac can help with that.", table: "Core")
+        case (.yourStuff, .macSetup):
+            String(localized: "Quick answers can't see your calendar, mail or files. Once setup is done, Nollie can help with that.", table: "Core")
+        case (.yourStuff, .phoneSetup):
+            String(localized: "Quick answers can't see your calendar, mail or files. Once Nollie is set up on your Mac, it can help with that.", table: "Core")
+        case (.lookUp, .macAway):
+            String(localized: "Quick answers can't look things up online. Nollie on your Mac can help with that.", table: "Core")
+        case (.lookUp, .macSetup):
+            String(localized: "Quick answers can't look things up online. Once setup is done, Nollie can help with that.", table: "Core")
+        case (.lookUp, .phoneSetup):
+            String(localized: "Quick answers can't look things up online. Once Nollie is set up on your Mac, it can help with that.", table: "Core")
         }
     }
 

@@ -127,13 +127,16 @@ struct TranscriptRowModel: Identifiable, Equatable {
         let cal: Calendar = .current
         let clock = date.formatted(date: .omitted, time: .shortened)
         func daysAgo(_ n: Int) -> Date? { cal.date(byAdding: .day, value: 0 - n, to: now) }
-        if cal.isDate(date, inSameDayAs: now) { return "Today \(clock)" }
-        if let prior = daysAgo(1), cal.isDate(date, inSameDayAs: prior) { return "Yesterday \(clock)" }
+        if cal.isDate(date, inSameDayAs: now) { return String(localized: "Today \(clock)", comment: "A time in the chat, like Today 5:34 PM") }
+        if let prior = daysAgo(1), cal.isDate(date, inSameDayAs: prior) {
+            return String(localized: "Yesterday \(clock)", comment: "A time in the chat, like Yesterday 5:34 PM")
+        }
         if let cutoff = daysAgo(6), date > cutoff {
-            return "\(date.formatted(.dateTime.weekday(.wide))) \(clock)"
+            let weekday = date.formatted(.dateTime.weekday(.wide))
+            return String(localized: "\(weekday) \(clock)", comment: "A weekday, then a time, like Tuesday 5:34 PM")
         }
         let day = date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
-        return "\(day) at \(clock)"
+        return String(localized: "\(day) at \(clock)", comment: "A date, then a time, like Mon, Oct 12 at 5:34 PM")
     }
 }
 

@@ -81,8 +81,8 @@ public enum KeepAwakePolicy {
     /// reason, never a bot or a schedule's title.
     public static func assertionName(_ reason: Reason, clock: SleepNote.Clock = SleepNote.clock) -> String {
         switch reason {
-        case .working: "Nollie is keeping your Mac awake while a helper works"
-        case .due(let date): "Nollie is keeping your Mac awake for a schedule at \(clock(date))"
+        case .working: String(localized: "Nollie is keeping your Mac awake while a helper works", table: "Core")
+        case .due(let date): String(localized: "Nollie is keeping your Mac awake for a schedule at \(clock(date))", table: "Core")
         }
     }
 }

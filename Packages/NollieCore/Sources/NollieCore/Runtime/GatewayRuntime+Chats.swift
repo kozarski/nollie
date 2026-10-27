@@ -83,7 +83,7 @@ extension GatewayRuntime {
 
     /// A disposed runtime keeps no chats. One added after disposal would never be released.
     private func refuseIfDisposed() throws {
-        if isDisposed { throw HermesAPIError.transport("This gateway is closed.") }
+        if isDisposed { throw HermesAPIError.transport(String(localized: "This gateway is closed.", table: "Core")) }
     }
 
     public func closeChat(_ chat: ChatSession) {

@@ -2,17 +2,17 @@ import AppIntents
 
 /// The sentences Stop answers with. Shared so the tests can check them against the copy rules.
 enum MacStopWords {
-    static let stopped = "Done. Your Mac is ending the task, the replies and the schedules."
-    static let notLinked = "Link Nollie to your Mac first, then Stop will work."
-    static let unreachable = "Can't reach your Mac right now. Try at home, or with Tailscale on both."
-    static let notSent = "That didn't get through, so nothing was stopped."
-    static let sentThroughICloud = "Sent to your Mac through iCloud. It stops as soon as it hears."
+    static let stopped = String(localized: "Done. Your Mac is ending the task, the replies and the schedules.", comment: "Safety: Stop reached the Mac")
+    static let notLinked = String(localized: "Link Nollie to your Mac first, then Stop will work.", comment: "Safety: Stop can't go anywhere yet")
+    static let unreachable = String(localized: "Can't reach your Mac right now. Try at home, or with Tailscale on both.", comment: "Safety: Stop didn't reach the Mac")
+    static let notSent = String(localized: "That didn't get through, so nothing was stopped.", comment: "Safety: Stop didn't reach the Mac")
+    static let sentThroughICloud = String(localized: "Sent to your Mac through iCloud. It stops as soon as it hears.", comment: "Safety: Stop on its way through iCloud")
 }
 
 /// The Stop control's words, in Control Center, on the Lock Screen and on the Action button.
 enum StopControlWords {
-    static let control = "Stop all helpers"
-    static let controlDescription = "Ends every task, stops replies and pauses schedules."
+    static let control = String(localized: "Stop all helpers", comment: "Safety: the Stop control")
+    static let controlDescription = String(localized: "Ends every task, stops replies and pauses schedules.", comment: "Safety: what the Stop control does")
     static let controlSymbol = "stop.circle.fill"
 }
 

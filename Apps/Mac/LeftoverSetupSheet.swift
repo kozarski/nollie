@@ -50,7 +50,7 @@ struct LeftoverSetupSheet: View {
         let control = ManagedRuntimeServiceControl.system
         if control.status() != .notRegistered && control.status() != .notFound { try? await control.unregister() }
         do { try control.register() } catch {
-            trouble = "Couldn't start Nollie Runtime again. Allow it in Login Items, then try again."
+            trouble = String(localized: "Couldn't start Nollie Runtime again. Allow it in Login Items, then try again.")
             return
         }
         if let note = leftover.note { try? FileManager.default.removeItem(at: note) }

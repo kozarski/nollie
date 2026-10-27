@@ -11,7 +11,7 @@ struct MacModelHardware: Equatable, Sendable {
 
     var summary: String {
         let memory = ByteCountFormatter.string(fromByteCount: Int64(clamping: totalMemoryBytes), countStyle: .memory)
-        return "\(processor) · \(memory) memory"
+        return String(localized: "\(processor) · \(memory) memory", comment: "A processor name and an amount of memory, such as Apple M4 · 16 GB memory")
     }
 
     static func current() -> Self? {
@@ -19,7 +19,7 @@ struct MacModelHardware: Equatable, Sendable {
         var arm64: Int32 = 0
         var size = MemoryLayout<Int32>.size
         let silicon = sysctlbyname("hw.optional.arm64", &arm64, &size, nil, 0) == 0 && arm64 == 1
-        return Self(processor: string("machdep.cpu.brand_string") ?? (silicon ? "Apple silicon" : "Intel Mac"),
+        return Self(processor: string("machdep.cpu.brand_string") ?? (silicon ? String(localized: "Apple silicon") : String(localized: "Intel Mac")),
                     totalMemoryBytes: ProcessInfo.processInfo.physicalMemory, isAppleSilicon: silicon)
         #else
         return nil

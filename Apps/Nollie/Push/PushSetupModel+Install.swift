@@ -17,15 +17,19 @@ extension PushSetupModel {
         registerOutcome = registrationSummary(push)
     }
 
-    private func registrationSummary(_ push: PushRegistrar) -> String {
+    private func registrationSummary(_ push: PushRegistrar) -> (failed: Bool, text: String) {
         switch (push.lastError ?? push.relayError, push.registeredAt) {
         case (let problem?, _):
-            return "Failed: \(problem)"
+            return (true, String(localized: "Failed: \(problem)"))
         case (nil, nil):
-            return "Could not send: \(DeviceWords.the) has not received a push token yet. Give it a moment and try again."
+            return (false, String(localized: "Could not send: \(DeviceWords.the) has not received a push token yet. Give it a moment and try again.",
+                                  comment: "%@ is the iPhone, the iPad or the Mac"))
         case (nil, _):
-            let relayPart = PushRelay.isConfigured ? " and \(DeviceWords.the) is on the relay." : "."
-            return "Registered at \(Date().formatted(date: .omitted, time: .shortened)). The device file is on the gateway" + relayPart
+            let time = Date().formatted(date: .omitted, time: .shortened)
+            return (false, PushRelay.isConfigured
+                ? String(localized: "Registered at \(time). The device file is on the gateway and \(DeviceWords.the) is on the relay.",
+                         comment: "The second %@ is the iPhone, the iPad or the Mac")
+                : String(localized: "Registered at \(time). The device file is on the gateway."))
         }
     }
 
@@ -34,8 +38,8 @@ extension PushSetupModel {
 
         var errorDescription: String? {
             switch self {
-            case .unreadable(let name): "Could not read \(name)."
-            case .notAKey(let name): "\(name) does not look like an APNs .p8 key file."
+            case .unreadable(let name): String(localized: "Could not read \(name).")
+            case .notAKey(let name): String(localized: "\(name) does not look like an APNs .p8 key file.")
             }
         }
     }
@@ -66,11 +70,11 @@ extension PushSetupModel {
         if case .needsSignIn = credential(for: rt) { needsSignInFirst = true }
         // The first reason that holds is the one shown.
         let reasons: [(holds: Bool, words: String)] = [
-            (companionSignInRejected, "The gateway turned down the companion's sign-in. Sign in again before installing."),
-            (gatewayURL.isEmpty, "Enter the gateway address for the companion first."),
-            (ownKeyMissing, "This build cannot relay pushes itself, so add your APNs .p8 key first (step 1)."),
-            (ownKeyIncomplete, "Step 1 needs the Key ID and a 10-character Team ID."),
-            (needsSignInFirst, "Please sign in to the companion first."),
+            (companionSignInRejected, String(localized: "The gateway turned down the companion's sign-in. Sign in again before installing.")),
+            (gatewayURL.isEmpty, String(localized: "Enter the gateway address for the companion first.")),
+            (ownKeyMissing, String(localized: "This build cannot relay pushes itself, so add your APNs .p8 key first (step 1).")),
+            (ownKeyIncomplete, String(localized: "Step 1 needs the Key ID and a 10-character Team ID.")),
+            (needsSignInFirst, String(localized: "Please sign in to the companion first.")),
         ]
         return reasons.first(where: \.holds)?.words
     }
@@ -95,7 +99,7 @@ extension PushSetupModel {
         guard error == nil else { return }
         await installPlugin(runtime: rt)
         guard let outcome = pluginResult, outcome.hasPrefix("Installed") else {
-            error = pluginResult ?? "Could not install the plugin."
+            error = pluginResult ?? String(localized: "Could not install the plugin.")
             return
         }
         (pluginInstalledAt, installedAt, urlInUse) = (Date(), Date(), gatewayURL)
@@ -157,7 +161,7 @@ extension PushSetupModel {
         error = nil
         uploadedAt = nil
         guard let script = CompanionBundle.script, let installer = CompanionBundle.installer else {
-            error = "This build is missing the companion files."
+            error = String(localized: "This build is missing the companion files.")
             return
         }
         let folder = pushDir(for: rt)
@@ -168,7 +172,7 @@ extension PushSetupModel {
         ]
         if !PushRelay.isConfigured {
             guard let keyData else {
-                error = "Choose the APNs key first."
+                error = String(localized: "Choose the APNs key first.")
                 return
             }
             parcels.append(Parcel(name: "AuthKey_\(keyID).p8", data: keyData, mime: "application/x-pem-file"))
@@ -193,8 +197,8 @@ extension PushSetupModel {
         if !installing, !(await backUpCompanion(runtime: rt)) { pluginResult = error; return }
         installingPlugin = true
         defer { installingPlugin = false }
-        guard let home = rt.profileHome else { pluginResult = "The gateway did not say where its home folder is."; return }
-        guard let files = CompanionBundle.pluginFiles else { pluginResult = "This build is missing the plugin files."; return }
+        guard let home = rt.profileHome else { pluginResult = String(localized: "The gateway did not say where its home folder is."); return }
+        guard let files = CompanionBundle.pluginFiles else { pluginResult = String(localized: "This build is missing the plugin files."); return }
         let folder = "\(home)/plugins/\(Self.pluginID)"
         do {
             for file in files {
@@ -203,10 +207,10 @@ extension PushSetupModel {
             }
             let reply = try await enableCompanion(runtime: rt)
             if reply["ok"]?.boolValue == false {
-                pluginResult = reply["error"]?.stringValue ?? "Hermes would not enable the plugin."
+                pluginResult = reply["error"]?.stringValue ?? String(localized: "Hermes would not enable the plugin.")
                 return
             }
-            pluginResult = "Plugin v\(Self.bundledPluginVersion) is installed and on. Restart the gateway to start it."
+            pluginResult = String(localized: "Plugin v\(Self.bundledPluginVersion) is installed and on. Restart the gateway to start it.")
         } catch {
             pluginResult = error.localizedDescription
         }
@@ -215,7 +219,7 @@ extension PushSetupModel {
     /// A private, checked copy of the files an install is about to replace.
     func backUpCompanion(runtime rt: GatewayRuntime) async -> Bool {
         guard let home = rt.profileHome, home.hasPrefix("/") else {
-            error = "Wait for Hermes to connect before backing up the companion."
+            error = String(localized: "Wait for Hermes to connect before backing up the companion.")
             return false
         }
         let plugin = "plugins/\(Self.pluginID)"
@@ -227,7 +231,7 @@ extension PushSetupModel {
             }
             return true
         } catch {
-            self.error = "The companion backup could not be checked, so nothing was installed."
+            self.error = String(localized: "The companion backup could not be checked, so nothing was installed.")
             return false
         }
     }
@@ -256,6 +260,7 @@ extension PushSetupModel {
     private func askHermesToUninstall(runtime rt: GatewayRuntime, model: AppModel) async {
         guard let chat = try? await rt.newChat() else { return }
         let command = installCommand(for: rt) + " --uninstall"
+        // Goes to the model, so it stays in English.
         let request = "Run this exact command in the terminal and show me all of its output: `\(command)`. "
             + "It stops the Nollie companion service and deletes its files. "
             + "If it fails, tell me the error word for word."

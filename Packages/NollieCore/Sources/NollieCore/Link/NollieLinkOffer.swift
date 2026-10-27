@@ -6,12 +6,12 @@ public enum NollieLinkError: LocalizedError, Equatable, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .invalidOffer: "This isn't a Nollie code. Show the code again on your Mac and scan it."
-        case .expired: "This code has expired. Show a new one on your Mac."
-        case .unreachable: "Your iPhone couldn't reach your Mac. At home, try again on the same network. Away, both need Tailscale."
-        case .identityMismatch: "This Mac didn't prove it's the one that showed the code. Nothing was linked."
+        case .invalidOffer: String(localized: "This isn't a Nollie code. Show the code again on your Mac and scan it.", table: "Core")
+        case .expired: String(localized: "This code has expired. Show a new one on your Mac.", table: "Core")
+        case .unreachable: String(localized: "Your iPhone couldn't reach your Mac. At home, try again on the same network. Away, both need Tailscale.", table: "Core")
+        case .identityMismatch: String(localized: "This Mac didn't prove it's the one that showed the code. Nothing was linked.", table: "Core")
         case .refused(let message): message
-        case .invalidResponse: "Linking didn't finish. Show a new code on your Mac and try again."
+        case .invalidResponse: String(localized: "Linking didn't finish. Show a new code on your Mac and try again.", table: "Core")
         }
     }
 }
@@ -163,6 +163,6 @@ public struct NollieLinkInvite: Sendable, Equatable, Hashable, Codable {
     /// "Scout", "Scout and Juniper", "Scout, Juniper and Fern".
     public var helperList: String {
         guard helpers.count > 1 else { return helpers.first ?? "" }
-        return helpers.dropLast().joined(separator: ", ") + " and " + helpers[helpers.count - 1]
+        return Papertrail.list(helpers)
     }
 }

@@ -34,8 +34,8 @@ struct OnboardingComputerStep: View {
         VStack(alignment: .leading, spacing: 18) {
             Toggle(isOn: Binding(get: { switchIsOn }, set: flip)) {
                 StepHeading(
-                    title: "Give your helpers their own computers",
-                    note: "Each helper works on a computer inside your Mac, so your files stay out of reach. Nollie uses Cua, a free tool, to make them.")
+                    title: String(localized: "Give your helpers their own computers"),
+                    note: String(localized: "Each helper works on a computer inside your Mac, so your files stay out of reach. Nollie uses Cua, a free tool, to make them."))
             }
             .toggleStyle(.switch)
             .controlSize(.large)
@@ -115,7 +115,7 @@ private struct ComputerProgress: View {
             let needsYou = word == .needsYou
             card {
                 Label {
-                    Text("\(HelperComputerPresentation.cardTitle(name)): \(word.rawValue)").font(.headline)
+                    Text("\(HelperComputerPresentation.cardTitle(name)): \(Self.title(word))").font(.headline)
                 } icon: {
                     Image(systemName: needsYou ? "exclamationmark.circle" : "checkmark.circle.fill")
                         .foregroundStyle(needsYou ? Color.orange : Color.readableGreen)
@@ -134,6 +134,16 @@ private struct ComputerProgress: View {
             }
         case .unavailable(let text):
             card { Text(text).font(.body) }
+        }
+    }
+
+    /// The computer's state in a word. The raw value stays the English key.
+    private static func title(_ word: HelperComputerWord) -> String {
+        switch word {
+        case .ready: String(localized: "Ready", comment: "A helper's computer state")
+        case .working: String(localized: "Working", comment: "A helper's computer state")
+        case .asleep: String(localized: "Asleep", comment: "A helper's computer state")
+        case .needsYou: String(localized: "Needs you", comment: "A helper's computer state")
         }
     }
 

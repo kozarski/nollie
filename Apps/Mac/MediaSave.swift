@@ -18,7 +18,7 @@ struct MediaFile: Transferable {
         let kind = UTType.image
         return FileRepresentation(exportedContentType: kind) { (item: MediaFile) -> SentTransferredFile in
             guard let fetch = await MediaSave.localFetcher(for: item.ref, profile: item.profile) else {
-                throw HermesAPIError.transport("Connect a gateway first.")
+                throw HermesAPIError.transport(String(localized: "Connect a gateway first."))
             }
             return SentTransferredFile(try await fetch())
         }
@@ -75,15 +75,15 @@ enum MediaSave {
     }
 
     static func failureMessage(name: String, error: Error) -> String {
-        name + " was not saved to Downloads. " + error.localizedDescription
+        String(localized: "\(name) was not saved to Downloads. \(error.localizedDescription)", comment: "A file name, then why")
     }
 
     @MainActor
     private static func failureAlert(name: String, error: Error) -> NSAlert {
         let alert = NSAlert()
-        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: String(localized: "OK"))
         alert.informativeText = failureMessage(name: name, error: error)
-        alert.messageText = "Not saved to Downloads"
+        alert.messageText = String(localized: "Not saved to Downloads")
         return alert
     }
 

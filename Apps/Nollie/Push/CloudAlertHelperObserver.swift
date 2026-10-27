@@ -179,7 +179,8 @@ enum CloudAlertOutcomePolicy {
         let at = Date(timeIntervalSince1970: timestamp)
         guard at >= since, at > now.addingTimeInterval(-24 * 3600), at <= now.addingTimeInterval(60) else { return nil }
         if last.role == "error" || last.displayKind == "failed_turn" || ["error", "failed"].contains(last.finishReason ?? "") {
-            return (id, .needsAttention, at, CloudAlertPreview(title: "Nollie needs attention", body: "Open the conversation to see what needs your help."))
+            return (id, .needsAttention, at, CloudAlertPreview(title: String(localized: "Nollie needs attention"),
+                                                                  body: String(localized: "Open the conversation to see what needs your help.")))
         }
         // A length-limited fragment may still be followed by Hermes' automatic continuation.
         guard last.finishReason == "stop", !(last.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }

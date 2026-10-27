@@ -141,6 +141,7 @@ final class ComputerBroker: @unchecked Sendable {
         _ = data.withUnsafeBytes { write(client, $0.baseAddress, data.count) }
     }
 
+    // Answers to the add-on reach the bot's model, so they stay in English.
     static let tooLong = "Nollie took too long to answer, so nothing was done."
     static let tooLongMaybeDone = "Nollie took too long to answer. That action may have been done: look again before going on."
 

@@ -75,7 +75,7 @@ struct ConversationRowView: View, Equatable {
         case .note(let note):
             QuietNote(words: note.shownWords)
         case .error(let text):
-            Label(text.isEmpty ? "Something went wrong" : text, systemImage: "exclamationmark.circle")
+            Label(text.isEmpty ? String(localized: "Something went wrong") : text, systemImage: "exclamationmark.circle")
                 .font(Ink.cardBody)
                 .foregroundStyle(.red)
         case .post:
@@ -210,11 +210,13 @@ extension ConversationNote {
     /// The few words a quiet row says.
     var shownWords: String {
         switch self {
-        case .summarized: "Earlier messages summarized"
-        case .interrupted: "Stopped"
-        case .answered(let choice): choice == "deny" ? "Denied" : "Allowed"
-        case .answeredElsewhere: "Answered elsewhere"
-        case .withdrawn: "No longer needed"
+        case .summarized: String(localized: "Earlier messages summarized")
+        case .interrupted: String(localized: "Stopped", comment: "A reply that was stopped part way")
+        case .answered(let choice): choice == "deny"
+            ? String(localized: "Denied", comment: "Safety: an approval was denied")
+            : String(localized: "Allowed", comment: "Safety: an approval was allowed")
+        case .answeredElsewhere: String(localized: "Answered elsewhere", comment: "A question answered on another device")
+        case .withdrawn: String(localized: "No longer needed", comment: "A question the bot took back")
         case .notice(let text): text
         }
     }
@@ -224,8 +226,8 @@ extension ConversationDelivery {
     var shownWords: String? {
         switch self {
         case .sending, .sent: nil
-        case .uncertain: "May not have sent"
-        case .notSent: "Not sent"
+        case .uncertain: String(localized: "May not have sent", comment: "Safety: a message that may not have gone out")
+        case .notSent: String(localized: "Not sent", comment: "Safety: a message that did not go out")
         }
     }
 }
@@ -233,11 +235,11 @@ extension ConversationDelivery {
 extension ConversationToolStep {
     var shownWords: String {
         switch name {
-        case "terminal", "shell", "bash": "Ran a command"
-        case "read_file": "Read a file"
-        case "write_file", "patch": "Changed a file"
-        case "web_search", "search": "Searched the web"
-        case "web_extract", "browser": "Read a page"
+        case "terminal", "shell", "bash": String(localized: "Ran a command")
+        case "read_file": String(localized: "Read a file", comment: "Past tense: the bot read a file")
+        case "write_file", "patch": String(localized: "Changed a file")
+        case "web_search", "search": String(localized: "Searched the web")
+        case "web_extract", "browser": String(localized: "Read a page", comment: "Past tense: the bot read a web page")
         default: name.replacingOccurrences(of: "_", with: " ").capitalized
         }
     }

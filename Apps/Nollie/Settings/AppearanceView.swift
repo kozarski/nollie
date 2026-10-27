@@ -25,30 +25,33 @@ struct AppearanceView: View {
 
     private var heroTitle: String {
         switch scheme {
-        case "light": "Light"
-        case "dark": "Dark"
-        default: "Matches \(DeviceWords.your)"
+        case "light": String(localized: "Light", comment: "The light theme")
+        case "dark": String(localized: "Dark", comment: "The dark theme")
+        default: String(localized: "Matches \(DeviceWords.your)", comment: "The theme follows the device; the device is 'your Mac' or 'your iPhone'")
         }
     }
 
     private var heroLine: String {
-        if forcedSolid { return "Kept solid for your accessibility settings." }
-        return glassEnabled ? "Liquid Glass on." : "Solid look."
+        if forcedSolid { return String(localized: "Kept solid for your accessibility settings.") }
+        return glassEnabled ? String(localized: "Liquid Glass on.") : String(localized: "Solid look.")
     }
 
     /// A word beside Chat summaries: on or off, when this device can write them at all.
     private var summariesWord: String? {
         guard ChatSummarizer.isAvailable else { return nil }
-        return summaryTitles || summaryPreviews ? "On" : "Off"
+        return summaryTitles || summaryPreviews
+            ? String(localized: "On", comment: "A switch state") : String(localized: "Off", comment: "A switch state")
     }
 
     var body: some View {
         SettingsPage("appearance.page") {
-            PageHero(symbol: heroSymbol, title: heroTitle, line: heroLine,
+            PageHero(symbol: heroSymbol, title: .verbatim(heroTitle), line: .verbatim(heroLine),
                      tint: AppTheme.accent(accentID).color, id: "appearance.hero")
             GlassStack {
                 GlassChoice("Theme", selection: $scheme,
-                            options: [("system", "System"), ("light", "Light"), ("dark", "Dark")],
+                            options: [("system", String(localized: "System", comment: "Theme follows the system")),
+                                      ("light", String(localized: "Light", comment: "The light theme")),
+                                      ("dark", String(localized: "Dark", comment: "The dark theme"))],
                             id: "appearance.theme")
                 GlassSwitch("Liquid Glass", isOn: $glassEnabled, id: "appearance.glass.enabled")
             }
@@ -138,21 +141,30 @@ private struct AppearanceAdvancedPage: View {
 
     /// The glass now: its strength, or why it is solid.
     private var heroTitle: String {
-        if forcedSolid { return "Kept solid" }
-        guard glassEnabled else { return "Solid look" }
-        return "Glass at \(Int((strength * 100).rounded()))%"
+        if forcedSolid { return String(localized: "Kept solid") }
+        guard glassEnabled else { return String(localized: "Solid look") }
+        return String(localized: "Glass at \(strength.formatted(.percent.precision(.fractionLength(0))))",
+                      comment: "How strong the glass is, as a percentage")
     }
 
     /// How chats look, in a few words: "Default text, rounded bubbles."
     private var heroLine: String {
-        let size = switch textSize { case "small": "Small"; case "large": "Large"; default: "Default" }
-        let bubbles = switch bubbleStyle { case "tailed": "tailed"; case "plain": "plain"; default: "rounded" }
-        return "\(size) text, \(bubbles) bubbles."
+        switch (textSize, bubbleStyle) {
+        case ("small", "tailed"): String(localized: "Small text, tailed bubbles.")
+        case ("small", "plain"): String(localized: "Small text, plain bubbles.")
+        case ("small", _): String(localized: "Small text, rounded bubbles.")
+        case ("large", "tailed"): String(localized: "Large text, tailed bubbles.")
+        case ("large", "plain"): String(localized: "Large text, plain bubbles.")
+        case ("large", _): String(localized: "Large text, rounded bubbles.")
+        case (_, "tailed"): String(localized: "Default text, tailed bubbles.")
+        case (_, "plain"): String(localized: "Default text, plain bubbles.")
+        default: String(localized: "Default text, rounded bubbles.")
+        }
     }
 
     var body: some View {
         SettingsPage("appearance.advanced.page") {
-            PageHero(symbol: glassEnabled && !forcedSolid ? "drop.halffull" : "circle.fill", title: heroTitle, line: heroLine,
+            PageHero(symbol: glassEnabled && !forcedSolid ? "drop.halffull" : "circle.fill", title: .verbatim(heroTitle), line: .verbatim(heroLine),
                      tint: glassEnabled && !forcedSolid ? AppTheme.accent(accentID).color : Ink.text2,
                      id: "appearance.advanced.hero")
             VStack(spacing: 14) {
@@ -167,17 +179,21 @@ private struct AppearanceAdvancedPage: View {
             }
             GlassStack {
                 GlassChoice("Text size", selection: $textSize,
-                            options: [("small", "Small"), ("default", "Default"), ("large", "Large")],
+                            options: [("small", String(localized: "Small", comment: "A text size")),
+                                      ("default", String(localized: "Default", comment: "A text size")),
+                                      ("large", String(localized: "Large", comment: "A text size"))],
                             id: "appearance.textSize")
                 GlassChoice("Bubbles", selection: $bubbleStyle,
-                            options: [("rounded", "Rounded"), ("tailed", "Tailed"), ("plain", "Plain")],
+                            options: [("rounded", String(localized: "Rounded", comment: "A chat bubble shape")),
+                                      ("tailed", String(localized: "Tailed", comment: "A chat bubble shape")),
+                                      ("plain", String(localized: "Plain", comment: "A chat bubble shape"))],
                             id: "appearance.bubbles")
                 GlassLink("More chat options", symbol: "bubble.left.and.text.bubble.right", id: "appearance.chatOptions") {
                     ChatOptionsPage().untitledPage()
                 }
             }
             VStack(spacing: 14) {
-                GlassButton("Clear the saved chat list", symbol: "arrow.clockwise", value: listCleared ? "Cleared" : nil,
+                GlassButton("Clear the saved chat list", symbol: "arrow.clockwise", value: listCleared ? String(localized: "Cleared", comment: "The saved chat list was cleared") : nil,
                             id: "appearance.clearList") {
                     SessionCache.clearAll()
                     listCleared = true
@@ -277,12 +293,14 @@ private struct ChatOptionsPage: View {
                 PageHeading("Your chats")
                 GlassStack {
                     GlassChoice("Your messages", selection: $userBubble,
-                                options: [("ink", "Ink"), ("accent", "Accent colour")], id: "appearance.userBubble")
+                                options: [("ink", String(localized: "Ink", comment: "Your message bubbles in the plain ink colour")),
+                                          ("accent", String(localized: "Accent colour"))], id: "appearance.userBubble")
                     GlassSwitch("Bot colour on replies", isOn: $botTint, id: "appearance.botTint")
                     GlassSwitch("Wide replies", isOn: $wideReplies, id: "appearance.wideReplies")
                     #if os(iOS)
                     GlassChoice("Chat header shows", selection: $headerShowsTitle,
-                                options: [(false, "Bot name"), (true, "Chat title")], id: "appearance.header")
+                                options: [(false, String(localized: "Bot name")), (true, String(localized: "Chat title"))],
+                                id: "appearance.header")
                     GlassSwitch("Pull left for times", isOn: $timeReveal, id: "appearance.timeReveal")
                     GlassSwitch("Return key sends", isOn: $returnSends, id: "appearance.returnSends")
                     #endif

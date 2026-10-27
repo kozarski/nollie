@@ -10,7 +10,7 @@ struct ConfigurationImportView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SetupChecklistRow(title: "Copy your setup", subtitle: "Your original stays where it is.", symbol: "doc.on.doc", state: setup.importCompleted ? .ready : .needed, expanded: true) {
+            SetupChecklistRow(title: String(localized: "Copy your setup"), subtitle: String(localized: "Your original stays where it is."), symbol: "doc.on.doc", state: setup.importCompleted ? .ready : .needed, expanded: true) {
                 Text("Copies its instructions and settings. Chats, bots and schedules stay where they are.")
                     .foregroundStyle(.secondary)
                 Button(setup.importPreview == nil ? "Choose a setup to preview" : "Choose another setup") {

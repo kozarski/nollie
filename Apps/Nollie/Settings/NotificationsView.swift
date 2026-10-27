@@ -136,25 +136,26 @@ struct NotificationsHero: View {
         }
         var title: String {
             switch self {
-            case .canTell: "Nollie can tell you"
-            case .off: "Alerts are off"
-            case .whileOpen: "Alerts while Nollie is open"
-            case .settingUp: "Setting up alerts"
-            case .hearBack: "You'll hear back"
-            case .signInToICloud: "Sign in to iCloud"
-            case .newICloud: "New iCloud account"
-            case .needsLook: "Alerts need a look"
+            case .canTell: String(localized: "Nollie can tell you")
+            case .off: String(localized: "Alerts are off")
+            case .whileOpen: String(localized: "Alerts while Nollie is open")
+            case .settingUp: String(localized: "Setting up alerts")
+            case .hearBack: String(localized: "You'll hear back")
+            case .signInToICloud: String(localized: "Sign in to iCloud")
+            case .newICloud: String(localized: "New iCloud account")
+            case .needsLook: String(localized: "Alerts need a look")
             }
         }
         var line: String? {
             switch self {
-            case .canTell: "Allow alerts to hear back."
-            case .off: "Turn them on in \(DeviceWords.settings)."
-            case .whileOpen: "Turn on alerts for when it's closed."
+            case .canTell: String(localized: "Allow alerts to hear back.")
+            case .off: String(localized: "Turn them on in \(DeviceWords.settings).")
+            case .whileOpen: String(localized: "Turn on alerts for when it's closed.")
             case .settingUp: nil
-            case .hearBack(let closed): closed ? "Even when Nollie is closed." : "While Nollie is open."
-            case .signInToICloud: "Alerts travel through your iCloud."
-            case .newICloud: "Turn alerts on again."
+            case .hearBack(let closed):
+                closed ? String(localized: "Even when Nollie is closed.") : String(localized: "While Nollie is open.")
+            case .signInToICloud: String(localized: "Alerts travel through your iCloud.")
+            case .newICloud: String(localized: "Turn alerts on again.")
             case .needsLook(let line): line
             }
         }
@@ -174,12 +175,12 @@ struct NotificationsHero: View {
     var issue: String? = nil
 
     var body: some View {
-        PageHero(symbol: state.symbol, title: state.title, line: line, tint: state.tint, id: "notifications.hero")
+        PageHero(symbol: state.symbol, title: .verbatim(state.title), line: .verbatim(line), tint: state.tint, id: "notifications.hero")
     }
 
     private var line: String? {
         guard case .needsLook(nil) = state else { return state.line }
-        return issue.flatMap(CloudAlertWords.issue) ?? "Turn alerts off and on again."
+        return issue.flatMap(CloudAlertWords.issue) ?? String(localized: "Turn alerts off and on again.")
     }
 }
 
@@ -217,12 +218,12 @@ struct NotificationsAdvancedView: View {
         let push = model.push
         SettingsPage("notifications.advanced.page") {
             let hero = Self.hero(push.authorization)
-            PageHero(symbol: hero.symbol, title: hero.title, line: hero.line, tint: hero.tint, id: "notifications.advanced.hero")
+            PageHero(symbol: hero.symbol, title: .verbatim(hero.title), line: .verbatim(hero.line), tint: hero.tint, id: "notifications.advanced.hero")
             VStack(spacing: 12) {
                 GlassLink("Check alerts", symbol: "checkmark.seal", id: "notifications.checkAlerts") {
                     CloudAlertsView().untitledPage()
                 }
-                GlassRowLabel(title: "What \(DeviceWords.device) allows", symbol: "hand.raised",
+                GlassRowLabel(title: String(localized: "What \(DeviceWords.device) allows"), symbol: "hand.raised",
                               value: Self.allows(push.authorization), chevron: false)
                     .testID("notifications.permission")
             }
@@ -261,22 +262,27 @@ struct NotificationsAdvancedView: View {
     /// The top of the page: what this device lets Nollie do with alerts.
     static func hero(_ status: UNAuthorizationStatus) -> (symbol: String, title: String, line: String?, tint: Color) {
         switch status {
-        case .authorized: ("bell.badge.fill", "Alerts allowed", "\(DeviceWords.This) shows them.", .green)
-        case .provisional: ("bell.fill", "Quiet alerts", "They wait in Notification Center.", .green)
-        case .ephemeral: ("bell.fill", "Alerts for now", nil, .green)
-        case .denied: ("bell.slash.fill", "Alerts not allowed", "Turn them on in \(DeviceWords.settings).", .red)
-        default: ("bell", "Not asked yet", "Nollie hasn't asked for alerts.", Ink.text2)
+        case .authorized:
+            ("bell.badge.fill", String(localized: "Alerts allowed"), String(localized: "\(DeviceWords.This) shows them."), .green)
+        case .provisional:
+            ("bell.fill", String(localized: "Quiet alerts"), String(localized: "They wait in Notification Center."), .green)
+        case .ephemeral:
+            ("bell.fill", String(localized: "Alerts for now"), nil, .green)
+        case .denied:
+            ("bell.slash.fill", String(localized: "Alerts not allowed"), String(localized: "Turn them on in \(DeviceWords.settings)."), .red)
+        default:
+            ("bell", String(localized: "Not asked yet"), String(localized: "Nollie hasn't asked for alerts."), Ink.text2)
         }
     }
 
     /// What this device lets Nollie do with alerts, in a word or two.
     static func allows(_ status: UNAuthorizationStatus) -> String {
         switch status {
-        case .authorized: "Alerts"
-        case .denied: "Nothing"
-        case .provisional: "Quiet alerts"
-        case .ephemeral: "Alerts for now"
-        default: "Not asked yet"
+        case .authorized: String(localized: "Alerts", comment: "What the device allows: alerts")
+        case .denied: String(localized: "Nothing", comment: "What the device allows: nothing")
+        case .provisional: String(localized: "Quiet alerts")
+        case .ephemeral: String(localized: "Alerts for now")
+        default: String(localized: "Not asked yet")
         }
     }
 }

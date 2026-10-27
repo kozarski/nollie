@@ -11,21 +11,21 @@ enum ComputerAppsState: Equatable {
 
     var title: String {
         switch self {
-        case .off: "Off"
-        case .tooSmall: "Needs more memory"
-        case .needsModel: "Needs a model"
-        case .needsApps: "Pick apps"
-        case let .ready(count): count == 1 ? "In 1 app" : "In \(count) apps"
+        case .off: String(localized: "Off", comment: "Using this Mac is switched off")
+        case .tooSmall: String(localized: "Needs more memory")
+        case .needsModel: String(localized: "Needs a model")
+        case .needsApps: String(localized: "Pick apps")
+        case let .ready(count): String(localized: "In \(count) apps", comment: "Bots can use this Mac in this many apps")
         }
     }
 
     var line: String {
         switch self {
-        case .off: "Bots can't use this Mac."
-        case .tooSmall: "Using this Mac needs 32 GB or more."
-        case .needsModel: "One that runs on this Mac."
-        case .needsApps: "Bots use only the apps you pick."
-        case .ready: "A model on this Mac does the clicking."
+        case .off: String(localized: "Bots can't use this Mac.")
+        case .tooSmall: String(localized: "Using this Mac needs 32 GB or more.")
+        case .needsModel: String(localized: "One that runs on this Mac.", comment: "Under 'Needs a model': a model that runs on this Mac")
+        case .needsApps: String(localized: "Bots use only the apps you pick.")
+        case .ready: String(localized: "A model on this Mac does the clicking.")
         }
     }
 
@@ -77,7 +77,7 @@ struct ComputerAppsContent: View {
     }
 
     var body: some View {
-        PageHero(symbol: "macwindow.and.cursorarrow", title: state.title, line: state.line, tint: state.tint,
+        PageHero(symbol: "macwindow.and.cursorarrow", title: .verbatim(state.title), line: .verbatim(state.line), tint: state.tint,
                  id: "computer.apps.hero")
         FactStrip(facts: [Fact(symbol: "cpu", word: "Model on Mac"), Fact(symbol: "eye.slash", word: "Screens stay"),
                           Fact(symbol: "hand.raised", word: "Asks first")],

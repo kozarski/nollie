@@ -4,13 +4,13 @@ import NollieCore
 /// What to say to Siri, as symbol and words, in the order they show. Each works with no setup.
 enum SiriLines {
     static let common: [(symbol: String, words: String)] = [
-        ("bubble.left.and.text.bubble.right.fill", "Ask Nollie"),
-        ("eye.fill", "What is Nollie doing"),
-        ("stop.circle.fill", "Stop Nollie"),
-        ("square.and.pencil", "New chat in Nollie"),
-        ("bubble.left.fill", "Open my Travel chat in Nollie"),
+        ("bubble.left.and.text.bubble.right.fill", String(localized: "Ask Nollie", comment: "Something to say to Siri; match the Siri phrase in this language")),
+        ("eye.fill", String(localized: "What is Nollie doing", comment: "Something to say to Siri; match the Siri phrase in this language")),
+        ("stop.circle.fill", String(localized: "Stop Nollie", comment: "Something to say to Siri; match the Siri phrase in this language")),
+        ("square.and.pencil", String(localized: "New chat in Nollie", comment: "Something to say to Siri; match the Siri phrase in this language")),
+        ("bubble.left.fill", String(localized: "Open my Travel chat in Nollie", comment: "Something to say to Siri; match the Siri phrase in this language")),
     ]
-    static let approval = (symbol: "checkmark.shield.fill", words: "Answer the approval in Nollie")
+    static let approval = (symbol: "checkmark.shield.fill", words: String(localized: "Answer the approval in Nollie", comment: "Something to say to Siri; match the Siri phrase in this language"))
 
     static func shown(approvals: Bool) -> [(symbol: String, words: String)] {
         approvals ? common + [approval] : common
@@ -29,11 +29,11 @@ struct SiriSettingsView: View {
     var body: some View {
         SettingsPage("siri.page") {
             PageHero(symbol: "waveform", title: "Ask Siri",
-                     line: inSpotlight ? "Chats show in Spotlight too." : "Chats stay out of Spotlight.",
+                     line: inSpotlight ? LocalizedStringResource("Chats show in Spotlight too.") : LocalizedStringResource("Chats stay out of Spotlight."),
                      tint: .purple, id: "siri.hero")
             switches
             #if os(iOS)
-            PageNote(HelperAtWorkWords.settingFooter)
+            PageNote(.verbatim(HelperAtWorkWords.settingFooter))
             #endif
             phrases
             AdvancedLink(id: "siri.advanced") { SiriAdvancedView().untitledPage() }
@@ -45,7 +45,7 @@ struct SiriSettingsView: View {
             GlassSwitch("Show chats in Spotlight", isOn: $inSpotlight, id: "siri.spotlight")
                 .onChange(of: inSpotlight) { Task { await SiriCatalog.syncSpotlight() } }
             #if os(iOS)
-            GlassSwitch(HelperAtWorkWords.setting, isOn: $lockScreenStop, id: "siri.stopActivity")
+            GlassSwitch(.verbatim(HelperAtWorkWords.setting), isOn: $lockScreenStop, id: "siri.stopActivity")
                 .onChange(of: lockScreenStop) { HelperAtWorkActivities.shared.settingChanged() }
             #endif
         }

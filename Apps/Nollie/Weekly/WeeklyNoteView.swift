@@ -14,7 +14,7 @@ struct WeeklyNotePage: View {
 
     var body: some View {
         SettingsPage("weekly.note") {
-            PageHero(symbol: WeeklyInk.symbol, title: "Your week", line: line, tint: WeeklyInk.tint, id: "weekly.hero")
+            PageHero(symbol: WeeklyInk.symbol, title: LocalizedStringResource("Your week"), line: .verbatim(line), tint: WeeklyInk.tint, id: "weekly.hero")
             if let note = weekly.note {
                 WeeklyNoteBody(note: note)
             } else if weekly.loading {
@@ -43,7 +43,13 @@ struct WeeklyNotePage: View {
     /// "19 to 25 Oct. 3 helpers busy."
     private var line: String? {
         guard let note = weekly.note else { return nil }
-        return WeeklyNoteDates.range(note.since, note.until) + ". " + note.headline
+        let dates = WeeklyNoteDates.range(note.since, note.until)
+        // Some languages end a short month with its own full stop ("Okt."), so the dates do not get a second one.
+        if dates.hasSuffix(".") {
+            return String(localized: "\(dates) \(note.headline)", comment: "The week's dates, already ending in a full stop, then a short summary")
+        }
+        return String(localized: "\(dates). \(note.headline)",
+                      comment: "The week's dates, then a short summary like 3 helpers busy")
     }
 }
 
@@ -71,17 +77,17 @@ struct WeeklyNoteBody: View {
                     PageNote("Couldn't read \(WeeklyNoteDates.list(note.unread))'s week.", symbol: "exclamationmark.circle", id: "weekly.unread")
                 }
                 if let filter = note.filter {
-                    PageNote(filter, symbol: "exclamationmark.shield", id: "weekly.filter")
+                    PageNote(.verbatim(filter), symbol: "exclamationmark.shield", id: "weekly.filter")
                 }
                 if let problem = weekly.problem {
-                    PageNote(problem, symbol: "exclamationmark.circle", tint: .orange, id: "weekly.problem")
+                    PageNote(.verbatim(problem), symbol: "exclamationmark.circle", tint: .orange, id: "weekly.problem")
                 }
             }
         }
         .animation(.snappy, value: weekly.done)
     }
 
-    private func section<Rows: View>(_ title: String, id: String, @ViewBuilder rows: @escaping () -> Rows) -> some View {
+    private func section<Rows: View>(_ title: LocalizedStringResource, id: String, @ViewBuilder rows: @escaping () -> Rows) -> some View {
         VStack(spacing: 12) {
             PageHeading(title)
             GlassStack(content: rows)
@@ -112,7 +118,7 @@ struct WeeklyHelperSection: View {
                 ForEach(helper.left) { line in WeeklyLineRow(line: line) }
             }
             if helper.morePlaces > 0 {
-                Text(helper.morePlaces == 1 ? "and 1 more place" : "and \(helper.morePlaces) more places")
+                Text("and \(helper.morePlaces) more places", comment: "After a list of places a helper's work went")
                     .font(.subheadline)
                     .foregroundStyle(Ink.text3)
                     .padding(.horizontal, 8)
@@ -174,8 +180,9 @@ struct WeeklyLineRow: View {
                         tagLayout {
                             if tagged { NewTag() }
                             if let detail = line.detail {
-                                Text(detail).font(.subheadline).foregroundStyle(Ink.text2)
+                                Text(Self.unhyphenated(detail)).font(.subheadline).foregroundStyle(Ink.text2)
                                     .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityLabel(detail)
                             }
                         }
                     }
@@ -201,6 +208,18 @@ struct WeeklyLineRow: View {
 
     /// News says it is new in its words; the helper's own lines wear the tag.
     private var tagged: Bool { line.isNew && !line.id.hasPrefix("news/") }
+
+    /// A web address in a line ("mcp.notes.example.com") may break after a dot but is never hyphenated, even in
+    /// languages that hyphenate words: its letters are held together with word joiners.
+    static func unhyphenated(_ text: String) -> String {
+        text.split(separator: " ", omittingEmptySubsequences: false).map { word in
+            guard word.split(separator: ".").count >= 3 else { return String(word) }
+            return word.split(separator: ".", omittingEmptySubsequences: false)
+                .map { $0.map(String.init).joined(separator: "\u{2060}") }
+                .joined(separator: ".\u{200B}")
+        }
+        .joined(separator: " ")
+    }
 
     /// A place's host may break only after a dot, never inside a word.
     private var shown: String {
@@ -228,23 +247,14 @@ struct WeeklyActionButtons: View {
     var line: String
     @Environment(AppModel.self) private var model
     @State private var confirming: WeeklyAction?
+    @Environment(\.dynamicTypeSize) private var typeSize
     private var weekly: WeeklyNoteModel { .shared }
 
     var body: some View {
-        HStack(spacing: 8) {
-            if let done = weekly.done[line] {
-                Label(done.done, systemImage: "checkmark")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Ink.text2)
-                    .fixedSize()
-                    .testID("weekly.done.\(line)")
-                if let undo = done.undo {
-                    button(undo, title: "Undo")
-                }
-            } else {
-                ForEach(actions, id: \.self) { action in button(action, title: action.label) }
-            }
-            if weekly.busy.contains(line) { ProgressView().controlSize(.small) }
+        // Side by side when they fit; one above the other when longer words or large text would push past the edge.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) { content }
+            VStack(alignment: .leading, spacing: 8) { content }
         }
         .disabled(weekly.busy.contains(line) || model.lock.isLocked)
         .confirmationDialog(confirmTitle, isPresented: .present($confirming), titleVisibility: .visible) {
@@ -254,7 +264,7 @@ struct WeeklyActionButtons: View {
                 Button("Cancel", role: .cancel) {}
             }
         } message: {
-            Text("This can't be undone.")
+            Text("This can't be undone.", comment: "Safety: under the question before removing a schedule or a connected app; keep exact meaning")
         }
         #if DEBUG
         .task {
@@ -268,12 +278,29 @@ struct WeeklyActionButtons: View {
         #endif
     }
 
+    @ViewBuilder private var content: some View {
+        if let done = weekly.done[line] {
+            Label(done.done, systemImage: "checkmark")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Ink.text2)
+                .fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: true)
+                .testID("weekly.done.\(line)")
+            if let undo = done.undo {
+                button(undo, title: String(localized: "Undo"))
+            }
+        } else {
+            ForEach(actions, id: \.self) { action in button(action, title: action.label) }
+        }
+        if weekly.busy.contains(line) { ProgressView().controlSize(.small) }
+    }
+
     private var confirmTitle: String {
         switch confirming {
-        case .remove?: return "Remove this schedule?"
+        case .remove?: return String(localized: "Remove this schedule?", comment: "Safety: asks before removing a schedule")
         case .removeApp(let bot, let app)?:
             let helper = model.runtime?.profiles.first { $0.name == bot }?.shownName ?? ProfileInfo.shownName(of: bot)
-            return "Remove \u{201C}\(app)\u{201D} from \(helper)?"
+            return String(localized: "Remove \u{201C}\(app)\u{201D} from \(helper)?",
+                          comment: "Safety: asks before taking a connected app away from a helper; the app, then the helper. Keep exact meaning")
         default: return ""
         }
     }
@@ -282,7 +309,11 @@ struct WeeklyActionButtons: View {
         Button {
             if action.asksFirst { confirming = action } else { run(action) }
         } label: {
-            Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).fixedSize()
+            // One line on the capsule; at the largest sizes a longer word ("Stummschalten") may wrap instead of
+            // pushing the page past the screen's edge.
+            Text(title).font(.subheadline.weight(.semibold))
+                .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                .fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: true)
         }
         .buttonStyle(.nollieGlass)
         .buttonBorderShape(.capsule)
@@ -318,13 +349,19 @@ struct WeeklyNoteSheet: View {
 enum WeeklyNoteDates {
     /// "19 to 25 Oct", or "28 Oct to 3 Nov" across a month.
     static func range(_ from: Date, _ to: Date, calendar: Calendar = .current) -> String {
+        // Other languages order a range their own way ("21.–27. Okt.", "10月21日～27日").
+        if Bundle.main.preferredLocalizations.first?.hasPrefix("en") == false, from <= to {
+            return (from..<to).formatted(.interval.day().month(.abbreviated))
+        }
         let sameMonth = calendar.isDate(from, equalTo: to, toGranularity: .month)
         let start = sameMonth ? from.formatted(.dateTime.day()) : from.formatted(.dateTime.day().month(.abbreviated))
-        return "\(start) to \(to.formatted(.dateTime.day().month(.abbreviated)))"
+        return String(localized: "\(start) to \(to.formatted(.dateTime.day().month(.abbreviated)))", comment: "A range of two dates")
     }
 
     /// "Mason", "Mason and Forager", "Scout, Mason and Forager".
     static func list(_ names: [String]) -> String {
-        names.count <= 1 ? names.joined() : names.dropLast().joined(separator: ", ") + " and " + names[names.count - 1]
+        guard names.count > 1, let last = names.last else { return names.joined() }
+        let head = names.dropLast().joined(separator: String(localized: ", ", comment: "Separates names in a list"))
+        return String(localized: "\(head) and \(last)", comment: "The end of a list of names: Scout, Mason and Forager")
     }
 }

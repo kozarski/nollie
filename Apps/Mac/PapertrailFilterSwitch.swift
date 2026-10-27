@@ -85,7 +85,7 @@ final class PapertrailFilterModel: NSObject {
         } catch {
             // The person said no, or macOS couldn't save it: nothing is half on.
             try? Self.writeSwitch(on: false)
-            state = (error as NSError).domain == NEFilterErrorDomain ? .off : .failed("Couldn't turn it on. Try again.")
+            state = (error as NSError).domain == NEFilterErrorDomain ? .off : .failed(String(localized: "Couldn't turn it on. Try again."))
         }
     }
 
@@ -145,7 +145,7 @@ extension PapertrailFilterModel: OSSystemExtensionRequestDelegate {
     }
 
     nonisolated func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
-        Task { @MainActor in self.state = .failed("macOS didn't install it. Try again.") }
+        Task { @MainActor in self.state = .failed(String(localized: "macOS didn't install it. Try again.")) }
     }
 }
 
@@ -179,11 +179,12 @@ struct PapertrailFilterToggle: View {
 enum PapertrailFilterWords {
     @MainActor static func line(_ state: PapertrailFilterModel.State) -> String? {
         switch state {
-        case .unavailable: "Not in this version of Nollie yet."
+        case .unavailable: String(localized: "Not in this version of Nollie yet.")
         case .off: nil
-        case .waiting: "Allow Nollie Papertrail in System Settings › Login Items & Extensions."
-        case .asking: "Choose Allow when your Mac asks about filtering."
-        case .on: "Anything a helper starts that tries to go around Papertrail is stopped."
+        case .waiting: String(localized: "Allow Nollie Papertrail in System Settings › Login Items & Extensions.")
+        case .asking: String(localized: "Choose Allow when your Mac asks about filtering.")
+        case .on: String(localized: "Anything a helper starts that tries to go around Papertrail is stopped.",
+                         comment: "Safety: Papertrail; what the network filter stops")
         case .failed(let words): words
         }
     }

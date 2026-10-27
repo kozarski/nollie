@@ -14,7 +14,7 @@ enum StarterAssistantDefaults {
         case unavailable, invalid
 
         var errorDescription: String? {
-            "The starter settings are missing or incomplete in this build. Nothing was created."
+            String(localized: "The starter settings are missing or incomplete in this build. Nothing was created.")
         }
     }
 

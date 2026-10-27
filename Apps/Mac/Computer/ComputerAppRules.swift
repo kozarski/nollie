@@ -39,6 +39,8 @@ struct ComputerAppInfo: Equatable, Hashable, Sendable {
 /// can't run commands or open other apps unasked, each of which must be signed by its maker.
 /// Anything else stays with the person. The refusals are checked first so the card can say why.
 enum ComputerAppRules {
+    // The reasons go back to the bot's model in English; the approval card shows them in the
+    // person's language (`ComputerApproval.Refused.shownReason`).
     static let nollie = "Nollie can't use itself."
     static let commands = "Terminals and coding tools can run commands, so they stay with you."
     static let passwords = "Password managers stay with you."
@@ -47,6 +49,7 @@ enum ComputerAppRules {
     static let system = "System tools and Finder can open or change anything, so they stay with you."
     static let notOffered = "Nollie doesn't offer this app yet."
     static let notGenuine = "This copy isn't signed by the app's maker, so it stays with you."
+    static let unidentified = "This app can't be identified."
     static let apple = "apple"
 
     // MARK: Decision
@@ -83,7 +86,7 @@ enum ComputerAppRules {
 
     static func access(for app: ComputerAppInfo, ownBundleID: String? = Bundle.main.bundleIdentifier) -> ComputerAppAccess {
         let subject = Subject(app)
-        if subject.id.isEmpty { return .never("This app can't be identified.") }
+        if subject.id.isEmpty { return .never(unidentified) }
         let isNollie = subject.id == ownBundleID?.lowercased() || subject.id.hasPrefix("com.coreykozarski.nollie")
             || subject.name == "nollie"
         if isNollie { return .never(nollie) }

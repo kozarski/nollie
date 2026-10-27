@@ -49,13 +49,13 @@ enum NativeSetupPlan {
     static let diskMegabytes = 800
 
     static var steps: [NativeDependencyStep] { [
-        .init(id: "uv", title: "Download manager", detail: "uv 0.13.4. A 14.3 MB verified download, kept inside Nollie's setup folder.", state: .notChecked, optional: false),
-        .init(id: "python", title: "Python runtime", detail: "Python 3.14.8. A 26.7 MB verified download. A separate runtime for Nollie, without changing your existing Python.", state: .notChecked, optional: false),
-        .init(id: "hermes", title: "Hermes Agent", detail: "Hermes 0.22.2 at a fixed revision, an 81.5 MB verified download, with Nollie's reviewed changes for quiet bot chats, Board notes and safe scheduled checks.", state: .notChecked, optional: false),
-        .init(id: "dependencies", title: "Runtime libraries", detail: "The exact versions in Hermes's lockfile, each checked against its recorded hash. About 40 MB.", state: .notChecked, optional: false),
-        .init(id: "addons", title: "Nollie add-ons", detail: "Board follow-through, Papertrail and the Night shift, the crew, the page reader, computer previews and using apps on this Mac. The reader's own libraries are about 20 MB, each checked against its recorded hash.", state: .notChecked, optional: false),
-        .init(id: "service", title: "Background service", detail: "Keeps your assistant running while this Mac is awake, even after Nollie closes. Starting it is a separate step, with your permission.", state: .notChecked, optional: false),
-        .init(id: "computer", title: "Computer access", detail: "Optional. Needs a packaged computer adapter and your macOS permission approval. No permissions are copied.", state: .blocked, optional: true)
+        .init(id: "uv", title: String(localized: "Download manager"), detail: String(localized: "uv 0.13.4. A 14.3 MB verified download, kept inside Nollie's setup folder."), state: .notChecked, optional: false),
+        .init(id: "python", title: String(localized: "Python runtime"), detail: String(localized: "Python 3.14.8. A 26.7 MB verified download. A separate runtime for Nollie, without changing your existing Python."), state: .notChecked, optional: false),
+        .init(id: "hermes", title: "Hermes Agent", detail: String(localized: "Hermes 0.22.2 at a fixed revision, an 81.5 MB verified download, with Nollie's reviewed changes for quiet bot chats, Board notes and safe scheduled checks."), state: .notChecked, optional: false),
+        .init(id: "dependencies", title: String(localized: "Runtime libraries"), detail: String(localized: "The exact versions in Hermes's lockfile, each checked against its recorded hash. About 40 MB."), state: .notChecked, optional: false),
+        .init(id: "addons", title: String(localized: "Nollie add-ons"), detail: String(localized: "Board follow-through, Papertrail and the Night shift, the crew, the page reader, computer previews and using apps on this Mac. The reader's own libraries are about 20 MB, each checked against its recorded hash."), state: .notChecked, optional: false),
+        .init(id: "service", title: String(localized: "Background service"), detail: String(localized: "Keeps your assistant running while this Mac is awake, even after Nollie closes. Starting it is a separate step, with your permission."), state: .notChecked, optional: false),
+        .init(id: "computer", title: String(localized: "Computer access"), detail: String(localized: "Optional. Needs a packaged computer adapter and your macOS permission approval. No permissions are copied."), state: .blocked, optional: true)
     ] }
 
     static func environment(installation: URL) -> [String: String] {
@@ -76,21 +76,21 @@ enum NativeSetupPlan {
 
     static func validateArchiveListing(names: String, verbose: String) throws {
         let entries = names.split(separator: "\n", omittingEmptySubsequences: true)
-        guard !entries.isEmpty, entries.count < 100_000 else { throw failure("The downloaded archive has an invalid file list.") }
+        guard !entries.isEmpty, entries.count < 100_000 else { throw failure(String(localized: "The downloaded archive has an invalid file list.")) }
         var top: String?
         for raw in entries {
             let name = String(raw)
             let parts = name.split(separator: "/", omittingEmptySubsequences: true)
             guard !name.hasPrefix("/"), !name.contains("\\"), !parts.contains(".."),
                   !name.contains("\r"), let first = parts.first, first != "." else {
-                throw failure("The downloaded archive contains an unsafe path.")
+                throw failure(String(localized: "The downloaded archive contains an unsafe path."))
             }
-            if let top, top != first { throw failure("The downloaded archive has an unexpected layout.") }
+            if let top, top != first { throw failure(String(localized: "The downloaded archive has an unexpected layout.")) }
             top = String(first)
         }
         let details = verbose.split(separator: "\n", omittingEmptySubsequences: true)
         guard details.count == entries.count, details.allSatisfy({ $0.first == "-" || $0.first == "d" }) else {
-            throw failure("Linked or special files are not accepted in this download.")
+            throw failure(String(localized: "Linked or special files are not accepted in this download."))
         }
     }
 
@@ -123,7 +123,7 @@ actor NativeDependencyInstaller {
             let id = steps[index].id
             if !NativeSetupPlan.directAvailable {
                 steps[index].state = .blocked
-                steps[index].detail = "Local installation is available in the direct Mac edition."
+                steps[index].detail = String(localized: "Local installation is available in the direct Mac edition.")
             } else if (try? verified(id)) == true {
                 steps[index].state = .ready
             } else { steps[index].state = .needsInstall }
@@ -134,10 +134,10 @@ actor NativeDependencyInstaller {
     func install(_ id: String) async throws {
         #if NOLLIE_DIRECT
         guard NativeSetupPlan.preparationSteps.contains(id) else {
-            throw NativeSetupPlan.failure("This step needs a packaged, signed native service before it can run.")
+            throw NativeSetupPlan.failure(String(localized: "This step needs a packaged, signed native service before it can run."))
         }
         #if !arch(arm64)
-        throw NativeSetupPlan.failure("This runtime package currently supports Apple silicon Macs.")
+        throw NativeSetupPlan.failure(String(localized: "This runtime package currently supports Apple silicon Macs."))
         #else
         try prepareDirectories()
         if (try? verified(id)) == true { return }
@@ -151,13 +151,13 @@ actor NativeDependencyInstaller {
             try await run(uvPath, ["--no-config", "python", "install", NativeSetupPlan.pythonKey, "--no-bin"], timeout: 600)
             let version = try await run(pythonPath, ["-I", "--version"], timeout: 15)
             guard version.trimmingCharacters(in: .whitespacesAndNewlines) == "Python " + NativeSetupPlan.pythonVersion else {
-                throw NativeSetupPlan.failure("The installed Python version did not match the reviewed plan.")
+                throw NativeSetupPlan.failure(String(localized: "The installed Python version did not match the reviewed plan."))
             }
             try saveReceipt(id, version: NativeSetupPlan.pythonVersion)
         case "dependencies":
             try await requireUV()
             guard try verified("python"), try verified("hermes") else {
-                throw NativeSetupPlan.failure("Prepare Python and Hermes before installing runtime libraries.")
+                throw NativeSetupPlan.failure(String(localized: "Prepare Python and Hermes before installing runtime libraries."))
             }
             _ = try await run(uvPath, ["--no-config", "sync", "--frozen", "--no-default-groups", "--no-install-project", "--no-build",
                                      "--python", pythonPath.path, "--project", sourcePath.path], timeout: 1_200)
@@ -166,7 +166,7 @@ actor NativeDependencyInstaller {
             try saveReceipt(id, version: NativeSetupPlan.hermesCommit)
         case "addons":
             guard try verified("python"), try verified("hermes"), try verified("dependencies") else {
-                throw NativeSetupPlan.failure("Prepare the runtime before adding Nollie's add-ons.")
+                throw NativeSetupPlan.failure(String(localized: "Prepare the runtime before adding Nollie's add-ons."))
             }
             let kit = try NativeSetupKit.addOns()
             let envPython = installation.appendingPathComponent("environment/bin/python")
@@ -180,7 +180,7 @@ actor NativeDependencyInstaller {
         }
         #endif
         #else
-        throw NativeSetupPlan.failure("Local installation is available in the direct Mac edition.")
+        throw NativeSetupPlan.failure(String(localized: "Local installation is available in the direct Mac edition."))
         #endif
     }
 
@@ -189,10 +189,10 @@ actor NativeDependencyInstaller {
     private var pythonPath: URL { installation.appendingPathComponent("python/" + NativeSetupPlan.pythonKey + "/bin/python3.14") }
 
     static func readReceipt(installation: URL, id: String) throws -> Receipt {
-        guard NativeSetupPlan.preparationSteps.contains(id) else { throw NativeSetupPlan.failure("Unknown preparation step.") }
+        guard NativeSetupPlan.preparationSteps.contains(id) else { throw NativeSetupPlan.failure(String(localized: "Unknown preparation step.")) }
         let data = try OwnedSetupFiles.read(installation.appendingPathComponent("receipts/" + id + ".json"), maximum: 32_000_000)
         let result = try JSONDecoder().decode(Receipt.self, from: data)
-        guard result.files.count < 100_000 else { throw NativeSetupPlan.failure("The preparation receipt is too large.") }
+        guard result.files.count < 100_000 else { throw NativeSetupPlan.failure(String(localized: "The preparation receipt is too large.")) }
         return result
     }
 
@@ -237,14 +237,14 @@ actor NativeDependencyInstaller {
         return try kit.installedFiles.map { file in
             let bytes = try OwnedSetupFiles.read(home.appendingPathComponent(file.path), maximum: file.bytes)
             guard bytes.count == file.bytes, OwnedSetupFiles.hash(bytes) == file.sha256 else {
-                throw NativeSetupPlan.failure("An add-on did not install as reviewed. Nothing else was changed.")
+                throw NativeSetupPlan.failure(String(localized: "An add-on did not install as reviewed. Nothing else was changed."))
             }
             return FileRecord(path: file.path, bytes: file.bytes, sha256: file.sha256)
         }.sorted { $0.path < $1.path }
     }
 
     private func record(_ file: URL, relativeTo root: URL) throws -> FileRecord {
-        guard file.path.hasPrefix(root.path + "/") else { throw NativeSetupPlan.failure("A prepared file escaped its setup folder.") }
+        guard file.path.hasPrefix(root.path + "/") else { throw NativeSetupPlan.failure(String(localized: "A prepared file escaped its setup folder.")) }
         let bytes = try OwnedSetupFiles.read(file, maximum: 100_000_000)
         return FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: bytes.count, sha256: OwnedSetupFiles.hash(bytes))
     }
@@ -268,14 +268,14 @@ actor NativeDependencyInstaller {
                     // which would incorrectly reject a valid link within a canonical root.
                     let resolved = "/" + components.joined(separator: "/")
                     guard allowInternalLinks, resolved.hasPrefix(installation.path + "/") else {
-                        throw NativeSetupPlan.failure("A prepared component links outside its own setup.")
+                        throw NativeSetupPlan.failure(String(localized: "A prepared component links outside its own setup."))
                     }
                     records.append(FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: 0,
                                               sha256: OwnedSetupFiles.hash(Data(target.utf8)), linkTarget: target))
                 } else if values.isDirectory == true { try visit(file) }
                 else if values.isRegularFile == true { records.append(try record(file, relativeTo: root)) }
-                else { throw NativeSetupPlan.failure("A prepared component contains an unsupported file.") }
-                guard records.count < 100_000 else { throw NativeSetupPlan.failure("A prepared component has too many files.") }
+                else { throw NativeSetupPlan.failure(String(localized: "A prepared component contains an unsupported file.")) }
+                guard records.count < 100_000 else { throw NativeSetupPlan.failure(String(localized: "A prepared component has too many files.")) }
             }
         }
         try visit(root)
@@ -297,7 +297,7 @@ actor NativeDependencyInstaller {
         case "dependencies": paths = ["environment", "receipts/dependencies.json"]
         // Add-ons live in the Hermes home with the person's data. Their installer keeps dated copies itself.
         case "addons": paths = ["receipts/addons.json"]
-        default: throw NativeSetupPlan.failure("Unknown preparation step.")
+        default: throw NativeSetupPlan.failure(String(localized: "Unknown preparation step."))
         }
         // Move only named dependency components. User data and verified import backups
         // are never a repair target. Renaming a link does not follow its destination.
@@ -311,11 +311,11 @@ actor NativeDependencyInstaller {
             defer { close(parent) }
             var info = stat()
             if fstatat(parent, url.lastPathComponent, &info, AT_SYMLINK_NOFOLLOW) != 0 {
-                guard errno == ENOENT else { throw NativeSetupPlan.failure("The previous preparation could not be preserved safely.") }
+                guard errno == ENOENT else { throw NativeSetupPlan.failure(String(localized: "The previous preparation could not be preserved safely.")) }
                 continue
             }
             guard renameat(parent, url.lastPathComponent, destination, UUID().uuidString + "-" + url.lastPathComponent) == 0 else {
-                throw NativeSetupPlan.failure("The previous preparation could not be preserved safely.")
+                throw NativeSetupPlan.failure(String(localized: "The previous preparation could not be preserved safely."))
             }
         }
     }
@@ -323,13 +323,13 @@ actor NativeDependencyInstaller {
     private func prepareDirectories() throws {
         let values = try installation.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         guard let available = values.volumeAvailableCapacityForImportantUsage, available > 6_000_000_000 else {
-            throw NativeSetupPlan.failure("Keep at least 6 GB free before preparing the runtime. Model downloads need more space.")
+            throw NativeSetupPlan.failure(String(localized: "Keep at least 6 GB free before preparing the runtime. Model downloads need more space."))
         }
         // The service creates and owns this root before a runner can write into it.
         let marker = try OwnedSetupFiles.read(installation.appendingPathComponent("ownership.json"), maximum: 4096)
         guard let object = try JSONSerialization.jsonObject(with: marker) as? [String: String],
               object["owner"] == "com.coreykozarski.nollie", object["installationID"] == installation.lastPathComponent else {
-            throw NativeSetupPlan.failure("This folder is not an Nollie-owned setup.")
+            throw NativeSetupPlan.failure(String(localized: "This folder is not an Nollie-owned setup."))
         }
         for name in ["downloads", "receipts", "user", "home", "bin", "cache", "temporary"] {
             try OwnedSetupFiles.createPrivateDirectory(installation.appendingPathComponent(name))
@@ -344,12 +344,12 @@ actor NativeDependencyInstaller {
         } else {
             bytes = try await NativeArtifactDownload.fetch(artifact)
             guard bytes.count == artifact.bytes, OwnedSetupFiles.hash(bytes) == artifact.sha256 else {
-                throw NativeSetupPlan.failure("The download did not match the reviewed checksum. Nothing was installed.")
+                throw NativeSetupPlan.failure(String(localized: "The download did not match the reviewed checksum. Nothing was installed."))
             }
             try OwnedSetupFiles.writeNew(bytes, to: archive)
         }
         guard bytes.count == artifact.bytes, OwnedSetupFiles.hash(bytes) == artifact.sha256 else {
-            throw NativeSetupPlan.failure("The saved download failed verification. Existing files were not replaced.")
+            throw NativeSetupPlan.failure(String(localized: "The saved download failed verification. Existing files were not replaced."))
         }
         let names = try await run(URL(fileURLWithPath: "/usr/bin/tar"), ["-tzf", archive.path], timeout: 30)
         let verbose = try await run(URL(fileURLWithPath: "/usr/bin/tar"), ["-tvzf", archive.path], timeout: 30)
@@ -366,7 +366,7 @@ actor NativeDependencyInstaller {
         if FileManager.default.fileExists(atPath: output.path) {
             // Resume the narrow crash seam between a verified publish and its receipt.
             guard try inventory(output) == inventory(staging) else {
-                throw NativeSetupPlan.failure("An unfinished component differs from this release. It has been preserved for review.")
+                throw NativeSetupPlan.failure(String(localized: "An unfinished component differs from this release. It has been preserved for review."))
             }
             try FileManager.default.removeItem(at: staging)
         } else {
@@ -377,11 +377,11 @@ actor NativeDependencyInstaller {
     }
 
     private func requireUV() async throws {
-        guard try verified("uv") else { throw NativeSetupPlan.failure("Prepare the verified download manager first.") }
+        guard try verified("uv") else { throw NativeSetupPlan.failure(String(localized: "Prepare the verified download manager first.")) }
         // Apple's standalone-code check verifies notarization without treating a CLI as an app.
         // The pinned archive hash remains required; neither check changes macOS security policy.
         do { _ = try await run(URL(fileURLWithPath: "/usr/bin/codesign"), ["--verify", "--strict", "-R=notarized", "--check-notarization", uvPath.path], timeout: 30) }
-        catch { throw NativeSetupPlan.failure("macOS has not approved this download manager. This build needs a signed runtime package before preparation can continue.") }
+        catch { throw NativeSetupPlan.failure(String(localized: "macOS has not approved this download manager. This build needs a signed runtime package before preparation can continue.")) }
     }
 
     private func saveAddOnsReceipt(_ kit: NativeSetupKit.AddOns) throws {
@@ -439,7 +439,7 @@ enum NativeSetupProcess {
                     for _ in 0..<20 where process.isRunning { try? await Task.sleep(for: .milliseconds(50)) }
                     if process.isRunning { kill(process.processIdentifier, SIGKILL) }
                     for _ in 0..<50 where process.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
-                    throw NativeSetupPlan.failure("This preparation step stopped before completion. Existing setup files are unchanged.")
+                    throw NativeSetupPlan.failure(String(localized: "This preparation step stopped before completion. Existing setup files are unchanged."))
                 }
                 try? await Task.sleep(for: .milliseconds(100))
             }
@@ -504,7 +504,7 @@ private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
                     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         if totalBytesWritten > artifact.bytes || totalBytesExpectedToWrite > artifact.bytes {
-            finish(.failure(NativeSetupPlan.failure("The download was larger than the reviewed release.")))
+            finish(.failure(NativeSetupPlan.failure(String(localized: "The download was larger than the reviewed release."))))
         }
     }
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
@@ -514,14 +514,14 @@ private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate
         }
         do {
             let size = try location.resourceValues(forKeys: [.fileSizeKey]).fileSize
-            guard size == artifact.bytes else { throw NativeSetupPlan.failure("The download size did not match the reviewed release.") }
+            guard size == artifact.bytes else { throw NativeSetupPlan.failure(String(localized: "The download size did not match the reviewed release.")) }
             let data = try Data(contentsOf: location)
             guard data.count == artifact.bytes, OwnedSetupFiles.hash(data) == artifact.sha256 else {
-                throw NativeSetupPlan.failure("The download failed checksum verification.")
+                throw NativeSetupPlan.failure(String(localized: "The download failed checksum verification."))
             }
             finish(.success(data))
         } catch {
-            finish(.failure((error as? ConfigurationBackup.Failure) ?? NativeSetupPlan.failure("The download could not be read for verification.")))
+            finish(.failure((error as? ConfigurationBackup.Failure) ?? NativeSetupPlan.failure(String(localized: "The download could not be read for verification."))))
         }
     }
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
@@ -543,7 +543,7 @@ private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate
 }
 
 enum NativeArtifactDownloadPolicy {
-    static let redirectFailure = "The release server redirected outside the approved download hosts. Nothing was installed."
+    static let redirectFailure = String(localized: "The release server redirected outside the approved download hosts. Nothing was installed.")
 
     static func allows(_ url: URL) -> Bool {
         let hosts = ["github.com", "codeload.github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com"]
@@ -552,16 +552,16 @@ enum NativeArtifactDownloadPolicy {
     }
 
     static func httpFailure(_ status: Int?) -> String {
-        guard let status else { return "The release server did not return an HTTP response. You can retry this step." }
-        return "The release server returned HTTP \(status). You can retry this step."
+        guard let status else { return String(localized: "The release server did not return an HTTP response. You can retry this step.") }
+        return String(localized: "The release server returned HTTP \(status). You can retry this step.", comment: "%lld is an HTTP status code")
     }
 
     static func transportFailure(_ error: Error) -> String {
         let error = error as NSError
         if error.domain == NSURLErrorDomain {
-            return "The download stopped with network error \(error.code). You can retry this step."
+            return String(localized: "The download stopped with network error \(String(error.code)). You can retry this step.", comment: "%@ is an error code")
         }
-        return "The download stopped before verification. You can retry this step."
+        return String(localized: "The download stopped before verification. You can retry this step.")
     }
 }
 #endif

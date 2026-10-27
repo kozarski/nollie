@@ -241,14 +241,14 @@ public enum SavedSignInError: LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .badSite: return "Enter the site's address, like example.com."
-        case .noUsername: return "Enter the username or email for this site."
-        case .noPassword: return "Enter the password."
-        case .duplicate(let site): return "There's already a sign-in for \(site). Edit that one instead."
-        case .cancelled: return "Nothing was shown. Try again when you're ready."
-        case .gone: return "This sign-in isn't saved any more."
-        case .unreadable: return "Nollie couldn't read the Keychain. Unlock your Mac and try again."
-        case .notDeleted: return "Nollie couldn't remove it. Unlock your Mac and try again."
+        case .badSite: return String(localized: "Enter the site's address, like example.com.", table: "Core")
+        case .noUsername: return String(localized: "Enter the username or email for this site.", table: "Core")
+        case .noPassword: return String(localized: "Enter the password.", table: "Core")
+        case .duplicate(let site): return String(localized: "There's already a sign-in for \(site). Edit that one instead.", table: "Core")
+        case .cancelled: return String(localized: "Nothing was shown. Try again when you're ready.", table: "Core")
+        case .gone: return String(localized: "This sign-in isn't saved any more.", table: "Core")
+        case .unreadable: return String(localized: "Nollie couldn't read the Keychain. Unlock your Mac and try again.", table: "Core")
+        case .notDeleted: return String(localized: "Nollie couldn't remove it. Unlock your Mac and try again.", table: "Core")
         }
     }
 }

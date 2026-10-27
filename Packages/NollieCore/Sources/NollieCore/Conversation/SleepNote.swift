@@ -18,6 +18,7 @@ public enum SleepNote {
     }
 
     /// "Your Mac was asleep from 1:10 to 6:40, so two runs waited until it woke and one was skipped."
+    /// Each ending is a whole sentence with the clause about the Mac, the runs and the wake filled in.
     public static func line(gaps: [ConversationPost.SleepGap], waited: Int, skipped: Int,
                             clock: Clock = SleepNote.clock) -> String? {
         let gaps = gaps.sorted { $0.from < $1.from }
@@ -26,13 +27,23 @@ public enum SleepNote {
         let back = wake(gaps)
         switch (waited > 0, skipped > 0) {
         case (false, false):
-            return head + "."
+            return String(localized: "\(head).", table: "Core", comment: "A sentence about when the Mac was asleep or off, with its full stop")
         case (true, false):
-            return "\(head), so \(runs(waited)) waited \(back)."
+            let runs = runs(waited)
+            return String(localized: "\(head), so \(runs) waited \(back).", table: "Core",
+                          comment: "Your Mac was asleep from 1:10 to 6:40, so two runs waited until it woke.")
         case (false, true):
-            return "\(head), so \(runs(skipped)) \(skipped == 1 ? "was" : "were") skipped."
+            let runs = runs(skipped)
+            return skipped == 1
+                ? String(localized: "\(head), so \(runs) was skipped.", table: "Core", comment: "Your Mac was asleep from 1:10 to 6:40, so one run was skipped.")
+                : String(localized: "\(head), so \(runs) were skipped.", table: "Core", comment: "Your Mac was asleep from 1:10 to 6:40, so three runs were skipped.")
         case (true, true):
-            return "\(head). \(capitalised(runs(waited))) waited \(back) and \(number(skipped)) \(skipped == 1 ? "was" : "were") skipped."
+            let runs = capitalised(runs(waited)), others = number(skipped)
+            return skipped == 1
+                ? String(localized: "\(head). \(runs) waited \(back) and \(others) was skipped.", table: "Core",
+                         comment: "Your Mac was asleep from 1:10 to 6:40. Two runs waited until it woke and one was skipped.")
+                : String(localized: "\(head). \(runs) waited \(back) and \(others) were skipped.", table: "Core",
+                         comment: "Your Mac was asleep from 1:10 to 6:40. One run waited until it woke and three were skipped.")
         }
     }
 
@@ -41,11 +52,13 @@ public enum SleepNote {
     public static func scheduleLine(due: Date, ran: Date, gaps: [ConversationPost.SleepGap],
                                     clock: Clock = SleepNote.clock) -> String? {
         guard ran.timeIntervalSince(due) > lateSeconds else { return nil }
-        switch gaps.first(where: { $0.holds(due) })?.kind {
-        case .asleep?: return "Your Mac was asleep at \(clock(due)), so this ran at \(clock(ran))."
-        case .off?: return "Your Mac was off at \(clock(due)), so this ran at \(clock(ran))."
-        case .stopped?: return "Your crew wasn't running at \(clock(due)), so this ran at \(clock(ran))."
-        case nil: return "Due at \(clock(due)). It ran late, at \(clock(ran))."
+        let kind = gaps.first(where: { $0.holds(due) })?.kind
+        let due = clock(due), ran = clock(ran)
+        switch kind {
+        case .asleep?: return String(localized: "Your Mac was asleep at \(due), so this ran at \(ran).", table: "Core")
+        case .off?: return String(localized: "Your Mac was off at \(due), so this ran at \(ran).", table: "Core")
+        case .stopped?: return String(localized: "Your crew wasn't running at \(due), so this ran at \(ran).", table: "Core")
+        case nil: return String(localized: "Due at \(due). It ran late, at \(ran).", table: "Core")
         }
     }
 
@@ -54,56 +67,87 @@ public enum SleepNote {
 
     // MARK: Pieces
 
-    /// Who was out and when: one or two stretches by their times, more by how long in all.
+    /// Who was out and when: one or two stretches by their times, more by how long in all. A whole clause each, so
+    /// the subject and its times can be said in any order.
     private static func when(_ gaps: [ConversationPost.SleepGap], clock: Clock) -> String {
+        enum Subject { case crewStopped, crewCouldNot, asleep, off, asleepOrOff }
         let kinds = Set(gaps.map(\.kind))
-        let subject: String
+        let subject: Subject
         if kinds == [.stopped] {
-            subject = "Your crew wasn't running"
+            subject = .crewStopped
         } else if kinds.contains(.stopped) {
-            subject = "Your crew couldn't run"
+            subject = .crewCouldNot
         } else if kinds == [.asleep] {
-            subject = "Your Mac was asleep"
+            subject = .asleep
         } else if kinds == [.off] {
-            subject = "Your Mac was off"
+            subject = .off
         } else {
-            subject = "Your Mac was asleep or off"
+            subject = .asleepOrOff
         }
         if gaps.count <= 2, kinds.count == 1 {
-            let stretches = gaps.map { "from \(clock($0.from)) to \(clock($0.to))" }
-            return "\(subject) \(stretches.joined(separator: " and "))"
+            let stretches = gaps.map { gap in
+                let from = clock(gap.from), to = clock(gap.to)
+                return String(localized: "from \(from) to \(to)", table: "Core", comment: "A stretch of time, as in: Your Mac was asleep from 1:10 to 6:40")
+            }
+            let times = stretches.count == 2
+                ? String(localized: "\(stretches[0]) and \(stretches[1])", table: "Core", comment: "Two stretches of time: from 1:10 to 2:00 and from 3:15 to 6:40")
+                : stretches.joined()
+            switch subject {
+            case .crewStopped: return String(localized: "Your crew wasn't running \(times)", table: "Core", comment: "Followed by more of the sentence")
+            case .crewCouldNot: return String(localized: "Your crew couldn't run \(times)", table: "Core", comment: "Followed by more of the sentence")
+            case .asleep: return String(localized: "Your Mac was asleep \(times)", table: "Core", comment: "Followed by more of the sentence")
+            case .off: return String(localized: "Your Mac was off \(times)", table: "Core", comment: "Followed by more of the sentence")
+            case .asleepOrOff: return String(localized: "Your Mac was asleep or off \(times)", table: "Core", comment: "Followed by more of the sentence")
+            }
         }
         let seconds = gaps.reduce(0) { $0 + $1.to.timeIntervalSince($1.from) }
-        return "\(subject) for \(length(seconds)) in all"
+        let total = length(seconds)
+        switch subject {
+        case .crewStopped: return String(localized: "Your crew wasn't running for \(total) in all", table: "Core", comment: "Followed by more of the sentence")
+        case .crewCouldNot: return String(localized: "Your crew couldn't run for \(total) in all", table: "Core", comment: "Followed by more of the sentence")
+        case .asleep: return String(localized: "Your Mac was asleep for \(total) in all", table: "Core", comment: "Followed by more of the sentence")
+        case .off: return String(localized: "Your Mac was off for \(total) in all", table: "Core", comment: "Followed by more of the sentence")
+        case .asleepOrOff: return String(localized: "Your Mac was asleep or off for \(total) in all", table: "Core", comment: "Followed by more of the sentence")
+        }
     }
 
     private static func wake(_ gaps: [ConversationPost.SleepGap]) -> String {
         switch Set(gaps.map(\.kind)) {
-        case [.asleep]: "until it woke"
-        case [.off]: "until it was back on"
-        case [.stopped]: "until it started again"
-        default: "until it was back"
+        case [.asleep]: String(localized: "until it woke", table: "Core", comment: "As in: two runs waited until it woke (the Mac)")
+        case [.off]: String(localized: "until it was back on", table: "Core", comment: "As in: two runs waited until it was back on (the Mac)")
+        case [.stopped]: String(localized: "until it started again", table: "Core", comment: "As in: two runs waited until it started again (the crew)")
+        default: String(localized: "until it was back", table: "Core", comment: "As in: two runs waited until it was back (the Mac)")
         }
     }
 
     /// "about 5 hours", "about an hour", "40 minutes".
     static func length(_ seconds: TimeInterval) -> String {
         let minutes = Int((seconds / 60).rounded())
-        if minutes < 55 { return "\(max(minutes, 1)) \(minutes == 1 ? "minute" : "minutes")" }
+        if minutes < 55 {
+            let shown = max(minutes, 1)
+            return String(localized: "\(shown) minutes", table: "Core")
+        }
         let hours = Int((seconds / 3600).rounded())
-        return hours <= 1 ? "about an hour" : "about \(hours) hours"
+        return hours <= 1 ? String(localized: "about an hour", table: "Core") : String(localized: "about \(hours) hours", table: "Core")
     }
 
     /// "two runs", "one run", "14 runs".
-    static func runs(_ count: Int) -> String { "\(number(count)) \(count == 1 ? "run" : "runs")" }
+    static func runs(_ count: Int) -> String {
+        if count == 1 { return String(localized: "one run", table: "Core", comment: "A number of schedule runs, in a sentence") }
+        guard count <= 12 else { return String(localized: "\(count) runs", table: "Core") }
+        let word = number(count)
+        return String(localized: "\(word) runs", table: "Core", comment: "A number of schedule runs spelled out: two runs")
+    }
 
     /// One to twelve in words, as people say them; bigger numbers in figures.
     static func number(_ count: Int) -> String {
-        let words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"]
-        return words.indices.contains(count) ? words[count] : String(count)
+        guard (0...12).contains(count) else { return String(count) }
+        let words = NumberFormatter()
+        words.numberStyle = .spellOut
+        return words.string(from: NSNumber(value: count)) ?? String(count)
     }
 
-    private static func capitalised(_ text: String) -> String { text.prefix(1).uppercased() + text.dropFirst() }
+    private static func capitalised(_ text: String) -> String { text.prefix(1).uppercased(with: .current) + text.dropFirst() }
 }
 
 // MARK: Where the gaps come from, for a schedule's page

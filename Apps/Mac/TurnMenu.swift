@@ -98,7 +98,7 @@ private struct IdleHeader: View {
             CharacterView(look: .main, size: 28, seed: CharacterLookID.seed("nollie-menubar"))
             VStack(alignment: .leading, spacing: 1) {
                 Text("Nothing running").menuHeading()
-                Text(gateway ?? "No gateway").font(.caption).foregroundStyle(.secondary)
+                Text(gateway ?? String(localized: "No gateway")).font(.caption).foregroundStyle(.secondary)
             }
         }
         .padding(12)
@@ -132,8 +132,8 @@ private struct MenuFooter: View {
     var openApp: () -> Void
 
     private var summary: String {
-        guard attention > 0 else { return "\(running) working" }
-        return "\(attention) need\(attention == 1 ? "s" : "") you"
+        guard attention > 0 else { return String(localized: "\(running) working", comment: "Turns in flight") }
+        return String(localized: "\(attention) need you", comment: "Turns waiting on the person")
     }
 
     var body: some View {
@@ -234,8 +234,10 @@ private struct TurnRow: View {
         if let waiting { return approvalChoices(waiting.chat, waiting.card, waiting.approval) }
         let usingMac = !turn.attention && turn.detail.contains("computer_use") && control.isOn(turn.profile, turn.chat?.runtime)
         guard usingMac else { return [] }
-        return [RowChoice(title: "Stop", identifier: "menubar.stopUsingMac",
-                          help: "System control off: it stops using your Mac at once") { switchOff(turn.profile, turn.chat?.runtime) }]
+        return [RowChoice(title: String(localized: "Stop", comment: "Safety: turns system control off for this bot"), identifier: "menubar.stopUsingMac",
+                          help: String(localized: "System control off: it stops using your Mac at once", comment: "Safety: what Stop does")) {
+            switchOff(turn.profile, turn.chat?.runtime)
+        }]
     }
 
     private func approvalChoices(_ chat: ChatSession, _ card: PendingCard, _ approval: ApprovalRequest) -> [RowChoice] {
@@ -243,18 +245,20 @@ private struct TurnRow: View {
             let answer: JSONValue = ["choice": .string(choice)]
             return { Task { await chat.respond(card: card, result: answer) } }
         }
-        let deny = RowChoice(title: "Deny", run: reply("deny"))
+        let deny = RowChoice(title: String(localized: "Deny", comment: "Safety: approval button; refuses"), run: reply("deny"))
 
         if SystemControl.isScreen(approval) {
             // The question is whether the bot may use this Mac at all.
-            return [RowChoice(title: "Allow system control", prominent: true) { SystemControl.answer(true, card: card, chat: chat) },
-                    RowChoice(title: "Keep it off") { SystemControl.answer(false, card: card, chat: chat) }]
+            return [RowChoice(title: String(localized: "Allow system control", comment: "Safety: lets the bot use this Mac"), prominent: true) {
+                        SystemControl.answer(true, card: card, chat: chat)
+                    },
+                    RowChoice(title: String(localized: "Keep it off", comment: "Safety: keeps system control off")) { SystemControl.answer(false, card: card, chat: chat) }]
         }
         if mustOpenCard {
             // Ask first and sign-ins are allowed only on the full card (read the whole action, or
             // Touch ID). Saying no is fine from here.
-            return [RowChoice(title: "Answer in Nollie", prominent: true, identifier: "menubar.answerInNollie") { open(turn.id) }, deny]
+            return [RowChoice(title: String(localized: "Answer in Nollie"), prominent: true, identifier: "menubar.answerInNollie") { open(turn.id) }, deny]
         }
-        return [RowChoice(title: "Allow once", prominent: true, run: reply("once")), deny]
+        return [RowChoice(title: String(localized: "Allow once", comment: "Safety: approval button; allows this one time"), prominent: true, run: reply("once")), deny]
     }
 }

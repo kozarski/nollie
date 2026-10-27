@@ -80,7 +80,7 @@ struct FamilySharePage: View {
                                                  Fact(symbol: "creditcard.fill", word: "Cards"), Fact(symbol: "person.3.fill", word: "Other helpers")],
                                          id: "family.you"))
             VStack(spacing: 14) {
-                Button(action: add) { PageActionLabel("Add someone", symbol: "person.badge.plus") }
+                Button(action: add) { PageActionLabel(LocalizedStringResource("Add someone"), symbol: "person.badge.plus") }
                     .pageAction(tint: .teal)
                     .testID("family.add")
                 // Safety: what the copy takes with it, and what never goes.
@@ -91,7 +91,8 @@ struct FamilySharePage: View {
             }
             if !people.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    PageHeading(people.count == 1 ? "Shared with" : "Shared with \(people.count)")
+                    PageHeading(people.count == 1 ? LocalizedStringResource("Shared with", comment: "Heading over the one person who has this helper")
+                                                   : LocalizedStringResource("Shared with \(people.count)", comment: "Heading over the people who have this helper"))
                     ForEach(people) { person in
                         FamilyPersonRow(member: person, busy: removing == person.id) { remove(person) }
                     }
@@ -225,7 +226,7 @@ struct FamilyAddPage: View {
 
     private var who: String {
         let trimmed = person.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "They" : trimmed
+        return trimmed.isEmpty ? String(localized: "They", comment: "Stands in for a person's name when none was typed") : trimmed
     }
 
     var body: some View {
@@ -240,7 +241,7 @@ struct FamilyAddPage: View {
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                     .testID("family.add.instruction")
                 if offer.expiresAt <= now {
-                    Button(action: again) { PageActionLabel("New code", symbol: "arrow.clockwise") }
+                    Button(action: again) { PageActionLabel(LocalizedStringResource("New code"), symbol: "arrow.clockwise") }
                         .pageAction(tint: .teal).testID("family.add.again")
                 }
             } else {
@@ -257,7 +258,7 @@ struct FamilyAddPage: View {
                 if busy {
                     ProgressView("Making \(who)'s \(name)").testID("family.add.busy")
                 } else {
-                    Button(action: make) { PageActionLabel("Make code", symbol: "qrcode") }
+                    Button(action: make) { PageActionLabel(LocalizedStringResource("Make code"), symbol: "qrcode") }
                         .pageAction(tint: .teal)
                         .disabled(person.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .testID("family.add.make")

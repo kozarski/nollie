@@ -14,11 +14,21 @@ struct LiveRemovalServices: RemovalServices {
         guard ManagedRuntimeServiceControl.system.status() == .enabled else { return nil }
         guard let reply = try? await ManagedRuntimeRequest.send(.prepareRemoval),
               let response = try? NollieRuntimeRemovalResponse.decode(reply.data) else {
-            return "Couldn't reach Nollie Runtime. It stops when it's taken out of Login Items."
+            return String(localized: "Couldn't reach Nollie Runtime. It stops when it's taken out of Login Items.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
         }
-        if !response.hermesStopped { return "Nollie Runtime didn't confirm your assistant stopped. It stops with Nollie Runtime." }
-        if !response.cuaStopped { return "Cua's background part didn't stop. It stops when you log out." }
-        if !response.keychainCleared { return "Some of Nollie Runtime's keys stay in the keychain." }
+        if !response.hermesStopped {
+            return String(localized: "Nollie Runtime didn't confirm your assistant stopped. It stops with Nollie Runtime.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
+        }
+        if !response.cuaStopped {
+            return String(localized: "Cua's background part didn't stop. It stops when you log out.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
+        }
+        if !response.keychainCleared {
+            return String(localized: "Some of Nollie Runtime's keys stay in the keychain.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
+        }
         #endif
         return nil
     }
@@ -30,7 +40,8 @@ struct LiveRemovalServices: RemovalServices {
         let unregister = control.unregister
         let finished = (try? await ManagedRuntimeDeadline<Void>.run(after: .seconds(15)) { try await unregister() }) != nil
         if !finished || [.enabled, .requiresApproval].contains(control.status()) {
-            return "macOS hasn't taken Nollie Runtime out of Login Items yet. You can turn it off in Login Items."
+            return String(localized: "macOS hasn't taken Nollie Runtime out of Login Items yet. You can turn it off in Login Items.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
         }
         #endif
         return nil
@@ -43,7 +54,8 @@ struct LiveRemovalServices: RemovalServices {
         let unregister = item.unregister
         let finished = (try? await ManagedRuntimeDeadline<Void>.run(after: .seconds(15)) { try await unregister() }) != nil
         if !finished || [.enabled, .requiresApproval].contains(item.status()) {
-            return "macOS hasn't taken Nollie Notifications out of Login Items yet. You can turn it off in Login Items."
+            return String(localized: "macOS hasn't taken Nollie Notifications out of Login Items yet. You can turn it off in Login Items.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
         }
         #endif
         return nil
@@ -56,7 +68,8 @@ struct LiveRemovalServices: RemovalServices {
             _ = try? await ManagedRuntimeRequest.send(.cuaWake)
         }
         guard let script = Self.verifiedComputerScript() else {
-            return "This copy of Nollie is missing a file it needs to turn off your helpers' computers. Turn each one off in Bot settings."
+            return String(localized: "This copy of Nollie is missing a file it needs to turn off your helpers' computers. Turn each one off in Bot settings.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
         }
         var arguments = ["-I", "-B", script.path, "release", "--home", hermes.home.path, "--cua-home", places.home.path]
         var environment: [String: String]
@@ -71,13 +84,28 @@ struct LiveRemovalServices: RemovalServices {
         if let cua = NollieCuaPlaces.cli(home: places.home, own: places.nollie.cua) { environment["NOLLIE_CUA_CLI"] = cua.path }
         guard let output = await Self.run(hermes.python, arguments, environment: environment, timeout: 900),
               let report = try? JSONDecoder().decode(ReleaseReport.self, from: output) else {
-            return "Couldn't turn off your helpers' computers. Turn each one off in Bot settings."
+            return String(localized: "Couldn't turn off your helpers' computers. Turn each one off in Bot settings.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
         }
+        // The add-on's own messages come back in English.
         if let message = report.message { return message }
         let kept = report.profiles.sorted { $0.key < $1.key }.filter { $0.value.computer == "kept" }
         if let first = kept.first {
-            let name = first.key == "default" ? "Your main helper" : first.key.capitalized
-            return "\(name)'s computer stays. \(first.value.message ?? "")".trimmingCharacters(in: .whitespaces)
+            let helper = first.key.capitalized
+            let why = (first.value.message ?? "").trimmingCharacters(in: .whitespaces)
+            switch (first.key == "default", why.isEmpty) {
+            case (true, true):
+                return String(localized: "Your main helper's computer stays.", comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
+            case (true, false):
+                return String(localized: "Your main helper's computer stays. \(why)",
+                              comment: "Safety: Remove Nollie, what stayed; the placeholder is a reason in English; keep exact meaning")
+            case (false, true):
+                return String(localized: "\(helper)'s computer stays.",
+                              comment: "Safety: Remove Nollie, what stayed; the placeholder is a helper's name; keep exact meaning")
+            case (false, false):
+                return String(localized: "\(helper)'s computer stays. \(why)",
+                              comment: "Safety: Remove Nollie, what stayed; the placeholders are a helper's name and a reason in English; keep exact meaning")
+            }
         }
         if let first = report.profiles.sorted(by: { $0.key < $1.key }).first(where: { $0.value.message != nil }) {
             return first.value.message
@@ -97,7 +125,8 @@ struct LiveRemovalServices: RemovalServices {
     func trash(_ url: URL) -> String? {
         #if os(macOS)
         do { try FileManager.default.trashItem(at: url, resultingItemURL: nil); return nil } catch {
-            return "Couldn't move \(url.lastPathComponent) to the Trash. You can drag it there in Finder."
+            return String(localized: "Couldn't move \(url.lastPathComponent) to the Trash. You can drag it there in Finder.",
+                          comment: "Safety: Remove Nollie, what stayed; the placeholder is a file or folder name; keep exact meaning")
         }
         #else
         return nil
@@ -105,7 +134,8 @@ struct LiveRemovalServices: RemovalServices {
     }
 
     func forgetKeychain(_ service: String) -> String? {
-        Keychain.deleteAll(service: service) ? nil : "Some of Nollie's keychain items stay. You can delete them in Keychain Access."
+        Keychain.deleteAll(service: service) ? nil
+            : String(localized: "Some of Nollie's keychain items stay. You can delete them in Keychain Access.", comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
     }
 
     func clearSettings() {
@@ -117,7 +147,8 @@ struct LiveRemovalServices: RemovalServices {
         // Away through iCloud's mailbox too; its records expire within a day anyway.
         try? await CloudKitAwayCloud().deleteEverything()
         do { try await CloudKitAlertStore().deleteEverything(); return nil } catch {
-            return "Couldn't reach iCloud, so Nollie's alerts there stay. They expire by themselves within a week."
+            return String(localized: "Couldn't reach iCloud, so Nollie's alerts there stay. They expire by themselves within a week.",
+                          comment: "Safety: Remove Nollie, what stayed; keep exact meaning")
         }
     }
 

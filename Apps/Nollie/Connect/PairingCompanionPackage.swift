@@ -28,7 +28,7 @@ enum PairingCompanionPackage {
 
     enum Failure: LocalizedError {
         case unavailable
-        var errorDescription: String? { "The pairing companion is missing or incomplete in this build." }
+        var errorDescription: String? { String(localized: "The pairing companion is missing or incomplete in this build.") }
     }
 
     static func load(bundle: Bundle = .main) throws -> Plan {

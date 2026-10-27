@@ -57,7 +57,7 @@ struct SetupFooter: View {
                 .accessibilityIdentifier("setup.exit")
         case .overview:
             // Keeps the footer the same height as on the other steps.
-            Text(" ").font(.subheadline)
+            Text(verbatim: " ").font(.subheadline)
         default:
             Button("Cancel setup", action: cancel)
                 .small(.subheadline)

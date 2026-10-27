@@ -26,9 +26,9 @@ struct BotsSettingsView: View {
     /// The choice that leaves it to the bot your Mac has active.
     private static var leaveToMac: String {
         #if os(macOS)
-        "Automatic"
+        String(localized: "Automatic", comment: "Which bot opens first: left to the Mac")
         #else
-        "Same as your Mac"
+        String(localized: "Same as your Mac", comment: "Which bot opens first: left to the Mac")
         #endif
     }
 
@@ -95,8 +95,8 @@ private struct BotsHeadline: View {
 
     var body: some View {
         if let bot = answersFirst {
-            BotsHero(profile: bot.name, title: profiles.count == 1 ? "1 bot" : "\(profiles.count) bots",
-                     line: "\(bot.shownName) answers first.")
+            BotsHero(profile: bot.name, title: String(localized: "\(profiles.count) bots"),
+                     line: String(localized: "\(bot.shownName) answers first."))
         } else {
             PageHero(symbol: "person.2", title: "Finding your bots", tint: Ink.text2, id: "settings.bots.hero")
         }
@@ -158,7 +158,9 @@ private struct BotRowLabel: View {
 private struct BotsAdvancedPage: View {
     #if os(iOS)
     private var motion = MotionPrefs()
-    private static let styles = [("lively", "Lively"), ("calm", "Calm"), ("still", "Still")]
+    private static let styles = [("lively", String(localized: "Lively", comment: "How bots move")),
+                                  ("calm", String(localized: "Calm", comment: "How bots move")),
+                                  ("still", String(localized: "Still", comment: "How bots move: not at all"))]
     #endif
 
     var body: some View {

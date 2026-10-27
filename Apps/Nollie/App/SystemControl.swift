@@ -184,7 +184,7 @@ final class SystemControl {
         let key = Self.key(profile, rt)
         guard !busy.contains(key) else { return false }
         guard let home = home(rt, profile) else {
-            lastError = "The gateway didn't say where this bot lives."
+            lastError = String(localized: "The gateway didn't say where this bot lives.")
             return false
         }
         let gateway = rt.connection.gateway
@@ -229,7 +229,7 @@ final class SystemControl {
     func stopMacControl(profile: String, rt: GatewayRuntime,
                         allowed: @escaping @MainActor () -> Bool) async -> Bool {
         guard let home = home(rt, profile) else {
-            lastError = "The gateway didn't say where this bot lives."
+            lastError = String(localized: "The gateway didn't say where this bot lives.")
             return false
         }
         return await stopMacControl(key: Self.key(profile, rt), home: home, api: rt.api, allowed: allowed)
@@ -268,7 +268,8 @@ final class SystemControl {
                 source.removeValue(forKey: key)
                 readAt.removeValue(forKey: key)
             }
-            lastError = "Couldn't confirm Mac control is off. Check the connection and try again."
+            lastError = String(localized: "Couldn't confirm Mac control is off. Check the connection and try again.",
+                                    comment: "Safety: Mac control may still be on; keep exact meaning")
             return false
         }
     }
@@ -337,6 +338,7 @@ final class SystemControl {
     private func writeLease(_ api: HermesAPI, _ home: String, holder: String, epoch: Int, overwrite: Bool = true) async throws {
         var lease: [String: Any] = ["holder": holder, "since": Date().timeIntervalSince1970, "epoch": epoch]
         lease["viewer_id"] = holder == "human" ? "nollie-app" : NSNull()
+        // The lease is read by the gateway, so its reason stays in English.
         lease["reason"] = holder == "human" ? "System control is off in the Nollie app" : ""
         let data = try JSONSerialization.data(withJSONObject: lease, options: [.sortedKeys])
         let body: JSONValue = ["path": .string(Self.leasePath(home)),

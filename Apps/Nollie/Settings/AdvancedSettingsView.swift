@@ -14,12 +14,12 @@ struct AdvancedSettingsView: View {
     var body: some View {
         let hero = StatusReport(model: model, setup: setup).hero
         SettingsPage("advanced.page") {
-            PageHero(symbol: hero.symbol, title: hero.title, line: hero.line, tint: hero.tint, id: "advanced.hero")
+            PageHero(symbol: hero.symbol, title: .verbatim(hero.title), line: .verbatim(hero.line), tint: hero.tint, id: "advanced.hero")
             GlassStack {
                 if let rt = model.runtime {
                     if rt.connection.linkedMac != nil {
                         // Nollie Link carries the app's own routes only, not the dashboard's pages.
-                        GlassRowLabel(title: "Open the Hermes dashboard on your Mac", symbol: "safari", chevron: false)
+                        GlassRowLabel(title: String(localized: "Open the Hermes dashboard on your Mac"), symbol: "safari", chevron: false)
                             .accessibilityIdentifier("advanced.dashboard")
                     } else {
                         Link(destination: rt.connection.gateway.base) { DashboardRowLabel() }

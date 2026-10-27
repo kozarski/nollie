@@ -28,7 +28,7 @@ struct ApprovalCardView: View {
     /// On a member's phone, every approval waits on the owner.
     @Environment(\.familyOwner) private var familyOwner
 
-    private var who: String { botName.isEmpty ? "Your bot" : botName }
+    private var who: String { botName.isEmpty ? String(localized: "Your bot", comment: "Stands in for a bot's name when it has none") : botName }
     private var offers: [String] { approval.offeredChoices }
     private var screenKey: String { approval.patternKey ?? "" }
     private var isScreenAction: Bool { screenKey.hasPrefix("cua:") }
@@ -43,9 +43,12 @@ struct ApprovalCardView: View {
     private var kind: String {
         if isScreenAction { return Self.screenLine(screenKey) }
         if let tool = approval.toolName, !tool.isEmpty, tool != "terminal" {
-            return "Use \(tool.replacingOccurrences(of: "_", with: " "))."
+            let named = tool.replacingOccurrences(of: "_", with: " ")
+            return String(localized: "Use \(named).", comment: "Safety: approval card, what a yes allows; a tool's name follows Use. Keep exact meaning")
         }
-        return commandText == nil ? "Go ahead with this." : "Run a command."
+        return commandText == nil
+            ? String(localized: "Go ahead with this.", comment: "Safety: approval card, what a yes allows. Keep exact meaning")
+            : String(localized: "Run a command.", comment: "Safety: approval card, what a yes allows. Keep exact meaning")
     }
 
     /// A screen action reads as what it does on the Mac ("Click on your Mac, in the background")
@@ -195,7 +198,8 @@ struct ApprovalCardView: View {
     }
 
     @ViewBuilder private func answers(fill: Bool) -> some View {
-        ApproveButton(title: "Allow once", locked: locked, fill: fill) { onChoice("once") }
+        ApproveButton(title: LocalizedStringResource("Allow once", comment: "Safety: approval answer, allows this one action only"),
+                      locked: locked, fill: fill) { onChoice("once") }
         Button("Deny") { onChoice("deny") }
             .buttonStyle(OutlinePillStyle(fill: fill))
             .accessibilityIdentifier("approval.deny")
@@ -240,44 +244,63 @@ struct ApprovalCardView: View {
         return (pieces.count > 1 ? pieces[1] : "", pieces.count > 2 ? pieces[2] : "")
     }
 
+    /// The keys are the gateway's action names; only the words are shown.
     private static let verbs: [String: String] = {
+        let press = String(localized: "Press keys", comment: "Safety: a screen action on the Mac, starts a sentence")
+        let type = String(localized: "Type", comment: "Safety: a screen action on the Mac (type text), starts a sentence")
         let pairs: [(String, String)] = [
-            ("scroll", "Scroll"), ("drag", "Drag"), ("set_value", "Fill in a field"),
-            ("click", "Click"), ("right_click", "Right-click"), ("double_click", "Double-click"),
-            ("type", "Type"), ("type_text", "Type"),
-            ("key", "Press keys"), ("press_key", "Press keys"), ("hotkey", "Press keys"),
-            ("focus_app", "Switch to an app"), ("launch_app", "Open an app"),
-            ("bring_to_front", "Bring an app to the front"),
+            ("scroll", String(localized: "Scroll", comment: "Safety: a screen action on the Mac, starts a sentence")),
+            ("drag", String(localized: "Drag", comment: "Safety: a screen action on the Mac, starts a sentence")),
+            ("set_value", String(localized: "Fill in a field", comment: "Safety: a screen action on the Mac, starts a sentence")),
+            ("click", String(localized: "Click", comment: "Safety: a screen action on the Mac, starts a sentence")),
+            ("right_click", String(localized: "Right-click", comment: "Safety: a screen action on the Mac, starts a sentence")),
+            ("double_click", String(localized: "Double-click", comment: "Safety: a screen action on the Mac, starts a sentence")),
+            ("type", type), ("type_text", type),
+            ("key", press), ("press_key", press), ("hotkey", press),
+            ("focus_app", String(localized: "Switch to an app", comment: "Safety: a screen action on the Mac, starts a sentence")),
+            ("launch_app", String(localized: "Open an app", comment: "Safety: a screen action on the Mac, starts a sentence")),
+            ("bring_to_front", String(localized: "Bring an app to the front", comment: "Safety: a screen action on the Mac, starts a sentence")),
         ]
         return Dictionary(uniqueKeysWithValues: pairs)
     }()
 
     private static let nouns: [String: String] = [
-        "click": "a click", "double_click": "a double-click", "right_click": "a right-click",
-        "middle_click": "a middle-click", "type": "typing", "key": "a key press", "scroll": "scrolling",
-        "drag": "a drag", "focus_app": "switching to an app", "bring_to_front": "bringing an app to the front",
-        "set_value": "filling in a field",
+        "click": String(localized: "a click", comment: "Safety: a screen action on the Mac, as a noun"),
+        "double_click": String(localized: "a double-click", comment: "Safety: a screen action on the Mac, as a noun"),
+        "right_click": String(localized: "a right-click", comment: "Safety: a screen action on the Mac, as a noun"),
+        "middle_click": String(localized: "a middle-click", comment: "Safety: a screen action on the Mac, as a noun"),
+        "type": String(localized: "typing", comment: "Safety: a screen action on the Mac, as a noun"),
+        "key": String(localized: "a key press", comment: "Safety: a screen action on the Mac, as a noun"),
+        "scroll": String(localized: "scrolling", comment: "Safety: a screen action on the Mac, as a noun"),
+        "drag": String(localized: "a drag", comment: "Safety: a screen action on the Mac, as a noun"),
+        "focus_app": String(localized: "switching to an app", comment: "Safety: a screen action on the Mac, as a noun"),
+        "bring_to_front": String(localized: "bringing an app to the front", comment: "Safety: a screen action on the Mac, as a noun"),
+        "set_value": String(localized: "filling in a field", comment: "Safety: a screen action on the Mac, as a noun"),
     ]
 
     /// A screen action in plain words, taken from its approval key.
     static func screenLine(_ key: String) -> String {
         let (action, mode) = parts(of: key)
-        let verb = verbs[action] ?? "Use your Mac's screen"
-        let tail = switch mode {
-        case "foreground": " on your Mac, in front: its window comes forward for a moment."
-        case "background": " on your Mac, in the background: your cursor and windows stay as they are."
-        default: " on your Mac."
+        let verb = verbs[action] ?? String(localized: "Use your Mac's screen", comment: "Safety: a screen action on the Mac, starts a sentence")
+        return switch mode {
+        case "foreground":
+            String(localized: "\(verb) on your Mac, in front: its window comes forward for a moment.",
+                   comment: "Safety: approval card; the screen action comes first, like Click. Keep exact meaning")
+        case "background":
+            String(localized: "\(verb) on your Mac, in the background: your cursor and windows stay as they are.",
+                   comment: "Safety: approval card; the screen action comes first, like Click. Keep exact meaning")
+        default:
+            String(localized: "\(verb) on your Mac.", comment: "Safety: approval card; the screen action comes first, like Click. Keep exact meaning")
         }
-        return verb + tail
     }
 
     /// The first screen action in a few words for the System control card, like "a click, in front".
     static func screenStep(_ key: String) -> String {
         let (action, mode) = parts(of: key)
-        let what = nouns[action] ?? "a screen action"
+        let what = nouns[action] ?? String(localized: "a screen action", comment: "Safety: a screen action on the Mac, as a noun")
         switch mode {
-        case "foreground": return what + ", in front"
-        case "background": return what + ", in the background"
+        case "foreground": return String(localized: "\(what), in front", comment: "Safety: a screen action, like a click, done with its window brought forward")
+        case "background": return String(localized: "\(what), in the background", comment: "Safety: a screen action, like a click, done without moving the cursor or windows")
         default: return what
         }
     }

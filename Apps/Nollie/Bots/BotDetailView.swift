@@ -56,15 +56,16 @@ struct BotDetailView: View {
                 ChatRows(chats: chats, profile: profile, askToDelete: { doomed = $0 })
             }
         }
-        .inlineTitle(profile.label)
+        .inlineTitle(.verbatim(profile.label))
         .modifier(ComposeTarget(profile: profile.name, starting: $startingChat))
         .reloadable { await reload() }
         .task { await reload() }
-        .alert("Delete chat?", isPresented: .present($doomed), presenting: doomed) { session in
+        .alert(Text("Delete chat?", comment: "Safety: asks before deleting a chat"),
+               isPresented: .present($doomed), presenting: doomed) { session in
             Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) { Task { await erase(session) } }
+            Button(String(localized: "Delete", comment: "Safety: deletes the chat"), role: .destructive) { Task { await erase(session) } }
         } message: { _ in
-            Text("The chat and its transcript are deleted from the gateway.")
+            Text("The chat and its transcript are deleted from the gateway.", comment: "Safety: what deleting a chat does; keep exact meaning")
         }
     }
 

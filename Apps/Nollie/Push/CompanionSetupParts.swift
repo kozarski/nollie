@@ -232,7 +232,7 @@ struct InstalledFilesWindow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            WindowBar(title: finished ? "Installed \(files.count) files" : "Writing files…", folded: folded) {
+            WindowBar(title: finished ? String(localized: "Installed \(files.count) files") : String(localized: "Writing files…"), folded: folded) {
                 withAnimation(.smooth(duration: 0.3)) { folded.toggle() }
             }
             FileLines(files: files)

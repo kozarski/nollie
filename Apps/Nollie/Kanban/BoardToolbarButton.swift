@@ -78,13 +78,13 @@ struct BoardToolbarButton: View {
                                   attentionCounts: currentMetadata?.attentionCounts)
     }
     private var reviewDescription: String {
-        summary.count == 1 ? "1 task needing your help" : "\(summary.count) tasks needing your help"
+        String(localized: "\(summary.count) tasks needing your help")
     }
 
     var body: some View {
         styled
         .accessibilityLabel("Board")
-        .accessibilityValue(summary.count > 0 ? reviewDescription : "No tasks needing your help")
+        .accessibilityValue(summary.count > 0 ? reviewDescription : String(localized: "No tasks needing your help"))
         .accessibilityHint(summary.count > 0 ? "Opens tasks that need your help" : "Opens the Board")
         .accessibilityIdentifier("chats.board")
         .task(id: refreshKey) { await refreshCounts() }
@@ -112,7 +112,7 @@ struct BoardToolbarButton: View {
     @ViewBuilder private var styled: some View {
         #if os(iOS)
         if asRow {
-            SidebarActionRow(title: "Board", symbol: "rectangle.split.3x1", action: open) { countBadge }
+            SidebarActionRow(title: String(localized: "Board", comment: "The Board, Nollie's task board; a name"), symbol: "rectangle.split.3x1", action: open) { countBadge }
         } else {
             bar
         }
@@ -130,7 +130,8 @@ struct BoardToolbarButton: View {
         }
         #if os(macOS)
         .buttonStyle(BoardToolbarStyle(needsReview: summary.count > 0))
-        .help(summary.count > 0 ? "Board: \(reviewDescription) (⌘B)" : "Board: no tasks needing your help (⌘B)")
+        .help(summary.count > 0 ? String(localized: "Board: \(reviewDescription) (⌘B)", comment: "%@ says how many tasks need help")
+                                 : String(localized: "Board: no tasks needing your help (⌘B)"))
         #else
         .tint(summary.count > 0 ? .blue : .primary)
         #endif

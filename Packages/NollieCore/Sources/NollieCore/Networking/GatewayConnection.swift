@@ -11,8 +11,11 @@ public extension AuthMode {
     var id: String { rawValue }
 
     var title: String {
-        let words: [AuthMode: String] = [.sessionToken: "Session token", .password: "Username & password", .oauth: "Sign in with browser"]
-        return words[self] ?? rawValue
+        switch self {
+        case .sessionToken: String(localized: "Session token", table: "Core", comment: "A way to sign in to a gateway")
+        case .password: String(localized: "Username & password", table: "Core", comment: "A way to sign in to a gateway")
+        case .oauth: String(localized: "Sign in with browser", table: "Core", comment: "A way to sign in to a gateway")
+        }
     }
 
     /// Everything but the session token signs in and carries a bearer token.

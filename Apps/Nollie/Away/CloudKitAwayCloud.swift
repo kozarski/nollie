@@ -15,7 +15,7 @@ final class CloudKitAwayCloud: AwayCloud {
     nonisolated static let phoneAlertSubscription = "nollie-away-phone-alert-v1"
     nonisolated static let subscriptions = [macSubscription, phoneSubscription, phoneAlertSubscription]
     /// The words on a visible notification. Nothing from the record is ever in it.
-    nonisolated static let alertWords = "Nollie has something for you."
+    nonisolated static let alertWords = String(localized: "Nollie has something for you.")
 
     nonisolated static var zoneID: CKRecordZone.ID { CKRecordZone.ID(zoneName: zoneName, ownerName: CKCurrentUserDefaultName) }
 

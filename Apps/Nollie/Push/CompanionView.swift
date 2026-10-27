@@ -42,8 +42,8 @@ struct CompanionView: View {
 
     private func setupCard(_ runtime: GatewayRuntime) -> some View {
         let configured = setup.isCompleted(for: runtime)
-        return FormCard(note: configured ? "Configure goes through the setup again: address, sign-in, install, test."
-                                         : "Guided setup: permission, address, sign-in, install, start and a test.") {
+        return FormCard(note: configured ? String(localized: "Configure goes through the setup again: address, sign-in, install, test.")
+                                         : String(localized: "Guided setup: permission, address, sign-in, install, start and a test.")) {
             NavigationLink {
                 PushSetupView(setup: setup)
             } label: {
@@ -58,10 +58,11 @@ struct CompanionView: View {
     }
 
     private var gatewayCard: some View {
-        FormCard("Companion on the gateway",
-                 note: "A small plugin on your gateway. It sends replies as notifications and brings approval cards to \(DeviceWords.your) as soon as a bot needs a yes.") {
+        FormCard(String(localized: "Companion on the gateway"),
+                 note: String(localized: "A small plugin on your gateway. It sends replies as notifications and brings approval cards to \(DeviceWords.your) as soon as a bot needs a yes.",
+                              comment: "%@ is your iPhone, your iPad or your Mac")) {
             if setup.companionCheckedAt == nil {
-                SpinnerLabel("Checking…").foregroundStyle(.secondary)
+                SpinnerLabel(String(localized: "Checking…")).foregroundStyle(.secondary)
             } else {
                 CompanionStatusChecks(setup: setup)
             }
@@ -71,12 +72,16 @@ struct CompanionView: View {
     private var deviceCard: some View {
         let push = model.push
         var facts: [(title: String, value: String)] = [
-            ("Notifications", PushSetupView.statusText(push.authorization)),
+            (String(localized: "Notifications"), PushSetupView.statusText(push.authorization)),
         ]
         if PushRelay.isConfigured {
-            facts.append(("Push relay", Self.when("registered", push.relayRegisteredAt, otherwise: "not registered")))
+            facts.append((String(localized: "Push relay"),
+                          Self.when(push.relayRegisteredAt, { String(localized: "registered \($0)", comment: "%@ is a time") },
+                                    otherwise: String(localized: "not registered"))))
         }
-        facts.append(("Device file on gateway", Self.when("published", push.registeredAt, otherwise: "not published")))
+        facts.append((String(localized: "Device file on gateway"),
+                      Self.when(push.registeredAt, { String(localized: "published \($0)", comment: "%@ is a time") },
+                                otherwise: String(localized: "not published"))))
         return FormCard(DeviceWords.This) {
             ForEach(facts, id: \.title) { fact in
                 LabeledContent(fact.title, value: fact.value)
@@ -84,18 +89,20 @@ struct CompanionView: View {
         }
     }
 
-    private static func when(_ verb: String, _ date: Date?, otherwise: String) -> String {
+    /// `said` puts the time into its sentence.
+    private static func when(_ date: Date?, _ said: (String) -> String, otherwise: String) -> String {
         guard let date else { return otherwise }
-        return verb + " " + date.formatted(date: .omitted, time: .shortened)
+        return said(date.formatted(date: .omitted, time: .shortened))
     }
 
     private var removalCard: some View {
-        FormCard(note: "Stops the service and removes the plugin and its files from the gateway, and \(DeviceWords.this) forgets the setup. Installing again starts fresh.") {
+        FormCard(note: String(localized: "Stops the service and removes the plugin and its files from the gateway, and \(DeviceWords.this) forgets the setup. Installing again starts fresh.",
+                                     comment: "%@ is this iPhone, this iPad or this Mac")) {
             Button(role: .destructive) {
                 askingToUninstall = true
             } label: {
                 if uninstalling {
-                    SpinnerLabel("Uninstalling…")
+                    SpinnerLabel(String(localized: "Uninstalling…"))
                 } else {
                     Label("Uninstall companion", systemImage: "trash")
                 }
@@ -105,7 +112,7 @@ struct CompanionView: View {
     }
 
     private var diagnosticsCard: some View {
-        FormCard(note: "The last notification, the push log and the last push the companion sent.") {
+        FormCard(note: String(localized: "The last notification, the push log and the last push the companion sent.")) {
             NavigationLink {
                 CompanionDiagnosticsView(setup: setup)
             } label: {

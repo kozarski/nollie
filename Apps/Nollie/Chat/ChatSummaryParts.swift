@@ -59,6 +59,7 @@ enum SummaryWriter {
         var summary: String
     }
 
+    // Goes to the model, so it stays in English.
     private static let brief = """
         Write the preview text for one row of a chat list, based on an exchange between a person and an assistant. \
         Stay specific and matter-of-fact, and never say the words conversation or summary.

@@ -10,7 +10,7 @@ enum NativeSetupKit {
     static var root: URL? { Bundle.main.resourceURL?.appendingPathComponent("Setup Kit", isDirectory: true) }
 
     static func failure(_ message: String) -> ConfigurationBackup.Failure { .init(message) }
-    static let missing = "This copy of Nollie is missing some of its setup files. Reinstall Nollie, then try again."
+    static let missing = String(localized: "This copy of Nollie is missing some of its setup files. Reinstall Nollie, then try again.")
 
     /// A plain relative path: no root, no "." or "..", no empty parts, nothing unusual.
     static func isSafeRelativePath(_ path: String) -> Bool {
@@ -64,19 +64,19 @@ enum NativeSetupKit {
                 if let before = entry.before {
                     guard exists, (info.st_mode & S_IFMT) == S_IFREG,
                           OwnedSetupFiles.hash(try OwnedSetupFiles.read(target, maximum: 16_000_000)) == before else {
-                        throw NativeSetupKit.failure("This Hermes download doesn't match the version Nollie was tested with. Nothing was installed.")
+                        throw NativeSetupKit.failure(String(localized: "This Hermes download doesn't match the version Nollie was tested with. Nothing was installed."))
                     }
                 } else if exists {
-                    throw NativeSetupKit.failure("This Hermes download doesn't match the version Nollie was tested with. Nothing was installed.")
+                    throw NativeSetupKit.failure(String(localized: "This Hermes download doesn't match the version Nollie was tested with. Nothing was installed."))
                 }
                 let temporary = target.deletingLastPathComponent().appendingPathComponent(".nollie-" + UUID().uuidString)
                 try OwnedSetupFiles.writeNew(data, to: temporary)
                 guard renameat(parent, temporary.lastPathComponent, parent, target.lastPathComponent) == 0 else {
                     _ = unlinkat(parent, temporary.lastPathComponent, 0)
-                    throw NativeSetupKit.failure("A reviewed Hermes change could not be written. Nothing was installed.")
+                    throw NativeSetupKit.failure(String(localized: "A reviewed Hermes change could not be written. Nothing was installed."))
                 }
                 guard OwnedSetupFiles.hash(try OwnedSetupFiles.read(target, maximum: entry.bytes)) == entry.after else {
-                    throw NativeSetupKit.failure("A reviewed Hermes change did not verify. Nothing was installed.")
+                    throw NativeSetupKit.failure(String(localized: "A reviewed Hermes change did not verify. Nothing was installed."))
                 }
             }
         }

@@ -207,6 +207,7 @@ final class ComputerCenter {
 
     // MARK: Ask
 
+    // Refusals go back to the bot's model, so they stay in English.
     static let noHelper = "This copy of Nollie can't use the Mac."
     static let off = "Nollie Computer is off on this Mac. The person can turn it on in a bot's settings, under Your Mac."
     /// The setting, app-wide: off until the person turns it on.
@@ -220,6 +221,7 @@ final class ComputerCenter {
     static let declined = "The person said no. Don't try again unless they ask."
     static let macControlOff = "Allow Mac control is off for %@. The person can turn it on in its settings, under Computer."
     static let cantCheckMacControl = "Nollie couldn't check whether %@ may use the Mac, so it won't ask the person. Try again in a moment."
+    static let notOnThisMac = "Not on this Mac."
 
     /// A bot's Allow Mac control, read again from Hermes now.
     static func readMacControl(_ profile: String) async -> Bool? {
@@ -285,7 +287,7 @@ final class ComputerCenter {
         let found = await Task.detached { request.apps.prefix(8).map { (name: $0, info: resolve($0)) } }.value
         for (name, info) in found {
             guard let info else {
-                refused.append(.init(name: name, reason: "Not on this Mac."))
+                refused.append(.init(name: name, reason: Self.notOnThisMac))
                 continue
             }
             let access = ComputerAppRules.access(for: info)
@@ -358,14 +360,18 @@ final class ComputerCenter {
     func allowWithOwner() async {
         guard let approval else { return }
         let apps = approval.apps.map(\.name).joined(separator: ", ")
-        guard await authenticate("let \(approval.botName) use \(apps)"), self.approval?.id == approval.id else { return }
+        let reason = String(localized: "let \(approval.botName) use \(apps)",
+                            comment: "Safety: Touch ID reason for Allow; finishes 'Nollie is trying to …'; keep exact meaning")
+        guard await authenticate(reason), self.approval?.id == approval.id else { return }
         answerApproval(true)
     }
 
     /// Allow Once, from a confirmation card: the same proof, for each risky step.
     func allowOnceWithOwner(id: UUID) async {
         guard let confirmation, confirmation.id == id else { return }
-        guard await authenticate("let \(confirmation.botName) \(confirmation.sentence)"), self.confirmation?.id == id else { return }
+        let reason = String(localized: "let \(confirmation.botName) \(confirmation.sentence)",
+                            comment: "Safety: Touch ID reason for Allow Once; finishes 'Nollie is trying to …'; the second part is a step like 'send something in Mail'")
+        guard await authenticate(reason), self.confirmation?.id == id else { return }
         answerConfirmation(true, id: id)
     }
 
@@ -424,6 +430,7 @@ final class ComputerCenter {
 
     // MARK: Act
 
+    // To the bot's model: English.
     static let ended = "Access to the Mac has ended. Ask again with mac_start if the person wants."
     static let stillActing = "Nollie is still doing the last action. Wait for its answer, then try again."
     static let staleElement = "Use an element from a new mac_look of that app: each look is good for one action."

@@ -106,12 +106,12 @@ struct MacDevicePairingView: View {
                         instructions
                         TimelineView(.periodic(from: .now, by: 1)) { context in
                             let remaining = max(0, Int(invitation.expiresAt.timeIntervalSince(context.date)))
-                            Text(remaining > 0 ? "Expires in \(remaining / 60):\(String(format: "%02d", remaining % 60))" : "This code has expired.")
+                            Text(remaining > 0 ? "Expires in \(Duration.seconds(remaining).formatted(.time(pattern: .minuteSecond)))" : "This code has expired.")
                                 .font(.callout.monospacedDigit()).foregroundStyle(.secondary)
                                 .accessibilityIdentifier("pairing.expiry")
                         }
                     } else {
-                        Text(installer.message ?? issue ?? "This code has expired. Make a new one when your iPhone is ready.")
+                        Text(installer.message ?? issue ?? String(localized: "This code has expired. Make a new one when your iPhone is ready."))
                             .foregroundStyle(.secondary).multilineTextAlignment(.center)
                             .accessibilityIdentifier("pairing.issue")
                         if companionNeeded && installer.phase != .needsActivation {
@@ -167,11 +167,11 @@ struct MacDevicePairingView: View {
 
     private var installationProgress: String {
         switch installer.phase {
-        case .checking: "Checking the connection…"
-        case .backingUp: "Saving a verified backup…"
-        case .copying: "Adding the pairing companion…"
-        case .enabling: "Enabling pairing…"
-        default: "Checking that pairing is ready…"
+        case .checking: String(localized: "Checking the connection…")
+        case .backingUp: String(localized: "Saving a verified backup…")
+        case .copying: String(localized: "Adding the pairing companion…")
+        case .enabling: String(localized: "Enabling pairing…")
+        default: String(localized: "Checking that pairing is ready…")
         }
     }
 
@@ -215,19 +215,19 @@ struct MacDevicePairingView: View {
         installer.clearStatus()
         loading = true; paired = false; ended = false; issue = nil; companionNeeded = false
         guard !model.lock.isLocked else {
-            issue = "Unlock Nollie before making a pairing code."
+            issue = String(localized: "Unlock Nollie before making a pairing code.")
             loading = false
             return
         }
         guard let runtime = model.runtime, runtime.connection.id == connection.id else {
-            issue = "Connect to this assistant first, then try pairing again."
+            issue = String(localized: "Connect to this assistant first, then try pairing again.")
             loading = false
             return
         }
         guard connection.gateway.isTLS, !connection.hasAccessHeaders else {
             issue = connection.hasAccessHeaders
-                ? "This connection has an extra sign-in gate. Connect manually on your iPhone for now."
-                : "This connection is only available on this Mac or local network. Pairing needs a secure address your iPhone can reach."
+                ? String(localized: "This connection has an extra sign-in gate. Connect manually on your iPhone for now.")
+                : String(localized: "This connection is only available on this Mac or local network. Pairing needs a secure address your iPhone can reach.")
             loading = false
             return
         }
@@ -241,10 +241,10 @@ struct MacDevicePairingView: View {
                 companionNeeded = capability.reason == "companion_required"
                     && connection.authMode.usesBearer && connection.authProvider != DevicePairingClient.provider
                 issue = companionNeeded
-                    ? "Add the pairing companion to connect your iPhone with a one-use code."
+                    ? String(localized: "Add the pairing companion to connect your iPhone with a one-use code.")
                     : capability.reason == "original_sign_in_required"
-                        ? "Sign in with your original Mac account before making a pairing code."
-                        : "Pairing needs an existing secure address with sign-in. You can still connect manually on your iPhone."
+                        ? String(localized: "Sign in with your original Mac account before making a pairing code.")
+                        : String(localized: "Pairing needs an existing secure address with sign-in. You can still connect manually on your iPhone.")
                 loading = false
                 return
             }
@@ -272,7 +272,7 @@ struct MacDevicePairingView: View {
         } catch {
             guard !Task.isCancelled else { return }
             revoke()
-            issue = "Couldn't prepare pairing. Check the connection and try again."
+            issue = String(localized: "Couldn't prepare pairing. Check the connection and try again.")
             loading = false
         }
     }
@@ -387,7 +387,7 @@ struct PhoneDevicePairingView: View {
                                 .accessibilityIdentifier("pairing.preview")
                         }
                     } else if issue == nil {
-                        Text(replacing.map { "Reconnect to \($0.name)" } ?? "Scan the code on your Mac").font(.title2.bold())
+                        Text(replacing.map { String(localized: "Reconnect to \($0.name)") } ?? String(localized: "Scan the code on your Mac")).font(.title2.bold())
                         Text("On your Mac, open Nollie's Settings and show the code for your iPhone.")
                             .foregroundStyle(.secondary).multilineTextAlignment(.center)
                         PairingScanner(onCode: receive).id(scannerID)
@@ -433,7 +433,7 @@ struct PhoneDevicePairingView: View {
         .onChange(of: model.lock.isLocked) { _, locked in
             if locked {
                 reset()
-                issue = "Unlock Nollie, then scan a new code from your Mac."
+                issue = String(localized: "Unlock Nollie, then scan a new code from your Mac.")
             }
         }
         .onDisappear {
@@ -546,7 +546,7 @@ struct PhoneDevicePairingView: View {
         } catch let error as DevicePairingRecovery.Failure {
             issue = error.localizedDescription
         } catch {
-            issue = "This isn't a current Nollie pairing code. Make a new code on your Mac and scan again."
+            issue = String(localized: "This isn't a current Nollie pairing code. Make a new code on your Mac and scan again.")
         }
     }
 
@@ -580,13 +580,13 @@ struct PhoneDevicePairingView: View {
                 if pendingConnection == nil {
                     guard await localNetworkAllowed() else { return }
                     try Task.checkCancellation()
-                    phase = "Finding your Mac…"
+                    phase = String(localized: "Finding your Mac…")
                     let candidate = LinkedMac(macName: offer.macName, pin: offer.pin, port: offer.port, hosts: offer.hosts,
                                               installTag: offer.installTag, deviceID: UUID())
                     guard let host = await NollieLinkResolver().resolve(candidate, lastGood: nil) else { throw NollieLinkError.unreachable }
                     try Task.checkCancellation()
                     guard !model.lock.isLocked, operationID == operation else { throw CancellationError() }
-                    phase = "Linking…"
+                    phase = String(localized: "Linking…")
                     let claim = try await NollieLinkClient.claim(offer, host: host, deviceName: UIDevice.current.name)
                     guard !Task.isCancelled, !model.lock.isLocked, operationID == operation else { throw CancellationError() }
                     var linked = LinkedMac(macName: claim.macName, pin: offer.pin, port: offer.port, hosts: offer.hosts,
@@ -598,16 +598,16 @@ struct PhoneDevicePairingView: View {
                     pendingSecrets = GatewaySecrets(sessionToken: claim.credential, linkedDevice: true)
                 }
                 guard var connection = pendingConnection, let secrets = pendingSecrets else { return }
-                phase = "Checking the connection…"
+                phase = String(localized: "Checking the connection…")
                 let outcome = await ConnectionTester.run(connection: connection, secrets: secrets) { _ in }
                 try Task.checkCancellation()
                 guard !model.lock.isLocked, operationID == operation else { throw CancellationError() }
                 guard outcome.succeeded else {
-                    issue = "Linked, but your Mac's assistant didn't answer yet. Keep Nollie open on your Mac and try again."
+                    issue = String(localized: "Linked, but your Mac's assistant didn't answer yet. Keep Nollie open on your Mac and try again.")
                     return
                 }
                 connection.lastVersion = outcome.version
-                phase = "Saving…"
+                phase = String(localized: "Saving…")
                 try model.store.upsert(connection, secrets: secrets)
                 pendingSecrets = nil
                 pendingConnection = nil
@@ -624,7 +624,7 @@ struct PhoneDevicePairingView: View {
             } catch {
                 guard !Task.isCancelled, operationID == operation else { return }
                 issue = pendingConnection == nil ? NollieLinkError.invalidResponse.localizedDescription
-                    : "Couldn't save the link securely. Try again."
+                    : String(localized: "Couldn't save the link securely. Try again.")
             }
         }
     }
@@ -643,7 +643,7 @@ struct PhoneDevicePairingView: View {
                         guard await localNetworkAllowed() else { return }
                         try Task.checkCancellation()
                     }
-                    phase = "Pairing with your Mac…"
+                    phase = String(localized: "Pairing with your Mac…")
                     let secrets = try await DevicePairingClient.redeem(invitation)
                     guard !Task.isCancelled, !model.lock.isLocked, operationID == operation else {
                         Task { try? await DevicePairingClient.discard(invitation, secrets: secrets) }
@@ -653,16 +653,16 @@ struct PhoneDevicePairingView: View {
                     pendingConnection = connection
                 }
                 guard var connection = pendingConnection, let secrets = pendingSecrets else { return }
-                phase = "Checking the connection…"
+                phase = String(localized: "Checking the connection…")
                 let outcome = await ConnectionTester.run(connection: connection, secrets: secrets) { _ in }
                 try Task.checkCancellation()
                 guard !model.lock.isLocked, operationID == operation else { throw CancellationError() }
                 guard outcome.succeeded else {
-                    issue = "Pairing was accepted, but the connection check didn't finish. Keep your Mac online and try again."
+                    issue = String(localized: "Pairing was accepted, but the connection check didn't finish. Keep your Mac online and try again.")
                     return
                 }
                 connection.lastVersion = outcome.version
-                phase = "Saving this connection…"
+                phase = String(localized: "Saving this connection…")
                 try model.store.upsert(connection, secrets: secrets)
                 pendingSecrets = nil
                 pendingConnection = nil
@@ -683,8 +683,8 @@ struct PhoneDevicePairingView: View {
             } catch {
                 guard !Task.isCancelled, operationID == operation else { return }
                 issue = pendingConnection == nil
-                    ? "This code may have expired or already been used. Make a new code on your Mac and scan again."
-                    : "Couldn't save the connection securely. Try again."
+                    ? String(localized: "This code may have expired or already been used. Make a new code on your Mac and scan again.")
+                    : String(localized: "Couldn't save the connection securely. Try again.")
             }
         }
     }

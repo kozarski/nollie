@@ -24,21 +24,29 @@ enum KanbanAsk: Identifiable {
     private var script: Script {
         switch self {
         case .done:
-            Script(title: "Mark as done", verb: "Done", hint: "What was done",
-                   message: "A short note on the result. The gateway wants one unless the task is coming out of review.")
+            Script(title: String(localized: "Mark as done"), verb: String(localized: "Done", comment: "A button that marks a task done"),
+                   hint: String(localized: "What was done"),
+                   message: String(localized: "A short note on the result. The gateway wants one unless the task is coming out of review."))
         case .block:
-            Script(title: "Block this task", verb: "Block", hint: "Why it is blocked (optional)",
-                   message: "The reason stays on the card for whoever picks it up next.")
+            Script(title: String(localized: "Block this task"), verb: String(localized: "Block", comment: "A button that blocks a task"),
+                   hint: String(localized: "Why it is blocked (optional)"),
+                   message: String(localized: "The reason stays on the card for whoever picks it up next."))
         case .comment:
-            Script(title: "Comment", verb: "Send", hint: "Your comment", message: task.title)
+            Script(title: String(localized: "Comment", comment: "A title: comment on a task"), verb: String(localized: "Send", comment: "A button that sends a comment"),
+                   hint: String(localized: "Your comment"), message: task.title)
         case .archive:
-            Script(title: "Archive this task?", verb: "Archive", message: "It leaves the board, and the gateway keeps a copy.")
+            Script(title: String(localized: "Archive this task?"), verb: String(localized: "Archive", comment: "A button that archives a task"),
+                   message: String(localized: "It leaves the board, and the gateway keeps a copy."))
         case .delete:
-            Script(title: "Delete this task?", verb: "Delete", destructive: true,
-                   message: "This deletes \"\(task.title)\" from the gateway, along with its comments and runs.")
+            Script(title: String(localized: "Delete this task?", comment: "Safety: deleting; keep exact meaning"),
+                   verb: String(localized: "Delete", comment: "Safety: a button that deletes a task"), destructive: true,
+                   message: String(localized: "This deletes \"\(task.title)\" from the gateway, along with its comments and runs.",
+                                   comment: "Safety: what deleting removes; keep exact meaning"))
         case .stop:
-            Script(title: "Stop the worker?", verb: "Stop", destructive: true,
-                   message: "The worker on \"\(task.title)\" stops and the card returns to Ready.")
+            Script(title: String(localized: "Stop the worker?", comment: "Safety: Stop; keep exact meaning"),
+                   verb: String(localized: "Stop", comment: "Safety: a button that stops the worker on a task"), destructive: true,
+                   message: String(localized: "The worker on \"\(task.title)\" stops and the card returns to Ready.",
+                                   comment: "Safety: what Stop does; keep exact meaning"))
         }
     }
 
@@ -95,7 +103,7 @@ extension KanbanStore {
         case .comment(let task): typed.isEmpty ? nil : await comment(task, typed)
         case .archive(let task): await move(task, to: .archived)
         case .delete(let task): await delete(task)
-        case .stop(let task): await stop(task, reason: "stopped from Nollie")
+        case .stop(let task): await stop(task, reason: "stopped from Nollie") // Goes to the gateway, so it stays in English.
         }
     }
 }

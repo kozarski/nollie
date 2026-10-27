@@ -35,14 +35,14 @@ final class PairingCompanionInstaller {
         case unsupportedConnection, wrongHome, busy, unknownActivity, changed, upload, enable, cancelled
         var errorDescription: String? {
             switch self {
-            case .unsupportedConnection: "Pairing needs your original sign-in and an existing secure address your iPhone can reach."
-            case .wrongHome: "Couldn't verify the pairing installation folder. No more files were changed."
-            case .busy: "Nollie is working. Wait for the current tasks to finish, then set up pairing."
-            case .unknownActivity: "Couldn't check whether tasks are running. Try again when the connection is ready."
-            case .changed: "The companion files changed during setup. Your backup is saved. Check the connection before trying again."
-            case .upload: "Couldn't verify the copied pairing files. Setup stopped and your backup is saved."
-            case .enable: "The pairing files are saved, but Hermes couldn't enable them. Your backup is saved."
-            case .cancelled: "Pairing setup stopped. Any verified backup is kept."
+            case .unsupportedConnection: String(localized: "Pairing needs your original sign-in and an existing secure address your iPhone can reach.")
+            case .wrongHome: String(localized: "Couldn't verify the pairing installation folder. No more files were changed.")
+            case .busy: String(localized: "Nollie is working. Wait for the current tasks to finish, then set up pairing.")
+            case .unknownActivity: String(localized: "Couldn't check whether tasks are running. Try again when the connection is ready.")
+            case .changed: String(localized: "The companion files changed during setup. Your backup is saved. Check the connection before trying again.")
+            case .upload: String(localized: "Couldn't verify the copied pairing files. Setup stopped and your backup is saved.")
+            case .enable: String(localized: "The pairing files are saved, but Hermes couldn't enable them. Your backup is saved.")
+            case .cancelled: String(localized: "Pairing setup stopped. Any verified backup is kept.")
             }
         }
     }
@@ -101,7 +101,7 @@ final class PairingCompanionInstaller {
             try checkAllowed(operations)
             if capability.supported {
                 phase = .ready
-                message = "Pairing is ready. Your existing connection is unchanged."
+                message = String(localized: "Pairing is ready. Your existing connection is unchanged.")
             } else {
                 phase = .needsActivation
                 message = Self.activationMessage(reason: capability.reason)
@@ -112,11 +112,11 @@ final class PairingCompanionInstaller {
             phase = .failed
             if error is CancellationError { message = Failure.cancelled.localizedDescription }
             else if let failure = error as? Failure { message = failure.localizedDescription }
-            else if error is CompanionFileBackup.Failure { message = "Couldn't verify the companion backup. No installation files were changed." }
+            else if error is CompanionFileBackup.Failure { message = String(localized: "Couldn't verify the companion backup. No installation files were changed.") }
             else if error is PairingCompanionPackage.Failure { message = PairingCompanionPackage.Failure.unavailable.localizedDescription }
             else if wasCopying { message = Failure.upload.localizedDescription }
             else if wasEnabling { message = Failure.enable.localizedDescription }
-            else { message = "Couldn't finish pairing setup. Check the connection and try again. Any verified backup is kept." }
+            else { message = String(localized: "Couldn't finish pairing setup. Check the connection and try again. Any verified backup is kept.") }
         }
     }
 
@@ -268,11 +268,11 @@ final class PairingCompanionInstaller {
     static func activationMessage(reason: String?) -> String {
         switch reason {
         case "https_required", "authenticated_https_required", "secure_address_required":
-            "The pairing companion is saved. This address still needs a secure sign-in before it can pair an iPhone. No network settings were changed."
+            String(localized: "The pairing companion is saved. This address still needs a secure sign-in before it can pair an iPhone. No network settings were changed.")
         case "original_sign_in_required":
-            "The pairing companion is saved. Sign in with your original Mac account before making a code."
+            String(localized: "The pairing companion is saved. Sign in with your original Mac account before making a code.")
         default:
-            "The pairing companion is saved, but this Hermes version hasn't activated it yet. A dashboard restart may be needed. Your running tasks were not restarted."
+            String(localized: "The pairing companion is saved, but this Hermes version hasn't activated it yet. A dashboard restart may be needed. Your running tasks were not restarted.")
         }
     }
 }

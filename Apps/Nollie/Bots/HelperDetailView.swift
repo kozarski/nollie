@@ -51,11 +51,11 @@ struct HelperDetailView: View {
                 part("Helps with") {
                     FactStrip(facts: helper.helpsWith, tint: coat, id: "helper.helps")
                 }
-                part("Asks first") {
+                part(LocalizedStringResource("Asks first", comment: "Safety: heading over what a helper always asks you first")) {
                     FactStrip(facts: ReadyMadeHelper.asksFirst, tint: Ink.text, id: "helper.asks")
                 }
                 if let routine = helper.routine {
-                    part("Schedule") {
+                    part(LocalizedStringResource("Schedule", comment: "Noun: a heading over a helper's schedule")) {
                         HelperRoutineRow(helper: helper, routine: routine, runtime: runtime, profile: profile)
                     }
                 }
@@ -80,7 +80,7 @@ struct HelperDetailView: View {
             CharacterView(look: helper.look, state: pose, size: 120, seed: CharacterLookID.seed(helper.id))
                 .frame(width: 136, height: 136)
                 .accessibilityHidden(true)
-            Text(helper.name)
+            Text(helper.shownName)
                 .font(.largeTitle.weight(.bold))
                 .foregroundStyle(Ink.text)
                 .multilineTextAlignment(.center)
@@ -100,7 +100,7 @@ struct HelperDetailView: View {
         return state == .justAdded ? .done : .idle
     }
 
-    private func part<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func part<Content: View>(_ title: LocalizedStringResource, @ViewBuilder content: () -> Content) -> some View {
         VStack(spacing: 18) {
             PageHeading(title)
             content()
@@ -127,7 +127,7 @@ struct HelperAddPill: View {
             }
             .modifier(PillStyle(prominent: prominent))
             .disabled(locked || state == .full)
-            .accessibilityLabel("Add \(helper.name)")
+            .accessibilityLabel("Add \(helper.shownName)")
             .testID("gallery.add.\(helper.id)")
         case .justAdded:
             Button(action: undo) {
@@ -135,14 +135,14 @@ struct HelperAddPill: View {
             }
             .buttonStyle(OutlinePillStyle())
             .disabled(locked)
-            .accessibilityLabel("Undo adding \(helper.name)")
+            .accessibilityLabel("Undo adding \(helper.shownName)")
             .testID("gallery.undo.\(helper.id)")
         case .inCrew:
             Label("Added", systemImage: "checkmark")
                 .font(.body.weight(.medium))
                 .foregroundStyle(Ink.text2)
                 .padding(.vertical, 12)
-                .accessibilityLabel("\(helper.name) is in your crew")
+                .accessibilityLabel("\(helper.shownName) is in your crew")
                 .testID("gallery.added.\(helper.id)")
         }
     }
@@ -184,7 +184,7 @@ private struct HelperRoutineRow: View {
         VStack(spacing: 14) {
             Toggle(isOn: Binding(get: { routineSwitch.isOn }, set: { on in Task { await set(on) } })) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(routine.title).font(.headline).foregroundStyle(Ink.text)
+                    Text(routine.shownTitle).font(.headline).foregroundStyle(Ink.text)
                     Text(routine.when()).font(.subheadline).foregroundStyle(Ink.text2)
                 }
                 .fixedSize(horizontal: false, vertical: true)
@@ -197,9 +197,9 @@ private struct HelperRoutineRow: View {
             .nollieGlass(.regular, in: shape, solid: Ink.card)
             .testID("helper.schedule.\(helper.id)")
             if profile == nil {
-                PageNote("Add \(helper.name) first.", id: "helper.schedule.first")
+                PageNote("Add \(helper.shownName) first.", id: "helper.schedule.first")
             } else if let problem = routineSwitch.problem {
-                PageNote(problem, symbol: "exclamationmark.circle", tint: .red, id: "helper.schedule.issue")
+                PageNote(.verbatim(problem), symbol: "exclamationmark.circle", tint: .red, id: "helper.schedule.issue")
             } else if routineSwitch.standing == .unavailable {
                 PageNote("Couldn't check Schedules.", id: "helper.schedule.issue")
             }

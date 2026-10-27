@@ -200,7 +200,7 @@ struct CharacterLookPicker: View {
             photoProblem = nil
             choice = .photo
         } catch {
-            photoProblem = "That photo didn't load."
+            photoProblem = String(localized: "That photo didn't load.")
         }
     }
 }

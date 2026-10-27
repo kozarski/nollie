@@ -44,11 +44,11 @@ public enum HelperComputerSetupRun: Equatable, Sendable {
         case checking, downloading, installing, starting, preparing
         public var title: String {
             switch self {
-            case .checking: "Checking Cua"
-            case .downloading: "Downloading Cua"
-            case .installing: "Installing Cua"
-            case .starting: "Starting Cua"
-            case .preparing: "Getting Cua ready to run computers"
+            case .checking: String(localized: "Checking Cua", table: "Core")
+            case .downloading: String(localized: "Downloading Cua", table: "Core")
+            case .installing: String(localized: "Installing Cua", table: "Core")
+            case .starting: String(localized: "Starting Cua", table: "Core")
+            case .preparing: String(localized: "Getting Cua ready to run computers", table: "Core")
             }
         }
     }
@@ -67,14 +67,14 @@ public enum HelperComputerAction: String, Equatable, Sendable {
     case setUp, update, startCua, finish, getCua, tryAgain, quitCua, notNow
     public var title: String {
         switch self {
-        case .setUp: "Set up Cua"
-        case .update: "Update Cua"
-        case .startCua: "Start Cua"
-        case .finish: "Finish setup"
-        case .getCua: "Get Cua"
-        case .tryAgain: "Try again"
-        case .quitCua: "Quit Cua and update"
-        case .notNow: "Not now"
+        case .setUp: String(localized: "Set up Cua", table: "Core")
+        case .update: String(localized: "Update Cua", table: "Core")
+        case .startCua: String(localized: "Start Cua", table: "Core")
+        case .finish: String(localized: "Finish setup", table: "Core")
+        case .getCua: String(localized: "Get Cua", table: "Core")
+        case .tryAgain: String(localized: "Try again", table: "Core")
+        case .quitCua: String(localized: "Quit Cua and update", table: "Core")
+        case .notNow: String(localized: "Not now", table: "Core")
         }
     }
 }
@@ -102,14 +102,16 @@ public enum HelperComputerScreen: Equatable, Sendable {
 }
 
 public enum HelperComputerPresentation {
-    public static let title = "A computer of its own"
-    public static let line = "Your helper works on its own computer inside your Mac, so your files stay out of reach."
-
-    public static func gettingReady(_ name: String) -> String {
-        "Getting \(name)'s computer ready. The first time takes a few minutes."
+    public static var title: String { String(localized: "A computer of its own", table: "Core") }
+    public static var line: String {
+        String(localized: "Your helper works on its own computer inside your Mac, so your files stay out of reach.", table: "Core")
     }
 
-    public static func cardTitle(_ name: String) -> String { "\(name)'s computer" }
+    public static func gettingReady(_ name: String) -> String {
+        String(localized: "Getting \(name)'s computer ready. The first time takes a few minutes.", table: "Core")
+    }
+
+    public static func cardTitle(_ name: String) -> String { String(localized: "\(name)'s computer", table: "Core") }
 
     /// The switch: on while the helper has (or is getting) a computer, or while the person has
     /// asked for one and Cua is being set up for it.
@@ -124,23 +126,23 @@ public enum HelperComputerPresentation {
         switch (setup, onMac) {
         case (.ready, _): return nil
         case (.noCua, true):
-            return .init(line: "Your helpers' computers come from Cua, a free tool. Nollie can set it up for you.",
+            return .init(line: String(localized: "Your helpers' computers come from Cua, a free tool. Nollie can set it up for you.", table: "Core"),
                          action: .setUp, secondary: .notNow)
         case (.noCua, false):
-            return .init(line: "Your helpers' computers come from Cua, a free tool on your Mac. Open Nollie on your Mac to set it up.",
+            return .init(line: String(localized: "Your helpers' computers come from Cua, a free tool on your Mac. Open Nollie on your Mac to set it up.", table: "Core"),
                          action: nil, secondary: .notNow)
         case (.oldCua, true):
-            return .init(line: "Cua needs a quick update before your helpers can use it.", action: .update, secondary: .notNow)
+            return .init(line: String(localized: "Cua needs a quick update before your helpers can use it.", table: "Core"), action: .update, secondary: .notNow)
         case (.oldCua, false):
-            return .init(line: "Cua on your Mac needs a quick update. Open Nollie on your Mac to do it.", action: nil, secondary: .notNow)
+            return .init(line: String(localized: "Cua on your Mac needs a quick update. Open Nollie on your Mac to do it.", table: "Core"), action: nil, secondary: .notNow)
         case (.cuaNotRunning, true):
-            return .init(line: "Cua isn't running. Start it to wake your helpers' computers.", action: .startCua, secondary: nil)
+            return .init(line: String(localized: "Cua isn't running. Start it to wake your helpers' computers.", table: "Core"), action: .startCua, secondary: nil)
         case (.cuaNotRunning, false):
-            return .init(line: "Cua isn't running on your Mac. Open Nollie on your Mac to start it.", action: nil, secondary: nil)
+            return .init(line: String(localized: "Cua isn't running on your Mac. Open Nollie on your Mac to start it.", table: "Core"), action: nil, secondary: nil)
         case (.noRuntime, true):
-            return .init(line: "Cua needs one more piece to run computers on this Mac.", action: .finish, secondary: .notNow)
+            return .init(line: String(localized: "Cua needs one more piece to run computers on this Mac.", table: "Core"), action: .finish, secondary: .notNow)
         case (.noRuntime, false):
-            return .init(line: "Cua needs one more piece on your Mac. Open Nollie on your Mac to finish.", action: nil, secondary: .notNow)
+            return .init(line: String(localized: "Cua needs one more piece on your Mac. Open Nollie on your Mac to finish.", table: "Core"), action: nil, secondary: .notNow)
         }
     }
 
@@ -161,7 +163,7 @@ public enum HelperComputerPresentation {
                     if case .setup(let prompt) = fix { return .card(.needsYou, note: prompt) }
                     return fix
                 }
-                return .card(.needsYou, note: .init(line: status.message ?? "Something needs a look.", action: nil, secondary: nil))
+                return .card(.needsYou, note: .init(line: status.message ?? String(localized: "Something needs a look.", table: "Core"), action: nil, secondary: nil))
             default: return .card(working ? .working : .ready, note: nil)
             }
         }
@@ -175,11 +177,12 @@ public enum HelperComputerPresentation {
         guard onMac else { return prompt(for: setup, onMac: false).map { .setup($0) } }
         switch run {
         case .working(let step, let fraction): return .settingUp(title: step.title, fraction: fraction)
-        case .needsQuit: return .setup(.init(line: "Cua is open. Nollie needs to close it for a moment to update it.", action: .quitCua, secondary: .notNow))
+        case .needsQuit: return .setup(.init(line: String(localized: "Cua is open. Nollie needs to close it for a moment to update it.", table: "Core"), action: .quitCua, secondary: .notNow))
         case .failed(let reason):
-            return .setup(.init(line: reason + " You can also get Cua from cua.ai, then come back here.", action: .getCua, secondary: .tryAgain))
+            return .setup(.init(line: String(localized: "\(reason) You can also get Cua from cua.ai, then come back here.", table: "Core",
+                                              comment: "The first value is why setting up Cua failed"), action: .getCua, secondary: .tryAgain))
         case .unavailable where setup == .noCua || setup == .oldCua:
-            return .setup(.init(line: "Your helpers' computers come from Cua, a free tool. Get it from cua.ai, then come back here.",
+            return .setup(.init(line: String(localized: "Your helpers' computers come from Cua, a free tool. Get it from cua.ai, then come back here.", table: "Core"),
                                 action: .getCua, secondary: .notNow))
         case .idle, .done, .unavailable: return prompt(for: setup, onMac: true).map { .setup($0) }
         }

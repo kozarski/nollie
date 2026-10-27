@@ -13,8 +13,10 @@ enum ScopedHermesImport {
     }
     struct Preview: Equatable, Sendable {
         let files: [Entry]
-        let exclusions = ["All profiles", "Separate credentials", "Chats and history", "Schedules", "Board", "Computer permissions and leases", "Plugins and startup hooks"]
-        let summary = "Copies your instructions into a new home with Nollie's starter settings. Keeps config.yaml in a verified, inactive backup for later review. Existing files stay unchanged."
+        let exclusions = [String(localized: "All profiles"), String(localized: "Separate credentials"),
+                          String(localized: "Chats and history"), String(localized: "Schedules"), "Board",
+                          String(localized: "Computer permissions and leases"), String(localized: "Plugins and startup hooks")]
+        let summary = String(localized: "Copies your instructions into a new home with Nollie's starter settings. Keeps config.yaml in a verified, inactive backup for later review. Existing files stay unchanged.")
     }
     struct Result: Sendable {
         let installationID: UUID
@@ -42,11 +44,11 @@ enum ScopedHermesImport {
     static func create(source: URL, preview: Preview, installations: URL) throws -> Result {
         let snapshot = try ConfigurationBackup.snapshot(in: source)
         guard snapshot.map(entry) == preview.files else {
-            throw ConfigurationBackup.Failure("The source changed since the preview. Review it again before importing.")
+            throw ConfigurationBackup.Failure(String(localized: "The source changed since the preview. Review it again before importing."))
         }
         let sourcePath = source.path
         guard installations.path != sourcePath, !installations.path.hasPrefix(sourcePath + "/") else {
-            throw ConfigurationBackup.Failure("The new Nollie home must be outside the existing setup.")
+            throw ConfigurationBackup.Failure(String(localized: "The new Nollie home must be outside the existing setup."))
         }
         let starter = try StarterAssistantDefaults.prepare(assistantName: "Nollie")
         let installationID = UUID()
@@ -86,13 +88,13 @@ enum OwnedSetupFiles {
         let parent = try directory(url.deletingLastPathComponent(), create: true)
         defer { close(parent) }
         let result = mkdirat(parent, url.lastPathComponent, 0o700)
-        guard result == 0 || (!exclusive && errno == EEXIST) else { throw failure("The new setup folder already exists or cannot be created.") }
+        guard result == 0 || (!exclusive && errno == EEXIST) else { throw failure(String(localized: "The new setup folder already exists or cannot be created.")) }
         let fd = openat(parent, url.lastPathComponent, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
-        guard fd >= 0 else { throw failure("The setup folder could not be opened safely.") }
+        guard fd >= 0 else { throw failure(String(localized: "The setup folder could not be opened safely.")) }
         defer { close(fd) }
         var info = stat()
         guard fstat(fd, &info) == 0, info.st_uid == getuid(), (info.st_mode & 0o077) == 0 else {
-            throw failure("The setup folder must be private and owned by this account.")
+            throw failure(String(localized: "The setup folder must be private and owned by this account."))
         }
     }
 
@@ -100,41 +102,41 @@ enum OwnedSetupFiles {
         let parent = try directory(url.deletingLastPathComponent())
         defer { close(parent) }
         let fd = openat(parent, url.lastPathComponent, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, executable ? 0o700 : 0o600)
-        guard fd >= 0 else { throw failure("A setup file could not be created. Existing files are unchanged.") }
+        guard fd >= 0 else { throw failure(String(localized: "A setup file could not be created. Existing files are unchanged.")) }
         let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
         defer { try? handle.close() }
         try handle.write(contentsOf: data)
         try handle.synchronize()
-        guard try read(url, maximum: data.count + 1) == data else { throw failure("Setup file verification failed.") }
+        guard try read(url, maximum: data.count + 1) == data else { throw failure(String(localized: "Setup file verification failed.")) }
     }
 
     static func read(_ url: URL, maximum: Int) throws -> Data {
         let parent = try directory(url.deletingLastPathComponent())
         defer { close(parent) }
         let fd = openat(parent, url.lastPathComponent, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
-        guard fd >= 0 else { throw failure("A setup file is missing or unsafe.") }
+        guard fd >= 0 else { throw failure(String(localized: "A setup file is missing or unsafe.")) }
         let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
         defer { try? handle.close() }
         var info = stat()
         guard fstat(fd, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG,
-              info.st_size >= 0, info.st_size <= maximum else { throw failure("A setup file is not regular or is too large.") }
+              info.st_size >= 0, info.st_size <= maximum else { throw failure(String(localized: "A setup file is not regular or is too large.")) }
         let bytes = try handle.read(upToCount: maximum + 1) ?? Data()
-        guard bytes.count <= maximum else { throw failure("A setup file changed size.") }
+        guard bytes.count <= maximum else { throw failure(String(localized: "A setup file changed size.")) }
         return bytes
     }
 
     static func directory(_ url: URL, create: Bool = false) throws -> Int32 {
-        guard url.isFileURL, !url.pathComponents.contains("..") else { throw failure("The setup path is invalid.") }
+        guard url.isFileURL, !url.pathComponents.contains("..") else { throw failure(String(localized: "The setup path is invalid.")) }
         var fd = open("/", O_RDONLY | O_DIRECTORY | O_CLOEXEC)
-        guard fd >= 0 else { throw failure("The setup folder is unavailable.") }
+        guard fd >= 0 else { throw failure(String(localized: "The setup folder is unavailable.")) }
         for component in url.pathComponents.dropFirst() {
             if create, mkdirat(fd, component, 0o700) != 0, errno != EEXIST {
                 close(fd)
-                throw failure("The setup folder could not be created.")
+                throw failure(String(localized: "The setup folder could not be created."))
             }
             let next = openat(fd, component, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
             close(fd)
-            guard next >= 0 else { throw failure("Setup paths cannot contain symbolic links.") }
+            guard next >= 0 else { throw failure(String(localized: "Setup paths cannot contain symbolic links.")) }
             fd = next
         }
         return fd

@@ -97,7 +97,7 @@ struct QuickAnswerAwayBar: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Can't reach your Mac").font(.subheadline.weight(.semibold)).foregroundStyle(Ink.text)
                 if !handoff.waiting.isEmpty {
-                    Text(handoff.waiting.count == 1 ? "1 question waiting" : "\(handoff.waiting.count) questions waiting")
+                    Text("\(handoff.waiting.count) questions waiting")
                         .font(.footnote).foregroundStyle(Ink.text2)
                 }
             }
@@ -118,7 +118,7 @@ struct QuickAnswerAwayBar: View {
     private func sentPill(_ count: Int) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.readableGreen).accessibilityHidden(true)
-            Text(count == 1 ? "Your question went to your Mac" : "\(count) questions went to your Mac")
+            Text("\(count) questions went to your Mac")
                 .font(.subheadline.weight(.semibold)).foregroundStyle(Ink.text)
             Spacer(minLength: 8)
             Button {

@@ -110,7 +110,7 @@ public enum AutomatedReply {
             switch item.kind {
             case .user(let text, _), .steer(let text, _):
                 kind = .prompt; self.text = text
-                failed = InjectedNote.parse(text)?.title.lowercased().contains("failed") == true
+                failed = InjectedNote.parse(text)?.failed == true
             case .assistant(let text, _, let streaming):
                 kind = .assistant; self.text = text; self.streaming = streaming
                 failed = item.finishReason != nil && item.finishReason != "stop" && item.finishReason != "tool_calls"
@@ -127,7 +127,7 @@ public enum AutomatedReply {
             switch message.role {
             case "user":
                 kind = .prompt
-                failed = InjectedNote.parse(text)?.title.lowercased().contains("failed") == true
+                failed = InjectedNote.parse(text)?.failed == true
             case "assistant":
                 kind = .assistant; streaming = message.hasToolCalls
                 failed = message.finishReason != nil && message.finishReason != "stop" && message.finishReason != "tool_calls"

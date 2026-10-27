@@ -25,7 +25,7 @@ final class AwayGraceState {
             current = value
             problem = nil
         } catch {
-            problem = "Nollie could not read this from the gateway: \(error.localizedDescription)"
+            problem = String(localized: "Nollie could not read this from the gateway: \(error.localizedDescription)")
         }
     }
 
@@ -41,7 +41,7 @@ final class AwayGraceState {
             saved = true
             problem = nil
         } catch {
-            problem = "That did not save: \(error.localizedDescription)"
+            problem = String(localized: "That did not save: \(error.localizedDescription)")
         }
     }
 
@@ -63,13 +63,12 @@ struct AwayGraceSection: View {
         _state = State(initialValue: AwayGraceState(runtime: runtime))
     }
 
-    private var awayCause: String { DeviceWords.isMac ? "this Mac sleeps" : "Nollie leaves the screen" }
-
     private var footerText: String {
-        "This is how long the gateway lets a turn carry on after the last app disconnects, for example once \(awayCause). "
-        + "Newer Hermes already lets a busy turn finish alone. On an older one, a short wait cuts long tasks off "
-        + "with \u{201C}Operation interrupted\u{201D}. It lives in the gateway's config as dashboard.ws_orphan_reap_grace_s "
-        + "and is read when the dashboard starts, which also happens when Hermes is updated from here."
+        DeviceWords.isMac
+            ? String(localized: "This is how long the gateway lets a turn carry on after the last app disconnects, for example once this Mac sleeps. Newer Hermes already lets a busy turn finish alone. On an older one, a short wait cuts long tasks off with \u{201C}Operation interrupted\u{201D}. It lives in the gateway's config as dashboard.ws_orphan_reap_grace_s and is read when the dashboard starts, which also happens when Hermes is updated from here.",
+                     comment: "Operation interrupted is the gateway's own error text; dashboard.ws_orphan_reap_grace_s is a config key")
+            : String(localized: "This is how long the gateway lets a turn carry on after the last app disconnects, for example once Nollie leaves the screen. Newer Hermes already lets a busy turn finish alone. On an older one, a short wait cuts long tasks off with \u{201C}Operation interrupted\u{201D}. It lives in the gateway's config as dashboard.ws_orphan_reap_grace_s and is read when the dashboard starts, which also happens when Hermes is updated from here.",
+                     comment: "Operation interrupted is the gateway's own error text; dashboard.ws_orphan_reap_grace_s is a config key")
     }
 
     var body: some View {
@@ -110,7 +109,7 @@ struct AwayGraceSection: View {
 
     private var title: some View { Label("Keep work running", systemImage: "hourglass") }
 
-    private func line(_ words: String, symbol: String, tint: some ShapeStyle) -> some View {
+    private func line(_ words: LocalizedStringKey, symbol: String, tint: some ShapeStyle) -> some View {
         Label(words, systemImage: symbol).quiet(.footnote, tint)
     }
 

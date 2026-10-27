@@ -18,9 +18,20 @@ public struct TurnStats: Hashable, Sendable {
 
     /// Reads like "930 tokens · 41 tok/s · 22.7s", and a count that was estimated carries a leading "~".
     public var label: String {
-        let count = "\(exact ? "" : "~")\(outputTokens) tokens"
-        let rate = tokensPerSecond.map { String(format: "%.0f tok/s", $0) }
-        let time = seconds >= 60 ? String(format: "%.1f min", seconds / 60) : String(format: "%.1fs", seconds)
+        let count = exact ? String(localized: "\(outputTokens) tokens", table: "Core")
+            : String(localized: "~\(outputTokens) tokens", table: "Core", comment: "An estimated number of tokens")
+        let rate = tokensPerSecond.map { perSecond in
+            let figure = perSecond.formatted(.number.precision(.fractionLength(0)).grouping(.never))
+            return String(localized: "\(figure) tok/s", table: "Core", comment: "Tokens a second")
+        }
+        let time: String
+        if seconds >= 60 {
+            let minutes = (seconds / 60).formatted(.number.precision(.fractionLength(1)).grouping(.never))
+            time = String(localized: "\(minutes) min", table: "Core", comment: "How long a reply took, in minutes")
+        } else {
+            let shown = seconds.formatted(.number.precision(.fractionLength(1)).grouping(.never))
+            time = String(localized: "\(shown)s", table: "Core", comment: "How long a reply took, in seconds")
+        }
         return [count, rate, time].compactMap { $0 }.joined(separator: " · ")
     }
 
@@ -37,8 +48,15 @@ public struct TurnStats: Hashable, Sendable {
 /// Text the gateway inserted in place of the person's own message, such as a background job checking
 /// in, the prompt of a scheduled run or a system line. Rendered as a small collapsed notice, not a bubble.
 public struct InjectedNote: Hashable, Sendable {
+    /// What the note is, for its symbol. The title is in the person's language, so it is not read for this.
+    public enum Kind: Hashable, Sendable {
+        case backgroundFinished, backgroundFailed, scheduledRun, subagent, subagentFailed, gateway
+    }
+
     public var title: String
     public var body: String
+    public var kind: Kind = .gateway
+    public var failed: Bool { kind == .backgroundFailed || kind == .subagentFailed }
 
     private static let cronName = TextPattern(#"\[Cronjob "([^"]+)""#)
 
@@ -46,27 +64,32 @@ public struct InjectedNote: Hashable, Sendable {
         let note = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard note.hasPrefix("[") else { return nil }
         let lower = note.lowercased()
-        guard let title = title(for: note, lowercased: lower) else { return nil }
-        return InjectedNote(title: title, body: note)
+        guard let (title, kind) = title(for: note, lowercased: lower) else { return nil }
+        return InjectedNote(title: title, body: note, kind: kind)
     }
 
-    private static func title(for note: String, lowercased lower: String) -> String? {
+    private static func title(for note: String, lowercased lower: String) -> (String, Kind)? {
         if lower.hasPrefix("[important: background process") || lower.hasPrefix("[background process") {
             let cleanExit = lower.contains("completed normally") || lower.contains("exit code 0")
             let failed = lower.contains("failed") || lower.contains("non-zero") || (lower.contains("exit code") && !cleanExit)
-            return failed ? "Background process failed" : "Background process finished"
+            return failed ? (String(localized: "Background process failed", table: "Core"), .backgroundFailed)
+                : (String(localized: "Background process finished", table: "Core"), .backgroundFinished)
         }
         if lower.hasPrefix("[cronjob") {
-            return cronName.capture(1, in: note).map { "Scheduled run: " + $0 } ?? "Scheduled run"
+            let title = cronName.capture(1, in: note).map { String(localized: "Scheduled run · \($0)", table: "Core", comment: "The value is a schedule's name") }
+            return (title ?? String(localized: "Scheduled run", table: "Core"), .scheduledRun)
         }
         // Reports from delegated helpers, passed to the bot as plain text with a bracketed heading (async
         // delegation, batch or task results). They are machine text and must never read as the person's words.
         if lower.hasPrefix("[async delegation") {
             let heading = lower.prefix { $0 != "]" }
-            if heading.contains("fail") { return "Subagent failed" }
-            return heading.contains("batch") ? "Subagents reported back" : "Subagent reported back"
+            if heading.contains("fail") { return (String(localized: "Subagent failed", table: "Core"), .subagentFailed) }
+            return heading.contains("batch") ? (String(localized: "Subagents reported back", table: "Core"), .subagent)
+                : (String(localized: "Subagent reported back", table: "Core"), .subagent)
         }
-        if ["[important:", "[system", "[note"].contains(where: { lower.hasPrefix($0) }) { return "Note from the gateway" }
+        if ["[important:", "[system", "[note"].contains(where: { lower.hasPrefix($0) }) {
+            return (String(localized: "Note from the gateway", table: "Core"), .gateway)
+        }
         return nil
     }
 }

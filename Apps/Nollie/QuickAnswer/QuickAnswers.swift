@@ -208,13 +208,13 @@ enum QuickAnswerFailure: Equatable {
 
     var words: String {
         switch self {
-        case .contextFull: "That's a lot for a quick answer. Try a shorter question."
-        case .busy: "Quick answers are busy. Try again in a moment."
-        case .declined: "That's not one I can answer here."
-        case .language: "Quick answers don't speak this language yet."
-        case .unavailable: "Quick answers aren't working on \(DeviceWords.this) right now."
-        case .empty: "No answer came back. Try asking another way."
-        case .cancelled: "Stopped."
+        case .contextFull: String(localized: "That's a lot for a quick answer. Try a shorter question.")
+        case .busy: String(localized: "Quick answers are busy. Try again in a moment.")
+        case .declined: String(localized: "That's not one I can answer here.")
+        case .language: String(localized: "Quick answers don't speak this language yet.")
+        case .unavailable: String(localized: "Quick answers aren't working on \(DeviceWords.this) right now.", comment: "%@ is this Mac, this iPhone or this iPad")
+        case .empty: String(localized: "No answer came back. Try asking another way.")
+        case .cancelled: String(localized: "Stopped.", comment: "A quick answer that was stopped while it was being written")
         }
     }
 }
@@ -251,7 +251,7 @@ struct OnDeviceEngine: QuickAnswerEngine {
 }
 
 /// What the model is told. It is also told it has no tools, but the rules around it do not rely
-/// on that: it is given none.
+/// on that: it is given none. Goes to the model, so it stays in English.
 enum QuickAnswerBrief {
     static func instructions(for place: QuickAnswerRules.Place) -> String {
         let helper = switch place {

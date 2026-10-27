@@ -1,0 +1,42 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSSystemExtensionUsageDescription" : {
+      "comment" : "Info.plist NSSystemExtensionUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Papertrail notes any connection your helpers make that doesn't go through Nollie, and can stop it."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Papertrail vermerkt jede Verbindung deiner Helfer, die nicht über Nollie läuft, und kann sie stoppen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Papertrail note toute connexion de vos assistants qui ne passe pas par Nollie, et peut l'arrêter."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Papertrail registra cualquier conexión de tus ayudantes que no pase por Nollie, y puede detenerla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Papertrailは、ヘルパーがNollieを経由せずに行う接続を記録し、それを止めることができます。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

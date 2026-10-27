@@ -22,7 +22,7 @@ struct ModelAdvanced: View {
                         }
                     }
                 } label: {
-                    CardChoiceLabel(title: "Every model", symbol: "list.bullet", tint: Ink.text2, value: nil, menu: true)
+                    CardChoiceLabel(title: String(localized: "Every model"), symbol: "list.bullet", tint: Ink.text2, value: nil, menu: true)
                 }
                 .menuStyle(.button)
                 .buttonStyle(.plain)
@@ -31,7 +31,7 @@ struct ModelAdvanced: View {
             } else {
                 ProgressView().frame(maxWidth: .infinity, minHeight: 60)
             }
-            if let note = state.note { CardNote(words: note) }
+            if let note = state.note { CardNote(words: note, saved: state.noteSaved) }
             CardFacts(facts: [
                 CardFact(title: "Saved now", value: state.savedModel, monospaced: true),
                 state.info?.path.flatMap { $0.isEmpty ? nil : CardFact(title: "Home", value: $0, monospaced: true) },
@@ -79,8 +79,9 @@ struct ThisChatAdvanced: View {
 
     var body: some View {
         SettingsPage("profile.thisChat.advanced.page") {
-            PageHero(symbol: model == nil ? "gauge.with.dots.needle.33percent" : "cpu", title: model ?? "How full this chat is",
-                     line: context.map { "\($0) used." }, tint: Ink.text, id: "profile.thisChat.advanced.hero")
+            PageHero(symbol: model == nil ? "gauge.with.dots.needle.33percent" : "cpu", title: model.map { .verbatim($0) } ?? "How full this chat is",
+                     line: context.map { LocalizedStringResource("\($0) used.", comment: "How much of the chat's context is used, like 40% of 200,000") },
+                     tint: Ink.text, id: "profile.thisChat.advanced.hero")
             CardFacts(facts: [
                 model.map { CardFact(title: "Model for this chat", value: $0, monospaced: true) },
                 context.map { CardFact(title: "Context", value: $0) },
@@ -117,7 +118,8 @@ struct ComputerAdvanced: View {
             if own != nil { PageHeading("Using this Mac") }
             GlassStack {
                 // The switch, the model on this Mac and the apps a bot may use, for every bot.
-                GlassLink("Apps on this Mac", symbol: "macwindow.and.cursorarrow", value: computerOn ? "On" : "Off",
+                GlassLink("Apps on this Mac", symbol: "macwindow.and.cursorarrow", value: computerOn ? String(localized: "On", comment: "A switch state")
+                                                                                             : String(localized: "Off", comment: "A switch state"),
                           id: "profile.computerApps") { ComputerAppsPage() }
                 if computerOn {
                     GlassButton("Mac permissions", symbol: "lock.shield", id: "profile.computerPermissions") {

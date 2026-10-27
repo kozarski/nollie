@@ -19,7 +19,7 @@ struct MemoryEditor: View {
             VStack(spacing: 20) {
                 editor
                 if let note {
-                    PageNote(note, symbol: "exclamationmark.triangle.fill", tint: .orange, id: "memory.editor.note")
+                    PageNote(.verbatim(note), symbol: "exclamationmark.triangle.fill", tint: .orange, id: "memory.editor.note")
                 }
                 if let original = draft.original {
                     GlassButton("Forget", symbol: "trash", role: .destructive, id: "memory.editor.forget") {
@@ -90,12 +90,12 @@ struct MemoryEditor: View {
                 dismiss()
             case .changed(let kept):
                 draft = kept
-                note = kept.isNew ? "This changed on your Mac. Save again to keep yours."
-                                  : "This changed on your Mac. Check it and save again."
+                note = kept.isNew ? String(localized: "This changed on your Mac. Save again to keep yours.")
+                                  : String(localized: "This changed on your Mac. Check it and save again.")
             case .refused(let words):
                 note = words
             case .failed:
-                note = "Couldn't save. Try again."
+                note = String(localized: "Couldn't save. Try again.")
             }
         }
     }

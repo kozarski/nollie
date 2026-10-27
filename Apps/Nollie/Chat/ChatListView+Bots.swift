@@ -84,7 +84,7 @@ extension ChatListView {
                 ForEach(rows) { botRow($0, runtime: runtime, selected: openName == $0.name) }
                 #if os(iOS)
                 if opensBeside {
-                    SidebarActionRow(title: "New bot", symbol: "plus") { model.newBotRequest = UUID() }
+                    SidebarActionRow(title: String(localized: "New bot"), symbol: "plus") { model.newBotRequest = UUID() }
                         .accessibilityIdentifier("chats.newBot")
                 }
                 #endif
@@ -133,7 +133,7 @@ extension ChatListView {
 
     /// The foot of the sidebar: Settings, where the Mac keeps it.
     private var besideFoot: some View {
-        SidebarActionRow(title: "Settings", symbol: "gearshape") { model.selectedTab = .settings }
+        SidebarActionRow(title: String(localized: "Settings", comment: "The app's settings"), symbol: "gearshape") { model.selectedTab = .settings }
             .accessibilityIdentifier("chats.settings")
             .inset(h: 8, v: 6)
     }
@@ -206,7 +206,7 @@ extension ChatListView {
     /// Mail's and Safari's fields keep a button there. The field stays pinned under the title and the
     /// list scrolls behind it.
     var searchField: some View {
-        InkSearchField(text: $searchText, prompt: "Search", focused: $searchFocused) {
+        InkSearchField(text: $searchText, prompt: String(localized: "Search"), focused: $searchFocused) {
             if model.runtime != nil { PapertrailSearchButton() }
         }
         .clipShape(.capsule)

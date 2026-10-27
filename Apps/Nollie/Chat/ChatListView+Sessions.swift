@@ -99,8 +99,9 @@ enum RowFlag {
 
     func title(whenSet set: Bool) -> String {
         switch self {
-        case .pin: set ? "Unpin" : "Pin"
-        case .archive: set ? "Unarchive" : "Archive"
+        case .pin: set ? String(localized: "Unpin", comment: "A button that unpins a chat") : String(localized: "Pin", comment: "A button that pins a chat to the top")
+        case .archive: set ? String(localized: "Unarchive", comment: "A button that brings a chat back from the archive")
+            : String(localized: "Archive", comment: "A button that archives a chat")
         }
     }
 
@@ -145,7 +146,7 @@ private struct SessionRowCell: View {
             SessionRow(session: session, needsYou: waiting, live: live?.isRunning ?? false, showBot: showsBot,
                        botProfile: session.profile ?? runtime.selectedProfile,
                        thinking: live.map { $0.isRunning && ($0.statusLine ?? "Thinking…") == "Thinking…" } ?? false,
-                       step: waiting ? nil : live?.statusLine, summary: summary)
+                       step: waiting ? nil : live?.statusWords, summary: summary)
                 .task(id: "\(session.id)-\(session.lastActive ?? 0)-\(list.aiSummaries)") {
                     if list.aiSummaries { list.summarizer.refresh(session, runtime: runtime, profile: peekProfile) }
                 }

@@ -10,20 +10,20 @@ public enum NativeAuthError: LocalizedError {
     case cancelled
 
     /// The browser sheet refused to start.
-    static let browserWouldNotOpen = NativeAuthError.invalidResponse("The sign-in browser would not open.")
+    static let browserWouldNotOpen = NativeAuthError.invalidResponse(String(localized: "The sign-in browser would not open.", table: "Core"))
 
     public var errorDescription: String? {
         switch self {
         case .cancelled:
-            "You stopped the sign-in."
+            String(localized: "You stopped the sign-in.", table: "Core")
         case .stateMismatch:
-            "The sign-in did not match the one we started. Please try again."
+            String(localized: "The sign-in did not match the one we started. Please try again.", table: "Core")
         case .invalidResponse(let text):
             text
         case .providerRequired(let providers):
-            "Pick how to sign in: " + providers.map(\.name).joined(separator: ", ") + "."
+            String(localized: "Pick how to sign in: \(providers.map(\.name).joined(separator: ", ")).", table: "Core", comment: "The value is a list of sign-in providers")
         case .noCallback:
-            "No sign-in code came back from the browser. Try again, or paste a session token from the dashboard."
+            String(localized: "No sign-in code came back from the browser. Try again, or paste a session token from the dashboard.", table: "Core")
         }
     }
 }

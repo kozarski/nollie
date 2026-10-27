@@ -6,9 +6,9 @@ struct CompanionDiagnosticsView: View {
 
     private var footerWords: String {
         #if os(iOS)
-        "Every alert arrives as a notification."
+        String(localized: "Every alert arrives as a notification.")
         #else
-        "On the Mac every alert arrives as a notification. Running turns and waiting approvals also sit in the menu bar."
+        String(localized: "On the Mac every alert arrives as a notification. Running turns and waiting approvals also sit in the menu bar.")
         #endif
     }
 
@@ -17,7 +17,7 @@ struct CompanionDiagnosticsView: View {
             SettingsHeaderSection(title: "Diagnostics")
             Section {
                 LabeledContent("Last notification") {
-                    Text(setup.extensionBreadcrumb ?? "none handled yet")
+                    Text(setup.extensionBreadcrumb ?? String(localized: "none handled yet", comment: "No notification has been handled yet"))
                         .multilineTextAlignment(.trailing)
                         .small(.caption)
                 }

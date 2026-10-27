@@ -86,46 +86,57 @@ public struct WeeklyNoteSettings: Codable, Equatable, Sendable {
 // MARK: The notification
 
 public extension WeeklyNote {
-    /// The notification's title, every week.
-    static let notificationTitle = "Your week"
+    /// The notification's title, every week. In the Mac's language, which builds it.
+    static var notificationTitle: String {
+        String(localized: "Your week", table: "Core", comment: "The weekly note's notification title")
+    }
     /// What the notification says when the records couldn't be read when it went out.
-    static let notificationFallback = "What your helpers did, and what left your Mac."
+    static var notificationFallback: String {
+        String(localized: "What your helpers did, and what left your Mac.", table: "Core",
+               comment: "Safety: the weekly note's notification when its counts couldn't be read; it lists what left the Mac")
+    }
 
     /// The notification's line, from the same records as the note, built when it is sent: "Scout and Planner did 12
     /// things. 4 places online, 1 new." Nil when part of the week couldn't be read, so a count is never short:
     /// the fixed line goes instead.
     var notificationLine: String? {
         guard unread.isEmpty else { return nil }
-        guard !helpers.isEmpty else { return quiet.isEmpty ? nil : "A quiet week. Nothing recorded." }
+        guard !helpers.isEmpty else {
+            return quiet.isEmpty ? nil : String(localized: "A quiet week. Nothing recorded.", table: "Core", comment: "The weekly note's notification")
+        }
         let things = helpers.reduce(0) { total, helper in
             total + helper.did.filter { [.schedule, .board, .asked].contains($0.kind) }.reduce(0) { $0 + $1.count }
         }
         let places = helpers.reduce(0) { $0 + $1.onlinePlaces }
         let names = Self.names(helpers.map(\.name))
         let new = news.count
-        let first: String
-        if things > 0 {
-            first = "\(names) did \(things) \(things == 1 ? "thing" : "things")."
-        } else {
-            first = "\(names) kept busy."
-        }
+        // Whole sentences per case, so each language can build its own.
+        let first = things > 0
+            ? String(localized: "\(names) did \(things) things.", table: "Core", comment: "The weekly note's notification: the helpers' names, then how many things they did")
+            : String(localized: "\(names) kept busy.", table: "Core", comment: "The weekly note's notification: the helpers' names")
         let second: String
         if places > 0 {
-            second = "\(places) \(places == 1 ? "place" : "places") online" + (new > 0 ? ", \(new) new." : ".")
+            let online = String(localized: "\(places) places online", table: "Core", comment: "The weekly note's notification: how many places went online")
+            second = new > 0
+                ? String(localized: "\(online), \(new) new.", table: "Core", comment: "The weekly note's notification: places online, then how many were new")
+                : String(localized: "\(online).", table: "Core", comment: "The weekly note's notification: places online, as a sentence")
         } else {
-            second = "Nothing went online" + (new > 0 ? ", \(new) new." : ".")
+            second = new > 0
+                ? String(localized: "Nothing went online, \(new) new.", table: "Core", comment: "Safety: the weekly note's notification; nothing left the Mac, then how many things were new")
+                : String(localized: "Nothing went online.", table: "Core", comment: "Safety: the weekly note's notification; nothing left the Mac")
         }
-        return first + " " + second
+        return String(localized: "\(first) \(second)", table: "Core", comment: "Two whole sentences one after the other")
     }
 
     /// "Scout", "Scout and Planner", "Scout, Mason and 2 more".
     static func names(_ names: [String]) -> String {
         switch names.count {
-        case 0: return "Your helpers"
+        case 0: return String(localized: "Your helpers", table: "Core", comment: "Stands in for the helpers' names in the weekly notification")
         case 1: return names[0]
-        case 2: return "\(names[0]) and \(names[1])"
-        case 3: return "\(names[0]), \(names[1]) and \(names[2])"
-        default: return "\(names[0]), \(names[1]) and \(names.count - 2) more"
+        case 2: return String(localized: "\(names[0]) and \(names[1])", table: "Core", comment: "Two names in a list")
+        case 3: return String(localized: "\(names[0]), \(names[1]) and \(names[2])", table: "Core", comment: "Three names in a list")
+        default: return String(localized: "\(names[0]), \(names[1]) and \(names.count - 2) more", table: "Core",
+                               comment: "Two names, then how many more helpers")
         }
     }
 }

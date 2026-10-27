@@ -99,10 +99,10 @@ struct SettingsView: View {
     private func word(for category: SettingsCategory) -> String? {
         guard category == .connection, let socket = model.runtime?.socketState else { return nil }
         switch socket {
-        case .open: return "Connected"
-        case .connecting, .reconnecting: return "Connecting"
-        case .authRejected: return "Sign in again"
-        case .failed, .idle: return "Offline"
+        case .open: return String(localized: "Connected", comment: "The connection's state beside its Settings row")
+        case .connecting, .reconnecting: return String(localized: "Connecting", comment: "The connection's state beside its Settings row")
+        case .authRejected: return String(localized: "Sign in again", comment: "The connection's state beside its Settings row")
+        case .failed, .idle: return String(localized: "Offline", comment: "The connection's state beside its Settings row")
         }
     }
 

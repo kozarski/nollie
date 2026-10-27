@@ -13,7 +13,7 @@ private struct CopyReplyButton: View {
     var enabled: Bool
     var action: () -> Void
 
-    private var words: String { copied ? "Copied" : "Copy reply" }
+    private var words: String { copied ? String(localized: "Copied") : String(localized: "Copy reply") }
     private var symbol: String { copied ? "checkmark" : "doc.on.doc" }
     private var tint: Color { copied ? .green : .secondary }
 

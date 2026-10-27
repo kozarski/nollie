@@ -147,11 +147,17 @@ struct ValuePromptCardView: View {
     private var title: String {
         let site = request.site ?? request.origin
         switch method {
-        case "sudo": return "sudo password"
-        case "secret": return "Secret: \(request.envVar ?? "")"
-        case "vault.unlock_prompt": return "Unlock \(request.displayName ?? request.backend ?? "vault")"
-        case "vault.save_login": return "Save login for \(site ?? "site")"
-        case "vault.code": return "One-time code" + (request.site.map { " for \($0)" } ?? "")
+        case "sudo": return String(localized: "sudo password", comment: "Title of a card asking for the sudo password")
+        case "secret": return String(localized: "Secret: \(request.envVar ?? "")", comment: "Title of a card asking for a secret value; the name of the setting follows")
+        case "vault.unlock_prompt":
+            let vault = request.displayName ?? request.backend ?? String(localized: "vault", comment: "A password vault, when its name is unknown")
+            return String(localized: "Unlock \(vault)", comment: "Title of a card asking to unlock a password vault")
+        case "vault.save_login":
+            let place = site ?? String(localized: "site", comment: "A website, when its name is unknown")
+            return String(localized: "Save login for \(place)")
+        case "vault.code":
+            guard let named = request.site else { return String(localized: "One-time code") }
+            return String(localized: "One-time code for \(named)")
         default: return method
         }
     }

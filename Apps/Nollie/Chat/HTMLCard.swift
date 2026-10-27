@@ -197,7 +197,7 @@ struct HTMLCardPanel: View {
     @State private var measured: CGFloat = 0
 
     var body: some View {
-        SidePanelPage(title: "Card") {
+        SidePanelPage(title: String(localized: "Card", comment: "A card the bot drew in the chat; a noun")) {
             Group {
                 if viewingSource || failed {
                     ScrollView {

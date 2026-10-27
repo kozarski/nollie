@@ -8,7 +8,7 @@ struct ProfileModelTab: View {
 
     var body: some View {
         let stance = state.thinks.stance
-        PageHero(symbol: stance.symbol, title: stance.title, line: stance.line, tint: stance.tint, id: "profile.model.hero")
+        PageHero(symbol: stance.symbol, title: .verbatim(stance.title), line: .verbatim(stance.line), tint: stance.tint, id: "profile.model.hero")
         if let options = state.options {
             choices(options.providers)
         } else {
@@ -24,9 +24,10 @@ struct ProfileModelTab: View {
         let thinks = state.thinks
         GlassStack {
             Choice(state: state, title: CardThinks.macWords, symbol: "desktopcomputer", providers: local,
-                   chosen: thinks == .mac, idle: local.isEmpty ? "Not set up" : "Recommended", id: "profile.model.mac")
-            Choice(state: state, title: "ChatGPT or Claude plan", symbol: "person.crop.circle.badge.checkmark", providers: plans,
-                   chosen: thinks.isPlan, idle: plans.isEmpty ? "Not signed in" : nil, id: "profile.model.plan")
+                   chosen: thinks == .mac, idle: local.isEmpty ? String(localized: "Not set up") : String(localized: "Recommended"),
+                   id: "profile.model.mac")
+            Choice(state: state, title: String(localized: "ChatGPT or Claude plan"), symbol: "person.crop.circle.badge.checkmark", providers: plans,
+                   chosen: thinks.isPlan, idle: plans.isEmpty ? String(localized: "Not signed in") : nil, id: "profile.model.plan")
         }
         if local.isEmpty && thinks != .mac {
             PageNote("Private and free once a model is on your Mac. Get one in Settings, under Connection.", symbol: "sparkles")

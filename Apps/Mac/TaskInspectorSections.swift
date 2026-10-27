@@ -28,9 +28,9 @@ private extension View {
 
 /// A line that stands in for an empty list.
 private struct EmptyNote: View {
-    var words: String
+    var words: LocalizedStringKey
 
-    init(_ words: String) { self.words = words }
+    init(_ words: LocalizedStringKey) { self.words = words }
 
     var body: some View {
         Text(words).foregroundStyle(.secondary)
@@ -40,7 +40,7 @@ private struct EmptyNote: View {
 /// A round icon button without a frame, as the inspector's title bar and headers use.
 private struct IconTap: View {
     var symbol: String
-    var help: String
+    var help: LocalizedStringKey
     var action: () -> Void
 
     var body: some View {
@@ -77,7 +77,7 @@ struct InspectorTitleBar: View {
 
     private var shown: some View {
         Group {
-            Text(title ?? "Task")
+            Text(title ?? String(localized: "Task", comment: "A Board task with no title"))
                 .lineLimit(3)
                 .fillLeading()
                 .font(.headline)
@@ -116,12 +116,12 @@ struct InspectorTitleBar: View {
 
 /// A picker that reports only real changes.
 private struct ChangePicker<Value: Hashable, Options: View>: View {
-    var title: String
+    var title: LocalizedStringKey
     var current: Value
     var change: (Value) -> Void
     @ViewBuilder var options: () -> Options
 
-    init(_ title: String, current: Value, change: @escaping (Value) -> Void, @ViewBuilder options: @escaping () -> Options) {
+    init(_ title: LocalizedStringKey, current: Value, change: @escaping (Value) -> Void, @ViewBuilder options: @escaping () -> Options) {
         self.title = title
         self.current = current
         self.change = change

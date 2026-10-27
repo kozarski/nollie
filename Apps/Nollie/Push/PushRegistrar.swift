@@ -235,7 +235,7 @@ final class PushRegistrar: PushRegistrationSyncing {
         do {
             try await GatewayFiles.put(record, at: path, via: runtime)
         } catch {
-            lastError = "Push registration did not reach the gateway: \(error.localizedDescription)"
+            lastError = String(localized: "Push registration did not reach the gateway: \(error.localizedDescription)")
             return
         }
         lastRegistrationPath = path

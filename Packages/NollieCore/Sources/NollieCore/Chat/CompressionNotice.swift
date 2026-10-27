@@ -11,8 +11,10 @@ public enum CompressionNotice: Equatable, Sendable {
     /// A warning that only makes sense for chats people restart (for example "Consider /new").
     case hidden
 
+    /// The status line while it works. In English, as every `statusLine` is; `summarizingWords` shows it.
     public static let summarizingLine = "Summarizing earlier messages…"
-    public static let summarizedRow = "Earlier messages summarized to keep this chat going"
+    public static var summarizingWords: String { String(localized: "Summarizing earlier messages…", table: "Core") }
+    public static var summarizedRow: String { String(localized: "Earlier messages summarized to keep this chat going", table: "Core") }
 
     /// nil: not about compression, shown as it comes.
     public static func read(kind: String, text: String) -> CompressionNotice? {

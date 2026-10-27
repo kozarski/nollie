@@ -24,9 +24,9 @@ struct ConversationComposer: View {
         HStack(alignment: .bottom, spacing: 8) {
             field
             if running && !hasWords {
-                button(Round(symbol: "stop.fill", size: 13, label: "Stop", id: "conversation.stop"), action: stop)
+                button(Round(symbol: "stop.fill", size: 13, label: String(localized: "Stop", comment: "Safety: stops the bot's reply"), id: "conversation.stop"), action: stop)
             } else {
-                button(Round(symbol: "arrow.up", size: 16, label: "Send", id: "conversation.send"), action: send)
+                button(Round(symbol: "arrow.up", size: 16, label: String(localized: "Send", comment: "A button that sends the typed message"), id: "conversation.send"), action: send)
                     .disabled(!hasWords)
                     .opacity(hasWords ? 1 : 0.35)
             }

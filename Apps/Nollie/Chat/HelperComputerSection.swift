@@ -44,7 +44,7 @@ struct HelperComputerSection: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            GlassSwitch(HelperComputerPresentation.title,
+            GlassSwitch(.verbatim(HelperComputerPresentation.title),
                         isOn: Binding(get: { HelperComputerPresentation.switchIsOn(computer.status, wantsOn: computer.wantsOn) },
                                       set: { on in if let rt { Task { await computer.setSwitch(on, rt) } } }),
                         id: "profile.ownComputer")
@@ -52,7 +52,7 @@ struct HelperComputerSection: View {
             content
             if computer.status?.exitNodeBlocksInternet == true { ExitNodeCard() }
             if let note = watchNote ?? computer.actionError.map(OwnComputerWords.plainProblem) {
-                PageNote(note, symbol: "exclamationmark.triangle.fill", tint: .orange, id: "profile.ownComputer.note")
+                PageNote(.verbatim(note), symbol: "exclamationmark.triangle.fill", tint: .orange, id: "profile.ownComputer.note")
             }
         }
         .animation(.snappy, value: screen)
@@ -88,14 +88,15 @@ struct HelperComputerSection: View {
         case .loading:
             ProgressView().spread(.center)
         case .unavailable(let text):
-            PageNote(text)
+            PageNote(.verbatim(text))
         case .off(let hasComputer, let busy):
             if busy {
-                waiting(computer.status?.state == .removing ? "Removing its computer." : "Turning off its computer.", id: "profile.ownComputer.busy")
+                waiting(computer.status?.state == .removing ? String(localized: "Removing its computer.") : String(localized: "Turning off its computer."),
+                        id: "profile.ownComputer.busy")
             } else if hasComputer {
                 PageNote("Its computer is kept, switched off, for next time.")
             } else {
-                PageNote(HelperComputerPresentation.line)
+                PageNote(.verbatim(HelperComputerPresentation.line))
             }
         case .setup(let prompt):
             steps(prompt)
@@ -130,7 +131,7 @@ struct HelperComputerSection: View {
                 .foregroundStyle(OwnComputerWords.tint(word))
                 .contentTransition(.symbolEffect(.replace))
                 .accessibilityHidden(true)
-            Text(word.rawValue)
+            Text(OwnComputerWords.word(word))
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(OwnComputerWords.tint(word))
                 .accessibilityIdentifier("profile.ownComputer.status")
@@ -154,7 +155,7 @@ struct HelperComputerSection: View {
     /// The one thing to do next: a plain line and at most two capsules, one above the other.
     private func steps(_ prompt: HelperComputerPrompt) -> some View {
         VStack(spacing: 12) {
-            PageNote(line(prompt), id: "profile.ownComputer.prompt")
+            PageNote(.verbatim(line(prompt)), id: "profile.ownComputer.prompt")
             if let action = prompt.action {
                 Button { perform(action) } label: {
                     Text(OwnComputerWords.label(action)).font(.headline)
@@ -184,10 +185,10 @@ struct HelperComputerSection: View {
     /// words, and the add-on's own message only when it is plain too.
     private func line(_ prompt: HelperComputerPrompt) -> String {
         if prompt == HelperComputerPresentation.prompt(for: .cuaNotRunning, onMac: true) {
-            return "Your helpers' computers are paused on this Mac. Start them again to carry on."
+            return String(localized: "Your helpers' computers are paused on this Mac. Start them again to carry on.")
         }
         if prompt == HelperComputerPresentation.prompt(for: .cuaNotRunning, onMac: false) {
-            return "Your helpers' computers are paused on your Mac. Open Nollie on your Mac to start them again."
+            return String(localized: "Your helpers' computers are paused on your Mac. Open Nollie on your Mac to start them again.")
         }
         if let message = computer.status?.message, prompt.line == message, prompt.action == nil {
             return OwnComputerWords.plainProblem(message)
@@ -199,11 +200,11 @@ struct HelperComputerSection: View {
     private func setupTitle(_ fallback: String) -> String {
         guard case .working(let step, _) = run else { return fallback }
         switch step {
-        case .checking: return "Checking your Mac"
-        case .downloading: return "Downloading what it needs"
-        case .installing: return "Installing what it needs"
-        case .starting: return "Starting up"
-        case .preparing: return "Getting ready to run computers"
+        case .checking: return String(localized: "Checking your Mac")
+        case .downloading: return String(localized: "Downloading what it needs")
+        case .installing: return String(localized: "Installing what it needs")
+        case .starting: return String(localized: "Starting up")
+        case .preparing: return String(localized: "Getting ready to run computers")
         }
     }
 
@@ -212,7 +213,7 @@ struct HelperComputerSection: View {
         if let watchChat { watching = watchChat; return }
         guard let rt, let stored = BotsHome.shared.entry(rt, profile).storedID,
               let chat = try? await rt.openChat(storedID: stored, title: nil, profile: profile) else {
-            watchNote = "Open a chat with \(name) once, then Watch."
+            watchNote = String(localized: "Open a chat with \(name) once, then Watch.", comment: "Watch is a button's name")
             return
         }
         watching = chat
@@ -259,7 +260,7 @@ struct HelperComputerAdvanced: View {
                         .accessibilityIdentifier("profile.ownComputer.info")
                 }
                 if let status {
-                    detail("Cua", [OwnComputerWords.setup(status.setup), status.cuaVersion.map { "Version \($0)" }]
+                    detail("Cua", [OwnComputerWords.setup(status.setup), status.cuaVersion.map { String(localized: "Version \($0)") }]
                         .compactMap { $0 }.joined(separator: ", "))
                 }
                 if let problem { detail("Last problem", problem) }
@@ -310,7 +311,7 @@ struct HelperComputerAdvanced: View {
         return computer.error
     }
 
-    private func detail(_ title: String, _ value: String, monospaced: Bool = false) -> some View {
+    private func detail(_ title: LocalizedStringKey, _ value: String, monospaced: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.headline).foregroundStyle(Ink.text)
             Text(value)
@@ -332,30 +333,31 @@ struct HelperComputerAdvancedHero: View {
 
     var body: some View {
         let shown = words
-        PageHero(symbol: shown.0, title: shown.1, line: shown.2, tint: shown.3, id: "profile.computer.advanced.hero")
+        PageHero(symbol: shown.0, title: .verbatim(shown.1), line: .verbatim(shown.2), tint: shown.3, id: "profile.computer.advanced.hero")
     }
 
     private var words: (String, String, String?, Color) {
-        let its = "\(name)'s computer"
         guard let status = computer.status else {
-            return computer.error == nil ? ("ellipsis.circle", "Checking", nil, Ink.text2)
-                                         : ("wifi.exclamationmark", "Couldn't check \(its)", nil, .orange)
+            return computer.error == nil ? ("ellipsis.circle", String(localized: "Checking"), nil, Ink.text2)
+                                         : ("wifi.exclamationmark", String(localized: "Couldn't check \(name)'s computer"), nil, .orange)
         }
         switch status.state {
-        case .gettingReady: return ("macwindow", "\(its) is getting ready", nil, .blue)
-        case .turningOff: return ("macwindow", "\(its) is turning off", nil, Ink.text2)
-        case .removing: return ("trash", "\(its) is being removed", nil, Ink.text2)
+        case .gettingReady: return ("macwindow", String(localized: "\(name)'s computer is getting ready"), nil, .blue)
+        case .turningOff: return ("macwindow", String(localized: "\(name)'s computer is turning off"), nil, Ink.text2)
+        case .removing: return ("trash", String(localized: "\(name)'s computer is being removed"), nil, Ink.text2)
         default: break
         }
         if status.on {
             switch status.state {
-            case .asleep: return ("moon.zzz.fill", "\(its) is asleep", "It wakes when there's work.", Ink.text2)
-            case .needsYou: return ("exclamationmark.triangle.fill", "\(its) needs you", nil, .orange)
-            default: return ("checkmark.circle.fill", "\(its) is ready", nil, .green)
+            case .asleep:
+                return ("moon.zzz.fill", String(localized: "\(name)'s computer is asleep"), String(localized: "It wakes when there's work."), Ink.text2)
+            case .needsYou: return ("exclamationmark.triangle.fill", String(localized: "\(name)'s computer needs you"), nil, .orange)
+            default: return ("checkmark.circle.fill", String(localized: "\(name)'s computer is ready"), nil, .green)
             }
         }
-        return status.hasComputer ? ("macwindow", "\(its) is switched off", "Kept for next time.", Ink.text2)
-                                  : ("macwindow", "No computer of its own", nil, Ink.text2)
+        return status.hasComputer
+            ? ("macwindow", String(localized: "\(name)'s computer is switched off"), String(localized: "Kept for next time."), Ink.text2)
+            : ("macwindow", String(localized: "No computer of its own"), nil, Ink.text2)
     }
 }
 
@@ -379,28 +381,38 @@ enum OwnComputerWords {
         }
     }
 
+    /// The status word on the computer's card, shown in the person's language.
+    static func word(_ word: HelperComputerWord) -> String {
+        switch word {
+        case .ready: String(localized: "Ready", comment: "A computer's state")
+        case .working: String(localized: "Working", comment: "A computer's state")
+        case .asleep: String(localized: "Asleep", comment: "A computer's state")
+        case .needsYou: String(localized: "Needs you", comment: "A computer's state")
+        }
+    }
+
     /// A step's button, without the tool's name.
     static func label(_ action: HelperComputerAction) -> String {
         switch action {
-        case .setUp: "Set it up for me"
-        case .update: "Update it"
-        case .startCua: "Start them again"
-        case .finish: "Finish setup"
-        case .getCua: "Download it"
-        case .tryAgain: "Try again"
-        case .quitCua: "Close it and update"
-        case .notNow: "Not now"
+        case .setUp: String(localized: "Set it up for me")
+        case .update: String(localized: "Update it")
+        case .startCua: String(localized: "Start them again")
+        case .finish: String(localized: "Finish setup")
+        case .getCua: String(localized: "Download it")
+        case .tryAgain: String(localized: "Try again")
+        case .quitCua: String(localized: "Close it and update")
+        case .notNow: String(localized: "Not now")
         }
     }
 
     /// What Cua needs, for the Advanced page.
     static func setup(_ setup: HelperComputerStatus.Setup) -> String {
         switch setup {
-        case .ready: "Ready"
-        case .noCua: "Not on your Mac"
-        case .oldCua: "Needs an update"
-        case .cuaNotRunning: "Not running"
-        case .noRuntime: "Needs one more piece"
+        case .ready: String(localized: "Ready", comment: "A computer's state")
+        case .noCua: String(localized: "Not on your Mac")
+        case .oldCua: String(localized: "Needs an update")
+        case .cuaNotRunning: String(localized: "Not running")
+        case .noRuntime: String(localized: "Needs one more piece")
         }
     }
 
@@ -409,8 +421,8 @@ enum OwnComputerWords {
     static func plainProblem(_ text: String) -> String {
         let technical = ["Cua", "MCP", "API", "gateway", "Gateway", "token", "HTTP", "Traceback", "{", "lume", "Lume"]
         guard technical.contains(where: text.contains) else { return text }
-        if text.hasPrefix("Cua didn't answer") { return "Its computer didn't answer just now. Nollie keeps checking." }
-        return "Something went wrong with its computer. Advanced has the details."
+        if text.hasPrefix("Cua didn't answer") { return String(localized: "Its computer didn't answer just now. Nollie keeps checking.") }
+        return String(localized: "Something went wrong with its computer. Advanced has the details.", comment: "Advanced is the name of a page")
     }
 }
 

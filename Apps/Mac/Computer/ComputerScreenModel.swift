@@ -57,6 +57,7 @@ enum ComputerScreenModels {
     /// Memory the one model that passed needs. Below it, using this Mac stays off.
     static let minimumMemory: UInt64 = 32 * 1024 * 1024 * 1024
 
+    /// To the bot's model: English.
     static let missing = "Using this Mac needs a model on this Mac that can see the screen. The person can get one on the Models page."
 
     /// The Hermes homes whose engine may be running: the main setup's and Nollie's own setups'.

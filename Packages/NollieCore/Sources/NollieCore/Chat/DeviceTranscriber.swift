@@ -9,7 +9,8 @@ public enum DeviceTranscriber {
         public let locale: Locale
 
         public var errorDescription: String? {
-            "Speech recognition on this device is not available for \(locale.identifier) yet."
+            let language = locale.identifier
+            return String(localized: "Speech recognition on this device is not available for \(language) yet.", table: "Core", comment: "The value is a language code, such as cy_GB")
         }
     }
 

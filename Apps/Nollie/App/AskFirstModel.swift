@@ -72,7 +72,8 @@ final class AskFirstModel {
             enabled = nil
             needsTurnOffConfirmation = false
             if matches(bot: bot, runtime: runtime), !Task.isCancelled {
-                self.error = "Couldn't check Ask first. Try again."
+                self.error = String(localized: "Couldn't check Ask first. Try again.",
+                                    comment: "Safety: Ask first state unknown; keep exact meaning")
             }
         }
     }
@@ -114,7 +115,8 @@ final class AskFirstModel {
             guard self.operation == operation else { return }
             enabled = nil
             if matches(bot: bot, runtime: runtime), !Task.isCancelled {
-                self.error = "Couldn't confirm that change. Check Ask first again."
+                self.error = String(localized: "Couldn't confirm that change. Check Ask first again.",
+                                    comment: "Safety: an Ask first change was not confirmed; keep exact meaning")
             }
         }
     }

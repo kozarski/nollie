@@ -15,12 +15,12 @@ public extension SocketState {
 
     var label: String {
         switch self {
-        case .open: "Connected"
-        case .idle: "Offline"
-        case .authRejected: "Sign in required"
-        case .failed: "Connection failed"
-        case .connecting: "Connecting…"
-        case .reconnecting(let tries, _): "Reconnecting (\(tries))…"
+        case .open: String(localized: "Connected", table: "Core", comment: "The gateway connection's state")
+        case .idle: String(localized: "Offline", table: "Core", comment: "The gateway connection's state")
+        case .authRejected: String(localized: "Sign in required", table: "Core", comment: "The gateway connection's state")
+        case .failed: String(localized: "Connection failed", table: "Core", comment: "The gateway connection's state")
+        case .connecting: String(localized: "Connecting…", table: "Core", comment: "The gateway connection's state")
+        case .reconnecting(let tries, _): String(localized: "Reconnecting (\(tries))…", table: "Core", comment: "The gateway connection's state, with the attempt number")
         }
     }
 }
@@ -35,12 +35,12 @@ public enum SocketError: LocalizedError, Sendable {
 public extension SocketError {
     var errorDescription: String? {
         switch self {
-        case .cancelled: return "Cancelled."
-        case .notConnected: return "Not connected to the gateway."
-        case .timeout(let what): return "Timed out waiting for \(what)."
+        case .cancelled: return String(localized: "Cancelled.", table: "Core")
+        case .notConnected: return String(localized: "Not connected to the gateway.", table: "Core")
+        case .timeout(let what): return String(localized: "Timed out waiting for \(what).", table: "Core", comment: "The value is a gateway method name, such as gateway.ready")
         case .closed(let code, let reason):
-            let tail = reason.isEmpty ? "" : ": \(reason)"
-            return "WebSocket closed (\(code))\(tail)"
+            return reason.isEmpty ? String(localized: "WebSocket closed (\(String(code)))", table: "Core", comment: "The value is a close code")
+                : String(localized: "WebSocket closed (\(String(code))): \(reason)", table: "Core", comment: "A close code, then why")
         }
     }
 }
@@ -289,13 +289,13 @@ extension GatewaySocket {
             return .connected
         } catch GatewayTransportError.refused(let status) where status == 401 || status == 403 {
             dropLine()
-            return .rejected("The gateway turned down the WebSocket credential (\(status)).")
+            return .rejected(String(localized: "The gateway turned down the WebSocket credential (\(status)).", table: "Core", comment: "The value is an HTTP status"))
         } catch let refused as HermesAPIError where refused.isUnauthorized {
             dropLine()
             return .rejected(refused.localizedDescription)
         } catch SocketError.closed(let code, let reason) where code == 4401 {
             dropLine()
-            return .rejected(reason.isEmpty ? "The gateway turned down the WebSocket credential (4401)." : reason)
+            return .rejected(reason.isEmpty ? String(localized: "The gateway turned down the WebSocket credential (4401).", table: "Core") : reason)
         } catch {
             dropLine()
             log.warning("connect failed: \(error.localizedDescription, privacy: .public)")

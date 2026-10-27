@@ -1,0 +1,222 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSCameraUsageDescription" : {
+      "comment" : "Info.plist NSCameraUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan your Mac's pairing code or take a photo to attach to a chat."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Scanne den Kopplungscode deines Macs oder nimm ein Foto auf, um es an einen Chat anzuhängen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Scanner le code de jumelage de votre Mac ou prendre une photo à joindre à une discussion."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Escanea el código de enlace de tu Mac o haz una foto para adjuntarla a un chat."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macのペアリングコードを読み取ったり、写真を撮ってチャットに添付したりします。"
+          }
+        }
+      }
+    },
+    "NSFaceIDUsageDescription" : {
+      "comment" : "Info.plist NSFaceIDUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Check it's you before Nollie unlocks, opens saved sign-ins, or pays, sends or posts for you."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Prüft, dass du es bist, bevor Nollie entsperrt, gespeicherte Anmeldungen öffnet oder für dich bezahlt, sendet oder postet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vérifier que c'est bien vous avant que Nollie se déverrouille, ouvre des connexions enregistrées, ou paie, envoie ou publie pour vous."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Comprueba que eres tú antes de que Nollie se desbloquee, abra inicios de sesión guardados, o pague, envíe o publique por ti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieのロックを解除する、保存済みのサインインを開く、またはあなたの代わりに支払い、送信、投稿をする前に、本人であることを確認します。"
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Info.plist NSLocalNetworkUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Find and connect to Nollie on your Mac, or to a Hermes dashboard on your local network."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie auf deinem Mac oder ein Hermes-Dashboard in deinem lokalen Netzwerk finden und verbinden."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trouver Nollie sur votre Mac et s'y connecter, ou se connecter à un tableau de bord Hermes sur votre réseau local."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Encuentra Nollie en tu Mac y conéctate a él, o a un panel de Hermes en tu red local."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "MacのNollie、またはローカルネットワーク上のHermesダッシュボードを見つけて接続します。"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Info.plist NSMicrophoneUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Talk with your bots, dictate a message, or record a voice memo to attach."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sprich mit deinen Bots, diktiere eine Nachricht oder nimm ein Sprachmemo zum Anhängen auf."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Parlez avec vos bots, dictez un message ou enregistrez un mémo vocal à joindre."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Habla con tus bots, dicta un mensaje o graba una nota de voz para adjuntarla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ボットと話したり、メッセージを音声入力したり、添付するボイスメモを録音したりします。"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryAddUsageDescription" : {
+      "comment" : "Info.plist NSPhotoLibraryAddUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Save a picture from a chat to your Photos."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ein Bild aus einem Chat in deinen Fotos sichern."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enregistrer une image d'une discussion dans vos Photos."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guarda una imagen de un chat en tus Fotos."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "チャットの画像を写真に保存します。"
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription" : {
+      "comment" : "Info.plist NSSpeechRecognitionUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn what you say into words, on this device."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wandelt Gesprochenes in Text um, auf diesem Gerät."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Transformer ce que vous dites en texte, sur cet appareil."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Convierte lo que dices en texto, en este dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "話した内容を、このデバイス上で文字にします。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

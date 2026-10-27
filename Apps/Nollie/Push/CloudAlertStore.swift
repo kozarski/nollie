@@ -82,6 +82,8 @@ final class CloudKitAlertStore: CloudAlertStore {
             predicate: NSPredicate(format: "version == 1"), subscriptionID: Self.subscriptionID,
             options: [.firesOnRecordCreation])
         let info = CKSubscription.NotificationInfo()
+        // Kept in iCloud and compared on every device (`subscriptionState`), so it stays in English.
+        // The notification extension puts the shown words in place.
         info.title = "Nollie"
         info.alertBody = "There’s an update waiting for you in Nollie."
         info.soundName = "default"
