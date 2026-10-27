@@ -61,6 +61,13 @@ Notice-and-above entries are also written to `~/Library/Logs/Nollie/`, which Con
 | `Nollie Runtime.log` | The runtime helper |
 | `Hermes/` | A link to the managed Hermes's own `logs` folder (agent, errors, gateway), kept up to date by the helper |
 
+Hermes writes the start of each message into its own logs (the first 80 characters in `agent.log` and `gateway.log`,
+the first 100 of a schedule's prompt) and has no setting to stop it. The workflow add-on installs a log record
+factory in every Hermes process it loads in (`Companions/nollie-workflow/log_privacy.py`) that writes `[left out]`
+in their place: every log line in the pinned Hermes that passes a slice of a message, prompt, reply or body (a test
+finds them in the source), any `msg=` field, and anything quoting 16 or more characters of a recent message or reply.
+Lines written before the add-on loads, or by a Hermes without it, are not covered.
+
 Each file rotates at 10 MB and five are kept (`Nollie.1.log` is the previous one). The folder is
 0700 and the files 0600. Writing happens on a background queue. The app starts it with
 `NollieLogFiles.start(.app)` and the helper with `NollieLogFiles.start(.runtimeHelper)`. The iPhone
@@ -71,7 +78,7 @@ has no files: use Console or Diagnostics.
 Settings › About › Diagnostics makes one text file for the last 24 hours and offers Share. It holds the
 app version and build, the system and device model, whether a gateway is connected (never which), the
 app's own system log entries since launch, and on the Mac the tail of each file above. From Hermes's
-files only warnings and errors are included, because its ordinary lines can quote chats. Everything
+files only warnings and errors are included, as a second guard should a line quote a chat. Everything
 passes through `LogRedactor`, which hides bearer tokens, `sk-` and `ghp_` keys, `token=` and
 `password=` values, long hex and base64 strings and email addresses. Add a case to
 `LogRedactorTests` when a new kind of secret turns up.

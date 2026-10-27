@@ -1,6 +1,7 @@
 """Papertrail for every bot that is not private, the Night shift recorder, saved sign-ins, saved cards and
 the Mac's Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
-keeps a typed password out of screenshots, load in every bot that is not private. Nothing loads for a private bot.
+keeps a typed password out of screenshots, load in every bot that is not private. Nothing loads for a private bot, except
+that the words of chats stay out of Hermes's logs for every bot in the process.
 """
 
 
@@ -9,6 +10,8 @@ def register(ctx):
     from hermes_cli.profiles import get_profile_dir
     profile = str(getattr(ctx, "profile_name", "") or "")
     home = Path(get_profile_dir("default")).resolve()
+    # Before anything logs a word: Hermes's logs leave the words of chats out, for every bot in the process.
+    _install_log_privacy()
     # First, so a call is held or refused before anything else looks at it.
     _register_ask_first(ctx, profile, home)
     try:
@@ -17,6 +20,7 @@ def register(ctx):
             return
     except Exception:
         return
+    _register_log_privacy(ctx)
     _register_papertrail(ctx, profile, home)
     if profile == "default":
         from .service import start
@@ -28,6 +32,24 @@ def register(ctx):
     _register_sign_ins(ctx, profile, home)
     _register_apple_data(ctx, profile, home)
     _register_payments(ctx, profile, home)
+
+
+def _install_log_privacy():
+    import logging
+    try:
+        from .log_privacy import install
+        install()
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("Log privacy did not start: %s", type(exc).__name__)
+
+
+def _register_log_privacy(ctx):
+    import logging
+    try:
+        from .log_privacy import register
+        register(ctx)
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("Log privacy did not start: %s", type(exc).__name__)
 
 
 def _register_papertrail(ctx, profile, default_home):

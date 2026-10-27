@@ -362,6 +362,7 @@ Version 0.3 adds two features, both off until turned on. The design is in
 
 | File | Job |
 | :--- | :--- |
+| `log_privacy.py` | Keeps the words of chats out of Hermes's logs, in every Hermes process the add-on loads in |
 | `receipts.py` | Classify one call with Hermes's own predicates, scrub text, the look-only list |
 | `recorder.py` | The hooks in every followed profile: the guard and the recorder |
 | `rehearsals.py` | The registry, the schedule signature and which runs rehearse |

@@ -792,8 +792,10 @@ class RegisterTests(unittest.TestCase):
         return ctx.hooks, start.called, followups.called, (bot_home / "nollie-workflow" / "papertrail").is_dir()
 
     def test_every_bot_that_is_not_private_records_and_only_default_runs_the_board(self):
-        self.assertEqual(self.register("career"), (list(papertrail.HOOKS), False, False, True))
-        self.assertEqual(self.register("default"), (list(papertrail.HOOKS), True, True, True))
+        # The two log privacy hooks come first: they let Hermes's logs leave a quoted message out.
+        hooks = ["pre_llm_call", "post_llm_call", *papertrail.HOOKS]
+        self.assertEqual(self.register("career"), (hooks, False, False, True))
+        self.assertEqual(self.register("default"), (hooks, True, True, True))
 
     def test_private_bots_never_record(self):
         for profile in ("moss", "private", "moss-2"):
