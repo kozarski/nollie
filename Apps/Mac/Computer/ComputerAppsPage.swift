@@ -3,15 +3,16 @@ import SwiftUI
 
 /// Using this Mac, as the page says it first: off, waiting for a model or for apps, or ready.
 enum ComputerAppsState: Equatable {
-    case off, needsModel, needsApps, ready(Int)
+    case off, tooSmall, needsModel, needsApps, ready(Int)
 
-    init(on: Bool, hasModel: Bool, picked: Int) {
-        self = !on ? .off : !hasModel ? .needsModel : picked == 0 ? .needsApps : .ready(picked)
+    init(on: Bool, hasModel: Bool, picked: Int, bigEnough: Bool = ComputerScreenModels.macIsBigEnough()) {
+        self = !on ? .off : !bigEnough ? .tooSmall : !hasModel ? .needsModel : picked == 0 ? .needsApps : .ready(picked)
     }
 
     var title: String {
         switch self {
         case .off: "Off"
+        case .tooSmall: "Needs more memory"
         case .needsModel: "Needs a model"
         case .needsApps: "Pick apps"
         case let .ready(count): count == 1 ? "In 1 app" : "In \(count) apps"
@@ -21,6 +22,7 @@ enum ComputerAppsState: Equatable {
     var line: String {
         switch self {
         case .off: "Bots can't use this Mac."
+        case .tooSmall: "Using this Mac needs 32 GB or more."
         case .needsModel: "One that runs on this Mac."
         case .needsApps: "Bots use only the apps you pick."
         case .ready: "A model on this Mac does the clicking."
@@ -30,7 +32,7 @@ enum ComputerAppsState: Equatable {
     var tint: Color {
         switch self {
         case .off: Ink.text2
-        case .needsModel, .needsApps: .orange
+        case .tooSmall, .needsModel, .needsApps: .orange
         case .ready: .green
         }
     }
@@ -66,11 +68,12 @@ struct ComputerAppsContent: View {
     var modelName: String?
     var candidates: [ComputerPickedApps.Candidate]?
     var picked: Set<String>
+    var bigEnough = ComputerScreenModels.macIsBigEnough()
     var toggle: (ComputerPickedApps.Candidate, Bool) -> Void
 
     private var state: ComputerAppsState {
         ComputerAppsState(on: on, hasModel: modelName != nil,
-                          picked: (candidates ?? []).filter { picked.contains($0.id) }.count)
+                          picked: (candidates ?? []).filter { picked.contains($0.id) }.count, bigEnough: bigEnough)
     }
 
     var body: some View {
@@ -86,7 +89,7 @@ struct ComputerAppsContent: View {
             .inset(h: 22, v: 14)
             .spread(.center)
             .nollieGlass(.regular, in: Capsule(), solid: Ink.card)
-        if on {
+        if on, state != .tooSmall {
             if let modelName {
                 Label(modelName, systemImage: "cpu")
                     .font(.headline)

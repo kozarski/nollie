@@ -34,8 +34,10 @@ Accessibility and Screen Recording use to Nollie, so Privacy & Security lists on
   state file `runtimes/llamacpp/server.json` in the Hermes home says where it listens and its key,
   and `presets.ini` says which models see pictures (a `mmproj` file on disk). Qwen3.6 35B-A3B comes
   first: a mixture of experts with about 3B active, so each step takes about a second on Apple
-  silicon, and it reads app windows well. Qwen3.8 27B and Flash Next also work. With none,
-  using this Mac stays off and the page offers **Get a model**.
+  silicon, and it reads app windows well. It is the only model used: it is the one that passed every
+  step of the clicking test, and others that see pictures are ignored. It needs about 32 GB, so on a
+  Mac with less, using this Mac stays off and the page says so. On a bigger Mac without it, the
+  page offers **Get a model**.
 - **Allow Mac control** (each bot's Computer tab) is now that bot's permission to ask; it no longer
   turns Hermes's own computer_use on. In Nollie's own setup the nollie-mac add-on comes and goes with
   it (see [the add-on](../Companions/nollie-mac/README.md#in-nollies-own-setup)); a hand-installed

@@ -42,19 +42,20 @@ struct ComputerScreenModel: Equatable, Sendable {
 ///
 /// Nollie's own local model setup (the Models page) runs Hermes's managed engine. Its state file
 /// says where the engine listens and its key (`runtimes/llamacpp/server.json` in the Hermes home);
-/// its presets say which models see pictures (a `mmproj` file that exists). The models Nollie
-/// knows to click well come first; any other model that sees pictures will do.
+/// its presets say which models see pictures (a `mmproj` file that exists). Only a model that
+/// passed every step of the clicking test is used; any other model that sees pictures is not.
 enum ComputerScreenModels {
     struct Known: Equatable, Sendable { var id: String; var name: String }
 
-    /// In order. Qwen3.6 35B-A3B is a mixture of experts with about 3B active, so each step is fast
-    /// on Apple silicon, and it reads app windows and their element lists well. The bigger two
-    /// are slower per step but just as able.
+    /// The models that passed the clicking test (Docs/nollie-computer.md), in order. Qwen3.6 35B-A3B
+    /// is a mixture of experts with about 3B active, so each step is fast on Apple silicon. Smaller
+    /// models scored 4 of 5 and are left out; a model joins this list only after it passes.
     static let preferred: [Known] = [
         Known(id: "qwen3.6-35b-a3b", name: "Qwen3.6 35B-A3B"),
-        Known(id: "qwen3.8-27b", name: "Qwen3.8 27B"),
-        Known(id: "qwen3.8-flash-next", name: "Qwen3.8 Flash Next"),
     ]
+
+    /// Memory the one model that passed needs. Below it, using this Mac stays off.
+    static let minimumMemory: UInt64 = 32 * 1024 * 1024 * 1024
 
     static let missing = "Using this Mac needs a model on this Mac that can see the screen. The person can get one on the Models page."
 
@@ -103,12 +104,17 @@ enum ComputerScreenModels {
         return found
     }
 
-    /// The best of them: a known one in order, else the first.
+    /// The best of them that passed the clicking test, else none.
     static func choose(_ models: [String]) -> String? {
         for known in preferred {
             if let match = models.first(where: { $0.lowercased().hasPrefix(known.id) }) { return match }
         }
-        return models.first
+        return nil
+    }
+
+    /// Whether this Mac has the memory for a model that passed.
+    static func macIsBigEnough(memory: UInt64 = ProcessInfo.processInfo.physicalMemory) -> Bool {
+        memory >= minimumMemory - minimumMemory / 32
     }
 }
 

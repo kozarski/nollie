@@ -380,7 +380,12 @@ import Testing
                                       "/fixture/home/runtimes/llamacpp/presets.ini": files["/fixture/home/runtimes/llamacpp/presets.ini"]!]
         #expect(ComputerScreenModels.find(homes: [home], read: { away[$0.path].map { Data($0.utf8) } }, exists: exists) == nil)
         #expect(ComputerScreenModels.find(homes: [home], read: read, exists: { _ in false }) == nil)
-        #expect(ComputerScreenModels.choose(["something-vl"]) == "something-vl")
+        #expect(ComputerScreenModels.choose(["something-vl"]) == nil, "only a model that passed clicks")
+        #expect(ComputerScreenModels.choose(["Qwen3-VL-8B-Q4_K_M", "Qwen3.6-35B-A3B-UD-Q4_K_M"]) == "Qwen3.6-35B-A3B-UD-Q4_K_M")
+        #expect(ComputerScreenModels.macIsBigEnough(memory: 32 * 1024 * 1024 * 1024))
+        #expect(!ComputerScreenModels.macIsBigEnough(memory: 16 * 1024 * 1024 * 1024))
+        #expect(ComputerAppsState(on: true, hasModel: true, picked: 2, bigEnough: false) == .tooSmall)
+        #expect(ComputerAppsState(on: true, hasModel: false, picked: 0, bigEnough: true) == .needsModel)
     }
 
     @Test func movesAreReadStrictly() {

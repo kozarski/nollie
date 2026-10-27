@@ -61,20 +61,21 @@ import Testing
         ]
         // The switch reads its own pretend settings, never this Mac's.
         let defaults = try #require(UserDefaults(suiteName: "nollie-apps-page-\(UUID().uuidString)"))
-        for (name, on, model, picked) in [("off", false, "Qwen3.6 35B-A3B", Set<String>()),
-                                          ("ready", true, "Qwen3.6 35B-A3B", Set(["com.apple.notes", "com.apple.reminders"])),
-                                          ("needs-model", true, nil, Set<String>())] as [(String, Bool, String?, Set<String>)] {
+        for (name, on, model, picked, big) in [("off", false, "Qwen3.6 35B-A3B", Set<String>(), true),
+                                          ("ready", true, "Qwen3.6 35B-A3B", Set(["com.apple.notes", "com.apple.reminders"]), true),
+                                          ("needs-model", true, nil, Set<String>(), true),
+                                          ("too-small", true, nil, Set<String>(), false)] as [(String, Bool, String?, Set<String>, Bool)] {
             defaults.set(on, forKey: ComputerCenter.enabledKey)
             let page = NavigationStack {
                 ScrollView {
                     VStack(spacing: 36) {
-                        ComputerAppsContent(on: on, modelName: model, candidates: apps, picked: picked) { _, _ in }
+                        ComputerAppsContent(on: on, modelName: model, candidates: apps, picked: picked, bigEnough: big) { _, _ in }
                     }
                     .padding(EdgeInsets(top: 28, leading: 24, bottom: 40, trailing: 24))
                 }
                 .background(Ink.canvas)
             }
-            .frame(width: 520, height: on ? 980 : 560)
+            .frame(width: 520, height: on && big ? 980 : 560)
             .defaultAppStorage(defaults)
             try attach(page, named: "computer-apps-\(name)")
         }
