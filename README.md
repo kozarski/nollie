@@ -44,7 +44,7 @@
 | **Computers of their own** | A helper can work in its own small computer inside your Mac, away from your files. Watch it live from your phone. |
 | **Stop from the Lock Screen** | While a helper is using a computer, Stop sits on your iPhone's Lock Screen. |
 | **Night shift** | One card each morning: what your crew did overnight, and why each step was allowed. |
-| **Papertrail** | Exactly what left your Mac, and where it went. |
+| **Papertrail** | Every connection your helpers make, and where it went. [What it can't see yet](Docs/specs/papertrail.md#what-papertrail-still-cant-see) |
 | **Saved sign-ins** | A helper can log in to a site after you approve. It never sees the password. |
 | **Board and schedules** | Ongoing work in one place, and "every morning, do X" just by asking. |
 | **Try a demo** | Look around without setting anything up. |
@@ -71,7 +71,7 @@
 - Your chats stay between your devices and your own Mac. There is no Nollie server.
 - Your phone reaches your Mac over an encrypted link only those two can open. [Nollie Link](Docs/nollie-link.md)
 - Pick an online model and your messages go to that provider under your own account. Papertrail shows when.
-- Logs stay on your Mac with private details left out. **Settings › About › Remove** takes everything away.
+- Logs stay on your Mac and leave the words of your chats out. **Settings › About › Remove** takes everything away.
 
 [Privacy policy](https://nollie.app/privacy) · [How Nollie keeps you safe](Docs/security-note.md)
 

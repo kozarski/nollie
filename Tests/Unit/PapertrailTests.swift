@@ -73,7 +73,7 @@ import Testing
         let aloneWhy = alone.why(bot: "Scout")
         #expect(aloneWhy.kept)
         #expect(aloneWhy.reason == "Scout ran a command that connected to code.example.com.")
-        #expect(aloneWhy.sent == "Connected to code.example.com.")
+        #expect(aloneWhy.sent == nil, "the reason already names the one place")
         #expect(home.routeLabel == "Your network")
         #expect(home.why(bot: "Scout").reason == "Scout used a connected app that reached 192.168.1.20.")
     }
@@ -215,13 +215,13 @@ import Testing
         #expect(!today.allOneRoute, "Claude plan and Exa")
         #expect(PapertrailToday.wentOnline(1) == "Went online once today")
         // Read before the Mac's midnight, shown after it: today starts empty, not with yesterday's count.
-        #expect(PapertrailToday(trail, now: Date(timeIntervalSince1970: 1_761_001_300)).headline == "Nothing left your Mac today")
+        #expect(PapertrailToday(trail, now: Date(timeIntervalSince1970: 1_761_001_300)).headline == "Nothing seen leaving today")
         let midnight = 1_760_914_800.0
-        #expect(PapertrailToday(Papertrail(todayStartsAt: midnight, entries: []), now: now).headline == "Nothing left your Mac today")
+        #expect(PapertrailToday(Papertrail(todayStartsAt: midnight, entries: []), now: now).headline == "Nothing seen leaving today")
         let network = Papertrail(todayStartsAt: midnight, entries: [.init(id: "n", at: midnight + 10, route: "network")])
         let networkToday = PapertrailToday(network, now: now)
         #expect(networkToday.left == 1 && networkToday.online == 0)
-        #expect(networkToday.headline == "Stayed on your network today")
+        #expect(networkToday.headline == "Nothing seen going online today")
     }
 
     @Test func privateBotsHaveNoPapertrailTab() {

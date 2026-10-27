@@ -271,7 +271,8 @@ public extension Papertrail.Entry {
         guard let why, let origin = why.origin, Papertrail.origins.contains(origin) else {
             // Connections alone: the door kept who made them, so that is the reason.
             if !outsideHosts.isEmpty, let went = wentLine(bot: bot, backup: false) {
-                return PapertrailWhy(reason: went, sent: sent, kept: true)
+                // One place, already named in the reason, needs no second line.
+                return PapertrailWhy(reason: went, sent: outsideHosts.count == 1 && tokens == 0 ? nil : sent, kept: true)
             }
             return PapertrailWhy(reason: PapertrailWhy.notKept, sent: sent, kept: false)
         }

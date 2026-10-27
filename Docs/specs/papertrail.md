@@ -195,7 +195,9 @@ A tab `Papertrail` after Model, hidden for private bots.
   the person's own answers ("You said yes to sending at 14:02."), then "What went:" in sizes and kinds only.
   An entry from before 1.1 says "Nollie didn't keep the reason for this one." Words: `Papertrail.Entry.why(bot:)`.
   The device that answered is not recorded yet: Hermes's approval hook does not say, so the words leave it out.
-- Nothing listed this week: one row, "Nothing left your Mac this week."
+- Nothing listed this week: "All quiet", "Nothing seen leaving all week." Every "nothing" is said as what
+  Papertrail saw ("Nothing seen leaving today"), because it can't see a program that ignores the door while the
+  network filter is off.
 - Add-on missing or not on (404): one row, "Papertrail isn't on for this bot yet."
 - Load failure: "Couldn't load Papertrail." in the sheet's status line. A 403 means a private bot only when
   its message says so; the Link door's own 403 is a load failure.
