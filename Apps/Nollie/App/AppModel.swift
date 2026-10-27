@@ -138,6 +138,8 @@ final class AppModel {
     let family = FamilyModel()
     /// Set to open Settings, What left your Mac (the Mac sidebar's Papertrail button).
     var papertrailRequest: UUID?
+    /// Set to open the weekly note: its card at the top of the main chat, or its notification.
+    var weeklyRequest: UUID?
 
     /// Set when something that needs the Mac live was tapped while the phone cannot reach it.
     var awayPrompt = false

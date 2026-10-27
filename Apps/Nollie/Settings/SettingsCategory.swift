@@ -2,7 +2,7 @@ import Foundation
 
 /// The small set of top-level settings. Search also finds the controls grouped inside each page.
 enum SettingsCategory: String, CaseIterable, Identifiable {
-    case bots, appearance, speech, notifications, privacy = "icloud", signIns = "signins", cards, siri = "voice",
+    case bots, appearance, speech, notifications, weekly, privacy = "icloud", signIns = "signins", cards, siri = "voice",
          connection = "gateways", away, keepAwake = "awake", about, advanced
 
     var id: String { rawValue }
@@ -12,6 +12,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .appearance: "Appearance"
         case .speech: "Voice"
         case .notifications: "Notifications"
+        case .weekly: "Your week"
         case .privacy: "Privacy"
         case .signIns: "Sign-ins"
         case .cards: "Cards"
@@ -29,6 +30,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .appearance: "circle.lefthalf.filled"
         case .speech: "speaker.wave.2.fill"
         case .notifications: "bell.badge"
+        case .weekly: "calendar"
         case .privacy: "hand.raised.fill"
         case .signIns: "key.fill"
         case .cards: "creditcard.fill"
@@ -46,6 +48,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .appearance: "theme dark light text font reading transcript glass summaries titles previews"
         case .speech: "speak speech read aloud talk talking listen hands-free"
         case .notifications: "alert permission sound haptics background"
+        case .weekly: "weekly note week summary sunday helpers papertrail left undo mute pause"
         case .privacy: "security lock face id touch id approvals permissions camera microphone photos local network notifications accessibility screen recording"
         case .signIns: "password passwords login log in username website site keychain one-time code"
         case .cards: "card cards credit debit pay payment buy buying checkout shop money visa mastercard"
@@ -67,10 +70,12 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     #endif
 
     /// `away`: Away from home shows on a Mac that runs its own assistant and on a phone linked to one.
-    static func visible(developerMode: Bool, away: Bool = false, matching search: String = "") -> [Self] {
+    /// `weekly`: the weekly note is the owner's, so a member of someone's household never sees it.
+    static func visible(developerMode: Bool, away: Bool = false, weekly: Bool = true, matching search: String = "") -> [Self] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         return allCases.filter { category in
             (developerMode || category != .advanced) && (category != .signIns || hasSignIns) && (category != .away || away) &&
+            (category != .weekly || weekly) &&
             (category != .keepAwake || hasKeepAwake) &&
             (query.isEmpty || (category.title + " " + category.keywords).localizedCaseInsensitiveContains(query))
         }

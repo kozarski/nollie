@@ -104,4 +104,26 @@ enum DemoRoutes {
             "entries": .array(entries), "more": 0,
         ]
     }
+
+    // MARK: The weekly note
+
+    /// A small week for the bots that keep a record, the same few replies Papertrail shows. Nothing new, so the
+    /// demo never claims a change it didn't make.
+    static func week(bot: String, now: Double) -> JSONValue {
+        let today = Calendar.current.startOfDay(for: Date(timeIntervalSince1970: now)).timeIntervalSince1970
+        let busy = ["default", "scout"].contains(bot)
+        let places: [JSONValue] = busy
+            ? [["kind": "model", "provider": .string(DemoSeed.provider), "label": "Demo", "count": bot == "default" ? 5 : 3,
+                "first_at": .number(today - 3 * 86_400)],
+               ["kind": "search", "service": "exa", "count": 1, "first_at": .number(today - 3 * 86_400)]]
+            : []
+        return [
+            "bot": .string(bot), "days": 7, "now": .number(now), "since": .number(today - 6 * 86_400),
+            "recording_since": .number(today - 3 * 86_400), "papertrail": .bool(busy),
+            "replies": ["stayed": 4, "left": .number(busy ? 2 : 0), "online": .number(busy ? 2 : 0)],
+            "places": .array(places), "places_more": 0, "answers": ["once": 0, "session": 0, "always": 0, "deny": 0],
+            "asks": [:], "earlier_answers": [], "schedules": [], "runs_kept": true, "schedules_kept": true,
+            "board": ["done": 0, "stopped": 0, "failed": 0], "apps": [], "web": ["on": true, "service": "exa"], "filter": nil,
+        ]
+    }
 }

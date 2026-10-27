@@ -180,6 +180,8 @@ enum LocalNotifier {
         if isForeground, case .card = event { UINotificationFeedbackGenerator().notificationOccurred(.warning) }
         #endif
         if isForeground || companionDelivers { return }
+        // A helper muted from the weekly note: no banner for its replies. Its questions still come through.
+        if case .finished = event, HelperMute.isMuted(chat.profileName, connection: chat.runtime.connection.id) { return }
         let bot = chat.runtime.profiles.first(where: { $0.name == chat.profileName })?.label ?? chat.profileName
         let banner = Banner(event, bot: bot, chat: chat)
         let content = UNMutableNotificationContent()

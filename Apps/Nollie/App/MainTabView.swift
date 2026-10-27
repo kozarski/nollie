@@ -31,6 +31,7 @@ struct MainTabView: View {
     var body: some View {
         chats
             .modifier(BotSheetHost())
+            .weeklyNoteHost()
             .sheet(item: $page, onDismiss: returnToChats) { content(for: $0).withAppModel() }
             .onChange(of: model.selectedTab, initial: true) { follow(model.selectedTab) }
             .onChange(of: model.pendingRoute) { clearPage(if: model.pendingRoute != nil) }

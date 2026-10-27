@@ -222,7 +222,8 @@ final class WatchLink: NSObject {
         return WatchWire.Snapshot(made: now, approvals: approvals,
                                   helpers: CrewAtWork.members(in: runtime, now: now).map(\.helper),
                                   canStop: connection.linkedMac != nil, connected: runtime.socketState.isOpen,
-                                  night: WatchNight.note(night, now: now))
+                                  night: WatchNight.note(night, now: now), week: WatchNight.week(WeeklyNoteModel.shared.note,
+                                                                                                shown: WeeklyNoteModel.shows(AppModel.shared)))
     }
     #endif
 }
