@@ -13,7 +13,8 @@ struct LinkDoorFamilyTests {
 
     private func access(helpers: [String] = ["career-sam"], privateNames: Set<String>? = [], chats: [LinkDoorDevices.Chat] = [],
                         small: Bool = false, kinds: Set<String> = []) -> LinkDoorMemberAccess {
-        var made = LinkDoorMemberAccess(device: sam, member: .init(person: "Sam", helpers: helpers, small: small, chats: chats, locked: helpers),
+        var made = LinkDoorMemberAccess(device: sam, member: .init(person: "Sam", helpers: helpers, small: small, chats: chats, locked: helpers,
+                                                                  lockVersion: LinkDoorFamily.lockVersion),
                                         privateNames: privateNames)
         made.smallKinds = kinds
         return made
@@ -44,7 +45,7 @@ struct LinkDoorFamilyTests {
 
         let offer = devices.makeOffer(invite: .init(person: "Sam", helpers: ["career-sam"]))
         let member = try devices.claim(secret: offer.secret, name: "Sam's iPhone")
-        #expect(member.device.member == .init(person: "Sam", helpers: ["career-sam"], locked: ["career-sam"]))
+        #expect(member.device.member == .init(person: "Sam", helpers: ["career-sam"], locked: ["career-sam"], lockVersion: LinkDoorFamily.lockVersion))
         #expect(member.device.member?.small == false)
         #expect(devices.members.map(\.id) == [member.device.id])
 
@@ -394,17 +395,30 @@ struct LinkDoorFamilyTests {
         let fresh = LinkDoorFamily.lockedToolsets(existing: nil)
         #expect(fresh == LinkDoorFamily.householdDropped)
         for name in ["terminal", "code_execution", "file", "browser", "computer_use", "session_search", "cronjob", "skills",
-                     "nollie_calendar", "nollie_contacts", "nollie_payments", "nollie_sign_in", "mcp-cua"] {
+                     "nollie_calendar", "nollie_contacts", "nollie_payments", "nollie_sign_in", "mcp-cua", "connections", "discord"] {
             #expect(fresh.contains(name), "\(name)")
         }
-        // Talk, the web, its own memory and the owner's connected send tools stay.
-        for kept in ["web", "search", "clarify", "todo", "memory", "connections"] { #expect(!fresh.contains(kept), "\(kept)") }
+        // Only talk, the web, questions, a to-do list, speech, pictures and its own memory stay.
+        for kept in LinkDoorFamily.householdKept { #expect(!fresh.contains(kept), "\(kept)") }
+        #expect(LinkDoorFamily.householdKept == ["web", "search", "clarify", "todo", "tts", "image_gen", "memory", "context_engine"])
         let merged = LinkDoorFamily.lockedToolsets(existing: ["tts", "terminal"])
         #expect(merged.first == "tts" && merged.filter { $0 == "terminal" }.count == 1)
         #expect(LinkDoorFamily.lockedToolsets(existing: "tts, x_search").prefix(2) == ["tts", "x_search"])
         #expect(LinkDoorFamily.isLockedDown(merged))
         #expect(!LinkDoorFamily.isLockedDown(["terminal", "file"]))
         #expect(!LinkDoorFamily.isLockedDown(nil))
+    }
+
+    @Test func everyOtherToolsetAndEveryMCPServerIsDroppedToo() {
+        let required = LinkDoorFamily.requiredDrops(listed: ["web", "memory", "tts", "gmail", "drive_reader", "terminal"],
+                                                   mcpServers: ["gmail", "filesystem"])
+        // The owner's accounts, reads and sends alike: a plugin's toolsets and each MCP server.
+        for name in ["gmail", "drive_reader", "mcp-gmail", "mcp-filesystem", "connections"] { #expect(required.contains(name), "\(name)") }
+        for kept in ["web", "memory", "tts"] { #expect(!required.contains(kept), "\(kept)") }
+        #expect(required.filter { $0 == "terminal" }.count == 1)
+        let written = LinkDoorFamily.lockedToolsets(existing: ["image_gen"], required: required)
+        #expect(LinkDoorFamily.isLockedDown(written, required: required))
+        #expect(!LinkDoorFamily.isLockedDown(LinkDoorFamily.householdDropped, required: required))
     }
 
     @Test func theHouseholdCopyIsNamedForThePersonInHermessGrammar() {
@@ -417,16 +431,23 @@ struct LinkDoorFamilyTests {
     }
 
     @Test func onlyLockedDownCopiesAreReachable() {
-        let older = LinkDoorMemberAccess(device: sam, member: .init(person: "Sam", helpers: ["career-sam"]), privateNames: [])
-        #expect(!older.allows(profile: "career-sam"))
+        let never = LinkDoorMemberAccess(device: sam, member: .init(person: "Sam", helpers: ["career-sam"]), privateNames: [])
+        #expect(!never.allows(profile: "career-sam"))
+        // Locked down under the earlier rules (connected accounts kept): not reachable until locked again.
+        let earlier = LinkDoorMemberAccess(device: sam, member: .init(person: "Sam", helpers: ["career-sam"], locked: ["career-sam"]),
+                                           privateNames: [])
+        #expect(!earlier.allows(profile: "career-sam"))
+        let now = LinkDoorMemberAccess(device: sam, member: .init(person: "Sam", helpers: ["career-sam"], locked: ["career-sam"],
+                                                                  lockVersion: LinkDoorFamily.lockVersion), privateNames: [])
+        #expect(now.allows(profile: "career-sam"))
     }
 
     /// A member linked by the earlier build: a copy made by the phone, never locked down.
-    private func olderMember(_ helpers: [String]) throws -> (LinkDoorDevices, UUID, String) {
+    private func olderMember(_ helpers: [String], locked: [String]? = nil) throws -> (LinkDoorDevices, UUID, String) {
         let credential = Data((0..<32).map { _ in UInt8.random(in: 0...255) })
         let id = UUID()
         let device = LinkDoorDevices.Device(id: id, name: "Sam's iPhone", credentialHash: Data(SHA256.hash(data: credential)),
-                                            linkedAt: Date(), lastActive: nil, member: .init(person: "Sam", helpers: helpers))
+                                            linkedAt: Date(), lastActive: nil, member: .init(person: "Sam", helpers: helpers, locked: locked))
         let devices = try LinkDoorDevices(store: LinkDoorMemoryState(.init(installTag: "0123456789abcdef", devices: [device], away: false)))
         return (devices, id, credential.map { String(format: "%02x", $0) }.joined())
     }
@@ -440,7 +461,25 @@ struct LinkDoorFamilyTests {
         #expect(profiles["profiles"]?.arrayValue?.compactMap { $0["name"]?.stringValue } == ["career-sam"])
         #expect(LinkDoorFamily.isLockedDown(fixture.hermes.disabled("career-sam")))
         #expect(devices.member(id)?.locked == ["career-sam"])
+        #expect(devices.member(id)?.lockVersion == LinkDoorFamily.lockVersion)
         // Once is enough: the owner may change the copy afterwards as an ordinary bot on the Mac.
+        let writes = fixture.hermes.configWrites
+        let _: JSONValue = try await fixture.api(credential).get("/api/profiles")
+        #expect(fixture.hermes.configWrites == writes)
+    }
+
+    @Test(.timeLimit(.minutes(1))) func copiesLockedUnderTheEarlierRulesLoseTheOwnersAccountsOnce() async throws {
+        // As 66f5df9 left them: locked, connected accounts and MCP servers still on.
+        let (devices, id, credential) = try olderMember(["career-sam"], locked: ["career-sam"])
+        let fixture = try await FamilyDoorFixture.start(devices: devices)
+        defer { fixture.stop() }
+        let profiles: JSONValue = try await fixture.api(credential).get("/api/profiles")
+        #expect(profiles["profiles"]?.arrayValue?.compactMap { $0["name"]?.stringValue } == ["career-sam"])
+        let dropped = try #require(fixture.hermes.disabled("career-sam"))
+        for name in ["connections", "gmail", "mcp-gmail", "mcp-drive", "terminal"] { #expect(dropped.contains(name), "\(name)") }
+        for kept in ["web", "memory"] { #expect(!dropped.contains(kept), "\(kept)") }
+        #expect(dropped.first == "tts")
+        #expect(devices.member(id)?.lockVersion == LinkDoorFamily.lockVersion)
         let writes = fixture.hermes.configWrites
         let _: JSONValue = try await fixture.api(credential).get("/api/profiles")
         #expect(fixture.hermes.configWrites == writes)
@@ -763,7 +802,12 @@ final class FamilyFakeHermes: @unchecked Sendable {
             body = #"{"ok":true}"#
         case ("GET", "/api/config"):
             let list = configs.withLock { $0[profile] } ?? []
-            body = String(decoding: try! JSONSerialization.data(withJSONObject: ["agent": ["disabled_toolsets": list]]), as: UTF8.self)
+            // Every copy carries the owner's MCP servers, as Hermes's profile copy does.
+            let config: [String: Any] = ["agent": ["disabled_toolsets": list],
+                                         "mcp_servers": ["gmail": ["command": "gmail-mcp"], "drive": ["url": "https://example.invalid/mcp"]]]
+            body = String(decoding: try! JSONSerialization.data(withJSONObject: config), as: UTF8.self)
+        case ("GET", "/api/tools/toolsets"):
+            body = #"[{"name":"web"},{"name":"terminal"},{"name":"file"},{"name":"memory"},{"name":"tts"},{"name":"connections"},{"name":"gmail"}]"#
         case ("PUT", "/api/config"):
             if refused.withLock({ $0.contains(profile) }) {
                 body = #"{"detail":"not here"}"#

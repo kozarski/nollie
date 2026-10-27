@@ -211,7 +211,8 @@ extension LinkDoor {
     /// on their next use. False when that couldn't be done; the member is refused until it can.
     func lockDownOlderCopies(of device: UUID) async -> Bool {
         guard let member = devices.member(device) else { return false }
-        let waiting = member.helpers.filter { !(member.locked ?? []).contains($0) }
+        let locked = member.lockVersion == LinkDoorFamily.lockVersion ? Set(member.locked ?? []) : []
+        let waiting = member.helpers.filter { !locked.contains($0) }
         guard !waiting.isEmpty else { return true }
         for copy in waiting { guard await family.lockDown(copy) else { return false } }
         devices.markLocked(waiting, for: device)

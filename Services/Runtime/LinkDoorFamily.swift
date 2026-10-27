@@ -30,17 +30,39 @@ enum LinkDoorFamily {
 
     // MARK: Household copies
 
-    /// What a household copy may never use: this Mac's terminal and files, code, the browser and the
-    /// computer, other chats and helpers, schedules, the Board, the owner's calendar, reminders and
-    /// contacts, saved cards and sign-ins, and pictures or videos read from disk. Talk, web search and
-    /// reading, its own memory and the owner's connected send tools stay (sends still wait on the owner).
+    /// What a household copy may never use, named: this Mac's terminal and files, code, the browser and
+    /// the computer, other chats and helpers, schedules, the Board, the owner's calendar, reminders and
+    /// contacts, saved cards and sign-ins, pictures or videos read from disk, and the owner's connected
+    /// accounts (connectors and messaging platforms), reads and sends alike. Every other toolset the copy
+    /// has that isn't kept, and every MCP server in its config, is dropped too (`requiredDrops`).
     static let householdDropped: [String] = [
         "terminal", "code_execution", "file", "browser", "computer_use", "debugging", "coding",
         "session_search", "skills", "delegation", "cronjob", "kanban", "vision", "video",
-        "desktop_ui", "project", "catalog", "onboarding",
+        "desktop_ui", "project", "catalog", "onboarding", "bot_room",
         "nollie_calendar", "nollie_reminders", "nollie_contacts", "nollie_payments", "nollie_sign_in", "nollie_crew",
         "mcp-cua", "mcp-cua-recorder",
+        "connections", "x_search", "discord", "discord_admin", "yuanbao", "feishu_doc", "feishu_drive",
     ]
+
+    /// All a household copy keeps: talk, looking things up and reading pages, questions, a to-do list,
+    /// speech, pictures it makes, its own memory (about that person only) and its context engine.
+    static let householdKept: Set<String> = ["web", "search", "clarify", "todo", "tts", "image_gen", "memory", "context_engine"]
+
+    /// Bumped whenever what a copy drops grows: copies locked down under an older version are locked
+    /// down again, once, on their next use. 1 kept the owner's connected tools; 2 drops them.
+    static let lockVersion = 2
+
+    /// Everything to drop from one copy: the named list, each toolset Hermes lists for it that isn't
+    /// kept (plugins included), and `mcp-<name>` for each MCP server in its config.
+    static func requiredDrops(listed: [String], mcpServers: [String]) -> [String] {
+        var out = householdDropped
+        for name in listed where !householdKept.contains(name) && !out.contains(name) { out.append(name) }
+        for server in mcpServers {
+            let name = "mcp-" + server
+            if !householdKept.contains(name), !out.contains(name) { out.append(name) }
+        }
+        return out
+    }
 
     /// Hermes keeps `agent.disabled_toolsets` as a list or a comma-separated string.
     static func toolsetList(_ value: Any?) -> [String] {
@@ -50,13 +72,15 @@ enum LinkDoorFamily {
     }
 
     /// The copy's list after locking it down: what it already had off, then everything dropped.
-    static func lockedToolsets(existing: Any?) -> [String] {
+    static func lockedToolsets(existing: Any?, required: [String] = householdDropped) -> [String] {
         var out = toolsetList(existing)
-        for name in householdDropped where !out.contains(name) { out.append(name) }
+        for name in required where !out.contains(name) { out.append(name) }
         return out
     }
 
-    static func isLockedDown(_ value: Any?) -> Bool { Set(householdDropped).isSubset(of: Set(toolsetList(value))) }
+    static func isLockedDown(_ value: Any?, required: [String] = householdDropped) -> Bool {
+        Set(required).isSubset(of: Set(toolsetList(value)))
+    }
 
     /// The household copy's profile name for a person: the helper's with theirs (`career-sam`), inside
     /// Hermes's grammar.
@@ -241,8 +265,8 @@ struct LinkDoorMemberAccess: Sendable {
     init(device: UUID, member: LinkDoorDevices.Member, privateNames: Set<String>?) {
         self.device = device
         person = member.person
-        // Only copies whose tools are locked down are reachable.
-        helpers = Set(member.helpers).intersection(member.locked ?? [])
+        // Only copies locked down under the current rules are reachable.
+        helpers = member.lockVersion == LinkDoorFamily.lockVersion ? Set(member.helpers).intersection(member.locked ?? []) : []
         self.privateNames = privateNames
         chats = Set(member.chats)
         small = member.small

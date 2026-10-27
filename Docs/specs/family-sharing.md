@@ -64,7 +64,7 @@ with the person's (`career-sam`); it still introduces itself as Scout.
 What still comes along, and the share screen says so in one line: the instructions you wrote for the helper. If they
 hold something personal, edit the copy's instructions after sharing.
 
-**The copy can't reach this Mac.** Before any code is made, the door writes the copy's own Hermes config,
+**The copy can't reach this Mac or the owner's accounts.** Before any code is made, the door writes the copy's own Hermes config,
 `agent.disabled_toolsets` (Hermes strips these out of every session, composite toolsets and subagents included),
 and reads it back to prove it took. Whatever the copy already had off stays off, and these are added:
 
@@ -77,19 +77,22 @@ and reads it back to prove it took. Whatever the copy already had off stays off,
 | `cronjob`, `kanban`, `desktop_ui`, `project`, `catalog`, `onboarding` | Schedules, the Board and the owner's app surfaces |
 | `nollie_calendar`, `nollie_reminders`, `nollie_contacts` | The owner's calendar, reminders and contacts |
 | `nollie_payments`, `nollie_sign_in`, `nollie_crew` | Saved cards, saved sign-ins, the crew |
+| `connections`, `x_search`, `discord`, `discord_admin`, `yuanbao`, `feishu_doc`, `feishu_drive` | The owner's connected accounts and messaging platforms, reads and sends alike |
+| Every other toolset Hermes lists for the copy (`/api/tools/toolsets`, plugins included) that isn't kept | Whatever the owner installed: an inbox or drive plugin reads as well as sends |
+| `mcp-<name>` for every MCP server in the copy's config | The owner's MCP servers (mail, files, anything), which the profile copy carries over |
 
-Kept: talk, `web` and `search` (looking things up and reading pages), `clarify`, `todo`, `tts`, `image_gen`, the
-copy's own `memory` (about that person only), and the owner's connected tools (`connections` and the owner's MCP
-servers), whose sends, posts and buys still wait for the owner through Ask first.
+Kept, and nothing else: talk, `web` and `search` (looking things up and reading pages), `clarify`, `todo`, `tts`,
+`image_gen`, the copy's own `memory` (about that person only) and `context_engine` (its own context). A family member
+can never read the owner's mail or files through a copy, and a copy never sends as the owner from someone else's chat.
+The owner can add a connector back by editing the copy on the Mac.
 
 There is no switch to turn these back on. The owner can still edit the copy like any other bot on the Mac.
 
-A copy made by an earlier build of this feature (made by the phone, never locked down) is locked down the next time
-that person's phone uses it; until that succeeds the door gives them nothing. The member record keeps which copies
-are locked (`locked` in `link.json`), so this happens once and later owner edits stand.
-
-Residual risk, for Corey: the owner's connected tools and MCP servers stay, because they are how the copy sends on the
-owner's behalf. A connector that reads (an inbox, a drive) reads for the member too; only its sends wait for a yes.
+A copy made by an earlier build of this feature (made by the phone, never locked down) or locked down under earlier
+rules is locked down again the next time that person's phone uses it; until that succeeds the door gives them nothing.
+The member record keeps which copies are locked and under which rules (`locked` and `lockVersion` in `link.json`;
+version 2 drops the owner's accounts, which version 1 kept), so this happens once per version and later owner edits
+stand.
 
 ## Joining
 
@@ -250,7 +253,6 @@ member on the owner's phone.
 
 - A real two-phone test at home: link Corey's phone as owner, share a helper, scan with a second iPhone, chat, raise
   an approval (ask the copy to send an email), answer it on Corey's phone, remove the second phone mid-chat.
-- Whether the owner's connectors and MCP servers should stay on household copies (they read as well as send).
 - Whether members should see their own copy's Papertrail.
 - Away from home for members (through the iCloud transport once it exists, never Tailscale).
 - No Apple capability or entitlement is needed: Apple Family Sharing is not used.

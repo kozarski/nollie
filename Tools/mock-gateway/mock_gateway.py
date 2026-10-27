@@ -840,7 +840,8 @@ FAMILY_SEND_RULE = "plugin_rule:nollie-ask-first:send:" + "0" * 24 + "5a11c0de"
 FAMILY_DROPPED = ("terminal", "code_execution", "file", "browser", "computer_use", "debugging", "coding",
                   "session_search", "skills", "delegation", "cronjob", "kanban", "vision", "video",
                   "desktop_ui", "project", "catalog", "onboarding", "nollie_calendar", "nollie_reminders",
-                  "nollie_contacts", "nollie_payments", "nollie_sign_in", "nollie_crew", "mcp-cua", "mcp-cua-recorder")
+                  "nollie_contacts", "nollie_payments", "nollie_sign_in", "nollie_crew", "mcp-cua", "mcp-cua-recorder",
+                  "bot_room", "connections", "x_search", "discord", "discord_admin", "yuanbao", "feishu_doc", "feishu_drive")
 
 
 def family_fresh() -> dict:

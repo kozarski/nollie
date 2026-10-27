@@ -51,7 +51,8 @@ class FamilyFixtureTests(unittest.TestCase):
         # The person's own copy, locked down, as the door makes it.
         copy = mock.CREATED_PROFILES["work-alex"]
         self.assertEqual(copy["clone_from"], "work")
-        self.assertTrue({"terminal", "file", "code_execution", "computer_use", "browser"} <= set(copy["disabled_toolsets"]))
+        self.assertTrue({"terminal", "file", "code_execution", "computer_use", "browser", "connections"} <= set(copy["disabled_toolsets"]))
+        self.assertFalse({"web", "search", "memory", "tts"} & set(copy["disabled_toolsets"]))
         self.request("/api/_mock/profile-creation", "POST", {})
         self.assertEqual(self.request("/nollie/family/invite", "POST", {"person": "Alex", "helpers": ["moss"]})[0], 403)
         self.assertEqual(self.request("/nollie/family/invite", "POST", {"person": "", "helpers": ["work"]})[0], 400)

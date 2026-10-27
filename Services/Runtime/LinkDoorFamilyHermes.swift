@@ -110,19 +110,24 @@ final class LinkDoorFamilyHermes: @unchecked Sendable {
         return (200..<300).contains(reply.status) || reply.status == 409
     }
 
-    /// Writes the copy's own `agent.disabled_toolsets` so it can't read this Mac's files, run code or
-    /// reach other helpers, keeping whatever the copy already had off. Read back to prove it took.
+    /// Writes the copy's own `agent.disabled_toolsets` so it can't read this Mac's files, run code, reach
+    /// other helpers or use the owner's accounts, keeping whatever the copy already had off. Read back to
+    /// prove it took.
     func lockDown(_ copy: String) async -> Bool {
         let scope = [URLQueryItem(name: "profile", value: copy)]
         let raw = [URLQueryItem(name: "profile", value: copy), URLQueryItem(name: "include_defaults", value: "false")]
         guard let before = await get("/api/config", query: raw), before.status == 200,
-              let config = try? JSONSerialization.jsonObject(with: before.body) as? [String: Any] else { return false }
-        let wanted = LinkDoorFamily.lockedToolsets(existing: (config["agent"] as? [String: Any])?["disabled_toolsets"])
+              let config = try? JSONSerialization.jsonObject(with: before.body) as? [String: Any],
+              let toolsets = await get("/api/tools/toolsets", query: scope), toolsets.status == 200,
+              let rows = try? JSONSerialization.jsonObject(with: toolsets.body) as? [[String: Any]] else { return false }
+        let servers = ((config["mcp_servers"] as? [String: Any]) ?? [:]).keys.sorted()
+        let required = LinkDoorFamily.requiredDrops(listed: rows.compactMap { $0["name"] as? String }, mcpServers: servers)
+        let wanted = LinkDoorFamily.lockedToolsets(existing: (config["agent"] as? [String: Any])?["disabled_toolsets"], required: required)
         guard let saved = await send("PUT", "/api/config", query: scope, json: ["config": ["agent": ["disabled_toolsets": wanted]]]),
               (200..<300).contains(saved.status),
               let after = await get("/api/config", query: raw), after.status == 200,
               let read = try? JSONSerialization.jsonObject(with: after.body) as? [String: Any] else { return false }
-        return LinkDoorFamily.isLockedDown((read["agent"] as? [String: Any])?["disabled_toolsets"])
+        return LinkDoorFamily.isLockedDown((read["agent"] as? [String: Any])?["disabled_toolsets"], required: required)
     }
 
     // MARK: Asking Hermes something on its socket
