@@ -195,17 +195,17 @@ class RegisterTests(unittest.TestCase):
         hooks, tools, started = self.register("default")
         self.assertEqual((tools, started),
                          (["nollie_followup", "request_sign_in", *APPLE_TOOLS, *PAYMENT_TOOLS], [self.home.resolve()]))
-        # The picture pause and Ask first, then the recorder's guard and its record of the call.
-        self.assertEqual(hooks.count("pre_tool_call"), 4)
+        # The Mac screen rule, the picture pause and Ask first, then the recorder's guard and its record of the call.
+        self.assertEqual(hooks.count("pre_tool_call"), 5)
 
     def test_other_profiles_get_papertrail_and_the_recorder_but_not_the_board(self):
         hooks, tools, started = self.register("career")
         self.assertEqual((tools, started), (["request_sign_in", *APPLE_TOOLS, *PAYMENT_TOOLS], []))
-        self.assertEqual(hooks.count("pre_tool_call"), 4)
+        self.assertEqual(hooks.count("pre_tool_call"), 5)
         # The recordings Ask first's pause keeps track of, its memory of the latest screen, Papertrail, and the
         # recorder.
         self.assertEqual(hooks.count("post_tool_call"), 4)
-        self.assertEqual(hooks.count("transform_tool_result"), 1)
+        self.assertEqual(hooks.count("transform_tool_result"), 2)
         self.assertTrue(set(load("papertrail").HOOKS) <= set(hooks))
         self.assertTrue((self.home / "nollie-workflow/recorders/career.json").exists())
         self.assertTrue((self.home / "profiles/career/nollie-workflow/papertrail").is_dir())
@@ -214,7 +214,7 @@ class RegisterTests(unittest.TestCase):
         with patch.object(load("papertrail"), "Recorder", side_effect=RuntimeError("broken")), \
                 self.assertLogs("nollie-workflow", "WARNING") as logged:
             hooks, _, _ = self.register("career")
-        self.assertEqual((hooks.count("pre_tool_call"), hooks.count("post_tool_call")), (4, 3))
+        self.assertEqual((hooks.count("pre_tool_call"), hooks.count("post_tool_call")), (5, 3))
         self.assertNotIn("post_api_request", hooks)
         self.assertIn("Papertrail did not start: RuntimeError", logged.output[0])
 
@@ -222,7 +222,8 @@ class RegisterTests(unittest.TestCase):
         with patch.object(load("recorder"), "register", side_effect=RuntimeError("broken")), \
                 self.assertLogs("nollie-workflow", "WARNING") as logged:
             hooks, _, _ = self.register("career")
-        self.assertEqual(hooks, ["pre_tool_call", "transform_tool_result", "post_tool_call", "pre_tool_call",
+        self.assertEqual(hooks, ["pre_tool_call", "transform_tool_result",
+                                 "pre_tool_call", "transform_tool_result", "post_tool_call", "pre_tool_call",
                                  "post_tool_call"] + list(load("papertrail").HOOKS))
         self.assertIn("The Night shift recorder did not start: RuntimeError", logged.output[0])
 
@@ -233,9 +234,9 @@ class RegisterTests(unittest.TestCase):
         self.assertEqual(self.register("career"), ([], [], []))
         self.assertEqual(self.register("private"), ([], [], []))
         (self.home / "nollie-private-bots.json").write_text("{")
-        # A damaged list: only the stand-in that refuses risky calls, and nothing at all for the bots that are
-        # always private.
-        self.assertEqual(self.register("nowhere"), (["pre_tool_call"], [], []))
+        # A damaged list: the Mac screen rule and the stand-in that refuses risky calls, and nothing at all for
+        # the bots that are always private.
+        self.assertEqual(self.register("nowhere"), (["pre_tool_call", "transform_tool_result", "pre_tool_call"], [], []))
         for profile in ("private", "moss"):
             self.assertEqual(self.register(profile), ([], [], []), profile)
 
@@ -253,7 +254,7 @@ class RegisterTests(unittest.TestCase):
         root.mkdir()
         load("workflow_core").atomic_write(root / "state.json", load("workflow_core").initial_state())
         (self.home / "nollie-private-bots.json").write_text("{")
-        self.assertEqual(self.register("default"), (["pre_tool_call"], [], []))
+        self.assertEqual(self.register("default"), (["pre_tool_call", "transform_tool_result", "pre_tool_call"], [], []))
 
 
 class AskFirstRegistrationTests(unittest.TestCase):

@@ -1,6 +1,7 @@
 """Papertrail for the main bot and the bots chosen for it, the Night shift recorder, saved sign-ins, saved cards and
-the Mac's Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
-keeps a typed password out of screenshots, load in every bot that is not private. Nothing loads for a private bot.
+the Mac's Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, the picture pause that
+keeps a typed password out of screenshots, and the rule that keeps this Mac's screen on this Mac (no Hermes computer_use), load in every bot that is not
+private. Nothing loads for a private bot.
 """
 
 
@@ -10,6 +11,7 @@ def register(ctx):
     profile = str(getattr(ctx, "profile_name", "") or "")
     home = Path(get_profile_dir("default")).resolve()
     # First, so a call is held or refused before anything else looks at it.
+    _register_mac_screen(ctx, profile, home)
     _register_ask_first(ctx, profile, home)
     try:
         from . import private_bots
@@ -28,6 +30,24 @@ def register(ctx):
     _register_sign_ins(ctx, profile, home)
     _register_apple_data(ctx, profile, home)
     _register_payments(ctx, profile, home)
+
+
+def _register_mac_screen(ctx, profile, default_home):
+    """Hermes's own computer_use refused: it would send this Mac's screen to the bot's model. Only a private bot
+    goes without (nothing loads for it); a Private list that can't be read keeps the rule on."""
+    import logging
+    try:
+        from . import private_bots
+        try:
+            private = private_bots.names(default_home) | private_bots.carried_over_names()
+        except (OSError, ValueError):
+            private = private_bots.carried_over_names()
+        if profile and private_bots.excluded(profile, private):
+            return
+        from .mac_screen import register
+        register(ctx)
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("The Mac screen rule did not start: %s", type(exc).__name__)
 
 
 def _register_papertrail(ctx, profile, default_home):
