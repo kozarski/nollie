@@ -495,10 +495,13 @@ import Testing
             let words = await center.doStep(taskID: task.id, app: "Groceries", step: step)
             answering.cancel()
             let seconds = Date().timeIntervalSince(started)
-            let ok = check(groceries)
-            passed += ok ? 1 : 0
             let answer = switch words { case let .success(text): text; case let .failure(refusal): "refused: " + refusal.message }
-            report.append("\(ok ? "PASS" : "FAIL") \(step) -> \(answer) | list \(groceries.items) | " +
+            // Done, and said so: a bot told "couldn't finish" after it did would try again.
+            let done = check(groceries), said = answer.hasPrefix("Done in ")
+            let ok = done && said
+            passed += ok ? 1 : 0
+            let verdict = ok ? "PASS" : done ? "FAIL (done, said not)" : "FAIL"
+            report.append("\(verdict) \(step) -> \(answer) | list \(groceries.items) | " +
                           "\(driver.actions.joined(separator: ", ")) | \(String(format: "%.1f", seconds))s")
             center.stop()
         }

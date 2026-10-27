@@ -265,7 +265,13 @@ computer_use isn't refused by the add-on.
 The model was tried for real on this Mac (`ComputerScreenLiveModelTests`, Qwen3.6 35B-A3B on the
 pinned llama.cpp): whole steps through Nollie's own loop, rules and cards in a throwaway window the
 test draws, with a stand-in for the helper. The helper itself couldn't take part: this Mac hasn't
-given Nollie Accessibility or Screen Recording.
+given Nollie Accessibility or Screen Recording. A step passes only when the window ends right and
+the answer says Done: a bot told "couldn't finish" after it did would try again.
+
+Smaller Macs have no pick yet. Two models that fit 16 GB scored 4 of 5 in three runs each (27 Oct,
+Q4_K_M with its F16 picture file): Qwen3-VL 8B did every step but said it couldn't delete Eggs after
+deleting them, and Qwen3.5 9B said it had cleared the list after one of two deletes. Qwen3.6 35B-A3B
+does 5 of 5 and needs about 32 GB.
 
 Not done yet: Nollie's own child processes (uv and Python from `NativeDependencyInstaller`) still
 inherit its Accessibility and Screen Recording, because macOS charges them to Nollie. They should be
