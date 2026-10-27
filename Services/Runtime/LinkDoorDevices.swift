@@ -13,6 +13,37 @@ final class LinkDoorDevices: @unchecked Sendable {
         let credentialHash: Data
         let linkedAt: Date
         var lastActive: Date?
+        /// Someone at home a helper was shared with. Nil for an owner: every device linked before
+        /// sharing existed, and every one linked with an ordinary code.
+        var member: Member?
+    }
+
+    /// What a member may reach: the helpers shared with them and the chats they started.
+    struct Member: Codable, Equatable, Sendable {
+        /// The name the owner typed ("Sam"), shown on the owner's asks.
+        var person: String
+        var helpers: [String]
+        /// "Small yeses": they may say Allow once to their own asks of a small kind. Off unless the owner turns it on.
+        var small = false
+        /// Chats they started, newest last, at most `maximumChats`.
+        var chats: [Chat] = []
+        /// Their copies whose tools the door has locked down, and under which rules
+        /// (`LinkDoorFamily.lockVersion`). Copies locked under older rules, or never, are locked down
+        /// again on their next use.
+        var locked: [String]? = nil
+        var lockVersion: Int? = nil
+    }
+
+    struct Chat: Codable, Hashable, Sendable {
+        /// The stored session id.
+        let id: String
+        let profile: String
+    }
+
+    /// A code made for someone at home: whoever claims it becomes a member with these helpers.
+    struct Invite: Equatable, Sendable {
+        let person: String
+        let helpers: [String]
     }
 
     /// Everything kept on disk: the port chosen once, the Bonjour tag and the device hashes.
@@ -31,6 +62,7 @@ final class LinkDoorDevices: @unchecked Sendable {
     struct Offer: Equatable, Sendable {
         let secret: Data
         let expiresAt: Date
+        var invite: Invite? = nil
     }
 
     enum OfferState: Equatable, Sendable {
@@ -43,6 +75,7 @@ final class LinkDoorDevices: @unchecked Sendable {
 
     static let offerLifetime: TimeInterval = 120
     static let maximumDevices = 16
+    static let maximumChats = 500
 
     private let lock = NSLock()
     private let store: any LinkDoorStateStoring
@@ -100,10 +133,11 @@ final class LinkDoorDevices: @unchecked Sendable {
 
     // MARK: Offers
 
-    /// A fresh single-use secret, replacing any offer still open.
-    func makeOffer(now: Date = Date()) -> Offer {
+    /// A fresh single-use secret, replacing any offer still open. With an invite, whoever claims it
+    /// becomes a member; without one, an owner.
+    func makeOffer(now: Date = Date(), invite: Invite? = nil) -> Offer {
         locked {
-            let made = Offer(secret: Self.randomBytes(32), expiresAt: now.addingTimeInterval(Self.offerLifetime))
+            let made = Offer(secret: Self.randomBytes(32), expiresAt: now.addingTimeInterval(Self.offerLifetime), invite: invite)
             offer = made
             lastClaim = nil
             return made
@@ -132,7 +166,12 @@ final class LinkDoorDevices: @unchecked Sendable {
         guard let name = Self.cleanName(rawName) else { throw .invalidName }
         guard state.devices.count < Self.maximumDevices else { throw .full }
         let credential = Self.randomBytes(32)
-        let device = Device(id: UUID(), name: name, credentialHash: Data(SHA256.hash(data: credential)), linkedAt: now, lastActive: now)
+        // The door made and locked down these copies before it made the code.
+        let member = current.invite.map {
+            Member(person: $0.person, helpers: $0.helpers, locked: $0.helpers, lockVersion: LinkDoorFamily.lockVersion)
+        }
+        let device = Device(id: UUID(), name: name, credentialHash: Data(SHA256.hash(data: credential)), linkedAt: now,
+                            lastActive: now, member: member)
         var next = state
         next.devices.append(device)
         do { try store.save(next) } catch { throw .unsaved }
@@ -169,6 +208,61 @@ final class LinkDoorDevices: @unchecked Sendable {
             lastSavedActivity[id] = nil
             if lastClaim?.deviceID == id { lastClaim = nil }
             return true
+        }
+    }
+
+    // MARK: Members
+
+    /// The member record of a linked device, or nil for an owner (or a device no longer linked).
+    func member(_ id: UUID) -> Member? { locked { state.devices.first { $0.id == id }?.member } }
+
+    var members: [Device] { locked { state.devices.filter { $0.member != nil } } }
+
+    /// Changes what a member may reach. Their chats with a helper no longer shared are forgotten.
+    @discardableResult
+    func updateMember(_ id: UUID, helpers: [String]? = nil, small: Bool? = nil) throws -> Bool {
+        try locked {
+            guard let index = state.devices.firstIndex(where: { $0.id == id }), var member = state.devices[index].member else { return false }
+            if let helpers {
+                member.helpers = helpers
+                member.chats.removeAll { !helpers.contains($0.profile) }
+            }
+            if let small { member.small = small }
+            var next = state
+            next.devices[index].member = member
+            guard next != state else { return true }
+            try store.save(next)
+            state = next
+            return true
+        }
+    }
+
+    /// Notes that these copies of a member's are locked down.
+    func markLocked(_ helpers: [String], for id: UUID) {
+        locked {
+            guard let index = state.devices.firstIndex(where: { $0.id == id }), var member = state.devices[index].member else { return }
+            // Copies locked under older rules don't count: only these, under the current ones.
+            let current = member.lockVersion == LinkDoorFamily.lockVersion ? Set(member.locked ?? []) : []
+            member.locked = Array(current.union(helpers)).sorted()
+            member.lockVersion = LinkDoorFamily.lockVersion
+            var next = state
+            next.devices[index].member = member
+            guard next != state, (try? store.save(next)) != nil else { return }
+            state = next
+        }
+    }
+
+    /// Notes a chat a member started (or a chat's new stored id), so it can be opened again.
+    func addChat(_ chat: Chat, for id: UUID) {
+        locked {
+            guard let index = state.devices.firstIndex(where: { $0.id == id }), var member = state.devices[index].member,
+                  !member.chats.contains(chat) else { return }
+            member.chats.append(chat)
+            if member.chats.count > Self.maximumChats { member.chats.removeFirst(member.chats.count - Self.maximumChats) }
+            var next = state
+            next.devices[index].member = member
+            guard (try? store.save(next)) != nil else { return }
+            state = next
         }
     }
 

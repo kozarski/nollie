@@ -15,6 +15,9 @@ public struct LinkedMac: Codable, Hashable, Sendable {
     /// whether Tailscale is ready on it ("ready", "stopped" or "missing"). Nil until it says.
     public var away: Bool?
     public var tailscale: String?
+    /// Set when this phone joined as someone at home a helper was shared with: the owner's first
+    /// name (may be empty). The Mac's door decides what such a phone may reach; this only picks the screen.
+    public var sharedBy: String?
 
     public init(macName: String, pin: Data, port: Int, hosts: [String], installTag: String, deviceID: UUID) {
         self.macName = macName

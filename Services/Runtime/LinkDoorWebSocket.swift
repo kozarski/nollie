@@ -59,14 +59,19 @@ enum LinkDoorWebSocket {
 
     /// Reads the phone's frames strictly: masked, no extension bits, known opcodes, minimal
     /// lengths, control frames whole and short, fragments only of one message at a time,
-    /// text valid UTF-8, and nothing past the size limit.
+    /// text valid UTF-8, and nothing past the size limit. With `masked` false it reads Hermes's
+    /// frames the same way, which a server never masks (a member's socket, read in full).
     struct ClientReader: Sendable {
         let maximumMessage: Int
+        let masked: Bool
         private var buffer = Data()
         private var fragments = Data()
         private var fragmentOpcode: UInt8?
 
-        init(maximumMessage: Int) { self.maximumMessage = maximumMessage }
+        init(maximumMessage: Int, masked: Bool = true) {
+            self.maximumMessage = maximumMessage
+            self.masked = masked
+        }
 
         mutating func feed(_ data: Data) throws(Failure) -> [Message] {
             buffer.append(data)
@@ -83,7 +88,7 @@ enum LinkDoorWebSocket {
                 let fin = first & 0x80 != 0
                 guard first & 0x70 == 0 else { throw .protocolError("extension bits") }
                 let opcode = first & 0x0F
-                guard second & 0x80 != 0 else { throw .protocolError("unmasked") }
+                guard (second & 0x80 != 0) == masked else { throw .protocolError(masked ? "unmasked" : "masked") }
                 var length = UInt64(second & 0x7F)
                 var offset = 2
                 if length == 126 {
@@ -105,11 +110,14 @@ enum LinkDoorWebSocket {
                 }
                 if control { guard fin, length <= 125 else { throw .protocolError("control frame") } }
                 guard length <= UInt64(maximumMessage), fragments.count + Int(length) <= maximumMessage else { throw .tooLarge }
-                let total = offset + 4 + Int(length)
+                let keyLength = masked ? 4 : 0
+                let total = offset + keyLength + Int(length)
                 guard bytes.count >= total else { return nil }
-                let key = [UInt8](bytes[(bytes.startIndex + offset)..<(bytes.startIndex + offset + 4)])
-                var payload = [UInt8](bytes[(bytes.startIndex + offset + 4)..<(bytes.startIndex + total)])
-                for index in payload.indices { payload[index] ^= key[index & 3] }
+                var payload = [UInt8](bytes[(bytes.startIndex + offset + keyLength)..<(bytes.startIndex + total)])
+                if masked {
+                    let key = [UInt8](bytes[(bytes.startIndex + offset)..<(bytes.startIndex + offset + 4)])
+                    for index in payload.indices { payload[index] ^= key[index & 3] }
+                }
                 buffer = Data(bytes.dropFirst(total))
 
                 if control {

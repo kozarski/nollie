@@ -25,6 +25,8 @@ struct ApprovalCardView: View {
 
     @State private var confirmAlways = false
     @State private var showMore = false
+    /// On a member's phone, every approval waits on the owner.
+    @Environment(\.familyOwner) private var familyOwner
 
     private var who: String { botName.isEmpty ? "Your bot" : botName }
     private var offers: [String] { approval.offeredChoices }
@@ -54,7 +56,9 @@ struct ApprovalCardView: View {
     }
 
     var body: some View {
-        if let onSignIn, let ask = SignInAsk(approval) {
+        if let familyOwner {
+            FamilyWaitingCard(approval: approval, botName: who, owner: familyOwner, onChoice: onChoice)
+        } else if let onSignIn, let ask = SignInAsk(approval) {
             SignInCardBody(ask: ask, botName: botName, onAnswer: onSignIn)
         } else if let ask = AskFirstAsk(approval) {
             AskFirstCardBody(ask: ask, botName: botName, locked: locked, onChoice: onChoice)
