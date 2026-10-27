@@ -192,7 +192,11 @@ refused for private bots and phones) and one `mac` line keeps the apps' names an
 `mac_sessions`, newest first, apart from what left.
 
 `mac_screen.py` refuses Hermes's own `computer_use` in every bot that is not private (it would send
-this Mac's screen to the bot's model) and replaces any result of it that got through.
+this Mac's screen to the bot's model) and replaces any result of it that got through. It also refuses,
+never asks, a terminal, code or wrapped call that would take a picture of the screen or record it:
+`screencapture`, Quartz and ScreenCaptureKit calls from Python, osascript or Swift, PIL's ImageGrab, mss,
+pyautogui, ffmpeg's screen input and the like, read in the command, the code and any script the command
+runs. It is a list of known ways, not a sandbox: code that hides what it calls can still get past it.
 
 `GET /api/plugins/nollie-workflow/papertrail?bot=career&days=7` (default scope only) groups
 calls by turn and answers counts of replies that stayed and left, plus up to 200 entries
