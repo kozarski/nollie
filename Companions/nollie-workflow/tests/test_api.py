@@ -65,8 +65,8 @@ class APITests(unittest.TestCase):
 
 
 
-@unittest.skipUnless(fastapi and TestClient, "FastAPI and its test client are available in the Hermes runtime")
-class PrivateBotsRouteTests(unittest.TestCase):
+class MainHomeRouteCase(unittest.TestCase):
+    """The workflow routes over a temporary main home, with the Private list's path at hand."""
     PATH = "/api/plugins/nollie-workflow/private-bots"
 
     @classmethod
@@ -90,6 +90,9 @@ class PrivateBotsRouteTests(unittest.TestCase):
         modules.start()
         self.addCleanup(modules.stop)
 
+
+@unittest.skipUnless(fastapi and TestClient, "FastAPI and its test client are available in the Hermes runtime")
+class PrivateBotsRouteTests(MainHomeRouteCase):
     def test_get_reports_the_carry_over_until_a_list_is_saved(self):
         response = self.client.get(self.PATH)
         self.assertEqual(response.status_code, 200)
@@ -131,6 +134,37 @@ class PrivateBotsRouteTests(unittest.TestCase):
         # A whole new list repairs it.
         self.assertEqual(self.client.put(self.PATH, json={"profiles": ["moss"]}).status_code, 200)
         self.assertEqual(self.client.get(self.PATH).json(), {"profiles": ["moss"], "saved": True})
+
+
+@unittest.skipUnless(fastapi and TestClient, "FastAPI and its test client are available in the Hermes runtime")
+class BotLooksRouteTests(MainHomeRouteCase):
+    LOOKS = "/api/plugins/nollie-workflow/bot-looks"
+
+    def test_a_look_chosen_on_one_device_is_read_on_another(self):
+        self.assertEqual(self.client.get(self.LOOKS).json(), {"bots": {}, "saved": False})
+        response = self.client.put(self.LOOKS + "/planner", json={"look": "duo", "colour": "#336699"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["cache-control"], "no-store")
+        self.assertEqual(self.client.get(self.LOOKS).json(),
+                         {"bots": {"planner": {"look": "duo", "colour": "#336699"}}, "saved": True})
+        self.assertEqual(self.client.put(self.LOOKS + "/planner", json={}).json(), {"bots": {}, "saved": True})
+
+    def test_a_private_bot_keeps_its_look_on_its_device(self):
+        self.assertEqual(self.client.put(self.LOOKS + "/moss", json={"look": "nite"}).status_code, 403)
+        self.client.put(self.LOOKS + "/scout", json={"look": "kick"})
+        self.client.put(self.PATH, json={"profiles": ["scout"]})
+        self.assertEqual(self.client.get(self.LOOKS).json(), {"bots": {}, "saved": True})
+        self.assertEqual(self.client.put(self.LOOKS + "/scout", json={"look": "kick"}).status_code, 403)
+
+    def test_bad_looks_are_refused_and_only_nollie_reaches_them(self):
+        for body in ({"look": "Duo!"}, {"colour": "blue"}, {"look": 3}):
+            self.assertEqual(self.client.put(self.LOOKS + "/planner", json=body).status_code, 422, body)
+        self.assertEqual(self.client.put(self.LOOKS + "/two%20words", json={"look": "duo"}).status_code, 422)
+        self.assertFalse((self.home / "nollie-bot-looks.json").exists())
+        self.active = "scout"
+        self.assertEqual(self.client.get(self.LOOKS).status_code, 403)
+        self.assertEqual(self.client.put(self.LOOKS + "/planner", json={"look": "duo"}).status_code, 403)
+
 
 if __name__ == "__main__":
     unittest.main()

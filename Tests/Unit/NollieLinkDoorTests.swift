@@ -203,6 +203,7 @@ struct NollieLinkDoorTests {
             ("GET", "/api/plugins/kanban/events", true), ("GET", "/api/plugins/nollie-workflow/attention", false),
             ("GET", "/api/plugins/nollie-workflow/private-bots", false),
             ("GET", "/api/plugins/nollie-workflow/papertrail", false),
+            ("GET", "/api/plugins/nollie-workflow/bot-looks", false), ("PUT", "/api/plugins/nollie-workflow/bot-looks/planner", false),
             ("GET", "/api/plugins/nollie-computer/preview", false), ("POST", "/nollie/link/claim", false),
             ("GET", "/api/plugins/nollie-workflow/posts", false), ("GET", "/api/plugins/nollie-workflow/sleep", false),
             ("POST", "/api/plugins/nollie-workflow/rehearsals/rehearsal-career-3f2a9c-e-81/turn-on", false),
@@ -241,6 +242,7 @@ struct NollieLinkDoorTests {
             // Bots: never deleted from a phone.
             ("DELETE", "/api/profiles/scout", false), ("GET", "/api/profiles/scout/setup-command", false),
             ("PUT", "/api/plugins/nollie-workflow/private-bots", false), ("POST", "/api/plugins/nollie-crew/anything", false),
+            ("PUT", "/api/plugins/nollie-workflow/bot-looks", false), ("DELETE", "/api/plugins/nollie-workflow/bot-looks/planner", false),
             ("POST", "/api/plugins/kanban/boards/import", false), ("POST", "/api/plugins/kanban/reset-state", false),
             ("POST", "/api/dashboard/agent-plugins/install", false), ("POST", "/api/dashboard/agent-plugins/kanban/enable", false),
             ("DELETE", "/api/dashboard/agent-plugins/kanban", false), ("GET", "/api/dashboard/plugins/hub", false),

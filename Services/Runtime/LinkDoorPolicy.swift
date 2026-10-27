@@ -108,6 +108,9 @@ enum LinkDoorPolicy {
         Rule(["GET", "POST", "PATCH", "DELETE"], "/api/plugins/kanban/**"), Rule([], "/api/plugins/kanban/events", socket: true),
         Rule(["GET"], "/api/plugins/nollie-workflow/private-bots"), Rule(["GET"], "/api/plugins/nollie-workflow/attention"),
         Rule(["GET"], "/api/plugins/nollie-workflow/papertrail"),
+        // Each bot's character and colour, so a look picked on the phone is the Mac's too. The add-on
+        // refuses a private bot's.
+        Rule(["GET"], "/api/plugins/nollie-workflow/bot-looks"), Rule(["PUT"], "/api/plugins/nollie-workflow/bot-looks/*"),
         // The main chat's cards: read them, and Turn on or Keep off a rehearsed schedule, as resuming one is.
         Rule(["GET"], "/api/plugins/nollie-workflow/posts"),
         Rule(["POST"], "/api/plugins/nollie-workflow/rehearsals/*/turn-on"),

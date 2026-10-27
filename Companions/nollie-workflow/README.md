@@ -50,6 +50,8 @@ The authenticated default-profile dashboard namespace exposes:
   installation boundary are server-owned. This endpoint is read-only.
 - `GET` and `PUT /api/plugins/nollie-workflow/private-bots`: the Private list, described
   below.
+- `GET /api/plugins/nollie-workflow/bot-looks` and `PUT .../bot-looks/<profile>`: each
+  bot's look, described under [Bot looks](#bot-looks).
 - `GET /api/plugins/nollie-workflow/memory?bot=<name>`: what a helper remembers, from its
   Hermes memory files (`memories/USER.md` and `memories/MEMORY.md`), and whether Hermes uses
   memory for it (`memory.py`). `POST`, `PUT` and `DELETE .../memory/notes` add, change or forget one entry,
@@ -124,6 +126,32 @@ gets 403), answer with `Cache-Control: no-store`:
 
 The mock gateway in `Tools/mock-gateway` serves the same two routes from memory.
 `POST /api/_mock/private-bots` forgets its saved list.
+
+## Bot looks
+
+The character and colour the person picks for a bot in Nollie, so every device draws it
+the same way: a helper added on the phone looks on the Mac as it was picked. Before this,
+a look stayed on the device where it was picked and the others guessed one from the name.
+The file is `nollie-bot-looks.json` in the main bot's Hermes home, with
+`nollie-bot-looks.lock` beside it and user-only permissions:
+
+```json
+{"version": 1, "bots": {"planner": {"look": "duo", "colour": "#336699"}}}
+```
+
+`look` is a character id, `colour` is `#RRGGBB`, and either may be missing (the default).
+A photo never comes here; it stays on its device. At most 64 bots.
+
+- `GET /api/plugins/nollie-workflow/bot-looks` returns `{"bots": {...}, "saved": true}`
+  (`{}` and `false` before any look is kept). Private bots are left out.
+- `PUT /api/plugins/nollie-workflow/bot-looks/<profile>` with `{"look": "duo", "colour": "#336699"}`
+  keeps one bot's look and returns them all; both null forgets it. One bot at a time, so a
+  change on one device never undoes another device's change to another bot. A private bot
+  gets 403, a bad name, look or colour 422. A damaged file answers 503.
+
+The app takes the gateway's look for each bot it lists, except one changed on that device
+and not yet confirmed, and offers its own for a bot the gateway has none for. The mock
+gateway serves both routes from memory; `POST /api/_mock/bot-looks` forgets them.
 
 ## Papertrail
 

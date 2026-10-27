@@ -338,7 +338,11 @@ struct BotsHomeHooks: ViewModifier {
     func body(content: Content) -> some View {
         content
             .task(id: runtime?.connection.id) { await keepFresh() }
-            .onChange(of: runtime?.profiles.map(\.name) ?? []) { _, _ in refresh(force: true) }
+            .onChange(of: runtime?.profiles.map(\.name) ?? []) { _, _ in
+                refresh(force: true)
+                // A bot made on another device arrives with the look picked there.
+                if let runtime { Task { await BotLookSharing.sync(runtime, force: true) } }
+            }
             .onChange(of: runtime?.socketState) { _, state in if case .open? = state { refresh() } }
             .onReceive(NotificationCenter.default.publisher(for: .hermesSessionsChanged)) { _ in refresh() }
             .onReceive(NotificationCenter.default.publisher(for: .hermesReplyCompleted)) { note in
@@ -360,12 +364,14 @@ struct BotsHomeHooks: ViewModifier {
     /// starts or finishes work elsewhere shows it here.
     private func keepFresh() async {
         guard let runtime else { return }
+        await BotLookSharing.sync(runtime, force: true)
         await home.refresh(runtime, force: true)
         if let first = home.firstPins(home.ordered(runtime), raw: pinnedRaw) { pinnedRaw = first }
         while !Task.isCancelled {
             let busy = runtime.profiles.contains { home.entry(runtime, $0.name).busy }
             try? await Task.sleep(for: .seconds(busy ? 8 : 25))
             guard !Task.isCancelled, model.runtime === runtime else { return }
+            await BotLookSharing.sync(runtime)
             await home.refresh(runtime, force: busy)
         }
     }

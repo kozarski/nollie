@@ -50,7 +50,7 @@ final class HelperGallery {
         var roster: () async throws -> Roster
         var add: (JSONValue) async throws -> Reply
         var undo: (String) async throws -> Reply
-        /// Keeps a bot's look on this device, or forgets it (nil).
+        /// Keeps a bot's look, on this device and for the person's other devices, or forgets it (nil).
         var look: (String, CharacterLookID?) -> Void
     }
 
@@ -149,6 +149,8 @@ extension HelperGallery.Calls {
             add: { body in try await api.send("POST", crewPath + "/members", json: body) },
             undo: { token in try await api.send("POST", crewPath + "/undo", json: .object(["token": .string(token)])) },
             look: { profile, look in
+                // The other devices draw the helper the same way.
+                defer { BotLookSharing.share(profile, runtime: runtime) }
                 if let look { return BotAvatarStore.set(.look(look), for: profile) }
                 var looks = BotAvatarStore.stored()
                 looks.removeValue(forKey: profile)

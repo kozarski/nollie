@@ -352,6 +352,7 @@ struct NewBotSheet: View {
             let modelChanged = (modelName, provider) != (bot.model ?? "", bot.provider ?? "")
             if modelChanged, !modelName.isEmpty { try await calls.choose(model: modelName, from: provider, for: bot.name) }
             BotAvatarStore.set(look, for: bot.name)
+            BotLookSharing.share(bot.name, runtime: runtime)
             await finish(announcing: false)
         } catch {
             problem = error.localizedDescription
@@ -402,6 +403,7 @@ struct NewBotSheet: View {
         }
         // The look picked here now belongs to the new name.
         BotAvatarStore.set(look, for: created)
+        BotLookSharing.share(created, runtime: runtime)
         await finish(announcing: true)
     }
 }

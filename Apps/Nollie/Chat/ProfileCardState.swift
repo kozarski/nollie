@@ -184,12 +184,14 @@ final class ProfileCardState {
     func chooseLook(_ choice: CharacterChoice) {
         avatar = choice
         BotAvatarStore.set(choice, for: name)
+        BotLookSharing.share(name, runtime: runtime)
     }
 
     func chooseColour(_ hex: String) {
         var colours = BotColors.stored()
         colours[name] = hex
         BotColors.save(colours)
+        BotLookSharing.share(name, runtime: runtime)
         tint = Color(hex: hex) ?? tint
     }
 
@@ -201,6 +203,7 @@ final class ProfileCardState {
         var colours = BotColors.stored()
         colours[name] = nil
         BotColors.save(colours)
+        BotLookSharing.share(name, runtime: runtime)
         refreshTint()
     }
 }
