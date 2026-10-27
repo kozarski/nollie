@@ -14,7 +14,7 @@
 	<key>manageAppVersionAndBuildNumber</key>
 	<false/>
 	<!-- Manual signing, as on iOS: an App Manager API key may not create cloud-managed
-	     certificates. The app and its two extensions each need a Mac App Store profile with
+	     certificates. The app and its three extensions each need a Mac App Store profile with
 	     these names, and the keychain needs the Mac installer certificate for the .pkg. -->
 	<key>signingStyle</key>
 	<string>manual</string>
@@ -28,6 +28,8 @@
 		<string>Nollie Mac App Store</string>
 		<key>com.coreykozarski.nollie.notifications</key>
 		<string>Nollie Mac Notification Service App Store</string>
+		<key>com.coreykozarski.nollie.controls</key>
+		<string>Nollie Mac Controls App Store</string>
 	</dict>
 </dict>
 </plist>

@@ -4,9 +4,10 @@ import NollieCore
 import UIKit
 #endif
 
-// Siri, Shortcuts and Spotlight: open a recent chat, start a new one, ask what a bot is doing and,
-// when the person has switched it on, answer the one approval that is waiting. The phrases are
-// generic. Nothing in them names anyone's bot or gateway.
+// Siri, Shortcuts and Spotlight: ask a helper something (SiriAskHelper.swift), open a recent chat,
+// start a new one, ask what a bot is doing, Stop and, when the person has switched it on, answer
+// the one approval that is waiting. The phrases are generic. Nothing in them names anyone's bot or
+// gateway.
 
 /// One spoken line as an intent result.
 private func spoken(_ line: String) -> some IntentResult & ProvidesDialog {
@@ -146,8 +147,20 @@ enum MacStop {
 }
 #endif
 
+/// Ready with no setup: Siri, Spotlight, the Shortcuts app and the Action button list these.
 struct NollieShortcuts: AppShortcutsProvider {
+    static var shortcutTileColor: ShortcutTileColor { .lightBlue }
+
     static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: AskHelperIntent(),
+            phrases: [
+                "Ask \(.applicationName)",
+                "Ask \(.applicationName) something",
+                "Ask \(\.$helper) in \(.applicationName)",
+            ],
+            shortTitle: LocalizedStringResource("Ask Nollie"),
+            systemImageName: "bubble.left.and.text.bubble.right.fill")
         AppShortcut(
             intent: OpenChatIntent(),
             phrases: ["Open my \(\.$chat) chat in \(.applicationName)", "Open \(\.$chat) in \(.applicationName)"],
@@ -165,6 +178,8 @@ struct NollieShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: BotStatusIntent(),
             phrases: [
+                "What is \(.applicationName) doing",
+                "What's \(.applicationName) doing",
                 "What is my bot doing in \(.applicationName)",
                 "\(.applicationName) status",
                 "What is \(\.$bot) doing in \(.applicationName)",
@@ -176,13 +191,11 @@ struct NollieShortcuts: AppShortcutsProvider {
             phrases: ["Answer the approval in \(.applicationName)", "\(.applicationName) approval"],
             shortTitle: LocalizedStringResource("Answer Approval"),
             systemImageName: "checkmark.shield")
-        #if os(iOS)
         AppShortcut(
             intent: StopMacIntent(),
-            phrases: ["Stop \(.applicationName)", "Stop \(.applicationName) now"],
+            phrases: ["Stop \(.applicationName)", "Stop \(.applicationName) now", "Stop all helpers in \(.applicationName)"],
             shortTitle: LocalizedStringResource("Stop Nollie"),
             systemImageName: "stop.circle")
-        #endif
     }
 }
 

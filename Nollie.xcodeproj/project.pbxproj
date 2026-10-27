@@ -109,6 +109,7 @@
 		CC0471000000000000000002 /* NollieControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CC0471000000000000000001 /* NollieControls.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A11CE0000000000000000002 /* NollieWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000001 /* NollieWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A11CE0000000000000001002 /* NollieWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000001001 /* NollieWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CC0472000000000000000002 /* NollieMacControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CC0472000000000000000001 /* NollieMacControls.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -196,6 +197,13 @@
 			remoteGlobalIDString = A11CE000000000000000100A;
 			remoteInfo = NollieWatchWidgets;
 		};
+		CC0472000000000000000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CC047200000000000000000A;
+			remoteInfo = NollieMacControls;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -219,6 +227,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				AA00000000000000000310 /* NollieMacNotificationService.appex in Embed Foundation Extensions */,
+				CC0472000000000000000002 /* NollieMacControls.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -307,6 +316,7 @@
 		CC0471000000000000000001 /* NollieControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A11CE0000000000000000001 /* NollieWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NollieWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A11CE0000000000000001001 /* NollieWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC0472000000000000000001 /* NollieMacControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieMacControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -444,6 +454,21 @@
 			);
 			target = A11CE000000000000000100A /* NollieWatchWidgets */;
 		};
+		CC0472000000000000000006 /* Exceptions for "Controls" folder in "NollieMacControls" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CC047200000000000000000A /* NollieMacControls */;
+		};
+		CC0472000000000000000007 /* Exceptions for "Shared" folder in "NollieMacControls" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AskNollie.swift,
+				StopMac.swift,
+			);
+			target = CC047200000000000000000A /* NollieMacControls */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -490,6 +515,7 @@
 				AA00000000000000000130 /* Exceptions for "Shared" folder in "NollieNotificationContent" target */,
 				AA00000000000000000365 /* Exceptions for "Shared" folder in "NollieMacNotificationService" target */,
 				CC0471000000000000000007 /* Exceptions for "Shared" folder in "NollieControls" target */,
+				CC0472000000000000000007 /* Exceptions for "Shared" folder in "NollieMacControls" target */,
 				A11CE0000000000000000007 /* Exceptions for "Shared" folder in "NollieWatch" target */,
 				A11CE0000000000000001007 /* Exceptions for "Shared" folder in "NollieWatchWidgets" target */,
 			);
@@ -543,6 +569,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				CC0471000000000000000006 /* Exceptions for "Controls" folder in "NollieControls" target */,
+				CC0472000000000000000006 /* Exceptions for "Controls" folder in "NollieMacControls" target */,
 			);
 			name = Controls;
 			path = Extensions/Controls;
@@ -674,6 +701,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CC047200000000000000000C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -775,6 +809,7 @@
 				A11CE0000000000000001001 /* NollieWatchWidgets.appex */,
 				AA00000000000000000220 /* Nollie.app */,
 				AA00000000000000000321 /* NollieMacNotificationService.appex */,
+				CC0472000000000000000001 /* NollieMacControls.appex */,
 				AA00000000000000000022 /* NollieTests.xctest */,
 				AA00000000000000000520 /* NollieMacTests.xctest */,
 				AA00000000000000000023 /* NollieUITests.xctest */,
@@ -1017,6 +1052,7 @@
 				98B4DB15596270BD1A755F89 /* PBXTargetDependency */,
 				C0FFEE0A11D7A5E7C0000009 /* PBXTargetDependency */,
 				AA00000000000000000311 /* PBXTargetDependency */,
+				CC0472000000000000000004 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				AA00000000000000000060 /* Nollie */,
@@ -1144,6 +1180,26 @@
 			productReference = A11CE0000000000000001001 /* NollieWatchWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		CC047200000000000000000A /* NollieMacControls */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CC047200000000000000000E /* Build configuration list for PBXNativeTarget "NollieMacControls" */;
+			buildPhases = (
+				CC047200000000000000000B /* Sources */,
+				CC047200000000000000000C /* Frameworks */,
+				CC047200000000000000000D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CC0471000000000000000005 /* Controls */,
+			);
+			name = NollieMacControls;
+			productName = NollieMacControls;
+			productReference = CC0472000000000000000001 /* NollieMacControls.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1193,6 +1249,7 @@
 				A11CE000000000000000100A /* NollieWatchWidgets */,
 				AA00000000000000000240 /* NollieMac */,
 				AA00000000000000000340 /* NollieMacNotificationService */,
+				CC047200000000000000000A /* NollieMacControls */,
 				AA00000000000000000042 /* NollieTests */,
 				AA00000000000000000043 /* NollieUITests */,
 				AA00000000000000000540 /* NollieMacTests */,
@@ -1288,6 +1345,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A11CE000000000000000100D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CC047200000000000000000D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1595,6 +1659,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CC047200000000000000000B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1657,6 +1728,11 @@
 			isa = PBXTargetDependency;
 			target = A11CE000000000000000100A /* NollieWatchWidgets */;
 			targetProxy = A11CE0000000000000001003 /* PBXContainerItemProxy */;
+		};
+		CC0472000000000000000004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CC047200000000000000000A /* NollieMacControls */;
+			targetProxy = CC0472000000000000000003 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -3311,6 +3387,116 @@
 			};
 			name = DirectRelease;
 		};
+		CC0472000000000000000014 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		CC0472000000000000000015 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = DirectDebug;
+		};
+		CC0472000000000000000016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		CC0472000000000000000017 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = DirectRelease;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -3475,6 +3661,17 @@
 				A11CE0000000000000001015 /* DirectDebug */,
 				A11CE0000000000000001016 /* Release */,
 				A11CE0000000000000001017 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CC047200000000000000000E /* Build configuration list for PBXNativeTarget "NollieMacControls" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CC0472000000000000000014 /* Debug */,
+				CC0472000000000000000015 /* DirectDebug */,
+				CC0472000000000000000016 /* Release */,
+				CC0472000000000000000017 /* DirectRelease */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

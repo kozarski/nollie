@@ -4,8 +4,8 @@ import NollieCore
 import UserNotifications
 
 /// "Stop Nollie on my Mac" from a linked iPhone. The press reaches the Link door in Nollie Runtime,
-/// which only records it; the app reads that record and does the stopping here: a task using this
-/// Mac ends, every reply in progress stops and schedules pause until the person resumes them.
+/// which only records it; the app reads that record and does the stopping here (MacStop): a task
+/// using this Mac ends, every reply in progress stops and schedules pause until the person resumes them.
 @MainActor
 final class LinkStopWatcher {
     static let shared = LinkStopWatcher()
@@ -42,31 +42,12 @@ final class LinkStopWatcher {
         await perform(device: stop.device, key: "\(stop.generation)")
     }
 
-    /// Ends the task using this Mac, stops every reply and pauses schedules, then says so on the
-    /// Mac. The same for a Stop through the door and one through iCloud. Returns schedules paused.
+    /// Stops everything through MacStop, then says so on the Mac. The same for a Stop through the
+    /// door and one through iCloud. Returns schedules paused.
     @discardableResult
     func perform(device: String, key: String) async -> Int {
-        ComputerCenter.shared.end(.phone)
-        guard let runtime = AppModel.shared.runtime else { tell(device: device, key: key, paused: 0); return 0 }
-        for chat in runtime.chats where chat.isRunning { await chat.stop() }
-        let paused = await pauseSchedules(runtime)
+        let paused = await MacStop.stopEverything(.phone)
         tell(device: device, key: key, paused: paused)
-        return paused
-    }
-
-    /// Pauses every schedule that would start more work, and counts only the pauses Hermes
-    /// confirms. A private bot's schedules are left alone.
-    private func pauseSchedules(_ runtime: GatewayRuntime) async -> Int {
-        guard let list: JSONValue = try? await runtime.api.get("/api/cron/jobs") else { return 0 }
-        var paused = 0
-        for raw in list["jobs"]?.arrayValue ?? list["items"]?.arrayValue ?? list.arrayValue ?? [] {
-            guard let job = ScheduledWork.decode(raw), !ScheduledWork.paused(job), !ScheduledWork.completed(job) else { continue }
-            let owner = ScheduledWork.owner(raw)
-            if let owner, PrivateBots.isPrivate(owner, connection: runtime.connection.id) { continue }
-            guard let reply: JSONValue = try? await runtime.api.send("POST", "/api/cron/jobs/\(job.identity)/pause", profile: owner, body: EmptyBody()),
-                  ScheduledWork.confirms(reply, jobID: job.identity, enabled: false, profile: owner) else { continue }
-            paused += 1
-        }
         return paused
     }
 
@@ -77,12 +58,6 @@ final class LinkStopWatcher {
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "nollie.link.stop.\(key)", content: content, trigger: nil))
     }
 
-    nonisolated static func summary(paused: Int) -> String {
-        switch paused {
-        case 0: "Nollie ended its task on this Mac and stopped its replies."
-        case 1: "Nollie ended its task on this Mac, stopped its replies and paused 1 schedule. Resume it in Schedules."
-        default: "Nollie ended its task on this Mac, stopped its replies and paused \(paused) schedules. Resume them in Schedules."
-        }
-    }
+    nonisolated static func summary(paused: Int) -> String { MacStop.summary(paused: paused) }
 }
 #endif

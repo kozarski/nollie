@@ -1,6 +1,6 @@
 import XCTest
 
-/// The Ask Nollie control: found in the Control Center gallery (and not the old Stop control),
+/// The Ask Nollie control: found in the Control Center gallery (and not the old stop-mac control),
 /// added, then pressed from Control Center, which opens Nollie on the main chat with the keyboard up.
 /// Pictures go to the folder in NOLLIE_CONTROL_SHOTS; without it the flow skips, because it edits
 /// the simulator's Control Center.
@@ -47,8 +47,7 @@ final class AskNollieControlShotsUITests: DemoCase {
         }
         let control = springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Ask Nollie")).firstMatch
         XCTAssertTrue(control.waitForExistence(timeout: 10), "Ask Nollie is not in the gallery")
-        XCTAssertFalse(springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Stop")).firstMatch.exists,
-                       "the old Stop control is still offered")
+        XCTAssertFalse(springboard.buttons["com.coreykozarski.nollie.stop-mac"].exists, "the old Stop control is still offered")
         control.tap()
         pause(1)
         picture("ask-control-placed")
