@@ -130,7 +130,7 @@
       {"name": "nollie-crew", "managed": true, "why": "Nollie adds and retires its own helper bots"},
       {"name": "nollie-reader", "managed": true, "why": "The polite page reader and free reference lookups"},
       {"name": "nollie-computer", "managed": true, "why": "Read-only previews of a bot's own computer"},
-      {"name": "nollie-mac", "managed": false, "why": "Nollie Computer accepts it only from the main Hermes setup in ~/.hermes, run by macOS's own Python; the managed setup can't use it yet"},
+      {"name": "nollie-mac", "managed": true, "why": "Nollie Computer: a bot asks to use the apps the person picked on this Mac. Copied into every bot that is not private, listed only where This Mac is on"},
       {"name": "nollie-pairing", "managed": false, "why": "A managed setup links the iPhone through the Nollie Link door instead"}
     ]
   }

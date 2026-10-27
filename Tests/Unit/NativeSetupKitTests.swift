@@ -169,7 +169,7 @@ struct NativeSetupKitTests {
               FileManager.default.fileExists(atPath: root.path) else { return }
         #expect(try !NativeSetupKit.hermesOverlay().entries.isEmpty)
         let kit = try NativeSetupKit.addOns()
-        #expect(Set(kit.names) == ["nollie-workflow", "nollie-crew", "nollie-reader", "nollie-computer"])
+        #expect(Set(kit.names) == ["nollie-workflow", "nollie-crew", "nollie-reader", "nollie-computer", "nollie-mac"])
     }
 }
 #endif

@@ -14,6 +14,9 @@ is on in every bot, Private ones too, and stays on: the person's Ask first switc
 switched off comes back on with that switch off. Every bot's use of this Mac starts off: a bot with
 no desktop lease gets a person's (bot-desktop/lease.json), since Hermes reads no lease as the bot's.
 Other disabled add-ons stay disabled. Board follow-through starts on the first install only.
+nollie-mac (a bot asking Nollie Computer to use apps on this Mac) is copied into every bot that is not
+private but is listed, with its MCP server on Nollie's own Python, only in bots whose desktop lease is
+the agent's (This Mac on); turning This Mac off takes both out again at the next start.
 Workflow's Hermes helpers stay inside its plugin folder; this installer never writes Hermes source.
 Never touches ~/.hermes, the always-private bots (private, moss), chats, schedules or the Board; a
 Private bot gets only Ask first and the lease, and nothing in it is read but its config.yaml.
@@ -35,6 +38,8 @@ import time
 
 READER = "nollie-reader"
 WORKFLOW = "nollie-workflow"
+MAC = "nollie-mac"
+MAC_FILES = ("__init__.py", "plugin.yaml", "server.py")
 WORKFLOW_INITIALIZED = "ask-first-initialized"
 MARKER = "nollie-lock.sha256"
 RECORDER_ONLY = "recorder-only"
@@ -207,8 +212,9 @@ def reader_environment(kit, home, uv, python, lock_entry, stamp, run=None):
     return "built"
 
 
-def enable(home, names, stamp, required=(), create=False):
-    """List the add-ons in plugins.enabled. Returns the names newly listed."""
+def _edit_config(home, stamp, change, create=False):
+    """Read the bot's config.yaml, let ``change(document)`` edit it, and write it back with a dated backup
+    when it changed. ``change`` returns what to hand back, or None when nothing changed."""
     config = home / "config.yaml"
     if not unlinked(config) or (not config.is_file() and not (create and not config.exists())):
         raise Refused("the setup's config.yaml is missing or linked")
@@ -226,22 +232,9 @@ def enable(home, names, stamp, required=(), create=False):
             raise Refused("the setup's config.yaml could not be read") from None
     if not isinstance(document, dict):
         raise Refused("the setup's config.yaml is not a mapping")
-    plugins = document.setdefault("plugins", {})
-    if not isinstance(plugins, dict):
-        raise Refused("plugins in config.yaml is not a mapping")
-    enabled = plugins.get("enabled", [])
-    disabled = plugins.get("disabled", [])
-    if not all(isinstance(value, list) and all(isinstance(name, str) for name in value)
-               for value in (enabled, disabled)):
-        raise Refused("enabled and disabled plugins must be lists of names")
-    kept_disabled = [name for name in disabled if name.rsplit("/", 1)[-1] not in required]
-    added = [name for name in names if name not in enabled and name not in kept_disabled]
-    if not added and kept_disabled == disabled:
-        return []
-    if added:
-        plugins["enabled"] = list(enabled) + added
-    if kept_disabled != disabled:
-        plugins["disabled"] = kept_disabled
+    outcome = change(document)
+    if outcome is None:
+        return None
     if original is not None:
         backup = home / f"config.yaml.bak-nollie-addons-{stamp}"
         descriptor = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
@@ -259,8 +252,118 @@ def enable(home, names, stamp, required=(), create=False):
             from ruamel.yaml import YAML
             YAML().dump(document, handle)
     os.replace(temporary, config)
-    return added + [name for name in required if name not in added
-                    and any(value.rsplit("/", 1)[-1] == name for value in disabled)]
+    return outcome
+
+
+def _plugin_lists(document):
+    plugins = document.setdefault("plugins", {})
+    if not isinstance(plugins, dict):
+        raise Refused("plugins in config.yaml is not a mapping")
+    enabled = plugins.get("enabled", [])
+    disabled = plugins.get("disabled", [])
+    if not all(isinstance(value, list) and all(isinstance(name, str) for name in value)
+               for value in (enabled, disabled)):
+        raise Refused("enabled and disabled plugins must be lists of names")
+    return plugins, enabled, disabled
+
+
+def enable(home, names, stamp, required=(), create=False):
+    """List the add-ons in plugins.enabled. Returns the names newly listed."""
+    def change(document):
+        plugins, enabled, disabled = _plugin_lists(document)
+        kept_disabled = [name for name in disabled if name.rsplit("/", 1)[-1] not in required]
+        added = [name for name in names if name not in enabled and name not in kept_disabled]
+        if not added and kept_disabled == disabled:
+            return None
+        if added:
+            plugins["enabled"] = list(enabled) + added
+        if kept_disabled != disabled:
+            plugins["disabled"] = kept_disabled
+        return added + [name for name in required if name not in added
+                        and any(value.rsplit("/", 1)[-1] == name for value in disabled)]
+    return _edit_config(home, stamp, change, create) or []
+
+
+def this_mac_on(home):
+    """This Mac is on for a bot when its desktop lease names the agent. Anything else (none, a link,
+    damage) is off."""
+    lease = home / "bot-desktop" / "lease.json"
+    if not unlinked(lease) or not lease.is_file():
+        return False
+    try:
+        return json.loads(lease.read_text()).get("holder") == "agent"
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
+def set_mac(home, python, on, stamp):
+    """nollie-mac listed, and its MCP server (Nollie's own Python running exactly the add-on's server.py),
+    in this bot's config while This Mac is on; both gone while it is off. True when the config changed."""
+    server = {"command": str(python), "args": ["-I", str(home / "plugins" / MAC / "server.py")]}
+
+    def change(document):
+        plugins, enabled, _ = _plugin_lists(document)
+        servers = document.get("mcp_servers")
+        if servers is not None and not isinstance(servers, dict):
+            raise Refused("mcp_servers in config.yaml is not a mapping")
+        servers = servers or {}
+        listed = [name for name in enabled if name.rsplit("/", 1)[-1] != MAC]
+        if on:
+            listed.append(MAC)
+        if listed == enabled and (servers.get(MAC) == server if on else MAC not in servers):
+            return None
+        plugins["enabled"] = listed
+        if on:
+            servers[MAC] = server
+            document["mcp_servers"] = servers
+        elif MAC in servers:
+            del servers[MAC]
+        return True
+    # Its own backup name: the same run may already have saved one for Ask first.
+    return bool(_edit_config(home, f"{stamp}-mac", change))
+
+
+def managed_python(installation, python):
+    """Nollie's own Python for this setup: the interpreter its installer put under <setup>/python, with no
+    link anywhere along it. None for anything else."""
+    try:
+        path = Path(python).absolute()
+        if path.resolve(strict=True) != path or not path.is_file():
+            return None
+        if Path(installation).absolute() / "python" not in path.parents:
+            return None
+        return path
+    except (OSError, RuntimeError):
+        return None
+
+
+def mac_item(source):
+    files = []
+    for name in MAC_FILES:
+        path = source / name
+        if path.is_symlink() or not path.is_file():
+            raise Refused("nollie-mac is incomplete or linked")
+        files.append({"path": f"{MAC}/{name}", "bytes": path.stat().st_size, "sha256": sha256(path)})
+    return {"name": MAC, "files": files}
+
+
+def _ensure_mac(home, policy, private, profiles, stamp, python):
+    """Copy nollie-mac into every bot that is not private and list it only where This Mac is on. Never a Private
+    bot, which keeps nothing of it. Returns the bots whose copy or config changed."""
+    source = home / "plugins" / MAC
+    if python is None or not unlinked(source) or not source.is_dir():
+        return []
+    item = mac_item(source)
+    changed = []
+    for profile, profile_home in profiles:
+        if policy.excluded(profile, private):
+            continue
+        # A bot still being created has This Mac off, and its folder is renamed before it is used.
+        staged = profile_home.name.startswith(f".{profile}.staging-")
+        copied = "current" if profile == "default" else install_addon(source.parent, profile_home, item, stamp)
+        if set_mac(profile_home, python, this_mac_on(profile_home) and not staged, stamp) or copied != "current":
+            changed.append(profile)
+    return changed
 
 
 def workflow_privacy(source, home):
@@ -370,7 +473,7 @@ def ensure_human_lease(home):
     return True
 
 
-def _ensure_workflow(home, source, stamp, policy, private, profiles=None):
+def _ensure_workflow(home, source, stamp, policy, private, profiles=None, python=None):
     profiles = workflow_profiles(home, policy, private) if profiles is None else profiles
     item = workflow_item(source)
     changed = []
@@ -389,6 +492,9 @@ def _ensure_workflow(home, source, stamp, policy, private, profiles=None):
             added = keep_ask_first_on(profile_home, stamp)
         leased = ensure_human_lease(profile_home)
         if added or copied != "current" or leased:
+            changed.append(profile)
+    for profile in _ensure_mac(home, policy, private, profiles, stamp, python):
+        if profile not in changed:
             changed.append(profile)
     return changed
 
@@ -421,8 +527,10 @@ def ensure_workflow(home, stamp=None, *, profiles=None):
                     raise Refused("the new bot's folder is missing or unsafe")
                 selected.append((profile, path))
             profiles = selected
+        # Run by Hermes's own start, under Nollie's Python: the interpreter its installer put in this setup.
+        python = managed_python(TRUSTED, Path(sys.base_prefix) / "bin" / f"python{sys.version_info[0]}.{sys.version_info[1]}")
         return _ensure_workflow(home, source, stamp or datetime.now().strftime("%Y%m%d-%H%M%S-%f"),
-                                policy, private, profiles)
+                                policy, private, profiles, python)
     finally:
         os.close(lock)
 
@@ -478,13 +586,15 @@ def install_all(args, home, stamp):
         if READER in names:
             print(f"Reader environment: {reader_environment(args.kit, home, args.uv, args.python, kit['readerLock'], stamp)}")
         first_workflow = WORKFLOW in names and not workflow_initialized(home)
-        enabled_names = [name for name in names if name != WORKFLOW or first_workflow]
+        # nollie-mac is listed per bot, only where This Mac is on (_ensure_mac).
+        enabled_names = [name for name in names if (name != WORKFLOW or first_workflow) and name != MAC]
         added = enable(home, enabled_names, stamp, required=(WORKFLOW,) if first_workflow else ())
         if first_workflow:
             mark_workflow_initialized(home)
         print("Listed in plugins.enabled: " + (", ".join(added) if added else "already listed"))
         if WORKFLOW in names:
-            _ensure_workflow(home, home / "plugins" / WORKFLOW, stamp, policy, private)
+            _ensure_workflow(home, home / "plugins" / WORKFLOW, stamp, policy, private,
+                             python=managed_python(args.installation, args.python))
     except (Refused, OSError, ValueError, subprocess.CalledProcessError) as error:
         print(f"Add-ons were not installed: {type(error).__name__}", file=sys.stderr)
         return 1

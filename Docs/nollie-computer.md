@@ -37,7 +37,9 @@ Accessibility and Screen Recording use to Nollie, so Privacy & Security lists on
   silicon, and it reads app windows well. Qwen3.8 27B and Flash Next also work. With none,
   using this Mac stays off and the page offers **Get a model**.
 - **Allow Mac control** (each bot's Computer tab) is now that bot's permission to ask; it no longer
-  turns Hermes's own computer_use on.
+  turns Hermes's own computer_use on. In Nollie's own setup the nollie-mac add-on comes and goes with
+  it (see [the add-on](../Companions/nollie-mac/README.md#in-nollies-own-setup)); a hand-installed
+  ~/.hermes still uses macOS's own Python.
 - **Papertrail.** When a task ends, one line goes in the bot's Papertrail: the apps, how many
   actions and looks, and that no picture left (`POST /api/plugins/nollie-workflow/papertrail/mac-session`).
 

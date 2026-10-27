@@ -42,7 +42,18 @@ managers, System Settings, or money and crypto apps; browsers view-only; sending
 uploading, accepting terms, installing and signing in confirmed by the person every time; nothing
 typed into a password or code field.
 
-## Installation
+## In Nollie's own setup
+
+Nollie's setup carries the add-on in its Setup Kit (`Tools/pins.json`, checked against `kit.json`
+like the others). At every start Nollie Runtime copies it into every bot that is not private
+(`Services/Runtime/managed_addons.py`) and lists it, with its MCP server on Nollie's own Python
+(`<setup>/python/<version>/bin/python3.14 -I <bot>/plugins/nollie-mac/server.py`), only in bots whose
+desktop lease is the agent's: This Mac on. Turning This Mac on or off on the Mac applies it at once
+for new chats (`ComputerManagedAddOn`); from the iPhone, at Hermes's next start. Nollie accepts it
+from that Python only by its exact path and the hash its installer recorded, under the gateway or
+dashboard this Nollie's Runtime started (`ComputerPeer.Managed`).
+
+## Installation (a hand-installed ~/.hermes)
 
 Plan first, for one bot:
 

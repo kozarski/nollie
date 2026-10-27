@@ -208,6 +208,10 @@ final class SystemControl {
                 let _: JSONValue = try await rt.api.send("PUT", "/api/config", profile: profile, json: ["config": .object(body)])
             }
             keptOff.insert(key)
+            #if os(macOS)
+            // Nollie's own setup: the add-on that asks Nollie Computer comes and goes with the switch.
+            await ComputerManagedAddOn.apply(on, profile: profile, home: home, rt: rt)
+            #endif
             lastError = nil
             readAt[key] = Date()
             return true
