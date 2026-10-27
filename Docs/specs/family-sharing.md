@@ -2,8 +2,8 @@
 
 [← Architecture](../architecture.md) · [Nollie Link](../nollie-link.md) · [Ask first](../ask-first.md) · [Papertrail](papertrail.md)
 
-Status: written before the code (26 Oct 2026) for 1.3, "For your home". The Mac side is enforced at the Nollie Link
-door; nothing here relies on the phone behaving.
+Status: written before the code (26 Oct 2026) for 1.3, "For your home", then built. The Mac side is enforced at the
+Nollie Link door; nothing here relies on the phone behaving. Not yet tried on two real iPhones (see the end).
 
 ## Purpose
 
@@ -40,6 +40,12 @@ Enforced by the door on the Mac. The phone's screens only follow what the door a
 Ask first stays absolute. Sending, buying, posting, deleting, and adding or changing calendar events, reminders or
 contacts always wait for the owner's yes, whatever the switch says. "Small yeses" never covers them, never offers
 Session or Always, and an ask the door cannot classify counts as not small.
+
+Decided while building: no kind is small yet. Every approval Hermes and Nollie raise today sends, buys, posts,
+deletes, uses a computer, runs code (Hermes's whole-script `execute_code`) or matches one of Hermes's dangerous
+command patterns. So the door's list of small kinds (`LinkDoorFamily.smallKinds`) is empty, the per-person switch is
+stored and enforced, and the share screen does not show it: a switch that changes nothing would claim what the app
+can't do. It appears when the first small kind is added.
 
 ## The household copy
 
@@ -84,9 +90,10 @@ reach the Mac.
 
 ## What the member's phone shows
 
-One quiet screen instead of the usual app: "Shared with you", the helpers shared with them (character and name), and
-under each its chats. A chat looks like any Nollie chat. There is no Board, no Settings beyond Appearance and the
-link itself, no Papertrail, no bot settings and no memory.
+One quiet screen instead of the usual app (`MemberHomeView`): "Shared with you", "From Corey", each shared helper
+(character and name) with New chat and the chats they started, and one safety line: "Corey says yes to anything that
+matters. Your chats are kept on Corey's Mac." A chat looks like any Nollie chat, without the computer button, bot
+info or model choices. There is no Board, no Settings, no Papertrail, no bot settings and no memory.
 
 When a helper needs a yes, the member's card says "Waiting for Corey" with what the helper wants to do and one
 button, Never mind. With Small yeses on and an ask that qualifies, it offers Allow once as well.
@@ -102,9 +109,9 @@ The door reads every frame Hermes sends to a member's phone. When Hermes asks a 
 3. refuses any answer from the member, by response frame or `approval.respond`, other than Never mind, and Allow
    once when Small yeses allows it.
 
-The owner sees the ask on the Mac (Nollie Runtime's link status, polled while a phone is linked) and on their own
-linked phone (`GET /nollie/family`, owners only), as a card that says "Sam asked Scout", the action and Allow once /
-Deny. A yes asks for Face ID first where a yes in a chat would. The answer goes to the door
+The owner sees the ask at the top of the helpers list, on the Mac (from Nollie Runtime over XPC, `linkFamily`) and on
+their own linked phone (`GET /nollie/family`, owners only), as a card that says "Sam asked Scout", the action and
+Allow once / Deny. The list looks every few seconds while it is open; there is no notification for an ask yet. A yes asks for Face ID first where a yes in a chat would. The answer goes to the door
 (`POST /nollie/family/asks/<id>`, owners only, `once` or `deny`), which delivers it to Hermes as the answer to that
 request on the member's own connection, or, when that connection has closed, as `request.answer` over the door's
 own loopback socket. Hermes then carries on in Sam's chat.

@@ -42,6 +42,16 @@ A device credential is powerful. It is meant to let a phone do what Nollie on a 
 
 Out of scope: malware on the Mac account or the phone, and someone using the unlocked Mac. The door gives no isolation from other software on the Mac: Hermes listens on loopback with its own token, as it did before Nollie Link, and a local process that has that token never needed the door. The door only decides what reaches Hermes from the network.
 
+## Sharing a helper at home
+
+A linked phone is an owner (every phone linked with an ordinary code, and every one from before) or a member:
+someone at home a helper was shared with, who joined with a version 2 code (`"f": {"o": owner, "b": [helpers]}`). The
+door decides the role from the offer that was claimed and keeps it in `link.json`. Members get their own short
+allowlist, filtered JSON-RPC both ways on `/api/ws`, their approvals routed to the owner, home only (never through
+Tailscale), and no Stop, live picture, Take over or Away from home. The door's own routes are under `/nollie/family`.
+Everything is in [Sharing a helper at home](specs/family-sharing.md); the code is `Services/Runtime/LinkDoorFamily*.swift`
+and its tests `Tests/Unit/LinkDoorFamilyTests.swift` (Mac) and `FamilySharingTests.swift` (both).
+
 ## Protocol
 
 1. **Offer.** The Mac app asks Nollie Runtime over its code-signed XPC connection. The helper makes a 32-byte random secret, valid for 120 seconds, replacing any open offer, and starts listening. It returns the Mac's name, the pin, the port, candidate hosts and its install tag.

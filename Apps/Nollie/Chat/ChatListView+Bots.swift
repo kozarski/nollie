@@ -63,6 +63,8 @@ extension ChatListView {
                     LinkReachLine(reach: reach, alertsOn: model.cloudAlerts.isEnabled || DemoMode.alertsOn) { model.awayPrompt = true }
                 }
                 #endif
+                // Someone at home is waiting on a yes.
+                if model.family.canShare(model) { FamilyAsksSection() }
                 if let errorText, model.needsSignIn == nil {
                     Text(errorText).font(.footnote).foregroundStyle(.red)
                         .inset(h: 12, v: 6)

@@ -134,6 +134,8 @@ final class AppModel {
     /// What left the Mac today and what the crew did overnight. Settings' top tiles and the Mac
     /// sidebar's Papertrail button both read it, so they always agree.
     let crewSummary = CrewSummaryModel()
+    /// Sharing a helper with someone at home: who this device is, and for the owner, who has what.
+    let family = FamilyModel()
     /// Set to open Settings, What left your Mac (the Mac sidebar's Papertrail button).
     var papertrailRequest: UUID?
 

@@ -830,6 +830,116 @@ def link_rest(method: str, base: str, payload) -> tuple[int, object] | None:
     return None
 
 
+# Sharing a helper at home: the door's /nollie/family routes, for the demo copy as the owner's phone
+# (`-nollie-demo-family owner`) or as the phone of someone a helper was shared with
+# (`-nollie-demo-family member`). A real door answers these itself and enforces them; here they are
+# a fixture. POST /api/_mock/family {"role": "owner"|"member", "asks": bool, "reset": true} sets it.
+# As a member the mock also lists only the shared helper and that person's own chats, as the door does.
+FAMILY_SEND_RULE = "plugin_rule:nollie-ask-first:send:" + "0" * 24 + "5a11c0de"
+
+
+def family_fresh() -> dict:
+    now = time.time()
+    return dict(
+        role="owner", owner="Corey",
+        members=[dict(id="6f9619ff-8b86-d011-b42d-00c04fc964ff", person="Sam", device="Sam's iPhone", helpers=["work-sam"],
+                      small=False, linkedAt=now - 86_400 * 3, lastActive=now - 600),
+                 dict(id="1d2c3b4a-5e6f-4071-8293-a4b5c6d7e8f9", person="Mum", device="Mum's iPhone", helpers=["work-mum"],
+                      small=False, linkedAt=now - 86_400 * 9, lastActive=now - 7_200)],
+        asks=[dict(id="srq-0123456789ab", person="Sam", helper="work-sam", chat="20261026_090000_5a11c0", small=False,
+                   at=now - 45, request=dict(
+                       request_id="req-5a11c0de", tool_name="mcp__gmail__send_email",
+                       command="<mcp__gmail__send_email> (plugin approval rule)",
+                       description="Send with gmail: send email\nto: grandma@example.com\nsubject: Sunday lunch\nbody: Can we bring a cake?",
+                       pattern_key=FAMILY_SEND_RULE, pattern_keys=[FAMILY_SEND_RULE], choices=["once", "deny"]))],
+        log=[])
+
+
+FAMILY: dict = family_fresh()
+FAMILY_MEMBER_CHATS = [
+    dict(id="20261026_090000_5a11c0", title="Sunday lunch with Grandma", started_at=time.time() - 3_600,
+         last_active=time.time() - 60, message_count=4, profile="work-sam"),
+    dict(id="20261024_181500_5a11c1", title="Maths homework: fractions", started_at=time.time() - 86_400 * 2,
+         last_active=time.time() - 86_400 * 2 + 900, message_count=12, profile="work-sam"),
+]
+
+
+def family_overview() -> dict:
+    return dict(members=FAMILY["members"], asks=FAMILY["asks"])
+
+
+def family_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    body = payload if isinstance(payload, dict) else {}
+    member = FAMILY["role"] == "member"
+    if base == "/api/_mock/family":
+        if method == "POST":
+            if body.get("reset"):
+                FAMILY.clear()
+                FAMILY.update(family_fresh())
+            if body.get("role") in ("owner", "member"):
+                FAMILY["role"] = body["role"]
+            if body.get("asks") is False:
+                FAMILY["asks"] = []
+        return ok(dict(family_overview(), role=FAMILY["role"], log=FAMILY["log"]))
+    if member and method == "GET" and base == "/api/profiles":
+        return ok(dict(profiles=[dict(name="work-sam", display_name="Work", is_default=False, model=MODEL, provider=PROVIDER,
+                                      description="For Sam")]))
+    if member and method == "GET" and base == "/api/sessions":
+        if query.get("profile") != "work-sam":
+            return refuse(403, "Ask the person who shared this.")
+        return ok(dict(sessions=FAMILY_MEMBER_CHATS, total=len(FAMILY_MEMBER_CHATS), limit=20, offset=0, storage={}))
+    if not base.startswith("/nollie/family"):
+        return None
+    if base == "/nollie/family/me":
+        if method != "GET":
+            return refuse(404, "The request was refused.")
+        if member:
+            return ok(dict(role="member", owner=FAMILY["owner"], person="Sam", helpers=["work-sam"], small=False))
+        return ok(dict(role="owner"))
+    if member:
+        return refuse(403, "Ask the person who shared this.")
+    if base == "/nollie/family" and method == "GET":
+        return ok(family_overview())
+    if base == "/nollie/family/invite" and method == "POST":
+        person, helpers = body.get("person"), body.get("helpers")
+        if not isinstance(person, str) or not person.strip() or not isinstance(helpers, list) or not helpers:
+            return refuse(400, "That can't be shared.")
+        if any(private_identity(h) for h in helpers if isinstance(h, str)):
+            return refuse(403, "Private helpers stay yours.")
+        FAMILY["log"].append(dict(operation="invite", person=person, helpers=helpers))
+        b64 = lambda raw: base64.urlsafe_b64encode(raw).decode().rstrip("=")
+        shown = [h.split("-")[0].capitalize() for h in helpers]
+        return ok(dict(macName="Studio", pin=b64(os.urandom(32)), port=52345, hosts=["192.168.1.20", "studio.local"],
+                       tag="0123456789abcdef", secret=b64(os.urandom(32)), expiresAt=time.time() + 120,
+                       owner=FAMILY["owner"], helpers=shown))
+    parts = base.split("/")
+    if len(parts) == 5 and parts[3] == "members":
+        found = next((m for m in FAMILY["members"] if m["id"] == parts[4]), None)
+        if found is None:
+            return refuse(404, "That isn't here any more.")
+        if method == "DELETE":
+            FAMILY["members"].remove(found)
+            FAMILY["asks"] = [a for a in FAMILY["asks"] if a["person"] != found["person"]]
+            FAMILY["log"].append(dict(operation="remove", person=found["person"]))
+            return ok(family_overview())
+        if method == "PUT":
+            if isinstance(body.get("small"), bool):
+                found["small"] = body["small"]
+            if isinstance(body.get("helpers"), list):
+                found["helpers"] = body["helpers"]
+            return ok(family_overview())
+    if len(parts) == 5 and parts[3] == "asks" and method == "POST":
+        if body.get("choice") not in ("once", "deny"):
+            return refuse(400, "That can't be shared.")
+        found = next((a for a in FAMILY["asks"] if a["id"] == parts[4]), None)
+        if found is None:
+            return refuse(404, "That isn't here any more.")
+        FAMILY["asks"].remove(found)
+        FAMILY["log"].append(dict(operation="answer", ask=found["id"], choice=body["choice"]))
+        return ok(family_overview())
+    return refuse(404, "The request was refused.")
+
+
 def own_computer_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
     body = payload if isinstance(payload, dict) else {}
     if base == "/api/_mock/own-computer":
@@ -3216,6 +3326,7 @@ def process_request(connection, request):
     # once with no-store; the others fall through to the config-write bookkeeping below.
     modules = [
         ("normal", lambda: auth_rest(method, base, query, fields, request.headers)),
+        ("quiet", lambda: family_rest(method, base, query, body)),
         ("normal", lambda: profile_creation(method, base, fields)),
         ("normal", lambda: private_bots_rest(method, base, query, body)),
         ("normal", lambda: backup_rest(method, base, query, body)),
