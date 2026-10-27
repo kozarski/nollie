@@ -54,7 +54,7 @@ private struct TaskOwner {
 
     init(raw: String?, profiles: [ProfileInfo]) {
         guard let raw, !raw.isEmpty else {
-            (name, symbol) = ("Unassigned", "person.slash")
+            (name, symbol) = (String(localized: "Unassigned", comment: "A task no bot holds"), "person.slash")
             return
         }
         symbol = "person.crop.circle"
@@ -67,10 +67,11 @@ private enum TaskStage {
     static func words(for task: KanbanTask) -> String {
         guard let column = task.column else { return task.status }
         switch column {
-        case .running: return "Working"
-        case .review: return "Being reviewed"
-        case .blocked: return task.needsUserAction ? "Needs your help" : "Waiting to continue"
-        case .triage, .todo, .ready: return "Queued"
+        case .running: return String(localized: "Working", comment: "Where a task stands")
+        case .review: return String(localized: "Being reviewed", comment: "Where a task stands")
+        case .blocked: return task.needsUserAction ? String(localized: "Needs your help", comment: "Where a task stands")
+                                                    : String(localized: "Waiting to continue", comment: "Where a task stands")
+        case .triage, .todo, .ready: return String(localized: "Queued", comment: "Where a task stands")
         default: return column.title
         }
     }

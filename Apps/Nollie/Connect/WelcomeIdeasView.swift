@@ -8,21 +8,22 @@ struct WelcomeIdea: Equatable, Sendable {
 enum WelcomeIdeas {
     static let interval: Duration = .seconds(10)
 
+    /// Shown as examples only; none is sent anywhere.
     static let pages: [[WelcomeIdea]] = [
         [
-            .init(title: "Watch this price", symbol: "tag"),
-            .init(title: "Find gigs this weekend", symbol: "music.note"),
-            .init(title: "Research my next laptop", symbol: "magnifyingglass"),
+            .init(title: String(localized: "Watch this price"), symbol: "tag"),
+            .init(title: String(localized: "Find gigs this weekend"), symbol: "music.note"),
+            .init(title: String(localized: "Research my next laptop"), symbol: "magnifyingglass"),
         ],
         [
-            .init(title: "Compare flights to Lisbon", symbol: "airplane"),
-            .init(title: "Keep my project moving", symbol: "checkmark.circle"),
-            .init(title: "Check back next week", symbol: "calendar"),
+            .init(title: String(localized: "Compare flights to Lisbon"), symbol: "airplane"),
+            .init(title: String(localized: "Keep my project moving"), symbol: "checkmark.circle"),
+            .init(title: String(localized: "Check back next week"), symbol: "calendar"),
         ],
         [
-            .init(title: "Find quiet cafés nearby", symbol: "cup.and.saucer"),
-            .init(title: "Plan a rainy weekend", symbol: "cloud.rain"),
-            .init(title: "Shortlist gifts under £30", symbol: "gift"),
+            .init(title: String(localized: "Find quiet cafés nearby"), symbol: "cup.and.saucer"),
+            .init(title: String(localized: "Plan a rainy weekend"), symbol: "cloud.rain"),
+            .init(title: String(localized: "Shortlist gifts under £30"), symbol: "gift"),
         ],
     ]
 }

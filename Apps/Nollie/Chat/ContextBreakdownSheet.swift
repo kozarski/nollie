@@ -54,19 +54,20 @@ struct ContextBreakdownSheet: View {
     @ViewBuilder private func usageRows(_ usage: Usage) -> some View {
         let positive: (Int?) -> Int? = { ($0 ?? 0) > 0 ? $0 : nil }
         let lines: [(String, String)?] = [
-            ("Input tokens", (usage.input ?? 0).formatted()),
-            ("Output tokens", (usage.output ?? 0).formatted()),
-            positive(usage.reasoning).map { ("Reasoning tokens", $0.formatted()) },
-            ("Model calls", String(usage.calls ?? 0)),
-            positive(usage.compressions).map { ("Compressions", String($0)) },
-            usage.cacheHitPct.map { ("Cache hit", "\($0)%") },
-            usage.costUsd.map { ("Cost", costText($0, estimated: usage.costStatus == "estimated")) },
+            (String(localized: "Input tokens"), (usage.input ?? 0).formatted()),
+            (String(localized: "Output tokens"), (usage.output ?? 0).formatted()),
+            positive(usage.reasoning).map { (String(localized: "Reasoning tokens"), $0.formatted()) },
+            (String(localized: "Model calls"), String(usage.calls ?? 0)),
+            positive(usage.compressions).map { (String(localized: "Compressions"), String($0)) },
+            usage.cacheHitPct.map { (String(localized: "Cache hit"), "\($0)%") },
+            usage.costUsd.map { (String(localized: "Cost"), costText($0, estimated: usage.costStatus == "estimated")) },
         ]
         ForEach(lines.compactMap { $0 }, id: \.0) { LabeledContent($0.0, value: $0.1) }
     }
 
     private func costText(_ dollars: Double, estimated: Bool) -> String {
-        String(format: "$%.4f", dollars) + (estimated ? " (est.)" : "")
+        let amount = String(format: "$%.4f", dollars)
+        return estimated ? String(localized: "\(amount) (est.)", comment: "A cost that is only an estimate") : amount
     }
 
     private static func colour(of category: ContextCategory) -> Color {
@@ -90,7 +91,7 @@ private struct BreakdownGauge: View {
 
     private var headline: String {
         let (used, limit) = (breakdown.contextUsed.formatted(), breakdown.contextMax.formatted())
-        return "\(used) of \(limit) tokens (\(breakdown.contextPercent)%)"
+        return String(localized: "\(used) of \(limit) tokens (\(breakdown.contextPercent)%)")
     }
 
     private var used: [ContextCategory] { breakdown.categories.filter { $0.tokens > 0 } }

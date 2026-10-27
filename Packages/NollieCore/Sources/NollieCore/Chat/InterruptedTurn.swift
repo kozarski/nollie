@@ -92,9 +92,13 @@ public struct AwayGrace: Hashable, Sendable {
 
     public static func label(_ seconds: Double) -> String {
         let whole = Int(seconds)
-        if whole == 0 { return "Never stop it" }
-        if whole == 3600 { return "1 hour" }
-        let (unit, count) = whole < 60 ? ("seconds", whole) : whole < 3600 ? ("minutes", whole / 60) : ("hours", whole / 3600)
-        return "\(count) \(unit)"
+        if whole == 0 { return String(localized: "Never stop it", table: "Core", comment: "A choice: the gateway never ends a turn left without the app") }
+        if whole < 60 { return String(localized: "\(whole) seconds", table: "Core") }
+        if whole < 3600 {
+            let minutes = whole / 60
+            return String(localized: "\(minutes) minutes", table: "Core")
+        }
+        let hours = whole / 3600
+        return String(localized: "\(hours) hours", table: "Core")
     }
 }

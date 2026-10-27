@@ -34,8 +34,9 @@ struct RemoveNollieSheet: View {
     private var places: RemovalPlaces { pretend ? RemovalPlan.demoPlaces : RemovalPlaces.thisDevice() }
     private var direct: Bool { places.edition == .macDirect }
     private var title: String {
-        if keepApp { return "Remove Nollie's earlier setup" }
-        return direct ? "Remove Nollie from this Mac" : "Remove Nollie's data"
+        if keepApp { return String(localized: "Remove Nollie's earlier setup", comment: "Safety: the remove sheet's title; keep exact meaning") }
+        return direct ? String(localized: "Remove Nollie from this Mac", comment: "Safety: the remove sheet's title; keep exact meaning")
+            : String(localized: "Remove Nollie's data", comment: "Safety: the remove sheet's title; keep exact meaning")
     }
 
     var body: some View {
@@ -76,16 +77,19 @@ struct RemoveNollieSheet: View {
     // MARK: Before
 
     @ViewBuilder private var reviewing: some View {
-        RemoveHero(symbol: "trash.circle.fill", title: title, line: "This can't be undone.", tint: .red, id: "remove.title")
+        RemoveHero(symbol: "trash.circle.fill", title: title,
+                   line: String(localized: "This can't be undone.", comment: "Safety: Remove Nollie, the warning before it starts; keep exact meaning"),
+                   tint: .red, id: "remove.title")
         if let plan {
-            group("What goes") {
+            group(LocalizedStringResource("What goes", comment: "Safety: heading over what Remove Nollie deletes; keep exact meaning")) {
                 ForEach(plan.parts) { part in line(part.symbol, part.title, part.detail, state: nil) }
             }
-            group("What stays") {
+            group(LocalizedStringResource("What stays", comment: "Safety: heading over what Remove Nollie leaves; keep exact meaning")) {
                 ForEach(stays(plan), id: \.self) { text in kept(text) }
             }
         }
-        GlassSwitch("Also delete Nollie's data in iCloud", isOn: $includeCloud, id: "remove.icloud")
+        GlassSwitch(LocalizedStringResource("Also delete Nollie's data in iCloud", comment: "Safety: Remove Nollie, a switch that deletes more; keep exact meaning"),
+                    isOn: $includeCloud, id: "remove.icloud")
     }
 
     /// Cancel and Remove, held at the foot of the sheet so they show however long the list is.
@@ -95,7 +99,11 @@ struct RemoveNollieSheet: View {
                 .buttonStyle(.nollieGlass)
                 .keyboardShortcut(.cancelAction)
                 .accessibilityIdentifier("remove.cancel")
-            Button(role: .destructive) { start() } label: { capsuleText(direct && !keepApp ? "Remove Nollie" : "Remove") }
+            Button(role: .destructive) { start() } label: {
+                capsuleText(direct && !keepApp
+                            ? LocalizedStringResource("Remove Nollie", comment: "Safety: button that starts removing Nollie; keep exact meaning")
+                            : LocalizedStringResource("Remove", comment: "Safety: button that starts removing Nollie's data; keep exact meaning"))
+            }
                 .buttonStyle(.nollieGlassProminent)
                 .tint(.red)
                 .accessibilityIdentifier("remove.confirm")
@@ -109,10 +117,13 @@ struct RemoveNollieSheet: View {
     private func stays(_ plan: RemovalPlan) -> [String] {
         var lines = plan.kept
         if direct {
-            if !keepApp { lines.append("Nollie's rows in Privacy & Security. macOS keeps those; you can remove them there afterwards.") }
-            lines.append("Backups you saved yourself.")
+            if !keepApp {
+                lines.append(String(localized: "Nollie's rows in Privacy & Security. macOS keeps those; you can remove them there afterwards.",
+                                    comment: "Safety: Remove Nollie, what stays; keep exact meaning"))
+            }
+            lines.append(String(localized: "Backups you saved yourself.", comment: "Safety: Remove Nollie, what stays; keep exact meaning"))
         } else {
-            lines.append("Your bots and chats on your Hermes.")
+            lines.append(String(localized: "Your bots and chats on your Hermes.", comment: "Safety: Remove Nollie, what stays; keep exact meaning"))
         }
         return lines
     }
@@ -122,8 +133,11 @@ struct RemoveNollieSheet: View {
     @ViewBuilder private func working(_ runner: RemovalRunner) -> some View {
         let total = runner.lines.count
         let finished = runner.lines.filter { $0.state != .waiting && $0.state != .working }.count
-        RemoveHero(symbol: "trash.circle.fill", title: keepApp ? "Removing the earlier setup" : "Removing Nollie",
-                   line: "Step \(min(finished + 1, total)) of \(total)", tint: Ink.text2, id: "remove.working")
+        RemoveHero(symbol: "trash.circle.fill",
+                   title: keepApp ? String(localized: "Removing the earlier setup", comment: "Safety: Remove Nollie, while it works; keep exact meaning")
+                       : String(localized: "Removing Nollie", comment: "Safety: Remove Nollie, while it works; keep exact meaning"),
+                   line: String(localized: "Step \(min(finished + 1, total)) of \(total)", comment: "Remove Nollie: how far along it is"),
+                   tint: Ink.text2, id: "remove.working")
         group(nil) {
             ForEach(runner.lines) { item in line(item.part.symbol, item.part.title, troubleText(item.state), state: item.state) }
         }
@@ -132,34 +146,44 @@ struct RemoveNollieSheet: View {
     // MARK: After
 
     @ViewBuilder private func finished(_ runner: RemovalRunner) -> some View {
-        let finishedTitle = runner.movedAppToTheTrash ? "Nollie is in the Trash"
-            : keepApp ? "The earlier setup is gone" : direct ? "Nollie is almost gone" : "Nollie's data is gone"
+        let finishedTitle = runner.movedAppToTheTrash
+            ? String(localized: "Nollie is in the Trash", comment: "Safety: Remove Nollie, the result; keep exact meaning")
+            : keepApp ? String(localized: "The earlier setup is gone", comment: "Safety: Remove Nollie, the result; keep exact meaning")
+            : direct ? String(localized: "Nollie is almost gone", comment: "Safety: Remove Nollie, the result; keep exact meaning")
+            : String(localized: "Nollie's data is gone", comment: "Safety: Remove Nollie, the result; keep exact meaning")
         let leftInApplications = direct && !keepApp && !runner.movedAppToTheTrash
         if !runner.troubles.isEmpty {
-            RemoveHero(symbol: "exclamationmark.triangle.fill", title: finishedTitle, line: "A few things need you.", tint: .orange,
+            RemoveHero(symbol: "exclamationmark.triangle.fill", title: finishedTitle,
+                       line: String(localized: "A few things need you.", comment: "Remove Nollie, the result when some steps failed"), tint: .orange,
                        id: "remove.finished")
         } else if leftInApplications {
-            RemoveHero(symbol: "trash.slash.fill", title: finishedTitle, line: "Drag Nollie to the Trash from Applications.", tint: .orange,
+            RemoveHero(symbol: "trash.slash.fill", title: finishedTitle,
+                       line: String(localized: "Drag Nollie to the Trash from Applications.", comment: "Safety: Remove Nollie, what is left to do; keep exact meaning"),
+                       tint: .orange,
                        id: "remove.finished")
         } else {
             RemoveHero(symbol: "checkmark.circle.fill", title: finishedTitle,
-                       line: keepApp || !direct ? "Everything on the list is done." : "Everything Nollie set up on this Mac is gone.",
+                       line: keepApp || !direct
+                           ? String(localized: "Everything on the list is done.", comment: "Safety: Remove Nollie, the result; keep exact meaning")
+                           : String(localized: "Everything Nollie set up on this Mac is gone.", comment: "Safety: Remove Nollie, the result; keep exact meaning"),
                        tint: .green, id: "remove.finished")
         }
         if !runner.troubles.isEmpty {
-            group("A few things couldn't be done") {
+            group(LocalizedStringResource("A few things couldn't be done", comment: "Safety: heading over the Remove Nollie steps that failed; keep exact meaning")) {
                 ForEach(runner.lines.filter { if case .trouble = $0.state { true } else { false } }) { item in
                     line(item.part.symbol, item.part.title, troubleText(item.state), state: item.state)
                 }
                 if leftInApplications {
-                    line("trash.slash", "Nollie couldn't move itself to the Trash. Drag Nollie there from Applications.", nil, state: nil,
-                         tint: .orange)
+                    line("trash.slash", String(localized: "Nollie couldn't move itself to the Trash. Drag Nollie there from Applications.",
+                                               comment: "Safety: Remove Nollie, what stayed; keep exact meaning"),
+                         nil, state: nil, tint: .orange)
                 }
             }
         }
         if direct && !keepApp {
-            line("lock.shield", "macOS keeps a few rows for Nollie in Privacy & Security. You can remove them there.", nil, state: nil,
-                 tint: .blue)
+            line("lock.shield", String(localized: "macOS keeps a few rows for Nollie in Privacy & Security. You can remove them there.",
+                                       comment: "Safety: Remove Nollie, what stays; keep exact meaning"),
+                 nil, state: nil, tint: .blue)
             #if os(macOS)
             buttons {
                 Button { openPrivacy() } label: { capsuleText("Open Privacy & Security") }
@@ -172,7 +196,7 @@ struct RemoveNollieSheet: View {
             }
             #endif
         } else {
-            Button { Task { dismiss(); await model.resetApp() } } label: { capsuleText("Done") }
+            Button { Task { dismiss(); await model.resetApp() } } label: { capsuleText(LocalizedStringResource("Done", comment: "A button that closes the remove sheet")) }
                 .buttonStyle(.nollieGlassProminent)
                 .buttonBorderShape(.capsule)
                 .controlSize(.large)
@@ -184,7 +208,7 @@ struct RemoveNollieSheet: View {
     // MARK: Pieces
 
     /// A heading and its rows, each a large symbol and plain words.
-    @ViewBuilder private func group(_ header: String?, @ViewBuilder _ content: () -> some View) -> some View {
+    @ViewBuilder private func group(_ header: LocalizedStringResource?, @ViewBuilder _ content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             if let header {
                 Text(header).font(.title3.weight(.semibold)).foregroundStyle(Ink.text)
@@ -246,7 +270,7 @@ struct RemoveNollieSheet: View {
             .controlSize(.large)
     }
 
-    private func capsuleText(_ text: String) -> some View {
+    private func capsuleText(_ text: LocalizedStringResource) -> some View {
         Text(text).font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
     }
 
@@ -351,32 +375,47 @@ extension RemovalPlan {
     /// What a typical Mac with a managed setup, helpers' computers and an older Hermes would show.
     static func demo(_ places: RemovalPlaces, options: Options) -> RemovalPlan {
         guard places.edition == .macDirect else {
-            var parts = [RemovalPart(kind: .files, title: "Delete Nollie's chats, pictures and settings here", detail: nil, steps: [.clearSettings]),
-                         RemovalPart(kind: .keychain, title: "Delete Nollie's connections and saved sign-ins from the keychain", detail: nil,
-                                     steps: [.forgetKeychain(Keychain.baseBundleID + ".gateways")])]
-            if options.includeCloud { parts.append(.init(kind: .cloud, title: "Delete Nollie's alerts in iCloud", detail: nil, steps: [.deleteCloudData])) }
+            var parts = [RemovalPart(kind: .files, title: String(localized: "Delete Nollie's chats, pictures and settings here", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                                     detail: nil, steps: [.clearSettings]),
+                         RemovalPart(kind: .keychain,
+                                     title: String(localized: "Delete Nollie's connections and saved sign-ins from the keychain", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                                     detail: nil, steps: [.forgetKeychain(Keychain.baseBundleID + ".gateways")])]
+            if options.includeCloud {
+                parts.append(.init(kind: .cloud, title: String(localized: "Delete Nollie's alerts in iCloud", comment: "Safety: Remove Nollie, what goes; keep exact meaning"), detail: nil,
+                                   steps: [.deleteCloudData]))
+            }
             return RemovalPlan(parts: parts, kept: [])
         }
         let root = places.nollie.root
         var parts: [RemovalPart] = [
-            .init(kind: .computers, title: "Turn off your helpers' own computers and delete them", detail: nil,
+            .init(kind: .computers, title: String(localized: "Turn off your helpers' own computers and delete them", comment: "Safety: Remove Nollie, what goes; keep exact meaning"), detail: nil,
                   steps: [.releaseComputers(.init(home: root.appendingPathComponent("Setups/demo/user"), python: root, managed: true))]),
-            .init(kind: .background, title: "Stop Nollie Runtime and Nollie Notifications", detail: "Your assistant on this Mac stops first.",
+            .init(kind: .background, title: String(localized: "Stop Nollie Runtime and Nollie Notifications", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                  detail: String(localized: "Your assistant on this Mac stops first.", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
                   steps: [.stopRuntime, .unregisterRuntime, .unregisterNotifications]),
-            .init(kind: .hermes, title: "Take Nollie's add-ons out of your Hermes", detail: "Your bots, chats and memory stay. The add-ons go to the Trash.",
+            .init(kind: .hermes, title: String(localized: "Take Nollie's add-ons out of your Hermes", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                  detail: String(localized: "Your bots, chats and memory stay. The add-ons go to the Trash.", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
                   steps: [.trash(places.hermes.appendingPathComponent("plugins/nollie-workflow"))]),
-            .init(kind: .cua, title: "Remove Cua, which Nollie set up", detail: "With your helpers' computers and Cua's settings.",
+            .init(kind: .cua, title: String(localized: "Remove Cua, which Nollie set up", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                  detail: String(localized: "With your helpers' computers and Cua's settings.", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
                   steps: [.delete(places.nollie.cua)]),
-            .init(kind: .setup, title: "Delete the assistant Nollie set up on this Mac", detail: "With its chats, memory and settings.",
+            .init(kind: .setup, title: String(localized: "Delete the assistant Nollie set up on this Mac", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                  detail: String(localized: "With its chats, memory and settings.", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
                   steps: [.delete(root.appendingPathComponent("Setups/demo"))]),
-            .init(kind: .files, title: "Delete Nollie's folder and settings on this Mac",
-                  detail: "Its caches, logs and records, in ~/Library/Application Support/Nollie.", steps: [.clearSettings]),
-            .init(kind: .keychain, title: "Delete Nollie's connections and saved sign-ins from the keychain", detail: nil,
+            .init(kind: .files, title: String(localized: "Delete Nollie's folder and settings on this Mac", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                  detail: String(localized: "Its caches, logs and records, in ~/Library/Application Support/Nollie.", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                  steps: [.clearSettings]),
+            .init(kind: .keychain, title: String(localized: "Delete Nollie's connections and saved sign-ins from the keychain", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                  detail: nil,
                   steps: [.forgetKeychain(Keychain.baseBundleID + ".gateways")]),
         ]
-        if options.includeCloud { parts.append(.init(kind: .cloud, title: "Delete Nollie's alerts in iCloud", detail: nil, steps: [.deleteCloudData])) }
+        if options.includeCloud {
+            parts.append(.init(kind: .cloud, title: String(localized: "Delete Nollie's alerts in iCloud", comment: "Safety: Remove Nollie, what goes; keep exact meaning"), detail: nil,
+                               steps: [.deleteCloudData]))
+        }
         if !options.keepApp, let app = places.app {
-            parts.append(.init(kind: .app, title: "Move Nollie to the Trash and quit", detail: nil, steps: [.trashApp(app)]))
+            parts.append(.init(kind: .app, title: String(localized: "Move Nollie to the Trash and quit", comment: "Safety: Remove Nollie, what goes; keep exact meaning"), detail: nil,
+                               steps: [.trashApp(app)]))
         }
         return RemovalPlan(parts: parts, kept: [])
     }

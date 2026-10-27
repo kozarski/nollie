@@ -76,12 +76,12 @@ struct PapertrailToday: Equatable {
     /// The line under the bot's name. Said as what Papertrail saw: it can't see a program that ignores
     /// Nollie's door while the network filter is off.
     var headline: String {
-        if left == 0 { return "Nothing seen leaving today" }
+        if left == 0 { return String(localized: "Nothing seen leaving today", comment: "Safety: Papertrail, what left the device; keep exact meaning") }
         if online > 0 { return Self.wentOnline(online) }
-        return "Nothing seen going online today"
+        return String(localized: "Nothing seen going online today", comment: "Safety: Papertrail, what left the device; keep exact meaning")
     }
 
-    static func wentOnline(_ n: Int) -> String { n == 1 ? "Went online once today" : "Went online \(n) times today" }
+    static func wentOnline(_ n: Int) -> String { String(localized: "Went online \(n) times today", comment: "Safety: Papertrail, what left the device; keep exact meaning") }
 }
 
 /// Bot settings' Papertrail tab: today's answer first, then how many replies stayed on this Mac
@@ -102,14 +102,15 @@ struct PapertrailView: View {
         case .loading:
             ProgressView().frame(maxWidth: .infinity, minHeight: 180)
         case .off:
-            hero("eye.slash", "Not recording yet", line: "Papertrail isn't on for this bot yet.", tint: Ink.text2)
+            hero("eye.slash", String(localized: "Not recording yet", comment: "Safety: Papertrail is not recording what leaves the device"),
+                 line: String(localized: "Papertrail isn't on for this bot yet."), tint: Ink.text2)
                 .accessibilityIdentifier("papertrail.off")
         case .privateBot:
-            hero("lock.fill", "Private", line: "Papertrail isn't kept for private bots.", tint: .purple)
+            hero("lock.fill", String(localized: "Private", comment: "A private bot"), line: String(localized: "Papertrail isn't kept for private bots."), tint: .purple)
                 .accessibilityIdentifier("papertrail.off")
         case .failed:
             VStack(spacing: 24) {
-                hero("wifi.exclamationmark", "Couldn't check", line: "Your Mac didn't answer this time.", tint: .orange)
+                hero("wifi.exclamationmark", String(localized: "Couldn't check"), line: String(localized: "Your Mac didn't answer this time."), tint: .orange)
                 GlassButton("Try again", symbol: "arrow.clockwise", id: "papertrail.retry", action: retry)
             }
         case .on(let trail):
@@ -120,7 +121,7 @@ struct PapertrailView: View {
     // MARK: Pieces
 
     private func hero(_ symbol: String, _ title: String, line: String?, tint: Color) -> some View {
-        PageHero(symbol: symbol, title: title, line: line, tint: tint, id: "papertrail.hero")
+        PageHero(symbol: symbol, title: .verbatim(title), line: .verbatim(line), tint: tint, id: "papertrail.hero")
     }
 
     @ViewBuilder private func week(_ trail: Papertrail) -> some View {
@@ -130,11 +131,15 @@ struct PapertrailView: View {
         VStack(spacing: 32) {
             Group {
                 if today.left == 0 {
-                    hero(today.symbol, "All quiet", line: empty ? "Nothing seen leaving all week." : "Nothing seen leaving today.", tint: today.tint)
+                    hero(today.symbol, String(localized: "All quiet", comment: "Safety: Papertrail, nothing left the device"),
+                         line: empty ? String(localized: "Nothing seen leaving all week.", comment: "Safety: Papertrail, what left the device; keep exact meaning")
+                                     : String(localized: "Nothing seen leaving today.", comment: "Safety: Papertrail, what left the device; keep exact meaning"),
+                         tint: today.tint)
                 } else if today.online > 0 {
                     hero(today.symbol, PapertrailToday.wentOnline(today.online), line: routeLine(today), tint: today.tint)
                 } else {
-                    hero(today.symbol, "Your network only", line: "Nothing seen going online today.", tint: today.tint)
+                    hero(today.symbol, String(localized: "Your network only", comment: "Safety: Papertrail, things left only to the home network"),
+                         line: String(localized: "Nothing seen going online today.", comment: "Safety: Papertrail, what left the device; keep exact meaning"), tint: today.tint)
                 }
             }
             .modifier(EmptyWeekIdentifier(empty: empty))
@@ -155,8 +160,10 @@ struct PapertrailView: View {
     /// "To Claude plan." for one, "All to Claude plan." or "Mostly to Claude plan." for more.
     private func routeLine(_ today: PapertrailToday) -> String? {
         guard let route = today.topRoute else { return nil }
-        if today.online == 1 { return "To \(route)." }
-        return today.allOneRoute ? "All to \(route)." : "Mostly to \(route)."
+        if today.online == 1 { return String(localized: "To \(route).", comment: "Safety: Papertrail, where one thing went online, like Claude plan") }
+        return today.allOneRoute
+            ? String(localized: "All to \(route).", comment: "Safety: Papertrail, where everything went online, like Claude plan")
+            : String(localized: "Mostly to \(route).", comment: "Safety: Papertrail, where most things went online, like Claude plan")
     }
 
     /// The week in two big numbers, side by side, or stacked when the text is large.
@@ -166,10 +173,10 @@ struct PapertrailView: View {
             let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 20)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
             layout {
                 total(trail.stayedCount, symbol: "desktopcomputer", word: PapertrailWords.onMac, tint: .green,
-                      spoken: trail.stayedCount == 1 ? "1 reply stayed on this Mac" : "\(trail.stayedCount) replies stayed on this Mac",
+                      spoken: String(localized: "\(trail.stayedCount) replies stayed on this Mac", comment: "Safety: Papertrail, what stayed on the device"),
                       id: "papertrail.stayed")
-                total(trail.onlineCount, symbol: "globe", word: "Online", tint: .blue,
-                      spoken: trail.onlineCount == 1 ? "1 reply went online" : "\(trail.onlineCount) replies went online",
+                total(trail.onlineCount, symbol: "globe", word: String(localized: "Online", comment: "Safety: Papertrail, replies that went online"), tint: .blue,
+                      spoken: String(localized: "\(trail.onlineCount) replies went online", comment: "Safety: Papertrail, what left the device; keep exact meaning"),
                       id: "papertrail.online")
             }
         }
@@ -198,7 +205,7 @@ struct PapertrailView: View {
         .accessibilityIdentifier(id)
     }
 
-    private func rows(_ heading: String, _ entries: [Papertrail.Entry], from start: Int, today: Bool) -> some View {
+    private func rows(_ heading: LocalizedStringResource, _ entries: [Papertrail.Entry], from start: Int, today: Bool) -> some View {
         VStack(spacing: 14) {
             PageHeading(heading)
             ForEach(Array(entries.enumerated()), id: \.offset) { i, entry in row(entry, index: start + i, today: today) }
@@ -255,7 +262,7 @@ struct PapertrailRow: View {
                     .accessibilityIdentifier("papertrail.why.\(index)")
             }
             if open {
-                let why = entry.why(bot: bot.isEmpty ? "This bot" : bot)
+                let why = entry.why(bot: bot.isEmpty ? String(localized: "This bot", comment: "Stands in for a bot's name") : bot)
                 WhyNote(text: why.reason, detail: why.sent, colors: PostColors(text: Ink.text, detail: Ink.text2))
                     .padding(.leading, 36)
                     .accessibilityIdentifier("papertrail.why.\(index).text")
@@ -272,11 +279,11 @@ struct PapertrailMacUse: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            PageHeading(PapertrailWords.usedMac)
+            PageHeading(.verbatim(PapertrailWords.usedMac))
             ForEach(Array(sessions.sorted { $0.at > $1.at }.enumerated()), id: \.offset) { i, session in
                 row(session, index: i)
             }
-            PageNote(PapertrailWords.picturesStayed, symbol: "lock.fill", tint: .green, id: "papertrail.mac.note")
+            PageNote(.verbatim(PapertrailWords.picturesStayed), symbol: "lock.fill", tint: .green, id: "papertrail.mac.note")
         }
     }
 
@@ -304,19 +311,19 @@ struct PapertrailMacUse: View {
 
 private enum PapertrailWords {
     #if os(macOS)
-    static let usedMac = "Used this Mac"
-    static let picturesStayed = "Pictures of the screen stayed on this Mac."
+    static let usedMac = String(localized: "Used this Mac", comment: "Safety: Papertrail, times the bot used apps on the Mac")
+    static let picturesStayed = String(localized: "Pictures of the screen stayed on this Mac.", comment: "Safety: Papertrail, what stayed on the device; keep exact meaning")
     #else
-    static let usedMac = "Used your Mac"
-    static let picturesStayed = "Pictures of the screen stayed on your Mac."
+    static let usedMac = String(localized: "Used your Mac", comment: "Safety: Papertrail, times the bot used apps on the Mac")
+    static let picturesStayed = String(localized: "Pictures of the screen stayed on your Mac.", comment: "Safety: Papertrail, what stayed on the device; keep exact meaning")
     #endif
 
     /// Where the replies stayed, said from the device in hand.
     static var onMac: String {
         #if os(macOS)
-        "On this Mac"
+        String(localized: "On this Mac", comment: "Safety: Papertrail, replies that stayed on the device")
         #else
-        "On your Mac"
+        String(localized: "On your Mac", comment: "Safety: Papertrail, replies that stayed on the Mac")
         #endif
     }
 }
@@ -337,7 +344,7 @@ private struct PapertrailDetails: View {
     var body: some View {
         let (today, earlier) = trail.split()
         SettingsPage("papertrail.details") {
-            PageHero(symbol: "list.bullet.rectangle", title: Self.title(trail.left?.window ?? today.count + earlier.count), tint: Ink.text,
+            PageHero(symbol: "list.bullet.rectangle", title: .verbatim(Self.title(trail.left?.window ?? today.count + earlier.count)), tint: Ink.text,
                      id: "papertrail.details.hero")
             if let since = trail.recordingSince {
                 PageNote("Keeping a papertrail since \(Date(timeIntervalSince1970: since).formatted(date: .abbreviated, time: .omitted)).",
@@ -346,7 +353,7 @@ private struct PapertrailDetails: View {
             if !today.isEmpty { section("Today", today, today: true) }
             if !earlier.isEmpty { section("Earlier this week", earlier, today: false) }
             if let more = trail.more, more > 0 {
-                PageNote(more == 1 ? "1 older one isn't listed." : "\(more) older ones aren't listed.")
+                PageNote(LocalizedStringResource("\(more) older ones aren't listed.", comment: "Papertrail entries older than the list shows"))
             }
             PageNote("Searches answered from memory still count, so search counts can run a little high.", symbol: "info.circle")
         }
@@ -356,13 +363,12 @@ private struct PapertrailDetails: View {
     /// The top of the page: how many times something left this week.
     private static func title(_ count: Int) -> String {
         switch count {
-        case 0: "Nothing seen leaving this week"
-        case 1: "Left once this week"
-        default: "Left \(count) times this week"
+        case 0: String(localized: "Nothing seen leaving this week", comment: "Safety: Papertrail, what left the device; keep exact meaning")
+        default: String(localized: "Left \(count) times this week", comment: "Safety: Papertrail, what left the device; keep exact meaning")
         }
     }
 
-    private func section(_ heading: String, _ entries: [Papertrail.Entry], today: Bool) -> some View {
+    private func section(_ heading: LocalizedStringResource, _ entries: [Papertrail.Entry], today: Bool) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             PageHeading(heading)
             ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in detail(entry, today: today) }

@@ -55,7 +55,7 @@ struct CronView: View {
 
     private func row(for job: CronJob) -> some View {
         let record = records[job.identity] ?? .null
-        let title = job.name.flatMap { $0.isEmpty ? nil : $0 } ?? "Scheduled task"
+        let title = job.name.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Scheduled task")
         return NavigationLink {
             if let listedFrom {
                 CronJobDetailView(runtime: listedFrom, job: job, raw: record, onChange: { Task { await load() } })
@@ -69,7 +69,7 @@ struct CronView: View {
                     Text(ScheduledWork.status(job, raw: record)).font(.caption.weight(.semibold))
                     Text("Next check: \(ScheduledWork.next(job))").small(.caption, .secondary)
                     if job.lastRunAt != nil || job.lastStatus != nil {
-                        let when = ScheduledWork.date(job.lastRunAt) ?? "Time not reported"
+                        let when = ScheduledWork.date(job.lastRunAt) ?? String(localized: "Time not reported")
                         Text("Last check: \(when) \u{00B7} \(ScheduledWork.result(job))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -138,7 +138,7 @@ struct CronView: View {
             problem = nil
         } catch {
             guard stillValid(for: runtime) else { return }
-            problem = "Couldn't load Schedules. Check your connection and try again."
+            problem = String(localized: "Couldn't load Schedules. Check your connection and try again.")
         }
     }
 }

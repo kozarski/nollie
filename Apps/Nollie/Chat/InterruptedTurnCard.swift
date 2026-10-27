@@ -35,15 +35,17 @@ struct InterruptedTurnCard: View {
     private var notes: [String] {
         var lines: [String] = []
         if pausedForUpdate {
-            return ["Nollie was updating itself. Send a message to pick up where it left off."]
+            return [String(localized: "Nollie was updating itself. Send a message to pick up where it left off.")]
         }
         if !stoppedByYou, let doing = turn.doing {
             let stopped = doing.lowercased().hasPrefix("during")
-            lines.append(stopped ? "It was stopped \(doing)." : "It was \(doing).")
+            lines.append(stopped
+                ? String(localized: "It was stopped \(doing).", comment: "The gateway's own words follow, such as during a tool call")
+                : String(localized: "It was \(doing).", comment: "The gateway's own words follow, saying what the turn was doing"))
         }
         if showsExplanation {
             lines.append(explanation)
-            lines.append("Send a message to pick up where it left off.")
+            lines.append(String(localized: "Send a message to pick up where it left off."))
         }
         return lines
     }
@@ -59,8 +61,8 @@ struct InterruptedTurnCard: View {
     }
 
     private var headline: String {
-        if pausedForUpdate { return "Paused for an update" }
-        return stoppedByYou ? "You stopped this turn" : "Stopped before it finished"
+        if pausedForUpdate { return String(localized: "Paused for an update") }
+        return stoppedByYou ? String(localized: "You stopped this turn") : String(localized: "Stopped before it finished")
     }
 
     private var whyToggle: some View {
@@ -83,12 +85,12 @@ struct InterruptedTurnCard: View {
     /// Why a turn can end without anyone pressing Stop.
     private var explanation: String {
         let why = cause == .appWasAway
-            ? "Nollie was not connected, so the gateway ended this turn."
-            : "Either Stop was pressed, or no app was connected to this chat and the gateway ended the turn."
+            ? String(localized: "Nollie was not connected, so the gateway ended this turn.")
+            : String(localized: "Either Stop was pressed, or no app was connected to this chat and the gateway ended the turn.")
         let drop = DeviceWords.isMac
-            ? "When a Mac sleeps or loses its network, it drops the gateway connection."
-            : "iOS pauses an app soon after you leave it, and that drops the gateway connection."
-        let grace = "With no app on a chat, the gateway waits a short while (20 seconds unless changed) and then stops the turn."
+            ? String(localized: "When a Mac sleeps or loses its network, it drops the gateway connection.")
+            : String(localized: "iOS pauses an app soon after you leave it, and that drops the gateway connection.")
+        let grace = String(localized: "With no app on a chat, the gateway waits a short while (20 seconds unless changed) and then stops the turn.")
         return [why, drop, grace].joined(separator: " ")
     }
 }

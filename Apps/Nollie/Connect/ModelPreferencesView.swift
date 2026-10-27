@@ -22,18 +22,27 @@ enum ModelPlace {
     /// "On this Mac" on the Mac, "On your Mac" on the phone.
     static var here: String {
         #if os(macOS)
-        "On this Mac"
+        String(localized: "On this Mac", comment: "Where the model runs, as a title")
         #else
-        "On your Mac"
+        String(localized: "On your Mac", comment: "Where the model runs, as a title")
         #endif
     }
 
     /// The same, inside a sentence: "on this Mac".
     static var hereInSentence: String {
         #if os(macOS)
-        "on this Mac"
+        String(localized: "on this Mac", comment: "Where the model runs, inside a sentence")
         #else
-        "on your Mac"
+        String(localized: "on your Mac", comment: "Where the model runs, inside a sentence")
+        #endif
+    }
+
+    /// A whole sentence in its Mac form ("on this Mac") or its phone form ("on your Mac"), so each translates whole.
+    static func sentence(mac: @autoclosure () -> String, phone: @autoclosure () -> String) -> String {
+        #if os(macOS)
+        mac()
+        #else
+        phone()
         #endif
     }
 
@@ -94,7 +103,7 @@ final class ModelCheck {
             local = snapshot
         } catch {
             guard !Task.isCancelled, requestID == id, identity() == expected else { return }
-            self.error = "Couldn't check the current setup. Nothing was changed."
+            self.error = String(localized: "Couldn't check the current setup. Nothing was changed.")
         }
     }
 }
@@ -159,11 +168,12 @@ struct ModelPreferencesView: View {
     /// otherwise; then a plan they already pay for.
     private var choices: some View {
         VStack(spacing: 12) {
-            ModelChoiceRow(title: ModelPlace.here, line: "Private and free.", symbol: "desktopcomputer",
+            ModelChoiceRow(title: ModelPlace.here, line: String(localized: "Private and free."), symbol: "desktopcomputer",
                            recommended: true, selected: mode != .cloud, id: "models.mode.local") {
                 savedMode = ModelSetupMode.local.rawValue
             }
-            ModelChoiceRow(title: "Sign in with ChatGPT or Claude", line: "Uses a plan you already have.",
+            ModelChoiceRow(title: String(localized: "Sign in with ChatGPT or Claude"),
+                           line: String(localized: "Uses a plan you already have."),
                            symbol: "person.crop.circle.badge.checkmark",
                            selected: mode != .local, id: "models.mode.cloud") {
                 savedMode = ModelSetupMode.cloud.rawValue
@@ -182,7 +192,9 @@ struct ModelPreferencesView: View {
             if mode == .local && !ModelPlace.isLocal(provider) {
                 PageNote("Right now Nollie uses \(word). Choosing here doesn't switch it.", id: "models.current")
             } else if mode == .cloud && ModelPlace.isLocal(provider) {
-                PageNote("Right now the model runs \(ModelPlace.hereInSentence). Choosing here doesn't switch it.", id: "models.current")
+                PageNote(.verbatim(ModelPlace.sentence(mac: String(localized: "Right now the model runs on this Mac. Choosing here doesn't switch it."),
+                                             phone: String(localized: "Right now the model runs on your Mac. Choosing here doesn't switch it."))),
+                         id: "models.current")
             }
         }
         if mode != .local && !signedInToPlan {
@@ -241,27 +253,28 @@ struct ModelsHero: View {
         }
         var title: String {
             switch self {
-            case .checking: "Checking"
-            case .notConnected: "Not connected"
-            case .couldntCheck: "Couldn't check"
-            case .choose: "Choose how Nollie thinks"
+            case .checking: String(localized: "Checking", comment: "A status while Nollie reads the model")
+            case .notConnected: String(localized: "Not connected")
+            case .couldntCheck: String(localized: "Couldn't check")
+            case .choose: String(localized: "Choose how Nollie thinks")
             case .local: ModelPlace.here
             case .plan(let word), .online(let word), .unconfirmed(let word): word
-            case .needsSignIn: "Sign in needed"
+            case .needsSignIn: String(localized: "Sign in needed")
             case .download(let stage): stage.title
             }
         }
         var line: String? {
             switch self {
             case .checking: nil
-            case .notConnected: "Connect to see your model."
-            case .couldntCheck: "Nothing was changed."
-            case .choose: "\(ModelPlace.here) is free and private."
-            case .local(let name): name ?? "Private and free."
-            case .plan: "Signed in."
-            case .online: "Runs online."
-            case .needsSignIn(let word): "\(word) is signed out."
-            case .unconfirmed: "Couldn't confirm the sign-in."
+            case .notConnected: String(localized: "Connect to see your model.")
+            case .couldntCheck: String(localized: "Nothing was changed.")
+            case .choose: ModelPlace.sentence(mac: String(localized: "On this Mac is free and private."),
+                                              phone: String(localized: "On your Mac is free and private."))
+            case .local(let name): name ?? String(localized: "Private and free.")
+            case .plan: String(localized: "Signed in.")
+            case .online: String(localized: "Runs online.")
+            case .needsSignIn(let word): String(localized: "\(word) is signed out.")
+            case .unconfirmed: String(localized: "Couldn't confirm the sign-in.")
             case .download(let stage): stage.line
             }
         }
@@ -280,7 +293,7 @@ struct ModelsHero: View {
     var state: State
 
     var body: some View {
-        PageHero(symbol: state.symbol, title: state.title, line: state.line, tint: state.tint, id: "models.hero")
+        PageHero(symbol: state.symbol, title: .verbatim(state.title), line: .verbatim(state.line), tint: state.tint, id: "models.hero")
     }
 }
 
@@ -290,7 +303,7 @@ struct ModelsComparison: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     private var here: FactTile {
-        FactTile(title: ModelPlace.here, tint: .green,
+        FactTile(title: .verbatim(ModelPlace.here), tint: .green,
                  facts: [Fact(symbol: "lock.fill", word: "Private"), Fact(symbol: "gift.fill", word: "Free"),
                          Fact(symbol: "person.crop.circle.badge.xmark", word: "No account")],
                  id: "models.compare.local")
@@ -411,8 +424,11 @@ struct ModelsAdvancedView: View {
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     PageHeading("Use an API key")
-                    PageNote(keysInKeychain ? "Add a key in Hermes \(ModelPlace.hereInSentence). Nollie moves it to your Keychain."
-                                            : "Add a key in Hermes \(ModelPlace.hereInSentence). Nollie uses whichever key your assistant has.",
+                    PageNote(.verbatim(keysInKeychain
+                             ? ModelPlace.sentence(mac: String(localized: "Add a key in Hermes on this Mac. Nollie moves it to your Keychain."),
+                                                   phone: String(localized: "Add a key in Hermes on your Mac. Nollie moves it to your Keychain."))
+                             : ModelPlace.sentence(mac: String(localized: "Add a key in Hermes on this Mac. Nollie uses whichever key your assistant has."),
+                                                   phone: String(localized: "Add a key in Hermes on your Mac. Nollie uses whichever key your assistant has."))),
                              symbol: "key.fill", id: "models.keys")
                 }
                 .task(id: runtime?.connection.id) { keysInKeychain = await ManagedKeysPlace.inKeychain(runtime) }
@@ -423,7 +439,7 @@ struct ModelsAdvancedView: View {
             if showsPreference {
                 VStack(alignment: .leading, spacing: 12) {
                     PageHeading("What your choice means")
-                    PageNote(mode.detail)
+                    PageNote(.verbatim(mode.detail))
                     if mode != .local {
                         PageNote("Online models may cost money. Checking which model runs uses no online account.")
                     }
@@ -433,7 +449,7 @@ struct ModelsAdvancedView: View {
                 GlassButton("Check again", symbol: "arrow.clockwise", id: "models.refresh", action: refresh)
                     .disabled(check.loading || runtime?.socketState.isOpen != true)
                     .opacity(check.loading || runtime?.socketState.isOpen != true ? 0.5 : 1)
-                if let error = check.error { PageNote(error, id: "models.error") }
+                if let error = check.error { PageNote(.verbatim(error), id: "models.error") }
             }
         }
     }
@@ -442,26 +458,28 @@ struct ModelsAdvancedView: View {
     private var hero: some View {
         let shown: (symbol: String, title: String, line: String?, tint: Color)
         if runtime?.socketState.isOpen != true {
-            shown = ("wifi.exclamationmark", "Not connected", "Connect to see its model.", Ink.text2)
+            shown = ("wifi.exclamationmark", String(localized: "Not connected"), String(localized: "Connect to see its model."), Ink.text2)
         } else if let options = check.options {
             if let selected = options.model?.trimmingCharacters(in: .whitespacesAndNewlines), !selected.isEmpty,
                let slug = ModelPlace.provider(options), let word = ModelPlace.word(options) {
                 if ModelPlace.isLocal(slug) {
                     let name = check.local.flatMap { LocalModelDownload.entry(for: selected, in: $0) }?.displayName
-                    shown = ("desktopcomputer", name ?? selected, "Runs \(ModelPlace.hereInSentence).", .green)
+                    shown = ("desktopcomputer", name ?? selected,
+                             ModelPlace.sentence(mac: String(localized: "Runs on this Mac."), phone: String(localized: "Runs on your Mac.")), .green)
                 } else {
                     shown = ("cloud.fill", selected,
-                             ModelPlace.isPlan(slug) ? "Runs online with your \(word)." : "Runs online through \(word).", Ink.text2)
+                             ModelPlace.isPlan(slug) ? String(localized: "Runs online with your \(word).")
+                                                     : String(localized: "Runs online through \(word)."), Ink.text2)
                 }
             } else {
-                shown = ("cpu", "No model yet", "Your assistant hasn't picked one.", Ink.text2)
+                shown = ("cpu", String(localized: "No model yet"), String(localized: "Your assistant hasn't picked one."), Ink.text2)
             }
         } else if check.error != nil {
-            shown = ("exclamationmark.triangle.fill", "Couldn't check", "Nothing was changed.", .orange)
+            shown = ("exclamationmark.triangle.fill", String(localized: "Couldn't check"), String(localized: "Nothing was changed."), .orange)
         } else {
-            shown = ("cpu", "Checking", nil, Ink.text2)
+            shown = ("cpu", String(localized: "Checking", comment: "A status while Nollie reads the model"), nil, Ink.text2)
         }
-        return PageHero(symbol: shown.symbol, title: shown.title, line: shown.line, tint: shown.tint, id: "models.advanced.hero")
+        return PageHero(symbol: shown.symbol, title: .verbatim(shown.title), line: .verbatim(shown.line), tint: shown.tint, id: "models.advanced.hero")
     }
 
     /// The model Hermes uses now: its name, the identifier Hermes knows it by, and the sign-in.
@@ -471,12 +489,12 @@ struct ModelsAdvancedView: View {
             if let options = check.options {
                 if let selected = options.model, !selected.isEmpty {
                     let name = check.local.flatMap { LocalModelDownload.entry(for: selected, in: $0) }?.displayName
-                    ModelsDetailRow(name: "Model", value: name ?? "Chosen")
-                    ModelsDetailRow(name: "Model identifier", value: selected, selectable: true)
+                    ModelsDetailRow(name: String(localized: "Model"), value: name ?? String(localized: "Chosen", comment: "A model is chosen"))
+                    ModelsDetailRow(name: String(localized: "Model identifier"), value: selected, selectable: true)
                 } else {
-                    ModelsDetailRow(name: "Model", value: "Not chosen")
+                    ModelsDetailRow(name: String(localized: "Model"), value: String(localized: "Not chosen", comment: "No model is chosen"))
                 }
-                ModelsDetailRow(name: "Account", value: Self.accountDetail(options))
+                ModelsDetailRow(name: String(localized: "Account"), value: Self.accountDetail(options))
             } else if check.loading {
                 ProgressView("Checking your connection")
                     .frame(maxWidth: .infinity)
@@ -495,9 +513,9 @@ struct ModelsAdvancedView: View {
             let canChoose = setup.canBegin && choices.count > 1
             if setup.selectedModel != nil || canTry || canChoose {
                 VStack(alignment: .leading, spacing: 12) {
-                    PageHeading("Your model \(ModelPlace.hereInSentence)")
+                    PageHeading(.verbatim(ModelPlace.sentence(mac: String(localized: "Your model on this Mac"), phone: String(localized: "Your model on your Mac"))))
                     if let selected = setup.selectedModel {
-                        ModelsDetailRow(name: "Downloaded", value: selected, selectable: true)
+                        ModelsDetailRow(name: String(localized: "Downloaded", comment: "The model that was downloaded"), value: selected, selectable: true)
                             .testID("models.local.details")
                     }
                     if canTry { firstReply(setup) }
@@ -527,14 +545,14 @@ struct ModelsAdvancedView: View {
                 .nollieGlass(.regular, in: .rect(cornerRadius: 26, style: .continuous), solid: Ink.card)
                 .testID("models.local.reply")
         }
-        if setup.state == .selected, let message = setup.message { PageNote(message) }
+        if setup.state == .selected, let message = setup.message { PageNote(.verbatim(message)) }
     }
 
     /// Another model that fits, for Download and use on the Models page.
     private func otherModels(_ choices: [LocalModelCatalogEntry], recommended: String?) -> some View {
         VStack(spacing: 12) {
             GlassChoice("Other models", selection: Binding(get: { download.selectedID }, set: { download.selectedID = $0 }),
-                        options: choices.map { ($0.id, $0.displayName + ($0.id == recommended ? " (recommended)" : "")) },
+                        options: choices.map { ($0.id, $0.id == recommended ? String(localized: "\($0.displayName) (recommended)") : $0.displayName) },
                         id: "models.local.choice")
             PageNote("Download and use gets the one you pick.")
         }
@@ -547,20 +565,20 @@ struct ModelsAdvancedView: View {
         if let local = check.local {
             VStack(alignment: .leading, spacing: 12) {
                 PageHeading("The computer")
-                if let hardware = local.hardware { PageNote(hardware.summary, symbol: "memorychip") }
-                if let fit = local.recommended?.fitSummary { PageNote(fit) }
+                if let hardware = local.hardware { PageNote(.verbatim(hardware.summary), symbol: "memorychip") }
+                if let fit = local.recommended?.fitSummary { PageNote(.verbatim(fit)) }
                 if let recommended = local.recommended, LocalModelQuickstartSection.scope(for: runtime) == nil {
-                    ModelsDetailRow(name: "Suggested", value: recommended.displayName)
-                    ModelsDetailRow(name: "Download", value: recommended.downloadLabel)
+                    ModelsDetailRow(name: String(localized: "Suggested", comment: "The model suggested for this computer"), value: recommended.displayName)
+                    ModelsDetailRow(name: String(localized: "Download", comment: "The size of the download"), value: recommended.downloadLabel)
                     PageNote("Downloads work with the assistant Nollie set up on this Mac. Your setup stays as it is.")
                 } else if local.recommended == nil {
-                    PageNote(local.summary)
+                    PageNote(.verbatim(local.summary))
                 }
             }
         } else if runtime == nil, let hardware = MacModelHardware.current() {
             VStack(alignment: .leading, spacing: 12) {
                 PageHeading("The computer")
-                PageNote(hardware.summary, symbol: "memorychip")
+                PageNote(.verbatim(hardware.summary), symbol: "memorychip")
                 PageNote("This is the Mac running Nollie. A remote assistant uses its own computer.")
             }
         }
@@ -568,10 +586,10 @@ struct ModelsAdvancedView: View {
 
     static func accountDetail(_ options: ModelOptionsResult) -> String {
         switch OnboardingModelStatus.read(options) {
-        case .ready: "Connected"
-        case .needsSignIn: "Sign-in needed"
-        case .notConfigured: "No model selected"
-        case .unverified: "Sign-in not verified"
+        case .ready: String(localized: "Connected")
+        case .needsSignIn: String(localized: "Sign-in needed")
+        case .notConfigured: String(localized: "No model selected")
+        case .unverified: String(localized: "Sign-in not verified")
         }
     }
 }

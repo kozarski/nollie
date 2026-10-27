@@ -27,13 +27,13 @@ public enum PushRelay {
 
         public var errorDescription: String? {
             switch self {
-            case .rejected(let reason): return "The relay would not register this device: \(reason)"
-            case .badPayload: return "This notification's contents could not be unlocked."
-            case .invalidInvitation: return "Check the invitation code and try again."
-            case .invitationRequired: return "Enter your beta invitation to turn on notifications."
-            case .revoked: return "Notifications for this installation have been disabled. Contact the beta organizer."
-            case .rateLimited: return "Too many attempts. Give it a minute, then try again."
-            case .unavailable: return "Notifications could not connect. Try again in a moment."
+            case .rejected(let reason): return String(localized: "The relay would not register this device: \(reason)", table: "Core")
+            case .badPayload: return String(localized: "This notification's contents could not be unlocked.", table: "Core")
+            case .invalidInvitation: return String(localized: "Check the invitation code and try again.", table: "Core")
+            case .invitationRequired: return String(localized: "Enter your beta invitation to turn on notifications.", table: "Core")
+            case .revoked: return String(localized: "Notifications for this installation have been disabled. Contact the beta organizer.", table: "Core")
+            case .rateLimited: return String(localized: "Too many attempts. Give it a minute, then try again.", table: "Core")
+            case .unavailable: return String(localized: "Notifications could not connect. Try again in a moment.", table: "Core")
             }
         }
     }

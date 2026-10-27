@@ -38,8 +38,12 @@ struct CompanionStatusChecks: View {
     }
 
     var body: some View {
-        check("Installed", installedMark, spoken: installedMark == .yes ? "Installed" : "Not installed")
-        check("Running", runningMark, spoken: runningMark == .yes ? "Running" : "Not running")
+        check(String(localized: "Installed", comment: "The companion is installed"), installedMark,
+              spoken: installedMark == .yes ? String(localized: "Installed", comment: "The companion is installed")
+                                            : String(localized: "Not installed", comment: "The companion"))
+        check(String(localized: "Running", comment: "The companion is running"), runningMark,
+              spoken: runningMark == .yes ? String(localized: "Running", comment: "The companion is running")
+                                          : String(localized: "Not running", comment: "The companion"))
     }
 
     private func check(_ title: String, _ mark: Mark, spoken: String) -> some View {
@@ -99,8 +103,8 @@ struct CompanionStatusRows: View {
     private var showsUpdate: Bool { updateInFlight || setup.updateAvailable || setup.updateOutcome != nil }
 
     var body: some View {
-        StatusLine(title: "Installed") { installed }
-        StatusLine(title: "Running") { running }
+        StatusLine(title: String(localized: "Installed", comment: "The companion is installed")) { installed }
+        StatusLine(title: String(localized: "Running", comment: "The companion is running")) { running }
         notes
         if showsUpdate {
             CompanionUpdateRows(setup: setup, runtime: runtime)
@@ -131,8 +135,8 @@ struct CompanionStatusRows: View {
 
     private var staleWarning: String {
         setup.runningOlderCode
-            ? "The gateway is still running the previous companion code. Restart it to load what is on disk."
-            : "The gateway is on an older companion. Restart it to load v\(bundled)."
+            ? String(localized: "The gateway is still running the previous companion code. Restart it to load what is on disk.")
+            : String(localized: "The gateway is on an older companion. Restart it to load v\(bundled).")
     }
 
     // MARK: Installed
@@ -145,14 +149,14 @@ struct CompanionStatusRows: View {
         } else if setup.checkingCompanion {
             ProgressView()
         } else {
-            Facet(text: "Not installed", symbol: "xmark.circle", colour: .secondary)
+            Facet(text: String(localized: "Not installed", comment: "The companion"), symbol: "xmark.circle", colour: .secondary)
         }
     }
 
     private func installedWords(_ version: String) -> String {
-        if matchesBuild { return "v\(version) · matches this build" }
-        if version == bundled { return "v\(version) · files differ from the ones in this build" }
-        return "v\(version) · this build has v\(bundled)"
+        if matchesBuild { return String(localized: "v\(version) · matches this build") }
+        if version == bundled { return String(localized: "v\(version) · files differ from the ones in this build") }
+        return String(localized: "v\(version) · this build has v\(bundled)")
     }
 
     // MARK: Running
@@ -163,7 +167,7 @@ struct CompanionStatusRows: View {
         } else if setup.checkingCompanion {
             ProgressView()
         } else {
-            Facet(text: "No heartbeat", symbol: "questionmark.circle", colour: .secondary)
+            Facet(text: String(localized: "No heartbeat"), symbol: "questionmark.circle", colour: .secondary)
         }
     }
 
@@ -172,20 +176,25 @@ struct CompanionStatusRows: View {
         let ago = Duration.seconds(age).formatted(.units(width: .abbreviated, maximumUnitCount: 1))
         let version = "v" + beat.version
         if age > PushSetupModel.heartbeatSeconds * 6 {
-            return Facet(text: "Stopped · last seen \(ago) ago (\(version))", symbol: "xmark.circle.fill", colour: .red)
+            return Facet(text: String(localized: "Stopped · last seen \(ago) ago (\(version))", comment: "The first %@ is a length of time, the second a version"), symbol: "xmark.circle.fill", colour: .red)
         }
         if beat.connected == false {
-            let state = beat.error == "connecting…" ? "connecting…" : "not connected"
-            let older = setup.runningOlderCode ? " (older code)" : ""
-            return Facet(text: "\(version)\(older) · \(state)", symbol: "exclamationmark.triangle.fill", colour: .orange)
+            // The gateway's own word "connecting…" is matched in English.
+            let connecting = beat.error == "connecting…"
+            let text = switch (setup.runningOlderCode, connecting) {
+            case (true, true): String(localized: "\(version) (older code) · connecting…")
+            case (true, false): String(localized: "\(version) (older code) · not connected")
+            case (false, true): String(localized: "\(version) · connecting…")
+            case (false, false): String(localized: "\(version) · not connected")
+            }
+            return Facet(text: text, symbol: "exclamationmark.triangle.fill", colour: .orange)
         }
         if setup.runningOlderCode {
-            return Facet(text: "\(version) · connected, but running older code · \(ago) ago",
+            return Facet(text: String(localized: "\(version) · connected, but running older code · \(ago) ago"),
                          symbol: "arrow.clockwise.circle.fill", colour: .orange)
         }
         let devices = beat.devices ?? 0
-        let plural = devices == 1 ? "" : "s"
-        return Facet(text: "\(version) · connected · \(devices) device\(plural) · \(ago) ago",
+        return Facet(text: String(localized: "\(version) · connected · \(devices) devices · \(ago) ago"),
                      symbol: "checkmark.circle.fill", colour: .green)
     }
 }
@@ -198,7 +207,7 @@ private struct ReinstallBlock: View {
     let runtime: GatewayRuntime
 
     var body: some View {
-        BusyButton(title: "Reinstall plugin v\(PushSetupModel.bundledPluginVersion)", busyTitle: "Installing…",
+        BusyButton(title: String(localized: "Reinstall plugin v\(PushSetupModel.bundledPluginVersion)"), busyTitle: String(localized: "Installing…"),
                    symbol: "arrow.clockwise.circle", busy: setup.installingPlugin) {
             Task {
                 await setup.installPlugin(runtime: runtime)
@@ -229,7 +238,7 @@ private struct CheckNowButton: View {
 
     @ViewBuilder private var content: some View {
         if busy {
-            SpinnerLabel("Checking…")
+            SpinnerLabel(String(localized: "Checking…"))
         } else if justChecked {
             Label("Checked just now", systemImage: "checkmark.circle")
         } else if let last = setup.companionCheckedAt {

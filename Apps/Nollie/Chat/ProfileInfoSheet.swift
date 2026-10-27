@@ -135,7 +135,7 @@ struct ProfileCardView: View {
                     .padding(.top, 18)
                 VStack(spacing: 32) {
                     tabContent
-                    if let note = state.note { CardNote(words: note, id: "profile.status") }
+                    if let note = state.note { CardNote(words: note, saved: state.noteSaved, id: "profile.status") }
                 }
                 .frame(maxWidth: 560)
                 .padding(EdgeInsets(top: 24, leading: 24, bottom: 40, trailing: 24))

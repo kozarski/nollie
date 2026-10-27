@@ -43,14 +43,14 @@ struct ToolRunRow: View, Equatable {
     }
 
     static func duration(_ seconds: Double) -> String {
-        if seconds < 60 { return "\(Int(seconds.rounded()))s" }
-        return "\(Int((seconds / 60).rounded())) min"
+        if seconds < 60 { return String(localized: "\(Int(seconds.rounded()))s", comment: "A step's time in seconds, short") }
+        return String(localized: "\(Int((seconds / 60).rounded())) min", comment: "A step's time in minutes, short")
     }
 
     private var detail: String {
-        var parts = ["\(steps.count) step" + (steps.count == 1 ? "" : "s")]
+        var parts = [String(localized: "\(steps.count) steps")]
         if seconds >= 1, running == nil { parts.append(Self.duration(seconds)) }
-        if failed > 0 { parts.append("\(failed) failed") }
+        if failed > 0 { parts.append(String(localized: "\(failed) failed", comment: "How many steps failed")) }
         return parts.joined(separator: " · ")
     }
 
@@ -95,7 +95,7 @@ struct ToolRunRow: View, Equatable {
             headerRow
         }
         .accessibilityLabel(title)
-        .accessibilityValue((isOpen ? "Expanded" : "Collapsed") + ", " + detail)
+        .accessibilityValue(isOpen ? String(localized: "Expanded, \(detail)") : String(localized: "Collapsed, \(detail)"))
         .accessibilityHint(isOpen ? "Hides the steps" : "Shows each step")
         .accessibilityIdentifier("thread.steps")
     }
@@ -166,9 +166,9 @@ struct ToolCardView: View {
 
     private var status: String {
         switch activity.status {
-        case .running: "Running"
-        case .done: "Completed"
-        case .failed: "Failed"
+        case .running: String(localized: "Running", comment: "A step's state")
+        case .done: String(localized: "Completed", comment: "A step's state")
+        case .failed: String(localized: "Failed", comment: "A step's state")
         }
     }
 
@@ -193,8 +193,8 @@ struct ToolCardView: View {
 
     private var header: some View {
         PlainButton(action: toggle) { headerRow }
-            .accessibilityLabel(presentation.title + (presentation.detail.map { ", " + $0 } ?? ""))
-            .accessibilityValue((expanded ? "Expanded" : "Collapsed") + ", " + status)
+            .accessibilityLabel(presentation.detail.map { String(localized: "\(presentation.title), \($0)") } ?? presentation.title)
+            .accessibilityValue(expanded ? String(localized: "Expanded, \(status)") : String(localized: "Collapsed, \(status)"))
             .accessibilityHint(expanded ? "Hides this step’s details" : "Shows this step’s details")
             .accessibilityIdentifier("activity.step.\(identity)")
     }
@@ -227,7 +227,7 @@ struct ToolCardView: View {
         }
     }
 
-    private func caption(_ words: String, _ symbol: String) -> some View {
+    private func caption(_ words: LocalizedStringKey, _ symbol: String) -> some View {
         Label(words, systemImage: symbol).quiet(.caption.weight(.medium))
     }
 

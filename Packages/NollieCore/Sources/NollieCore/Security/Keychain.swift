@@ -212,6 +212,6 @@ public struct KeychainError: LocalizedError {
 
     public var errorDescription: String? {
         let code = String(status)
-        return "Keychain error " + code
+        return String(localized: "Keychain error \(String(code))", table: "Core")
     }
 }

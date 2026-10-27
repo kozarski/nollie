@@ -83,7 +83,7 @@ struct FamilyWaitingCard: View {
     private var about: String {
         if let ask = AskFirstAsk(approval) { return ask.summary }
         if let said = approval.description, !said.isEmpty { return said }
-        return "Go ahead with something that needs a yes."
+        return String(localized: "Go ahead with something that needs a yes.", comment: "Safety: what an approval waiting on the owner would do; keep exact meaning")
     }
 
     var body: some View {
@@ -121,8 +121,14 @@ struct FamilyWaitingCard: View {
 struct FamilyJoinConfirmation: View {
     var invite: NollieLinkInvite
 
-    private var owner: String { invite.owner.isEmpty ? "Someone at home" : invite.owner }
-    private var mac: String { invite.owner.isEmpty ? "their Mac" : "\(invite.owner)'s Mac" }
+    private var owner: String { invite.owner.isEmpty ? String(localized: "Someone at home") : invite.owner }
+    private var line: String {
+        invite.owner.isEmpty
+            ? String(localized: "They say yes to anything that matters. Your chats are kept on their Mac.",
+                     comment: "Safety: who approves for someone at home; keep exact meaning")
+            : String(localized: "\(invite.owner) says yes to anything that matters. Your chats are kept on \(invite.owner)'s Mac.",
+                     comment: "Safety: who approves for someone at home; keep exact meaning. Both are the owner's first name.")
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -132,7 +138,7 @@ struct FamilyJoinConfirmation: View {
                 .font(.title2.bold()).multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("family.join.title")
-            Text("\(invite.owner.isEmpty ? "They say" : invite.owner + " says") yes to anything that matters. Your chats are kept on \(mac).")
+            Text(line)
                 .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("family.join.line")

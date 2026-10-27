@@ -84,8 +84,9 @@ struct VoicePermissionSheet: View {
     }
 
     private var line: String {
-        if state == .denied { return "The microphone is off for Nollie. You can turn it on in Settings." }
-        return "I listen while you talk. Your voice stays on \(DeviceWords.this), and only your words are sent."
+        if state == .denied { return String(localized: "The microphone is off for Nollie. You can turn it on in Settings.") }
+        return String(localized: "I listen while you talk. Your voice stays on \(DeviceWords.this), and only your words are sent.",
+                      comment: "Safety: what leaves the device in talk mode; %@ is a phrase like this iPhone")
     }
 
     private func allow() {

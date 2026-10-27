@@ -96,8 +96,8 @@ struct QuickAnswerSheet: View {
                 .foregroundStyle(Ink.text)
                 .accessibilityAddTraits(.isHeader)
             FlowLayout(spacing: 8) {
-                badge("lock.fill", "Stays on \(DeviceWords.this)")
-                badge("bubble.left.fill", "Talk only")
+                badge("lock.fill", String(localized: "Stays on \(DeviceWords.this)", comment: "%@ is this Mac, this iPhone or this iPad"))
+                badge("bubble.left.fill", String(localized: "Talk only", comment: "Quick answers only talk; they take no actions"))
             }
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityElement(children: .combine)
@@ -117,10 +117,14 @@ struct QuickAnswerSheet: View {
 
     // MARK: Starters
 
+    /// The prompt starts the person's own question, so it is in their language too.
     private static let starterIdeas: [(symbol: String, words: String, prompt: String)] = [
-        ("text.bubble", "Reword a message", "Reword this so it sounds warmer: "),
-        ("lightbulb", "Explain something", "Explain simply: "),
-        ("fork.knife", "Ideas for dinner", "What could I cook tonight with "),
+        ("text.bubble", String(localized: "Reword a message"),
+         String(localized: "Reword this so it sounds warmer: ", comment: "Starts a question the person finishes typing; keep the trailing space")),
+        ("lightbulb", String(localized: "Explain something"),
+         String(localized: "Explain simply: ", comment: "Starts a question the person finishes typing; keep the trailing space")),
+        ("fork.knife", String(localized: "Ideas for dinner"),
+         String(localized: "What could I cook tonight with ", comment: "Starts a question the person finishes typing; keep the trailing space")),
     ]
 
     private var starters: some View {
@@ -193,7 +197,7 @@ struct QuickAnswerSheet: View {
             Spacer(minLength: 40)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(turn.state == .writing ? "Writing" : turn.answer)
+        .accessibilityLabel(turn.state == .writing ? String(localized: "Writing", comment: "A quick answer is being written") : turn.answer)
         .testID(turn.state == .writing ? "quickAnswer.writing" : "quickAnswer.answer")
     }
 

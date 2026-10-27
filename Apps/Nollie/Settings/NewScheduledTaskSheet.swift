@@ -8,10 +8,10 @@ struct ScheduledTaskDraft {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .price: "Watch a price"
-            case .weekend: "Weekend ideas"
-            case .morning: "Morning brief"
-            case .project: "Project check-in"
+            case .price: String(localized: "Watch a price", comment: "A starter idea for a scheduled task; also its first name")
+            case .weekend: String(localized: "Weekend ideas", comment: "A starter idea for a scheduled task; also its first name")
+            case .morning: String(localized: "Morning brief", comment: "A starter idea for a scheduled task; also its first name")
+            case .project: String(localized: "Project check-in", comment: "A starter idea for a scheduled task; also its first name")
             }
         }
         var symbol: String {
@@ -24,12 +24,13 @@ struct ScheduledTaskDraft {
         }
         var subjectLabel: String {
             switch self {
-            case .price: "Item or link"
-            case .weekend: "Place and interests"
-            case .morning: "What matters to you"
-            case .project: "Project or existing task"
+            case .price: String(localized: "Item or link")
+            case .weekend: String(localized: "Place and interests")
+            case .morning: String(localized: "What matters to you")
+            case .project: String(localized: "Project or existing task")
             }
         }
+        // Goes to the model, so it stays in English.
         var instructions: String {
             switch self {
             case .price: "Check the current price and availability. Include the seller, total price and source link when a worthwhile change happens. Do not buy anything."
@@ -44,11 +45,11 @@ struct ScheduledTaskDraft {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .once: "Once"
-            case .daily: "Every day"
-            case .weekdays: "Weekdays"
-            case .weekends: "Weekends"
-            case .weekly: "Weekly"
+            case .once: String(localized: "Once", comment: "How often a task repeats")
+            case .daily: String(localized: "Every day", comment: "How often a task repeats")
+            case .weekdays: String(localized: "Weekdays", comment: "How often a task repeats")
+            case .weekends: String(localized: "Weekends", comment: "How often a task repeats")
+            case .weekly: String(localized: "Weekly", comment: "How often a task repeats")
             }
         }
     }
@@ -72,6 +73,7 @@ struct ScheduledTaskDraft {
         weekday = 5
     }
 
+    // Goes to the model, so it stays in English.
     var instructions: String {
         let text = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard starter != nil else { return text }
@@ -174,7 +176,7 @@ struct NewScheduledTaskSheet: View {
                                 .accessibilityIdentifier("schedules.starter.\(choice.id)")
                         }
                     } label: {
-                        Label(draft.starter?.title ?? "Start with an idea", systemImage: draft.starter?.symbol ?? "sparkles")
+                        Label(draft.starter?.title ?? String(localized: "Start with an idea"), systemImage: draft.starter?.symbol ?? "sparkles")
                     }
                     .accessibilityIdentifier("schedules.starters")
                 }
@@ -272,7 +274,7 @@ struct NewScheduledTaskSheet: View {
             let reply: JSONValue = try await runtime.api.send("POST", "/api/cron/jobs", profile: submitted.profile, json: payload)
             guard allowed else { return }
             guard submitted.confirmsCreation(reply, payload: payload) else {
-                error = "The new task was not confirmed. Close this sheet and check Schedules before creating it again."
+                error = String(localized: "The new task was not confirmed. Close this sheet and check Schedules before creating it again.")
                 return
             }
             await onCreate()
@@ -280,7 +282,7 @@ struct NewScheduledTaskSheet: View {
             dismiss()
         } catch {
             guard allowed else { return }
-            self.error = "The new task was not confirmed. It may have been saved. Close this sheet and check Schedules before creating it again."
+            self.error = String(localized: "The new task was not confirmed. It may have been saved. Close this sheet and check Schedules before creating it again.")
         }
     }
 }

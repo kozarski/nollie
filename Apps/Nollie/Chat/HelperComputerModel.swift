@@ -33,9 +33,9 @@ final class HelperComputerModel {
             error = nil
         } catch HermesAPIError.http(let code, _) where code == 404 {
             status = nil
-            error = "This needs Nollie's computer add-on on your Mac."
+            error = String(localized: "This needs Nollie's computer add-on on your Mac.")
         } catch {
-            if status == nil { self.error = "Couldn't check its computer right now." }
+            if status == nil { self.error = String(localized: "Couldn't check its computer right now.") }
         }
         if status?.on == true { wantsOn = false }
         if wantsOn, let status, status.setup == .ready, !status.on, !status.busy {
@@ -92,7 +92,7 @@ final class HelperComputerModel {
             await load(rt)
         } catch {
             if action == "on" { wantsOn = false }
-            actionError = "Couldn't confirm that change. Here's how it is now."
+            actionError = String(localized: "Couldn't confirm that change. Here's how it is now.")
             await load(rt)
         }
     }
@@ -100,6 +100,6 @@ final class HelperComputerModel {
     /// The add-on's sentence without the status code the client appends.
     static func plain(_ detail: String) -> String {
         let text = detail.trimmingCharacters(in: .whitespacesAndNewlines)
-        return text.isEmpty ? "That didn't work. Try again in a moment." : text
+        return text.isEmpty ? String(localized: "That didn't work. Try again in a moment.") : text
     }
 }

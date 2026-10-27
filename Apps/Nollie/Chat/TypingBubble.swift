@@ -52,7 +52,8 @@ struct TypingBubble: View {
         .overlay(alignment: .bottomLeading) { bead(12, nudge: CGSize(width: -2, height: 2)) }
         .overlay(alignment: .bottomLeading) { bead(5, nudge: CGSize(width: -10, height: 9)) }
         .padding(EdgeInsets(top: 0, leading: 6, bottom: 6, trailing: 0))
-        .accessibilityLabel(tool.map { "Running \($0)" } ?? "Typing")
+        .accessibilityLabel(tool.map { String(localized: "Running \($0)", comment: "A bot is running a tool; the tool's name follows") }
+                            ?? String(localized: "Typing", comment: "A bot is writing its reply"))
     }
 }
 
@@ -113,7 +114,7 @@ struct WorkingLine: View {
         }
         .padding(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 0))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(text ?? "Working")
+        .accessibilityLabel(text ?? String(localized: "Working", comment: "A bot's state"))
     }
 }
 

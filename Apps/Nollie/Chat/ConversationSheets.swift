@@ -93,7 +93,7 @@ struct ApprovalConfirmation: ViewModifier {
     }
 
     private var words: String {
-        guard let request = waitingCard?.approval else { return "That request is not waiting any more." }
+        guard let request = waitingCard?.approval else { return String(localized: "That request is not waiting any more.") }
         return ConversationView.confirmWords(request)
     }
 

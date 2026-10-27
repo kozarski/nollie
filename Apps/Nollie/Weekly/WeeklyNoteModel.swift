@@ -108,7 +108,7 @@ final class WeeklyNoteModel {
         if worked {
             if let undone = done[line], undone.undo == action { done[line] = nil } else { done[line] = action }
         } else {
-            problem = "That didn't go through. Try again in a moment."
+            problem = String(localized: "That didn't go through. Try again in a moment.")
         }
     }
 
@@ -127,8 +127,9 @@ final class WeeklyNoteModel {
 /// are the same every week, so it never says something the records don't.
 enum WeeklyNoteReminder {
     static let identifier = "nollie.weekly"
-    static let title = "Your week"
-    static let body = "What your helpers did, and what left your Mac."
+    static let title = String(localized: "Your week", comment: "The weekly note's notification title")
+    static let body = String(localized: "What your helpers did, and what left your Mac.",
+                             comment: "Safety: the weekly note's notification; it lists what left the Mac")
 
     static func sync(on: Bool, timing: WeeklyNoteTiming, center: UNUserNotificationCenter = .current()) {
         center.removePendingNotificationRequests(withIdentifiers: [identifier])

@@ -74,23 +74,29 @@ public enum ConnectionTester {
             let status: GatewayStatusResponse = try await api.get("/api/status", authenticated: false)
             (version, authRequired) = (status.version, status.authRequired)
             let providers = status.authProviders?.joined(separator: ", ") ?? "-"
-            return "Hermes \(status.version ?? "?"), " + (status.authRequired == true ? "auth gate on (\(providers))" : "no auth gate")
+            let version = status.version ?? "?"
+            return status.authRequired == true
+                ? String(localized: "Hermes \(version), auth gate on (\(providers))", table: "Core", comment: "A connection check: the Hermes version and its sign-in providers")
+                : String(localized: "Hermes \(version), no auth gate", table: "Core", comment: "A connection check: the Hermes version")
         }
 
         /// The credentials suit the gateway's kind of sign-in, and work.
         func checkCredentials() async throws -> String {
             if authRequired == true {
                 if !usesBearer {
-                    throw Verdict(text: "This gateway requires a sign-in (its auth gate is on, non-loopback bind). Choose “Sign in with browser” or “Username & password” rather than a session token.")
+                    throw Verdict(text: String(localized: "This gateway requires a sign-in (its auth gate is on, non-loopback bind). Choose “Sign in with browser” or “Username & password” rather than a session token.", table: "Core"))
                 }
                 let me: AuthMeResponse = try await api.get("/api/auth/me")
-                return "Signed in as \(me.displayName ?? me.email ?? me.userId ?? "user") via \(me.provider ?? "provider")"
+                let who = me.displayName ?? me.email ?? me.userId ?? String(localized: "user", table: "Core", comment: "Stands in for an unknown account name")
+                let provider = me.provider ?? String(localized: "provider", table: "Core", comment: "Stands in for an unknown sign-in provider")
+                return String(localized: "Signed in as \(who) via \(provider)", table: "Core")
             }
             if usesBearer {
-                throw Verdict(text: "This gateway has no auth gate and wants the dashboard session token (HERMES_DASHBOARD_SESSION_TOKEN). Change the auth mode to “Session token”.")
+                throw Verdict(text: String(localized: "This gateway has no auth gate and wants the dashboard session token (HERMES_DASHBOARD_SESSION_TOKEN). Change the auth mode to “Session token”.", table: "Core"))
             }
             let profiles: ProfilesResponse = try await api.get("/api/profiles")
-            return "Session token works: \(profiles.profiles.count) profile(s) found"
+            let found = profiles.profiles.count
+            return String(localized: "Session token works: \(found) profile(s) found", table: "Core")
         }
 
         private func oneUseTicket() async throws -> String? {
@@ -105,17 +111,17 @@ public enum ConnectionTester {
             do {
                 return try await probeWebSocket(url: address, headers: signer.publicHeaders, pin: pin)
             } catch {
-                let hint = " The HTTP checks passed but the WebSocket did not. Make sure your reverse proxy or Cloudflare tunnel passes Upgrade requests through to /api/ws, that Access (if used) gets the same service-token headers, and that the gateway's dashboard.public_url matches this host."
-                throw Verdict(text: error.localizedDescription + hint)
+                let why = error.localizedDescription
+                throw Verdict(text: String(localized: "\(why) The HTTP checks passed but the WebSocket did not. Make sure your reverse proxy or Cloudflare tunnel passes Upgrade requests through to /api/ws, that Access (if used) gets the same service-token headers, and that the gateway's dashboard.public_url matches this host.", table: "Core", comment: "The first value is the error the WebSocket met"))
             }
         }
     }
 
     public static func run(connection: GatewayConnection, secrets: GatewaySecrets, progress: @escaping @Sendable ([ConnectionTestStep]) -> Void) async -> ConnectionTestOutcome {
         let titles = [
-            ("status", "GET /api/status returns JSON"),
-            ("auth", "Credentials accepted"),
-            ("ws", "WebSocket /api/ws connects and gateway.ready comes back"),
+            ("status", String(localized: "GET /api/status returns JSON", table: "Core", comment: "A connection check step")),
+            ("auth", String(localized: "Credentials accepted", table: "Core", comment: "A connection check step")),
+            ("ws", String(localized: "WebSocket /api/ws connects and gateway.ready comes back", table: "Core", comment: "A connection check step")),
         ]
         var steps = titles.map { ConnectionTestStep(id: $0.0, title: $0.1) }
         let probe = Probe(connection: connection, secrets: secrets)
@@ -174,9 +180,9 @@ public enum ConnectionTester {
     /// What a socket that closed before it was ready means, in words for the person.
     private static func closeError(code: Int, reason: String, underlying: Error) -> Error {
         switch code {
-        case 4401: SocketError.closed(code: code, reason: "credential rejected (\(reason))")
-        case 4403: SocketError.closed(code: code, reason: "blocked by the host/origin guard (\(reason)); set dashboard.public_url to this URL")
-        case 4408: SocketError.closed(code: code, reason: "this address is not allowed (the gateway accepts loopback only)")
+        case 4401: SocketError.closed(code: code, reason: String(localized: "credential rejected (\(reason))", table: "Core", comment: "Why a WebSocket closed; the value is the gateway's own reason"))
+        case 4403: SocketError.closed(code: code, reason: String(localized: "blocked by the host/origin guard (\(reason)); set dashboard.public_url to this URL", table: "Core", comment: "Why a WebSocket closed; the value is the gateway's own reason"))
+        case 4408: SocketError.closed(code: code, reason: String(localized: "this address is not allowed (the gateway accepts loopback only)", table: "Core", comment: "Why a WebSocket closed"))
         case 1...: SocketError.closed(code: code, reason: reason)
         default: HermesAPIError.transport(underlying.localizedDescription)
         }
@@ -201,14 +207,14 @@ public enum ConnectionTester {
                         case .event(let event) where event.type == "gateway.ready":
                             return true
                         case .event(let event) where event.type == "gateway.error":
-                            throw HermesAPIError.transport("The gateway reported an error before it was ready.")
+                            throw HermesAPIError.transport(String(localized: "The gateway reported an error before it was ready.", table: "Core"))
                         case .response(_, _, let failure?):
                             throw failure
                         default:
                             continue
                         }
                     }
-                    throw HermesAPIError.transport("The gateway sent too many messages without becoming ready.")
+                    throw HermesAPIError.transport(String(localized: "The gateway sent too many messages without becoming ready.", table: "Core"))
                 }
                 race.addTask {
                     try await Task.sleep(for: .seconds(timeout))

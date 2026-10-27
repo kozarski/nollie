@@ -14,6 +14,24 @@ public enum AppleDataArea: String, CaseIterable, Codable, Sendable, Identifiable
 
     public var title: String {
         switch self {
+        case .calendar: String(localized: "Calendar", table: "Core", comment: "The Mac's Calendar app")
+        case .reminders: String(localized: "Reminders", table: "Core", comment: "The Mac's Reminders app")
+        case .contacts: String(localized: "Contacts", table: "Core", comment: "The Mac's Contacts app")
+        }
+    }
+
+    /// The same inside a sentence: "It read your calendar on your Mac first."
+    public var inSentence: String {
+        switch self {
+        case .calendar: String(localized: "calendar", table: "Core", comment: "Inside a sentence: It read your calendar on your Mac first")
+        case .reminders: String(localized: "reminders", table: "Core", comment: "Inside a sentence: It read your reminders on your Mac first")
+        case .contacts: String(localized: "contacts", table: "Core", comment: "Inside a sentence: It read your contacts on your Mac first")
+        }
+    }
+
+    /// The app's English name, for what goes back to the helper. Goes to the model, so it stays in English.
+    var modelName: String {
+        switch self {
         case .calendar: "Calendar"
         case .reminders: "Reminders"
         case .contacts: "Contacts"

@@ -310,7 +310,7 @@ public enum MediaScan {
 /// Tries each path in turn and returns the first result that works; if none does, the last
 /// failure is thrown.
 private func firstSuccess<T>(of paths: [String], _ attempt: (String) async throws -> T) async throws -> T {
-    var failure: Error = HermesAPIError.transport("No path to try.")
+    var failure: Error = HermesAPIError.transport(String(localized: "No path to try.", table: "Core"))
     for path in paths {
         do { return try await attempt(path) } catch { failure = error }
     }
@@ -361,7 +361,7 @@ public struct GatewayMediaAPI: Sendable {
                 if case .http(let status, _) = failure, ![403, 404, 415].contains(status) { throw failure }
             }
         }
-        throw HermesAPIError.transport("No picture data came back from the gateway.")
+        throw HermesAPIError.transport(String(localized: "No picture data came back from the gateway.", table: "Core"))
     }
 }
 

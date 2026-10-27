@@ -243,41 +243,44 @@ enum WatchNotificationNames {
 
 /// The words the Watch shows. Few, short and shared, so the tests can hold them to the copy rules.
 enum WatchWords {
-    static let allowOnce = "Allow once"
-    static let deny = "Deny"
-    static let allowAgain = "Allow once?"
-    static let approveOnPhone = "Approve on your iPhone"
-    static let stop = "Stop"
-    static let working = "Working"
-    static let allQuiet = "All quiet"
-    static let nobodyWorking = "No helpers working"
-    static let openPhone = "Open Nollie on your iPhone"
-    static let phoneAway = "Can't reach your iPhone"
-    static let allowed = "Allowed"
-    static let denied = "Denied"
-    static let gone = "Already answered"
-    static let flagged = "The safety check flagged this one."
-    static let lastSeen = "Last seen"
-    static let nightShift = "Night shift"
-    static let yourWeek = "Your week"
-    static let fullNote = "The whole note, with its taps, is in Nollie on your iPhone."
+    static let allowOnce = String(localized: "Allow once", comment: "Safety: approval button; allows this one time")
+    static let deny = String(localized: "Deny", comment: "Safety: approval button; refuses")
+    static let allowAgain = String(localized: "Allow once?", comment: "Safety: asks again before a risky yes goes")
+    static let approveOnPhone = String(localized: "Approve on your iPhone", comment: "Safety: this yes needs the iPhone")
+    static let stop = String(localized: "Stop", comment: "Safety: stops a bot using the Mac")
+    static let working = String(localized: "Working", comment: "A helper is working")
+    static let allQuiet = String(localized: "All quiet")
+    static let nobodyWorking = String(localized: "No helpers working")
+    static let openPhone = String(localized: "Open Nollie on your iPhone")
+    static let phoneAway = String(localized: "Can't reach your iPhone")
+    static let allowed = String(localized: "Allowed", comment: "An approval was allowed")
+    static let denied = String(localized: "Denied", comment: "An approval was denied")
+    static let gone = String(localized: "Already answered")
+    static let flagged = String(localized: "The safety check flagged this one.", comment: "Safety: on an approval")
+    static let lastSeen = String(localized: "Last seen")
+    static let nightShift = String(localized: "Night shift")
+    static let yourWeek = String(localized: "Your week")
+    static let fullNote = String(localized: "The whole note, with its taps, is in Nollie on your iPhone.")
+
+    /// "Last seen 9:41", when the phone last sent a picture.
+    static func seenAt(_ time: String) -> String { String(localized: "Last seen \(time)") }
 
     /// "2 more", under the runs a busy night's note leaves out.
-    static func more(_ n: Int) -> String { "\(n) more" }
+    static func more(_ n: Int) -> String { String(localized: "\(n) more", comment: "More runs past the ones listed") }
 
     /// "2 helpers working", "1 helper working".
     static func count(_ n: Int) -> String {
-        n == 0 ? nobodyWorking : "\(n) \(n == 1 ? "helper" : "helpers") working"
+        n == 0 ? nobodyWorking : String(localized: "\(n) helpers working")
     }
 
     /// "1 waiting for you": approvals that need a yes or no.
-    static func waiting(_ n: Int) -> String { "\(n) waiting for you" }
+    static func waiting(_ n: Int) -> String { String(localized: "\(n) waiting for you", comment: "Approvals waiting for a yes or no") }
 
     /// What a helper is doing, under its name.
     static func doing(_ place: HelperWorkPlace?) -> String {
         switch place {
-        case .mac: "Using your Mac"
-        case .ownComputer: "Using its computer"
+        case .mac: String(localized: "Using your Mac")
+        case .ownComputer: String(localized: "Using its computer")
         case nil: working
         }
     }

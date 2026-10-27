@@ -32,6 +32,7 @@ struct ComputerSessionFacts: Equatable, Sendable {
 ///   it sent running now (which only this app knows); from the gateway, a messaging chat the
 ///   gateway itself routes (its session key and chat id).
 enum ComputerSessionCheck {
+    // Refusals go back to the bot's model, so they stay in English.
     static let notConnected = "Nollie isn't connected to Hermes right now, so it can't check which chat asked. Try again in a moment."
     static let unknown = "Nollie couldn't find that chat for this bot, so it won't ask the person."
     static let scheduled = "This isn't a chat someone is in, and Nollie only lets a bot use the Mac from one."
@@ -137,7 +138,7 @@ enum ComputerSessionCheck {
     /// (its session id, chat or bot) is used, only the row Hermes returned for it.
     static func facts(row: JSONValue, root: String, callID: String, host: ComputerPeer.Host) -> ComputerSessionFacts? {
         guard let profile = row["profile"]?.stringValue, !profile.isEmpty, !root.isEmpty else { return nil }
-        let title = row["title"]?.stringValue.flatMap { $0.isEmpty ? nil : $0 } ?? "Untitled chat"
+        let title = row["title"]?.stringValue.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Untitled chat")
         let source = row["source"]?.stringValue ?? ""
         return ComputerSessionFacts(chat: profile + "/" + root, title: title, source: source, callID: callID, profile: profile,
                                     platform: host == .dashboard ? "Nollie" : ComputerOtherControl.platformName(source))
@@ -405,6 +406,7 @@ import LocalAuthentication
 /// ends: another driver with Accessibility could press Nollie's own Allow, and two ways in at once
 /// can't be kept apart. Checked before the card, again after Touch ID, and every second of a task.
 enum ComputerOtherControl {
+    // To the bot's model: English.
     static let systemControlOn = "%@ can still control the Mac outside Nollie. The person can turn Allow Mac control off and on again in its settings to fix that."
     static let otherDriver = "Another computer-control helper is running on this Mac, outside Nollie. The person needs to quit it first."
 
@@ -541,7 +543,8 @@ enum ComputerOtherControl {
 
     /// How a chat's platform reads on the card.
     static func platformName(_ source: String) -> String {
-        let names = ["tui": "Terminal", "cli": "Terminal", "desktop": "Desktop", "photon": "iMessage", "sms": "SMS",
+        let names = ["tui": "Terminal", "cli": "Terminal", "desktop": String(localized: "Desktop", comment: "Where a chat runs: the desktop app"),
+                     "photon": "iMessage", "sms": "SMS",
                      "whatsapp": "WhatsApp", "whatsapp_cloud": "WhatsApp", "bluebubbles": "iMessage"]
         return names[source.lowercased()] ?? source.capitalized
     }

@@ -50,18 +50,18 @@ public struct ApprovalRequest: Sendable, Identifiable, Hashable, Codable {
         let key = (patternKey ?? "").trimmingCharacters(in: .whitespaces)
         switch key {
         case "":
-            return "this kind of command"
+            return String(localized: "this kind of command", table: "Core", comment: "Safety: what Always allow covers, as in: Always allow this kind of command?")
         case _ where key.hasPrefix("tirith:"):
-            return "this finding (session only)"
+            return String(localized: "this finding (session only)", table: "Core", comment: "Safety: what Always allow covers")
         case _ where key.hasPrefix("cua:"):
             return Self.screenScope(of: key)
         case _ where key.contains(":"):
-            let tool = key.prefix { $0 != ":" }
-            return "the \(tool) tool, for requests like this one"
+            let tool = String(key.prefix { $0 != ":" })
+            return String(localized: "the \(tool) tool, for requests like this one", table: "Core", comment: "Safety: what Always allow covers; the value is a tool's name")
         case toolName, "execute_code":
-            return "the \(key) tool"
+            return String(localized: "the \(key) tool", table: "Core", comment: "Safety: what Always allow covers; the value is a tool's name")
         default:
-            return "commands matching “\(key)”"
+            return String(localized: "commands matching “\(key)”", table: "Core", comment: "Safety: what Always allow covers; the value is a command pattern")
         }
     }
 
@@ -70,16 +70,23 @@ public struct ApprovalRequest: Sendable, Identifiable, Hashable, Codable {
         let pieces = key.split(separator: ":").map(String.init)
         let action = pieces.count > 1 ? pieces[1] : ""
         let inFront = pieces.count > 2 && pieces[2] == "foreground"
-        let what: String
-        switch action {
-        case "": what = "screen control"
-        case "type": what = "all typing"
-        case "key": what = "every key press"
-        case "set_value": what = "every field change"
-        case "focus_app": what = "every app switch"
-        default: what = "every " + action.replacingOccurrences(of: "_", with: "-")
+        switch (action, inFront) {
+        case ("", true): return String(localized: "screen control on this Mac's screen, in front", table: "Core", comment: "Safety: what Always allow covers; keep exact meaning")
+        case ("", false): return String(localized: "screen control on this Mac's screen, in the background", table: "Core", comment: "Safety: what Always allow covers; keep exact meaning")
+        case ("type", true): return String(localized: "all typing on this Mac's screen, in front", table: "Core", comment: "Safety: what Always allow covers; keep exact meaning")
+        case ("type", false): return String(localized: "all typing on this Mac's screen, in the background", table: "Core", comment: "Safety: what Always allow covers; keep exact meaning")
+        case ("key", true): return String(localized: "every key press on this Mac's screen, in front", table: "Core", comment: "Safety: what Always allow covers; keep exact meaning")
+        case ("key", false): return String(localized: "every key press on this Mac's screen, in the background", table: "Core", comment: "Safety: what Always allow covers; keep exact meaning")
+        case ("set_value", true): return String(localized: "every field change on this Mac's screen, in front", table: "Core", comment: "Safety: what Always allow covers; keep exact meaning")
+        case ("set_value", false): return String(localized: "every field change on this Mac's screen, in the background", table: "Core", comment: "Safety: what Always allow covers; keep exact meaning")
+        case ("focus_app", true): return String(localized: "every app switch on this Mac's screen, in front", table: "Core", comment: "Safety: what Always allow covers; keep exact meaning")
+        case ("focus_app", false): return String(localized: "every app switch on this Mac's screen, in the background", table: "Core", comment: "Safety: what Always allow covers; keep exact meaning")
+        default:
+            let name = action.replacingOccurrences(of: "_", with: "-")
+            return inFront
+                ? String(localized: "every \(name) on this Mac's screen, in front", table: "Core", comment: "Safety: what Always allow covers; the value is the gateway's action name")
+                : String(localized: "every \(name) on this Mac's screen, in the background", table: "Core", comment: "Safety: what Always allow covers; the value is the gateway's action name")
         }
-        return what + " on this Mac's screen" + (inFront ? ", in front" : ", in the background")
     }
 }
 

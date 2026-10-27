@@ -116,7 +116,8 @@ struct WatchView: View {
                     .accessibilityHidden(true)
                 VStack(spacing: 1) {
                     Text(name).font(.caption.weight(.semibold)).lineLimit(1)
-                    Text(held ? "Waiting for you" : (preview.computerName ?? "Computer"))
+                    Text(held ? String(localized: "Waiting for you")
+                              : (preview.computerName ?? String(localized: "Computer", comment: "A computer the bot uses; a noun")))
                         .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
                 .inset(h: 14).padding(.top, 10).padding(.bottom, 6)
@@ -145,7 +146,7 @@ struct WatchView: View {
         }
     }
 
-    private func circle(_ symbol: String, label: String, id: String, action: @escaping () -> Void) -> some View {
+    private func circle(_ symbol: String, label: LocalizedStringKey, id: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol).font(.title3.weight(.semibold))
                 .frame(square: 44).nollieGlass(.regular.interactive(), in: .circle)
@@ -256,7 +257,7 @@ struct WatchView: View {
                 VStack(spacing: 12) {
                     if preview.loading { ProgressView() }
                     else { Image(systemName: "desktopcomputer").font(.largeTitle) }
-                    Text(preview.loading ? "Connecting to the screen…" : emptyLine)
+                    Text(preview.loading ? String(localized: "Connecting to the screen…") : emptyLine)
                         .font(.subheadline)
                         .multilineTextAlignment(.center)
                         .accessibilityIdentifier("watch.empty")
@@ -292,10 +293,10 @@ struct WatchView: View {
     }
 
     private var emptyLine: String {
-        if preview.signInPaused { return WatchPolicy.signInPausedLine + "." }
-        if preview.needsCompanion { return "Watching isn’t set up on this gateway yet." }
-        if preview.kind == "mac" { return "Watching this Mac isn’t available yet." }
-        return "No screen to show yet."
+        if preview.signInPaused { return WatchPolicy.signInPausedSentence }
+        if preview.needsCompanion { return String(localized: "Watching isn’t set up on this gateway yet.") }
+        if preview.kind == "mac" { return String(localized: "Watching this Mac isn’t available yet.") }
+        return String(localized: "No screen to show yet.")
     }
 
     /// The helper's look, and its coat colour for the pointer.
@@ -395,7 +396,7 @@ struct WatchView: View {
     /// Watch covers the window, so the away card can't show over it: the same words go in its note.
     private func blockedAway() -> Bool {
         guard model.linkReach == .away else { return false }
-        note = "You're away from home. This needs Tailscale to reach your Mac."
+        note = String(localized: "You're away from home. This needs Tailscale to reach your Mac.")
         return true
     }
 

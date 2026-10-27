@@ -17,7 +17,7 @@ enum CompanionFileBackup {
     enum Failure: LocalizedError {
         case unsafePath, unreadable, writeFailed, verificationFailed
         var errorDescription: String? {
-            "The companion backup could not be verified. No installation files were changed."
+            String(localized: "The companion backup could not be verified. No installation files were changed.")
         }
     }
 

@@ -8,8 +8,8 @@ enum DevicePairingRecovery {
 
         var errorDescription: String? {
             switch self {
-            case .freshCodeRequired: "This connection needs a fresh pairing code from your Mac."
-            case .differentAssistant: "This code is for a different assistant. Make a new code on the Mac for this saved connection."
+            case .freshCodeRequired: String(localized: "This connection needs a fresh pairing code from your Mac.")
+            case .differentAssistant: String(localized: "This code is for a different assistant. Make a new code on the Mac for this saved connection.")
             }
         }
     }

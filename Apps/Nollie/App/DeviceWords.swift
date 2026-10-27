@@ -14,12 +14,15 @@ enum DeviceWords {
 
     #if os(macOS)
     private static let here = Vocabulary(
-        device: "Mac", settings: "System Settings", tap: "click", symbol: "laptopcomputer", isMac: true)
+        device: "Mac", settings: String(localized: "System Settings", comment: "The Mac's settings app"),
+        tap: String(localized: "click", comment: "A verb in the middle of a sentence: click a button"),
+        symbol: "laptopcomputer", isMac: true)
     #else
     private static let here: Vocabulary = {
         let isPad = modelIdentifier().hasPrefix("iPad")
         return Vocabulary(
-            device: isPad ? "iPad" : "iPhone", settings: "Settings", tap: "tap",
+            device: isPad ? "iPad" : "iPhone", settings: String(localized: "Settings", comment: "The iPhone or iPad settings app"),
+            tap: String(localized: "tap", comment: "A verb in the middle of a sentence: tap a button"),
             symbol: isPad ? "ipad" : "iphone", isMac: false)
     }()
 
@@ -41,17 +44,19 @@ enum DeviceWords {
     static let device = here.device
     static let settings = here.settings
     static let tap = here.tap
-    static let Tap = here.tap.capitalized
+    static let Tap = here.isMac ? String(localized: "Click", comment: "A verb at the start of a sentence: Click a button")
+                                : String(localized: "Tap", comment: "A verb at the start of a sentence: Tap a button")
     static let isMac = here.isMac
     static let symbol = here.symbol
 
-    static let companionBrings = "notifications and approvals"
-    static let CompanionBrings = "Notifications and approvals"
+    static let companionBrings = String(localized: "notifications and approvals", comment: "In the middle of a sentence")
+    static let CompanionBrings = String(localized: "Notifications and approvals")
 
-    static let this = "this " + device
-    static let This = "This " + device
-    static let your = "your " + device
-    static let the = "the " + device
+    // Pieces for the middle or start of a sentence; %@ is Mac, iPhone or iPad.
+    static let this = String(localized: "this \(device)", comment: "In the middle of a sentence; %@ is Mac, iPhone or iPad")
+    static let This = String(localized: "This \(device)", comment: "At the start of a sentence; %@ is Mac, iPhone or iPad")
+    static let your = String(localized: "your \(device)", comment: "In the middle of a sentence; %@ is Mac, iPhone or iPad")
+    static let the = String(localized: "the \(device)", comment: "In the middle of a sentence; %@ is Mac, iPhone or iPad")
     /// Plain device name for the middle of a sentence.
     static let kind = device
 }

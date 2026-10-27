@@ -20,6 +20,7 @@ struct ComputerScreenWindow: Equatable, Sendable {
 /// must be in front, and nothing else may cover the spot a click or scroll lands on.
 /// A look gives the model on this Mac a picture of that one window only, never the screen.
 enum ComputerWindowGuard {
+    // Refusals go back to the bot's model, so they stay in English.
     static func notItsWindow(_ app: String) -> String { "Nollie can't see that window of \(app) on screen, so it didn't do that." }
     static func notInFront(_ app: String) -> String {
         "\(app) isn't in front. Nollie only acts while an app you picked, or Nollie, is in front. Ask the person to bring \(app) forward."

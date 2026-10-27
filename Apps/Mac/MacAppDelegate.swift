@@ -36,7 +36,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationC
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         guard let running = ComputerCenter.shared.task else { return nil }
-        let stop = NSMenuItem(title: "Stop \(running.botName) Using Your Mac",
+        let stop = NSMenuItem(title: String(localized: "Stop \(running.botName) Using Your Mac", comment: "Safety: Dock menu; stops a bot using this Mac"),
                               action: #selector(stopUsingMac), keyEquivalent: "")
         stop.target = self
         let menu = NSMenu()

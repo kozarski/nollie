@@ -98,7 +98,7 @@ final class LocalModelQuickstart {
         state = .starting; message = nil; reply = nil; selectedModel = nil; job = nil
         let saved = LocalModelInstallReceipt(scope: scope, catalogID: entry.id, variantID: variant, requestedAt: Date())
         do { try persistence.save(saved); receipt = saved }
-        catch { fail("Couldn't save download progress. Nothing was started."); return }
+        catch { fail(String(localized: "Couldn't save download progress. Nothing was started.")); return }
         run { id in
             do {
                 try self.check(id)
@@ -112,7 +112,7 @@ final class LocalModelQuickstart {
                 guard self.current(id) else { return }
                 // A transport failure can hide an accepted POST. Never automatically repeat it.
                 self.state = .uncertain
-                self.message = "The connection changed. Check progress before starting another download."
+                self.message = String(localized: "The connection changed. Check progress before starting another download.")
             }
         }
     }
@@ -120,7 +120,7 @@ final class LocalModelQuickstart {
     func restore() {
         guard !busy, isCurrent() else { return }
         do { receipt = try persistence.load() }
-        catch { fail("Saved download progress could not be read. Nothing was started."); return }
+        catch { fail(String(localized: "Saved download progress could not be read. Nothing was started.")); return }
         guard receipt != nil else { return }
         checkProgress()
     }
@@ -142,8 +142,8 @@ final class LocalModelQuickstart {
                     guard matches.count == 1 else {
                         self.state = matches.isEmpty ? .interrupted : .uncertain
                         self.message = matches.isEmpty
-                            ? "No active setup was found. Review the model before trying again. Existing downloads are kept."
-                            : "More than one setup matches. Nothing else was started."
+                            ? String(localized: "No active setup was found. Review the model before trying again. Existing downloads are kept.")
+                            : String(localized: "More than one setup matches. Nothing else was started.")
                         return
                     }
                     self.receipt?.jobID = matches[0].jobId
@@ -154,10 +154,10 @@ final class LocalModelQuickstart {
                 guard self.current(id) else { return }
                 if case HermesAPIError.http(404, _) = error {
                     self.state = .interrupted
-                    self.message = "This setup is no longer running. Existing downloads are kept. Review the model before trying again."
+                    self.message = String(localized: "This setup is no longer running. Existing downloads are kept. Review the model before trying again.")
                 } else {
                     self.state = .uncertain
-                    self.message = "Couldn't check progress. The download may still be running on your Mac."
+                    self.message = String(localized: "Couldn't check progress. The download may still be running on your Mac.")
                 }
             }
         }
@@ -168,7 +168,7 @@ final class LocalModelQuickstart {
         stopObserving()
         run { id in
             do { try self.check(id); try await self.api.pause(id: job.jobId); try self.check(id); try await self.poll(id) }
-            catch { if self.current(id) { self.fail("Couldn't pause the download. Check progress before trying again.", uncertain: true) } }
+            catch { if self.current(id) { self.fail(String(localized: "Couldn't pause the download. Check progress before trying again."), uncertain: true) } }
         }
     }
 
@@ -176,7 +176,7 @@ final class LocalModelQuickstart {
         guard !busy, let job, job.canResume == true, isCurrent() else { return }
         run { id in
             do { try self.check(id); try await self.api.resume(id: job.jobId); try self.check(id); try await self.poll(id) }
-            catch { if self.current(id) { self.fail("Couldn't resume the download. Check progress before trying again.", uncertain: true) } }
+            catch { if self.current(id) { self.fail(String(localized: "Couldn't resume the download. Check progress before trying again."), uncertain: true) } }
         }
     }
 
@@ -195,7 +195,7 @@ final class LocalModelQuickstart {
             } catch {
                 guard self.current(id) else { return }
                 self.state = .selected
-                self.message = "The model is selected, but its reply wasn't verified. You can try again."
+                self.message = String(localized: "The model is selected, but its reply wasn't verified. You can try again.")
             }
         }
     }
@@ -229,7 +229,7 @@ final class LocalModelQuickstart {
             switch value.status {
             case "running": state = .installing
             case "paused": state = .paused; return
-            case "error": fail("Setup couldn't finish. Downloaded files are kept. Check your connection and available disk space before trying again."); return
+            case "error": fail(String(localized: "Setup couldn't finish. Downloaded files are kept. Check your connection and available disk space before trying again.")); return
             case "done": try await verifySelection(id); return
             default: throw LocalModelCheckFailure.incomplete
             }
@@ -246,7 +246,7 @@ final class LocalModelQuickstart {
               current.provider == "llamacpp", let selected = current.model, !selected.isEmpty,
               [entry.modelId, entry.downloadedModelId].compactMap({ $0 }).contains(selected),
               entry.downloaded == true else {
-            fail("The download finished, but the selected model wasn't verified. Check progress to try again.", uncertain: true)
+            fail(String(localized: "The download finished, but the selected model wasn't verified. Check progress to try again."), uncertain: true)
             return
         }
         selectedModel = selected; state = .selected; message = nil

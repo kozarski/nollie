@@ -241,7 +241,9 @@ struct ComposerView: View {
 
     /// "Message Nollie", or just "Message" at the accessibility text sizes, where the name would be cut off.
     private var placeholder: String {
-        typeSize.isAccessibilitySize ? "Message" : "Message \(botName)"
+        typeSize.isAccessibilitySize
+            ? String(localized: "Message", comment: "Placeholder in the message box")
+            : String(localized: "Message \(botName)", comment: "Placeholder in the message box; a bot's name follows")
     }
 
     /// The name in the placeholder, such as "Message Nollie".
@@ -315,7 +317,7 @@ struct ComposerView: View {
             let ext = type.preferredFilenameExtension ?? "bin"
             intake.pasted(data, name: "pasted-\(stamp).\(ext)", type: type)
         } else {
-            chat.banner = "There's nothing to paste."
+            chat.banner = String(localized: "There's nothing to paste.")
         }
     }
 }

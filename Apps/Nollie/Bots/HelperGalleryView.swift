@@ -52,7 +52,7 @@ struct HelperGalleryView: View {
                 let sections = ReadyMadeHelper.sections
                 ForEach(sections, id: \.self) { section in
                     VStack(spacing: 20) {
-                        PageHeading(section.title)
+                        PageHeading(.verbatim(section.title))
                             .padding(.horizontal, 4)
                             .testID("gallery.section.\(section.rawValue)")
                         LazyVGrid(columns: columns, spacing: 34) {
@@ -183,7 +183,7 @@ private struct HelperTile: View {
                         .frame(width: 104, height: 104)
                         .accessibilityHidden(true)
                     VStack(spacing: 4) {
-                        Text(helper.name)
+                        Text(helper.shownName)
                             .font(.headline)
                             .foregroundStyle(Ink.text)
                         Text(helper.promise)
@@ -198,7 +198,7 @@ private struct HelperTile: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
-            .accessibilityHint("Shows what \(helper.name) does")
+            .accessibilityHint("Shows what \(helper.shownName) does")
             .testID("gallery.open.\(helper.id)")
             Spacer(minLength: 0)
             HelperAddPill(helper: helper, state: state, working: working, locked: locked, add: add, undo: undo)

@@ -33,7 +33,7 @@ final class FamilyModel {
     /// Who shares with this device, by first name, or "the owner" before the Mac has said.
     func ownerName(_ model: AppModel) -> String {
         let said = me?.owner ?? model.runtime?.connection.linkedMac?.sharedBy ?? ""
-        return said.isEmpty ? "the owner" : said
+        return said.isEmpty ? String(localized: "the owner", comment: "Stands in for the owner's name, as in Waiting for the owner") : said
     }
 
     /// Where sharing can start: the Direct Mac that runs the assistant, or a phone linked to it as
@@ -66,7 +66,7 @@ final class FamilyModel {
             overview = try await fetchOverview(model)
             issue = nil
         } catch {
-            issue = "Couldn't reach your Mac."
+            issue = String(localized: "Couldn't reach your Mac.")
         }
     }
 
@@ -116,7 +116,7 @@ final class FamilyModel {
             overview = try await NollieFamilyClient.remove(runtime.api, member: member.id)
             issue = nil
         } catch {
-            issue = "Couldn't remove \(member.person). Try again."
+            issue = String(localized: "Couldn't remove \(member.person). Try again.")
         }
     }
 
@@ -137,7 +137,7 @@ final class FamilyModel {
             issue = nil
             return true
         } catch {
-            issue = "Couldn't reach \(ask.person)'s chat. Try again."
+            issue = String(localized: "Couldn't reach \(ask.person)'s chat. Try again.")
             return false
         }
     }

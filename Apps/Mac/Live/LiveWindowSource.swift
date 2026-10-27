@@ -80,7 +80,7 @@ final class LiveWindowSource: LiveSource {
     typealias Pause = @MainActor @Sendable () async -> LiveSignInPause
 
     let kind = LiveWire.ComputerKind.mac
-    static let computerName = "This Mac"
+    static let computerName = String(localized: "This Mac", comment: "The computer a live picture shows, named for the iPhone")
     static let firstPictureWithin = Duration.seconds(10)
     /// Saved sign-ins wait 1.5 seconds after they start before typing: well inside that.
     static let pauseEvery = Duration.milliseconds(500)

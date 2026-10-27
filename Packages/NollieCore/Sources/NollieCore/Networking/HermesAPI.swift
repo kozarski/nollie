@@ -10,22 +10,23 @@ public enum HermesAPIError: LocalizedError, Sendable {
 }
 
 extension HermesAPIError {
-    private static let notTheAPI = "That address answered with a web page, not the Hermes dashboard API. Use the `hermes serve` dashboard address, add the Access service-token headers if Cloudflare Access is on, and check that your tunnel passes WebSockets through."
+    private static var notTheAPI: String { String(localized: "That address answered with a web page, not the Hermes dashboard API. Use the `hermes serve` dashboard address, add the Access service-token headers if Cloudflare Access is on, and check that your tunnel passes WebSockets through.", table: "Core") }
 
     public var errorDescription: String? {
         switch self {
         case .sessionExpired:
-            return "Your session ran out. Please sign in again."
+            return String(localized: "Your session ran out. Please sign in again.", table: "Core")
         case .htmlResponse:
             return Self.notTheAPI
         case .transport(let message):
             return message
         case .decoding(let message):
-            return "The gateway sent something unexpected: \(message)"
+            return String(localized: "The gateway sent something unexpected: \(message)", table: "Core")
         case .unauthorized(let detail):
-            return detail.isEmpty ? "The gateway did not accept those credentials (401)." : detail
+            return detail.isEmpty ? String(localized: "The gateway did not accept those credentials (401).", table: "Core") : detail
         case .http(let status, let detail):
-            return detail.isEmpty ? "HTTP \(status)" : "\(detail) (HTTP \(status))"
+            return detail.isEmpty ? String(localized: "HTTP \(status)", table: "Core", comment: "An HTTP status code")
+                : String(localized: "\(detail) (HTTP \(status))", table: "Core", comment: "The gateway's own words, then an HTTP status code")
         }
     }
 
@@ -93,7 +94,7 @@ extension HermesAPI {
         if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
             throw Self.error(for: http, data: (try? Data(contentsOf: temporary)) ?? Data())
         }
-        guard response is HTTPURLResponse else { throw HermesAPIError.transport("No HTTP response") }
+        guard response is HTTPURLResponse else { throw HermesAPIError.transport(String(localized: "No HTTP response", table: "Core")) }
 
         // The caller gets a folder to itself, so a name that was already taken cannot clash.
         let asked = URLComponents(url: source, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "path" }?.value
@@ -216,7 +217,7 @@ extension HermesAPI {
         } catch {
             throw HermesAPIError.transport(error.localizedDescription)
         }
-        throw HermesAPIError.transport("No HTTP response")
+        throw HermesAPIError.transport(String(localized: "No HTTP response", table: "Core"))
     }
 }
 

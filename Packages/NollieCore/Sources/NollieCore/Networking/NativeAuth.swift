@@ -113,10 +113,10 @@ public final class NativeAuthClient: NSObject {
 
     private static func routeComplaint(status: Int, proxyPage: Bool) -> String? {
         if status == 404 {
-            return "This gateway's Hermes cannot do native sign-in yet (its /auth/native/authorize route is missing). The browser would sign in to the dashboard and never hand anything to the app. Update Hermes on the gateway, or use a session token from the dashboard."
+            return String(localized: "This gateway's Hermes cannot do native sign-in yet (its /auth/native/authorize route is missing). The browser would sign in to the dashboard and never hand anything to the app. Update Hermes on the gateway, or use a session token from the dashboard.", table: "Core")
         }
         if status == 403 && proxyPage {
-            return "The proxy in front of the gateway turned the sign-in request away (403). With Nginx Proxy Manager and Block Common Exploits, this build already encodes the request so the rule should not match; otherwise let /auth/ through the proxy."
+            return String(localized: "The proxy in front of the gateway turned the sign-in request away (403). With Nginx Proxy Manager and Block Common Exploits, this build already encodes the request so the rule should not match; otherwise let /auth/ through the proxy.", table: "Core")
         }
         return nil
     }
@@ -139,7 +139,7 @@ public final class NativeAuthClient: NSObject {
         )
 
         guard let back = redirectItems(in: answer), let code = back["code"] else {
-            throw NativeAuthError.invalidResponse("The gateway sent no sign-in code. Turn on a password provider in the dashboard (HERMES_DASHBOARD_BASIC_AUTH_*).")
+            throw NativeAuthError.invalidResponse(String(localized: "The gateway sent no sign-in code. Turn on a password provider in the dashboard (HERMES_DASHBOARD_BASIC_AUTH_*).", table: "Core"))
         }
         if back["state"] != nonce { throw NativeAuthError.stateMismatch }
         return try await redeem(code, proof.verifier, gateway, access)
@@ -190,7 +190,7 @@ public final class NativeAuthClient: NSObject {
             let (data, response) = try await session.data(for: request)
             switch response as? HTTPURLResponse {
             case nil:
-                throw HermesAPIError.transport("The gateway sent no HTTP answer")
+                throw HermesAPIError.transport(String(localized: "The gateway sent no HTTP answer", table: "Core"))
             case let bad? where bad.statusCode >= 400:
                 throw HermesAPI.error(for: bad, data: data)
             default:

@@ -66,7 +66,7 @@ struct MacChatTitle: View {
         }
         .buttonStyle(.plain)
         .help(isMain ? "\(name)'s settings" : "Back to \(name)'s main chat")
-        .accessibilityLabel(isMain ? name : "Back to \(name)'s main chat")
+        .accessibilityLabel(isMain ? name : String(localized: "Back to \(name)'s main chat"))
         .accessibilityIdentifier("chat.bot")
     }
 }

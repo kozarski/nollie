@@ -13,14 +13,14 @@ enum AppTheme {
 
     /// One row per accent: id, shown name, then red, green and blue as fractions of 1.
     private static let swatches: [(String, String, [Double])] = [
-        ("blue", "Blue", [0, 0.478, 1]),
-        ("indigo", "Indigo", [0.345, 0.337, 0.839]),
-        ("teal", "Teal", [0.188, 0.69, 0.78]),
-        ("green", "Green", [0.204, 0.78, 0.349]),
-        ("orange", "Orange", [1, 0.584, 0]),
-        ("pink", "Pink", [1, 0.176, 0.333]),
-        ("purple", "Purple", [0.686, 0.322, 0.871]),
-        ("graphite", "Graphite", [0.557, 0.557, 0.576]),
+        ("blue", String(localized: "Blue", comment: "An accent colour"), [0, 0.478, 1]),
+        ("indigo", String(localized: "Indigo", comment: "An accent colour"), [0.345, 0.337, 0.839]),
+        ("teal", String(localized: "Teal", comment: "An accent colour"), [0.188, 0.69, 0.78]),
+        ("green", String(localized: "Green", comment: "An accent colour"), [0.204, 0.78, 0.349]),
+        ("orange", String(localized: "Orange", comment: "An accent colour"), [1, 0.584, 0]),
+        ("pink", String(localized: "Pink", comment: "An accent colour"), [1, 0.176, 0.333]),
+        ("purple", String(localized: "Purple", comment: "An accent colour"), [0.686, 0.322, 0.871]),
+        ("graphite", String(localized: "Graphite", comment: "An accent colour"), [0.557, 0.557, 0.576]),
     ]
 
     static let accents: [Accent] = swatches.map { id, name, c in

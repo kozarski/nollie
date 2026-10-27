@@ -135,7 +135,7 @@ struct ChatEntity: AppEntity, IndexedEntity {
     var attributeSet: CSSearchableItemAttributeSet {
         let attributes = CSSearchableItemAttributeSet(contentType: .text)
         attributes.title = title
-        attributes.contentDescription = bot.map { "Chat with \($0) in Nollie" } ?? "Chat in Nollie"
+        attributes.contentDescription = bot.map { String(localized: "Chat with \($0) in Nollie") } ?? String(localized: "Chat in Nollie")
         return attributes
     }
 }
@@ -173,19 +173,20 @@ enum SiriWords {
 
         let activity: String
         if relevant.isEmpty {
-            activity = bot.map { "\($0) is not running anything." } ?? "No bot is running anything."
+            activity = bot.map { String(localized: "\($0) is not running anything.") }
+                ?? String(localized: "No bot is running anything.")
         } else if let only = relevant.first, relevant.count == 1 {
-            activity = "\(only.bot) is working on \(only.title)."
+            activity = String(localized: "\(only.bot) is working on \(only.title).")
         } else {
-            let sample = relevant.prefix(3).map { "\($0.bot) on \($0.title)" }
-            activity = "\(relevant.count) chats are running: " + sample.joined(separator: ", ") + "."
+            let sample = relevant.prefix(3).map {
+                String(localized: "\($0.bot) on \($0.title)", comment: "Siri, in a list of chats: a bot, then a chat title")
+            }
+            let list = sample.joined(separator: String(localized: ", ", comment: "Separates the items of a spoken list"))
+            activity = String(localized: "\(relevant.count) chats are running: \(list).",
+                              comment: "Siri; the number is always 2 or more, then a list of bots and chats")
         }
 
-        let waitingLine: String? = switch waiting {
-        case ..<1: nil
-        case 1: "You have one approval to look at."
-        default: "You have \(waiting) approvals to look at."
-        }
+        let waitingLine: String? = waiting < 1 ? nil : String(localized: "You have \(waiting) approvals to look at.")
         return [activity, waitingLine].compactMap { $0 }.joined(separator: " ")
     }
 
@@ -193,18 +194,25 @@ enum SiriWords {
     /// plugin rules (Ask first, or a sign-in) the readable description is voiced rather than the
     /// gateway's "(plugin approval rule)" stand-in.
     static func approvalQuestion(bot: String, request: ApprovalRequest, answer: ApprovalAnswer) -> String {
-        let verb = answer == .approve ? "Approve" : "Deny"
         let isRule = request.patternKey?.hasPrefix("plugin_rule:") == true
 
         if isRule {
             let words = AskFirstAsk(request)?.summary ?? request.description ?? ""
             let headline = words.split(separator: "\n", omittingEmptySubsequences: false).first.map(String.init) ?? ""
             let cleaned = headline.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: ":.")))
-            return "\(bot) asks: " + shortened(cleaned.isEmpty ? "something" : cleaned) + ". \(verb) it?"
+            let what = shortened(cleaned.isEmpty
+                                 ? String(localized: "something", comment: "Siri: Scout asks: something. Approve it?")
+                                 : cleaned)
+            return answer == .approve
+                ? String(localized: "\(bot) asks: \(what). Approve it?", comment: "Safety: Siri's approval question; keep exact meaning")
+                : String(localized: "\(bot) asks: \(what). Deny it?", comment: "Safety: Siri's approval question; keep exact meaning")
         }
-        let command = (request.command ?? request.description ?? request.toolName ?? "a command")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return "\(bot) wants to run: " + shortened(command) + ". \(verb) it?"
+        let command = shortened((request.command ?? request.description ?? request.toolName
+                                 ?? String(localized: "a command", comment: "Siri: Scout wants to run: a command. Approve it?"))
+            .trimmingCharacters(in: .whitespacesAndNewlines))
+        return answer == .approve
+            ? String(localized: "\(bot) wants to run: \(command). Approve it?", comment: "Safety: Siri's approval question; keep exact meaning")
+            : String(localized: "\(bot) wants to run: \(command). Deny it?", comment: "Safety: Siri's approval question; keep exact meaning")
     }
 
     /// What Siri says instead of approving when the answer belongs on the screen. A sign-in
@@ -212,11 +220,13 @@ enum SiriWords {
     /// may approve. Denying is always allowed.
     static func approveRefusal(_ request: ApprovalRequest?) -> String? {
         if SignInAsk(request) != nil {
-            return "Sign-ins need Face ID or Touch ID. Open Nollie to allow it."
+            return String(localized: "Sign-ins need Face ID or Touch ID. Open Nollie to allow it.",
+                          comment: "Safety: Siri will not approve a sign-in; keep exact meaning")
         }
         let askFirstRule = request?.patternKey?.hasPrefix(AskFirstAsk.rulePrefix) ?? false
         if askFirstRule || AskFirstAsk(request) != nil {
-            return "This one needs a look first. Open Nollie to answer it."
+            return String(localized: "This one needs a look first. Open Nollie to answer it.",
+                          comment: "Safety: Siri will not approve an Ask first request; keep exact meaning")
         }
         return nil
     }

@@ -2,7 +2,8 @@ import Foundation
 
 /// What Nollie on the Mac may do with one request, by fixed rules. A change is only ever worded while
 /// it waits, and made only once it comes back approved with the plan this Mac worded: nothing a helper
-/// sends can skip the person's yes.
+/// sends can skip the person's yes. Every refusal here and in `AppleDataWork` is the tool's answer to the helper:
+/// it goes to the model, so it stays in English.
 public enum AppleDataGate {
     public enum Step: Equatable, Sendable {
         case read
@@ -23,16 +24,16 @@ public enum AppleDataGate {
         let area = tool.area
         if isPrivate { return .refuse("Calendar, Reminders and Contacts aren't used by private bots.") }
         guard switchedOn else {
-            return .refuse("\(area.title) is off for this helper. The person can turn it on in Bot settings, Apps.")
+            return .refuse("\(area.modelName) is off for this helper. The person can turn it on in Bot settings, Apps.")
         }
         switch access {
         case .allowed: break
         case .notAsked:
-            return .refuse("\(area.title) isn't allowed on the Mac yet. The person can turn it on in Bot settings, Apps, in Nollie on their Mac.")
+            return .refuse("\(area.modelName) isn't allowed on the Mac yet. The person can turn it on in Bot settings, Apps, in Nollie on their Mac.")
         case .denied:
-            return .refuse("The Mac doesn't let Nollie use \(area.title). The person can allow it in System Settings, Privacy & Security, \(area.title).")
+            return .refuse("The Mac doesn't let Nollie use \(area.modelName). The person can allow it in System Settings, Privacy & Security, \(area.modelName).")
         case .unavailable:
-            return .refuse("\(area.title) can't be used on this Mac.")
+            return .refuse("\(area.modelName) can't be used on this Mac.")
         }
         switch request.state {
         case "waiting":

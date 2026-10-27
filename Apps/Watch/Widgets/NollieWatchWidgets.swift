@@ -104,11 +104,13 @@ struct CrewWidgetView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(spoken)
         case .accessoryInline:
-            Label(waits && count > 0 ? "\(WatchWords.count(count)), \(entry.waiting) waiting" : headline, systemImage: symbol)
+            Label(waits && count > 0 ? String(localized: "\(WatchWords.count(count)), \(entry.waiting) waiting", comment: "Who is working, then how many approvals wait")
+                  : headline, systemImage: symbol)
         case .accessoryCorner:
             Image(systemName: symbol)
                 .font(.title3)
-                .widgetLabel(waits && count > 0 ? "\(count) working, \(entry.waiting) waiting" : headline)
+                .widgetLabel(waits && count > 0 ? String(localized: "\(count) working, \(entry.waiting) waiting", comment: "Helpers working, then approvals waiting")
+                             : headline)
                 .widgetAccentable()
         default:
             rectangular
@@ -139,7 +141,7 @@ struct CrewWidgetView: View {
     private var detail: String? {
         if waits, count > 0 { return WatchWords.waiting(entry.waiting) }
         if entry.stale, let made = entry.snapshot?.made {
-            return "\(WatchWords.lastSeen) \(made.formatted(date: .omitted, time: .shortened))"
+            return WatchWords.seenAt(made.formatted(date: .omitted, time: .shortened))
         }
         let names = entry.helpers.map(\.name)
         return names.isEmpty ? nil : names.formatted(.list(type: .and))

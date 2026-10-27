@@ -21,6 +21,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		1A10C0DE0000000000000002 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A10C0DE0000000000000001 /* InfoPlist.xcstrings */; };
+		1A10C0DE0000000000000004 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A10C0DE0000000000000003 /* InfoPlist.xcstrings */; };
+		1A10C0DE0000000000000007 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A10C0DE0000000000000006 /* InfoPlist.xcstrings */; };
 		F692F6CFA4FC48E6054B8ACA /* PapertrailFilterProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E280DC62FDE5BA2EFBA6DB58 /* PapertrailFilterProvider.swift */; };
 		ACA9DE3276E59F1C4454CE06 /* NetworkFilterPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1D1DD57C8A0EBBC7DCA8EC /* NetworkFilterPolicy.swift */; };
 		416068DD5D8EAF2FDB93868C /* NetworkFilterXPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3291D73462EDBC84D5DDD4A /* NetworkFilterXPC.swift */; };
@@ -282,6 +285,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1A10C0DE0000000000000001 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = Services/Runtime/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
+		1A10C0DE0000000000000003 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = Services/NetworkFilter/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
+		1A10C0DE0000000000000006 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = Services/Notifications/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
 		161184EAE5DA40AAD9CA6D03 /* ScopedHermesImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScopedHermesImport.swift; path = Apps/Nollie/Connect/ScopedHermesImport.swift; sourceTree = SOURCE_ROOT; };
 		66ABCB2D8244FA073C0FD75D /* NollieAlertHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NollieAlertHelper.swift; path = Services/Notifications/NollieAlertHelper.swift; sourceTree = SOURCE_ROOT; };
 		684992DBB3E7B0B225FDCE16 /* ConfigurationBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConfigurationBackup.swift; path = Apps/Nollie/Connect/ConfigurationBackup.swift; sourceTree = SOURCE_ROOT; };
@@ -413,6 +419,7 @@
 				App/TabPageModifiers.swift,
 				App/RootView.swift,
 				Info.plist,
+				Resources/InfoPlist.xcstrings,
 			);
 			target = AA00000000000000000240 /* NollieMac */;
 		};
@@ -784,6 +791,7 @@
 			isa = PBXGroup;
 			children = (
 				66ABCB2D8244FA073C0FD75D /* NollieAlertHelper.swift */,
+				1A10C0DE0000000000000006 /* InfoPlist.xcstrings */,
 			);
 			name = Notifications;
 			sourceTree = "<group>";
@@ -841,6 +849,8 @@
 				C8D18C250E624E61B9E1DD4D /* managed_addons.py */,
 				DF9EB215A6E13067308C5591 /* RuntimeSupervisor.swift */,
 				6D276FD283EF81B4AA946628 /* RuntimeIPC.swift */,
+				1A10C0DE0000000000000001 /* InfoPlist.xcstrings */,
+				1A10C0DE0000000000000003 /* InfoPlist.xcstrings */,
 			);
 			name = Runtime;
 			sourceTree = "<group>";
@@ -924,6 +934,7 @@
 			buildPhases = (
 				3B12A35A85D0B81842E55487 /* Sources */,
 				9E19C0FD600913F5135F5613 /* Frameworks */,
+				1A10C0DE0000000000000005 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -957,6 +968,7 @@
 			buildPhases = (
 				52640ED27B1237A9B9E9370B /* Sources */,
 				89174DC5DB4A591CCC2479D8 /* Frameworks */,
+				1A10C0DE0000000000000008 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -1327,6 +1339,22 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		1A10C0DE0000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A10C0DE0000000000000004 /* InfoPlist.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1A10C0DE0000000000000008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A10C0DE0000000000000007 /* InfoPlist.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		15830ED126ABD8BD76E8BD27 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1335,6 +1363,7 @@
 				D4DCD8E95A8E4A8FBFD62C33 /* managed_addons.py in Resources */,
 				D8F239F6E15A4D2C9A42D004 /* nollie-starter.json in Resources */,
 				59FCCB956F2F766B20B75613 /* LICENSE in Resources */,
+				1A10C0DE0000000000000002 /* InfoPlist.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2082,6 +2111,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
+				XCSTRINGS_LANGUAGES_TO_COMPILE = en;
 			};
 			name = DirectRelease;
 		};
@@ -2250,6 +2280,7 @@
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
+				XCSTRINGS_LANGUAGES_TO_COMPILE = en;
 			};
 			name = DirectDebug;
 		};
@@ -2655,6 +2686,7 @@
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
+				XCSTRINGS_LANGUAGES_TO_COMPILE = en;
 			};
 			name = Debug;
 		};
@@ -2717,6 +2749,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
+				XCSTRINGS_LANGUAGES_TO_COMPILE = en;
 			};
 			name = Release;
 		};

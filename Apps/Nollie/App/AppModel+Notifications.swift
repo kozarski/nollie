@@ -59,7 +59,7 @@ extension AppModel {
             guard let target = await cloudAlerts.openedTarget(eventID: eventID) else {
                 guard isLive(generation) else { return nil }
                 notificationRequest = nil
-                notificationRouteError = "This notification is no longer available. Open your assistant to see its latest updates."
+                notificationRouteError = String(localized: "This notification is no longer available. Open your assistant to see its latest updates.")
                 return nil
             }
             guard target.isValid, isLive(generation) else { return nil }
@@ -110,7 +110,7 @@ extension AppModel {
         }
 
         guard let target = NotificationNavigation.connection(for: requested, among: store.connections) else {
-            notificationRouteError = "The connection for this notification is no longer saved on this device."
+            notificationRouteError = String(localized: "The connection for this notification is no longer saved on this device.")
             return
         }
         if runtime?.connection.id != target.id {
@@ -122,7 +122,7 @@ extension AppModel {
             let actual = await runtime.refreshGatewayIdentity()
             guard isLive(generation), self.runtime === runtime else { return }
             guard actual == identity else {
-                notificationRouteError = "This connection no longer identifies the assistant that sent the notification."
+                notificationRouteError = String(localized: "This connection no longer identifies the assistant that sent the notification.")
                 return
             }
         }
@@ -144,20 +144,20 @@ extension AppModel {
     /// bot's store only. Never search other bots or guess from the current selection.
     private func confirmOwner(of route: PendingRoute, on runtime: GatewayRuntime, generation: UUID) async -> Bool {
         if let cached = runtime.chatForStored(route.storedSessionID), cached.profileName != route.profile {
-            notificationRouteError = "This conversation belongs to a different bot. Open it from Chats."
+            notificationRouteError = String(localized: "This conversation belongs to a different bot. Open it from Chats.")
             return false
         }
         do {
             let info: JSONValue = try await runtime.api.get("/api/sessions/\(route.storedSessionID)", profile: route.profile)
             guard isLive(generation), self.runtime === runtime else { return false }
             guard NotificationNavigation.sessionMatches(info, route: route) else {
-                notificationRouteError = "The conversation named by this notification is no longer available for this bot."
+                notificationRouteError = String(localized: "The conversation named by this notification is no longer available for this bot.")
                 return false
             }
             return true
         } catch {
             guard isLive(generation), self.runtime === runtime else { return false }
-            notificationRouteError = "The conversation couldn\u{2019}t be checked. Reconnect, then open the notification again."
+            notificationRouteError = String(localized: "The conversation couldn\u{2019}t be checked. Reconnect, then open the notification again.")
             return false
         }
     }

@@ -40,7 +40,7 @@ struct SubagentRow: View {
 
     /// What VoiceOver says for the header: the goal and what the helper is doing.
     private var spokenHeader: String {
-        ["Helper: \(activity.goal).", activity.detailLine].compactMap { $0 }.joined(separator: " ")
+        [String(localized: "Helper: \(activity.goal).", comment: "A helper bot's goal follows"), activity.detailLine].compactMap { $0 }.joined(separator: " ")
     }
 
     /// With a report to show, the header is the button that opens and closes it.

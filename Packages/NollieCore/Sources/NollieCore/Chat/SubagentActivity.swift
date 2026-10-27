@@ -42,18 +42,30 @@ public struct SubagentActivity: Hashable, Sendable {
 
     /// The small line under the goal: where it is while running, how it went once back.
     public var detailLine: String? {
-        var parts = isRunning ? [step ?? "Working…"] : outcomeBits
-        if let index = taskIndex, let count = taskCount, count > 1 { parts.insert("\(index + 1) of \(count)", at: 0) }
+        var parts = isRunning ? [step ?? String(localized: "Working…", table: "Core")] : outcomeBits
+        if let index = taskIndex, let count = taskCount, count > 1 {
+            let place = index + 1
+            parts.insert(String(localized: "\(place) of \(count)", table: "Core", comment: "A helper's place in a batch: 2 of 3"), at: 0)
+        }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     private var outcomeBits: [String] {
-        var outcome = failed ? "Failed" : "Done"
-        if let secs = durationSeconds, secs > 0 {
-            outcome += secs >= 60 ? " in \(Int((secs / 60).rounded()))m" : " in \(Int(secs.rounded()))s"
+        let outcome: String
+        if let secs = durationSeconds, secs > 0, secs >= 60 {
+            let minutes = Int((secs / 60).rounded())
+            outcome = failed ? String(localized: "Failed in \(minutes)m", table: "Core", comment: "A helper failed after this many minutes")
+                : String(localized: "Done in \(minutes)m", table: "Core", comment: "A helper finished in this many minutes")
+        } else if let secs = durationSeconds, secs > 0 {
+            let seconds = Int(secs.rounded())
+            outcome = failed ? String(localized: "Failed in \(seconds)s", table: "Core", comment: "A helper failed after this many seconds")
+                : String(localized: "Done in \(seconds)s", table: "Core", comment: "A helper finished in this many seconds")
+        } else {
+            outcome = failed ? String(localized: "Failed", table: "Core", comment: "A helper's outcome")
+                : String(localized: "Done", table: "Core", comment: "A helper's outcome")
         }
         guard let tools = toolCount, tools > 0 else { return [outcome] }
-        return [outcome, tools == 1 ? "1 tool call" : "\(tools) tool calls"]
+        return [outcome, String(localized: "\(tools) tool calls", table: "Core")]
     }
 
     private static let idKeys = ["subagent_id", "child_session_id", "delegation_id"]
@@ -67,7 +79,7 @@ public struct SubagentActivity: Hashable, Sendable {
     /// Applies a further `subagent.*` event. The first event of any kind creates the row, and each
     /// one after updates it, so tools and progress for the helper are never dropped.
     public static func applying(_ type: String, _ p: JSONValue, to current: SubagentActivity? = nil) -> SubagentActivity {
-        var row = current ?? SubagentActivity(id: p.text("subagent_id") ?? p.text("child_session_id") ?? "", goal: "Subagent")
+        var row = current ?? SubagentActivity(id: p.text("subagent_id") ?? p.text("child_session_id") ?? "", goal: String(localized: "Subagent", table: "Core", comment: "A helper's title before its goal is known"))
         row.absorbHeader(of: p)
 
         switch type {

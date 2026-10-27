@@ -62,7 +62,7 @@ extension MarkdownTable {
         switch (title.isEmpty, value.isEmpty) {
         case (true, _): return value
         case (_, true): return title
-        default: return "\(title): \(value)"
+        default: return String(localized: "\(title): \(value)", table: "Core", comment: "VoiceOver: a table column's title, then the cell's value")
         }
     }
 

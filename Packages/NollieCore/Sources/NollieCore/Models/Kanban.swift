@@ -35,21 +35,21 @@ public enum KanbanStatus: String, CaseIterable, Hashable, Sendable, Codable {
 
     private var look: Look {
         switch self {
-        case .triage: Look(title: "Triage", symbol: "tray")
-        case .todo: Look(title: "To do", symbol: "circle")
-        case .ready: Look(title: "Ready", symbol: "play.circle")
-        case .blocked: Look(title: "Blocked", symbol: "hand.raised")
-        case .done: Look(title: "Done", symbol: "checkmark.circle")
-        case .archived: Look(title: "Archived", symbol: "archivebox")
+        case .triage: Look(title: String(localized: "Triage", table: "Core", comment: "A Board status"), symbol: "tray")
+        case .todo: Look(title: String(localized: "To do", table: "Core", comment: "A Board status"), symbol: "circle")
+        case .ready: Look(title: String(localized: "Ready", table: "Core", comment: "A Board status"), symbol: "play.circle")
+        case .blocked: Look(title: String(localized: "Blocked", table: "Core", comment: "A Board status"), symbol: "hand.raised")
+        case .done: Look(title: String(localized: "Done", table: "Core", comment: "A Board status"), symbol: "checkmark.circle")
+        case .archived: Look(title: String(localized: "Archived", table: "Core", comment: "A Board status"), symbol: "archivebox")
         case .scheduled:
-            Look(title: "Scheduled", symbol: "calendar",
-                 gatewayOnlyNote: "A task becomes Scheduled when it is given a time.")
+            Look(title: String(localized: "Scheduled", table: "Core", comment: "A Board status"), symbol: "calendar",
+                 gatewayOnlyNote: String(localized: "A task becomes Scheduled when it is given a time.", table: "Core"))
         case .running:
-            Look(title: "Running", symbol: "bolt.circle",
-                 gatewayOnlyNote: "The dispatcher moves a task to Running when a worker picks it up.")
+            Look(title: String(localized: "Running", table: "Core", comment: "A Board status"), symbol: "bolt.circle",
+                 gatewayOnlyNote: String(localized: "The dispatcher moves a task to Running when a worker picks it up.", table: "Core"))
         case .review:
-            Look(title: "Review", symbol: "eye",
-                 gatewayOnlyNote: "A worker asks for Review when it hands the task over.")
+            Look(title: String(localized: "Review", table: "Core", comment: "A Board status"), symbol: "eye",
+                 gatewayOnlyNote: String(localized: "A worker asks for Review when it hands the task over.", table: "Core"))
         }
     }
 
@@ -99,7 +99,7 @@ public struct KanbanDiagnostic: Codable, Sendable, Hashable {
     public let title: String?
 
     public var text: String {
-        [message, title, code, kind].lazy.compactMap { $0 }.first ?? "Needs a look"
+        [message, title, code, kind].lazy.compactMap { $0 }.first ?? String(localized: "Needs a look", table: "Core")
     }
 }
 

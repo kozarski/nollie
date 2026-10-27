@@ -68,17 +68,20 @@ struct AcknowledgementsView: View {
     CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     """
 
-    static let sparkle = sparkleMIT + "\n\nA few parts of Sparkle carry notices of their own. They are in full in the Notices folder inside Nollie on the Mac."
+    static let sparkle = sparkleMIT + "\n\n"
+        + String(localized: "A few parts of Sparkle carry notices of their own. They are in full in the Notices folder inside Nollie on the Mac.")
 
+    /// Names, licence texts and licence names stay as their authors wrote them; only Nollie's own words are localized.
     static let notices: [Notice] = [
-        Notice(name: "Hermes Agent", detail: "By Nous Research. Downloaded during setup. Not affiliated.",
+        Notice(name: "Hermes Agent", detail: String(localized: "By Nous Research. Downloaded during setup. Not affiliated."),
                licence: "MIT License. Copyright (c) 2025 Nous Research.", symbol: "sparkles"),
-        Notice(name: "uv", detail: "By Astral. Downloaded during setup.", licence: "MIT or Apache-2.0.", symbol: "shippingbox.fill"),
-        Notice(name: "Python", detail: "python-build-standalone. Downloaded during setup.", licence: "PSF-2.0 and the licences it bundles.",
+        Notice(name: "uv", detail: String(localized: "By Astral. Downloaded during setup."), licence: "MIT or Apache-2.0.", symbol: "shippingbox.fill"),
+        Notice(name: "Python", detail: String(localized: "python-build-standalone. Downloaded during setup."),
+               licence: String(localized: "PSF-2.0 and the licences it bundles."),
                symbol: "chevron.left.forwardslash.chevron.right"),
-        Notice(name: "Sparkle", detail: "By the Sparkle Project. Updates the Mac app you download from nollie.app.",
+        Notice(name: "Sparkle", detail: String(localized: "By the Sparkle Project. Updates the Mac app you download from nollie.app."),
                licence: sparkle, symbol: "arrow.triangle.2.circlepath"),
-        Notice(name: "hermes-cua-spaces", detail: "By Cua AI, Inc. Added to a helper's Hermes when it gets a computer of its own.",
+        Notice(name: "hermes-cua-spaces", detail: String(localized: "By Cua AI, Inc. Added to a helper's Hermes when it gets a computer of its own."),
                licence: cuaPlugin, symbol: "desktopcomputer"),
     ]
 
@@ -88,7 +91,7 @@ struct AcknowledgementsView: View {
                      tint: .pink, id: "acknowledgements.hero")
             GlassStack {
                 ForEach(Array(Self.notices.enumerated()), id: \.element.id) { index, notice in
-                    GlassLink(notice.name, symbol: notice.symbol, id: "acknowledgements.notice.\(index)") {
+                    GlassLink(.verbatim(notice.name), symbol: notice.symbol, id: "acknowledgements.notice.\(index)") {
                         NoticePage(notice: notice)
                     }
                 }
@@ -104,7 +107,7 @@ private struct NoticePage: View {
 
     var body: some View {
         SettingsPage("acknowledgements.notice") {
-            PageHero(symbol: notice.symbol, title: notice.name, line: notice.detail, tint: .pink, id: "acknowledgements.notice.hero")
+            PageHero(symbol: notice.symbol, title: .verbatim(notice.name), line: .verbatim(notice.detail), tint: .pink, id: "acknowledgements.notice.hero")
             Text(notice.licence)
                 .font(.callout.monospaced())
                 .foregroundStyle(Ink.text)

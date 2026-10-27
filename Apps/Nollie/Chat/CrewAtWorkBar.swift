@@ -156,7 +156,9 @@ struct CrewAtWorkBar: View {
 
     /// How Stop went, short enough for the bar. The full sentence is read out to VoiceOver.
     static func short(_ outcome: String) -> String {
-        outcome == MacStopWords.stopped ? "Stopping on your Mac" : HelperAtWorkWords.notReached
+        outcome == MacStopWords.stopped
+            ? String(localized: "Stopping on your Mac", comment: "Safety: Stop was pressed and the Mac is stopping the helpers' work")
+            : HelperAtWorkWords.notReached
     }
 
     private func show(_ line: String) {

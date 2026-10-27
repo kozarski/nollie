@@ -42,7 +42,7 @@ struct CardsSettingsView: View {
                 GlassButton("Show cards", symbol: "touchid", id: "cards.show") { Task { await unlock() } }
             }
             if let problem {
-                PageNote(problem, symbol: "exclamationmark.triangle.fill", tint: .orange, id: "cards.problem")
+                PageNote(.verbatim(problem), symbol: "exclamationmark.triangle.fill", tint: .orange, id: "cards.problem")
             }
         }
         .animation(.snappy, value: unlocked)
@@ -58,7 +58,7 @@ struct CardsSettingsView: View {
         .sheet(isPresented: $adding) {
             CardEditor(store: store) { adding = false }.withAppModel()
         }
-        .confirmationDialog(removing.map { "Remove \($0.label)?" } ?? "", isPresented: Binding(
+        .confirmationDialog(removing.map { String(localized: "Remove \($0.shownLabel)?", comment: "Safety: deleting a saved card, named like 'Visa ending 4242'") } ?? "", isPresented: Binding(
             get: { removing != nil }, set: { if !$0 { removing = nil } })) {
             Button("Remove", role: .destructive) {
                 if let card = removing {
@@ -74,7 +74,7 @@ struct CardsSettingsView: View {
     private var cards: some View {
         VStack(spacing: 12) {
             ForEach(store.items) { card in
-                CardRow(label: card.label, holder: card.holder)
+                CardRow(label: card.shownLabel, holder: card.holder)
                     .contextMenu { Button("Remove…", role: .destructive) { removing = card } }
                     .testID("cards.row.\(card.last4)")
             }
@@ -105,18 +105,21 @@ struct CardsSettingsView: View {
                             id: "cards.quickLimit")
             }
             // Money: the one place a footer earns its words.
-            PageNote(settings.quickPay ? "A first payment to a site always asks. Your Mac still asks for the security code."
-                                       : "Every payment asks you first.",
+            PageNote(.verbatim(settings.quickPay
+                     ? String(localized: "A first payment to a site always asks. Your Mac still asks for the security code.",
+                              comment: "Safety: payment; what still asks first")
+                     : String(localized: "Every payment asks you first.", comment: "Safety: payment")),
                      symbol: "hand.raised.fill", id: "cards.quickPay.note")
         }
     }
 
     private func change(_ edit: (inout PaymentSettings) -> Void) {
-        do { try center.rules.update(edit); problem = nil } catch { problem = "Couldn't save that. Try again." }
+        do { try center.rules.update(edit); problem = nil } catch { problem = String(localized: "Couldn't save that. Try again.") }
     }
 
     private func unlock() async {
-        guard await store.confirmOwner(reason: "show your cards") != nil else { return }
+        let reason = String(localized: "show your cards", comment: "Safety: Touch ID reason; finishes 'Nollie is trying to …'")
+        guard await store.confirmOwner(reason: reason) != nil else { return }
         store.reload()
         unlocked = true
         guard fixedHistory == nil, let rt = model.runtime, rt.gatewayIsOnThisMac else { return }
@@ -130,14 +133,14 @@ struct CardsSettingsView: View {
     /// What happened, in a few words.
     static func line(_ entry: PaymentHistoryEntry, bot: String) -> String {
         let amount = entry.total.flatMap(PaymentMoney.amount).map { PaymentMoney.text($0, entry.currency ?? "") }
-        let what = amount.map { "\($0) on \(entry.site)" } ?? entry.site
+        let what = amount.map { String(localized: "\($0) on \(entry.site)", comment: "A payment: the amount, then the site") } ?? entry.site
         switch entry.outcome {
-        case "paid": return "\(bot) paid \(what)"
-        case "declined": return "You said no to \(bot), \(what)"
-        case "cancelled": return "You stopped \(bot), \(what)"
-        case "no_answer", "expired": return "No answer for \(bot), \(what)"
-        case "refused": return "Not allowed: \(bot), \(what)"
-        default: return "\(bot) couldn't pay \(what)"
+        case "paid": return String(localized: "\(bot) paid \(what)", comment: "Safety: payment history; the bot, then an amount on a site")
+        case "declined": return String(localized: "You said no to \(bot), \(what)", comment: "Payment history; the bot, then an amount on a site")
+        case "cancelled": return String(localized: "You stopped \(bot), \(what)", comment: "Payment history; the bot, then an amount on a site")
+        case "no_answer", "expired": return String(localized: "No answer for \(bot), \(what)", comment: "Payment history; the bot, then an amount on a site")
+        case "refused": return String(localized: "Not allowed: \(bot), \(what)", comment: "Payment history; the bot, then an amount on a site")
+        default: return String(localized: "\(bot) couldn't pay \(what)", comment: "Payment history; the bot, then an amount on a site")
         }
     }
 }
@@ -163,7 +166,7 @@ private struct CardsAdvanced: View {
             VStack(spacing: 20) {
                 ForEach(Array(entries.enumerated()), id: \.offset) { i, entry in
                     let line = CardsSettingsView.line(entry, bot: botName(entry.bot))
-                    let card = entry.card.map { "Card ending \($0)" }
+                    let card = entry.card.map { String(localized: "Card ending \($0)", comment: "The last four digits of a card") }
                     let time = SignInsSettingsView.time(entry.at)
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
                         VStack(alignment: .leading, spacing: 3) {
@@ -253,7 +256,8 @@ struct CardEditor: View {
         saving = true
         Task {
             defer { saving = false }
-            guard await store.confirmOwner(reason: "save this card") != nil else { return }
+            let reason = String(localized: "save this card", comment: "Safety: Touch ID reason; finishes 'Nollie is trying to …'")
+            guard await store.confirmOwner(reason: reason) != nil else { return }
             do {
                 try store.add(number: number, expiry: expiry, holder: holder)
                 done()

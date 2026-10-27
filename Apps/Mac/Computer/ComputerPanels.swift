@@ -65,7 +65,7 @@ final class ComputerPanels: ComputerPresenting {
             return
         }
         let window = NSWindow(contentRect: .zero, styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        window.title = "Use Your Mac"
+        window.title = String(localized: "Use Your Mac", comment: "Window title: the permissions walkthrough for using this Mac")
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: ComputerPermissionsView(permissions: .shared) { [weak window] in window?.close() })
         window.setContentSize(window.contentView!.fittingSize)

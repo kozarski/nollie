@@ -11,7 +11,7 @@ struct ProfileInstructionsTab: View {
             CardHeadline(symbol: "lock.fill", tint: .purple, title: "Private", titleTint: .purple,
                          line: "Hidden from notifications, the chat list and backups.", id: "profile.instructions.hero")
         } else {
-            CardHeadline(symbol: "text.quote", tint: state.tint, title: "How \(state.label) works",
+            CardHeadline(symbol: "text.quote", tint: state.tint, title: LocalizedStringResource("How \(state.label) works"),
                          line: state.savedBlurb.isEmpty ? "Say what it's for." : nil, id: "profile.instructions.hero")
         }
         blurbField

@@ -10,7 +10,7 @@ struct OnboardingTeamStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            StepHeading(title: "Name your assistant", note: "Your main contact for questions and tasks.")
+            StepHeading(title: String(localized: "Name your assistant"), note: String(localized: "Your main contact for questions and tasks."))
             nameField
         }
         .glassCard(inset: compact ? 20 : 24, corner: 24, continuous: false)

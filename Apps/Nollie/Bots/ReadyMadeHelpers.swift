@@ -13,21 +13,25 @@ struct ReadyMadeHelper: Identifiable, Hashable, Sendable {
 
         var title: String {
             switch self {
-            case .home: "Home"
-            case .money: "Money"
-            case .family: "Family"
-            case .gettingThingsDone: "Getting things done"
+            case .home: String(localized: "Home", comment: "A section of ready-made helpers")
+            case .money: String(localized: "Money", comment: "A section of ready-made helpers")
+            case .family: String(localized: "Family", comment: "A section of ready-made helpers")
+            case .gettingThingsDone: String(localized: "Getting things done", comment: "A section of ready-made helpers")
             }
         }
     }
 
     /// Its profile name, as the crew add-on makes it from `name`.
     let id: String
+    /// Its name as the crew add-on gets it. The profile name (`id`) is made from it, so it stays in English.
     let name: String
+    /// Its name in the gallery, in the person's language.
+    let shownName: String
     let look: CharacterLookID
     let section: Section
     /// The one line under its name in the gallery.
     let promise: String
+    // `role`, `comeToMeFor` and `instructions` go to the crew add-on and the model, so they stay in English.
     /// Fits "I've added Planner to …", the crew's note.
     let role: String
     /// What Nollie reads when passing work on, in the helper's own voice. Its bot description.
@@ -53,10 +57,10 @@ struct ReadyMadeHelper: Identifiable, Hashable, Sendable {
     /// What every helper waits for a yes on, as its page shows it. Ask first holds these by fixed
     /// rules whatever a helper's words say; the calendar tools ask for themselves every time.
     static let asksFirst: [Fact] = [
-        Fact(symbol: "paperplane.fill", word: "Sending"),
-        Fact(symbol: "creditcard.fill", word: "Paying"),
-        Fact(symbol: "trash.fill", word: "Deleting"),
-        Fact(symbol: "calendar", word: "Calendar"),
+        Fact(symbol: "paperplane.fill", word: LocalizedStringResource("Sending", comment: "Safety: what always waits for a yes")),
+        Fact(symbol: "creditcard.fill", word: LocalizedStringResource("Paying", comment: "Safety: what always waits for a yes")),
+        Fact(symbol: "trash.fill", word: LocalizedStringResource("Deleting", comment: "Safety: what always waits for a yes")),
+        Fact(symbol: "calendar", word: LocalizedStringResource("Calendar", comment: "Safety: what always waits for a yes")),
     ]
 }
 
@@ -71,8 +75,11 @@ struct HelperRoutine: Hashable, Sendable {
         case weekly(Int)
     }
 
-    /// Its name in Schedules, after the helper's: "Bills: What's due".
+    /// Its name in Schedules, after the helper's: "Bills: What's due". The app finds its schedule by this
+    /// name, so it stays in English.
     let title: String
+    /// Its name on the helper's page, in the person's language.
+    let shownTitle: String
     let days: Days
     let hour: Int
     let minute: Int
@@ -91,7 +98,7 @@ struct HelperRoutine: Hashable, Sendable {
 
     func jobName(for helper: ReadyMadeHelper) -> String { "\(helper.name): \(title)" }
 
-    /// The words a scheduled run gets: its task, quiet when there's nothing to say, and nothing
+    /// The words a scheduled run gets (they go to the model, so they stay in English): its task, quiet when there's nothing to say, and nothing
     /// done that needs a yes.
     var prompt: String {
         """
@@ -112,10 +119,18 @@ struct HelperRoutine: Hashable, Sendable {
         } ?? String(format: "%02d:%02d", hour, minute)
         switch days {
         case .everyDay:
-            return "Every day, \(time)"
+            return String(localized: "Every day, \(time)", comment: "%@ is a time")
         case .weekly(let weekday):
-            let names = calendar.standaloneWeekdaySymbols
-            return "\(names[min(6, max(0, weekday))])s, \(time)"
+            // One whole phrase per day, since languages say "on Sundays" in their own way.
+            switch min(6, max(0, weekday)) {
+            case 0: return String(localized: "Sundays, \(time)", comment: "%@ is a time")
+            case 1: return String(localized: "Mondays, \(time)", comment: "%@ is a time")
+            case 2: return String(localized: "Tuesdays, \(time)", comment: "%@ is a time")
+            case 3: return String(localized: "Wednesdays, \(time)", comment: "%@ is a time")
+            case 4: return String(localized: "Thursdays, \(time)", comment: "%@ is a time")
+            case 5: return String(localized: "Fridays, \(time)", comment: "%@ is a time")
+            default: return String(localized: "Saturdays, \(time)", comment: "%@ is a time")
+            }
         }
     }
 }
@@ -143,8 +158,9 @@ extension ReadyMadeHelper {
     // MARK: Home
 
     static let homeAdmin = ReadyMadeHelper(
-        id: "home-admin", name: "Home admin", look: .spike, section: .home,
-        promise: "Warranties, meter readings and bin days.",
+        id: "home-admin", name: "Home admin", shownName: String(localized: "Home admin", comment: "A ready-made helper's name"),
+        look: .spike, section: .home,
+        promise: String(localized: "Warranties, meter readings and bin days.", comment: "The line under a ready-made helper's name"),
         role: "look after warranties, meter readings and bin days",
         comeToMeFor: "Share a receipt, a photo of your meter or a letter about the house. I'll keep track of it so you don't have to.",
         instructions: """
@@ -164,13 +180,15 @@ extension ReadyMadeHelper {
             Fact(symbol: "arrow.3.trianglepath", word: "Bin days"),
         ],
         routine: HelperRoutine(
-            title: "Bin night", days: .everyDay, hour: 19, minute: 0,
+            title: "Bin night", shownTitle: String(localized: "Bin night", comment: "A ready-made helper's schedule"),
+            days: .everyDay, hour: 19, minute: 0,
             task: "If tomorrow is a bin collection day by what you know, say which bins go out."),
         toolsets: ["file", "vision", "web", "browser", "todo", "memory", "clarify", "nollie_reminders"])
 
     static let meals = ReadyMadeHelper(
-        id: "meals", name: "Meals", look: .kick, section: .home,
-        promise: "Plans the week's meals and the shop.",
+        id: "meals", name: "Meals", shownName: String(localized: "Meals", comment: "A ready-made helper's name"),
+        look: .kick, section: .home,
+        promise: String(localized: "Plans the week's meals and the shop.", comment: "The line under a ready-made helper's name"),
         role: "plan the week's meals and the shopping",
         comeToMeFor: "Tell me who's eating and what you all like. I'll plan the week's meals and the shopping list.",
         instructions: """
@@ -190,15 +208,17 @@ extension ReadyMadeHelper {
             Fact(symbol: "book.fill", word: "Recipes"),
         ],
         routine: HelperRoutine(
-            title: "Next week's meals", days: .weekly(5), hour: 17, minute: 0,
+            title: "Next week's meals", shownTitle: String(localized: "Next week's meals", comment: "A ready-made helper's schedule"),
+            days: .weekly(5), hour: 17, minute: 0,
             task: "Suggest next week's meals from what you know about the household, with the shopping list. Keep it short."),
         toolsets: ["web", "browser", "memory", "file", "todo", "clarify", "nollie_reminders"])
 
     // MARK: Money
 
     static let bills = ReadyMadeHelper(
-        id: "bills", name: "Bills", look: .nite, section: .money,
-        promise: "Spots due dates and renewals. Never pays.",
+        id: "bills", name: "Bills", shownName: String(localized: "Bills", comment: "A ready-made helper's name"),
+        look: .nite, section: .money,
+        promise: String(localized: "Spots due dates and renewals. Never pays.", comment: "The line under a ready-made helper's name"),
         role: "keep track of bills and renewals",
         comeToMeFor: "Paste or attach a bill or a renewal letter. I'll note what's due and when, and help you stay ahead of it.",
         instructions: """
@@ -219,13 +239,15 @@ extension ReadyMadeHelper {
             Fact(symbol: "arrow.triangle.2.circlepath", word: "Renewals"),
         ],
         routine: HelperRoutine(
-            title: "What's due", days: .weekly(1), hour: 9, minute: 0,
+            title: "What's due", shownTitle: String(localized: "What's due", comment: "A ready-made helper's schedule"),
+            days: .weekly(1), hour: 9, minute: 0,
             task: "Look at the bills and renewals you're keeping track of. List anything due in the next 14 days with its amount and date, soonest first."),
         toolsets: ["file", "vision", "web", "todo", "memory", "clarify", "nollie_reminders", "nollie_calendar"])
 
     static let shopper = ReadyMadeHelper(
-        id: "shopper", name: "Shopper", look: .swell, section: .money,
-        promise: "Finds and compares. Never buys without your yes.",
+        id: "shopper", name: "Shopper", shownName: String(localized: "Shopper", comment: "A ready-made helper's name"),
+        look: .swell, section: .money,
+        promise: String(localized: "Finds and compares. Never buys without your yes.", comment: "The line under a ready-made helper's name"),
         role: "find and compare things to buy",
         comeToMeFor: "Tell me what you need and your budget. I'll find good options and compare them fairly.",
         instructions: """
@@ -249,8 +271,9 @@ extension ReadyMadeHelper {
     // MARK: Family
 
     static let school = ReadyMadeHelper(
-        id: "school", name: "School", look: .duo, section: .family,
-        promise: "Turns school messages into a weekly list.",
+        id: "school", name: "School", shownName: String(localized: "School", comment: "A ready-made helper's name"),
+        look: .duo, section: .family,
+        promise: String(localized: "Turns school messages into a weekly list.", comment: "The line under a ready-made helper's name"),
         role: "keep on top of school and clubs",
         comeToMeFor: "Paste or attach messages from school and clubs. I'll turn them into one list for the week.",
         instructions: """
@@ -270,13 +293,15 @@ extension ReadyMadeHelper {
             Fact(symbol: "calendar.badge.plus", word: "Dates"),
         ],
         routine: HelperRoutine(
-            title: "Week ahead", days: .weekly(0), hour: 18, minute: 0,
+            title: "Week ahead", shownTitle: String(localized: "Week ahead", comment: "A ready-made helper's schedule"),
+            days: .weekly(0), hour: 18, minute: 0,
             task: "Put together the week ahead from the school and club messages you know about: what's on each day, what to pack and anything due."),
         toolsets: ["file", "vision", "memory", "todo", "clarify", "nollie_calendar", "nollie_reminders"])
 
     static let tripPlanner = ReadyMadeHelper(
-        id: "trip-planner", name: "Trip planner", look: .spike, section: .family,
-        promise: "Plans the trip and keeps bookings together.",
+        id: "trip-planner", name: "Trip planner", shownName: String(localized: "Trip planner", comment: "A ready-made helper's name"),
+        look: .spike, section: .family,
+        promise: String(localized: "Plans the trip and keeps bookings together.", comment: "The line under a ready-made helper's name"),
         role: "plan trips and keep bookings together",
         comeToMeFor: "Tell me where, when and who's going, or share your bookings. I'll plan the trip day by day.",
         instructions: """
@@ -297,13 +322,15 @@ extension ReadyMadeHelper {
             Fact(symbol: "suitcase.fill", word: "Before you go"),
         ],
         routine: HelperRoutine(
-            title: "Before you go", days: .everyDay, hour: 9, minute: 0,
+            title: "Before you go", shownTitle: String(localized: "Before you go", comment: "A ready-made helper's schedule"),
+            days: .everyDay, hour: 9, minute: 0,
             task: "If a trip you know about starts in the next three days, give a short checklist: documents, tickets, check-in times and anything still missing."),
         toolsets: ["web", "browser", "vision", "memory", "file", "todo", "clarify", "nollie_calendar"])
 
     static let eventScout = ReadyMadeHelper(
-        id: "event-scout", name: "Event scout", look: .kick, section: .family,
-        promise: "Finds shows and tickets worth going to.",
+        id: "event-scout", name: "Event scout", shownName: String(localized: "Event scout", comment: "A ready-made helper's name"),
+        look: .kick, section: .family,
+        promise: String(localized: "Finds shows and tickets worth going to.", comment: "The line under a ready-made helper's name"),
         role: "find shows, gigs and tickets",
         comeToMeFor: "Tell me what you like and where you are. I'll find shows, gigs and games worth going to.",
         instructions: """
@@ -321,15 +348,17 @@ extension ReadyMadeHelper {
             Fact(symbol: "sportscourt.fill", word: "Games"),
         ],
         routine: HelperRoutine(
-            title: "Weekend ideas", days: .weekly(4), hour: 18, minute: 0,
+            title: "Weekend ideas", shownTitle: String(localized: "Weekend ideas", comment: "A ready-made helper's schedule"),
+            days: .weekly(4), hour: 18, minute: 0,
             task: "Find a few things on this weekend that fit what you know they like, with dates, venues, prices and links from the official seller."),
         toolsets: ["web", "browser", "memory", "clarify"])
 
     // MARK: Getting things done
 
     static let planner = ReadyMadeHelper(
-        id: "planner", name: "Planner", look: .duo, section: .gettingThingsDone,
-        promise: "Turns a busy week into a plan.",
+        id: "planner", name: "Planner", shownName: String(localized: "Planner", comment: "A ready-made helper's name"),
+        look: .duo, section: .gettingThingsDone,
+        promise: String(localized: "Turns a busy week into a plan.", comment: "The line under a ready-made helper's name"),
         role: "plan your days and weeks",
         comeToMeFor: "Bring me a busy week, a big day or a list that got out of hand. I'll turn it into a plan you can follow.",
         instructions: """
@@ -350,13 +379,15 @@ extension ReadyMadeHelper {
             Fact(symbol: "checklist", word: "To-dos"),
         ],
         routine: HelperRoutine(
-            title: "Today's plan", days: .everyDay, hour: 7, minute: 30,
+            title: "Today's plan", shownTitle: String(localized: "Today's plan", comment: "A ready-made helper's schedule"),
+            days: .everyDay, hour: 7, minute: 30,
             task: "Make a short plan for today from what you know, and the calendar if you can see it. Keep it short enough to read on a phone."),
         toolsets: ["todo", "memory", "file", "web", "clarify", "session_search", "nollie_calendar", "nollie_reminders"])
 
     static let appointments = ReadyMadeHelper(
-        id: "appointments", name: "Appointments", look: .swell, section: .gettingThingsDone,
-        promise: "Finds a time and asks before booking.",
+        id: "appointments", name: "Appointments", shownName: String(localized: "Appointments", comment: "A ready-made helper's name"),
+        look: .swell, section: .gettingThingsDone,
+        promise: String(localized: "Finds a time and asks before booking.", comment: "The line under a ready-made helper's name"),
         role: "find times for appointments and keep track of them",
         comeToMeFor: "Tell me what you need to book and when suits you. I'll find a time and ask before anything is booked.",
         instructions: """
@@ -376,13 +407,15 @@ extension ReadyMadeHelper {
             Fact(symbol: "bell.fill", word: "Reminders"),
         ],
         routine: HelperRoutine(
-            title: "Day before", days: .everyDay, hour: 18, minute: 0,
+            title: "Day before", shownTitle: String(localized: "Day before", comment: "A ready-made helper's schedule"),
+            days: .everyDay, hour: 18, minute: 0,
             task: "Check for appointments tomorrow, in the calendar if you can see it and in what you remember. For each one, say the time, the place and anything to bring."),
         toolsets: ["web", "browser", "memory", "file", "clarify", "nollie_calendar", "nollie_reminders"])
 
     static let researcher = ReadyMadeHelper(
-        id: "researcher", name: "Researcher", look: .nite, section: .gettingThingsDone,
-        promise: "Reads the web and shows its sources.",
+        id: "researcher", name: "Researcher", shownName: String(localized: "Researcher", comment: "A ready-made helper's name"),
+        look: .nite, section: .gettingThingsDone,
+        promise: String(localized: "Reads the web and shows its sources.", comment: "The line under a ready-made helper's name"),
         role: "look things up and show the sources",
         comeToMeFor: "Ask me a question worth looking into. I'll read up and answer with my sources.",
         instructions: """

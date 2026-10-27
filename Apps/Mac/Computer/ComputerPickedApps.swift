@@ -18,6 +18,7 @@ enum ComputerPickedApps {
         defaults.set(apps.sorted(), forKey: key)
     }
 
+    // Refusals go back to the bot's model, so they stay in English (the approval card shows its own words).
     static func notPicked(_ name: String) -> String { "\(name) isn't one of the apps you picked for this Mac." }
     static let nonePicked = "No apps are picked for using this Mac yet. The person can pick them in a bot's settings, under Computer."
     static func turnedOff(_ name: String) -> String { "\(name) was turned off for this Mac, so Nollie didn't do that." }

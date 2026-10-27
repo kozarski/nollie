@@ -89,11 +89,11 @@ struct CronRun: Equatable {
 
     var title: String {
         switch phase {
-        case .running: "Running…"
-        case .started: "Started"
-        case .requested: "Requested"
-        case .finished: "Finished"
-        case .idle, .failed: "Run now"
+        case .running: String(localized: "Running…", comment: "A scheduled task's Run now button")
+        case .started: String(localized: "Started", comment: "A scheduled task's Run now button")
+        case .requested: String(localized: "Requested", comment: "A scheduled task's Run now button")
+        case .finished: String(localized: "Finished", comment: "A scheduled task's Run now button")
+        case .idle, .failed: String(localized: "Run now", comment: "A scheduled task's Run now button")
         }
     }
 
@@ -124,13 +124,16 @@ struct CronRun: Equatable {
         case .failed(let message):
             return (message, true)
         case .running:
-            return calm("Waiting for your assistant to confirm the result. Leaving this page does not cancel the request.")
+            return calm(String(localized: "Waiting for your assistant to confirm the result. Leaving this page does not cancel the request."))
         case .started:
-            return calm("Your assistant is still checking. The last result updates when it finishes.")
+            return calm(String(localized: "Your assistant is still checking. The last result updates when it finishes."))
         case .requested:
-            return calm("Your request was sent. A finished result has not been confirmed yet.")
+            return calm(String(localized: "Your request was sent. A finished result has not been confirmed yet."))
         case .finished(let result):
-            return result.map { ("Last result: \($0).", !Self.isGood($0)) }
+            return result.map {
+                (String(localized: "Last result: \($0).", comment: "The gateway's own status word, such as ok or delivery failed"),
+                 !Self.isGood($0))
+            }
         }
     }
 
@@ -174,21 +177,21 @@ struct CronRun: Equatable {
 
     /// Turns a failure into words a person can act on.
     static func plainWords(_ error: Error) -> String {
-        let unclear = "Your assistant could not confirm this check. Reopen Schedules before trying again."
+        let unclear = String(localized: "Your assistant could not confirm this check. Reopen Schedules before trying again.")
         guard let failure = error as? HermesAPIError else { return unclear }
         switch failure {
         case .http(let code, _):
             switch code {
             // Hermes refuses a second run while one is live, whether it came from another tap, another
             // device or the schedule.
-            case 409: return "This one is already running. Give it a moment, then try again."
-            case 404: return "This task is gone from the gateway. Go back and refresh the list."
-            default: return "Your assistant could not run this check (error \(code))."
+            case 409: return String(localized: "This one is already running. Give it a moment, then try again.")
+            case 404: return String(localized: "This task is gone from the gateway. Go back and refresh the list.")
+            default: return String(localized: "Your assistant could not run this check (error \(String(code))).")
             }
         case .transport:
-            return "No answer from your assistant. Check the task before trying again."
+            return String(localized: "No answer from your assistant. Check the task before trying again.")
         case .sessionExpired:
-            return "Your sign-in has run out. Please sign in again."
+            return String(localized: "Your sign-in has run out. Please sign in again.")
         default:
             return unclear
         }

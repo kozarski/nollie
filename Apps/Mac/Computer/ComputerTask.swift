@@ -56,7 +56,7 @@ struct ComputerTask: Equatable, Sendable, Identifiable {
 
     enum End: Equatable, Sendable {
         case expired, idle, stopped, phone, finished, presence, away, otherApp, otherControl, helperExited
-        /// What the person reads afterwards.
+        /// Why it ended. Goes back to the bot's model as a refusal, so it stays in English.
         var message: String {
             switch self {
             case .expired: "Time's up. The 30 minutes you allowed are over."

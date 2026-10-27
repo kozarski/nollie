@@ -130,7 +130,7 @@ private struct LeftoverOffer: ViewModifier {
 enum MacPages {
     static let order: [AppModel.AppTab] = [.chats, .kanban, .cron]
 
-    private static let names: [AppModel.AppTab: String] = [.bots: "All Bots", .cron: "Schedules"]
+    private static let names: [AppModel.AppTab: String] = [.bots: String(localized: "All Bots"), .cron: String(localized: "Schedules")]
 
     static func title(_ tab: AppModel.AppTab) -> String { names[tab] ?? tab.title }
 }
@@ -166,7 +166,7 @@ private struct MacLockCover: View {
     }
 
     private var unlock: some View {
-        Button("Unlock with \(model.lock.biometryName)") { Task { await model.lock.unlock() } }
+        Button("Unlock with \(RememberedSignInCopy.shownMethod(model.lock.biometryName))") { Task { await model.lock.unlock() } }
             .keyboardShortcut(.defaultAction)
             .buttonStyle(.nollieGlassProminent)
     }

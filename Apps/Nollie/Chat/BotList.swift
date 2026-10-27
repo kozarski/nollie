@@ -82,9 +82,9 @@ struct BotPresenceAvatar: View {
 @MainActor
 enum BotActivity {
     static func line(_ presence: BotPresence) -> String {
-        guard let live = presence.live else { return presence.onBoard ? "Working on a task…" : "Working…" }
+        guard let live = presence.live else { return presence.onBoard ? String(localized: "Working on a task…") : String(localized: "Working…") }
         if let goal = ChatGoals.shared.goal(for: live.storedID), !goal.isEmpty { return goal }
-        if live.botState == .thinking { return "Thinking…" }
+        if live.botState == .thinking { return String(localized: "Thinking…") }
         return humanize(live.statusLine)
     }
 
@@ -92,20 +92,27 @@ enum BotActivity {
     /// Cua Spaces tool ("mcp__cua__space_bash") "Using its own computer…".
     static func humanize(_ status: String?) -> String {
         let s = (status ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        if s.isEmpty || s.hasPrefix("Writing") || s.hasPrefix("Replying") || s.hasPrefix("Streaming") { return "Typing…" }
+        if s.isEmpty || s.hasPrefix("Writing") || s.hasPrefix("Replying") || s.hasPrefix("Streaming") { return String(localized: "Typing…", comment: "A bot is writing its reply") }
         let lower = s.lowercased()
+        // The keys are the gateway's tool names; only the phrases are shown.
         let words: [(String, String)] = [
-            ("request_sign_in", "Signing in…"), ("cua_recorder", "Recording the screen…"), ("mcp__cua__", "Using its own computer…"),
-            ("computer_use", "Using your Mac…"), ("browser", "Browsing…"),
-            ("web_search", "Searching the web…"), ("web_fetch", "Reading a page…"), ("terminal", "Running a command…"),
-            ("read_file", "Reading files…"), ("write_file", "Writing a file…"), ("patch", "Editing a file…"),
-            ("kanban", "Checking the board…"), ("cron", "Checking schedules…"), ("memory", "Remembering…"),
-            ("delegate", "Asking a helper…"), ("send_message", "Sending a message…"), ("image", "Looking at a picture…"),
+            ("request_sign_in", String(localized: "Signing in…")), ("cua_recorder", String(localized: "Recording the screen…")),
+            ("mcp__cua__", String(localized: "Using its own computer…")),
+            ("computer_use", String(localized: "Using your Mac…")), ("browser", String(localized: "Browsing…")),
+            ("web_search", String(localized: "Searching the web…")), ("web_fetch", String(localized: "Reading a page…")),
+            ("terminal", String(localized: "Running a command…")),
+            ("read_file", String(localized: "Reading files…")), ("write_file", String(localized: "Writing a file…")),
+            ("patch", String(localized: "Editing a file…")),
+            ("kanban", String(localized: "Checking the board…")), ("cron", String(localized: "Checking schedules…")),
+            ("memory", String(localized: "Remembering…")),
+            ("delegate", String(localized: "Asking a helper…")), ("send_message", String(localized: "Sending a message…")),
+            ("image", String(localized: "Looking at a picture…")),
         ]
         if lower.hasPrefix("running ") || lower.hasPrefix("preparing ") {
             for (key, phrase) in words where lower.contains(key) { return phrase }
         }
-        return s.hasSuffix("…") || s.hasSuffix("...") ? s : s + "…"
+        let shown = ChatSession.statusWords(s)
+        return shown.hasSuffix("…") || shown.hasSuffix("...") ? shown : shown + "…"
     }
 }
 
@@ -165,8 +172,9 @@ struct BotListRow: View {
         .animation(.easeOut(duration: 0.12), value: hovering)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(profile.shownName)
-        .accessibilityValue([pinned ? "Pinned" : nil, presence.needsYou ? "needs your OK" : nil, presence.working ? BotActivity.line(presence) : nil,
-                             unread ? "new message" : nil, isPrivate ? nil : entry.lastText].compactMap { $0 }.joined(separator: ", "))
+        .accessibilityValue([pinned ? String(localized: "Pinned") : nil, presence.needsYou ? String(localized: "needs your OK") : nil,
+                             presence.working ? BotActivity.line(presence) : nil,
+                             unread ? String(localized: "new message") : nil, isPrivate ? nil : entry.lastText].compactMap { $0 }.joined(separator: ", "))
         .accessibilityHint("Opens your chat with \(profile.shownName).")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("bots.row.\(profile.name)")
@@ -213,9 +221,9 @@ struct BotListRow: View {
 
     private var lastLine: String {
         if let t = entry.lastText, !t.isEmpty { return t }
-        if entry.storedID == nil { return "Say hello to start your chat." }
+        if entry.storedID == nil { return String(localized: "Say hello to start your chat.") }
         if let d = profile.description, !d.isEmpty { return d }
-        return "No messages yet."
+        return String(localized: "No messages yet.")
     }
 }
 
@@ -262,7 +270,9 @@ struct BotTile: View {
         .contentShape(.rect(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(profile.shownName)
-        .accessibilityValue([presence.needsYou ? "needs your OK" : nil, presence.working ? "working" : nil, unread ? "new message" : nil].compactMap { $0 }.joined(separator: ", "))
+        .accessibilityValue([presence.needsYou ? String(localized: "needs your OK") : nil,
+                             presence.working ? String(localized: "working", comment: "A bot's state, read by VoiceOver") : nil,
+                             unread ? String(localized: "new message") : nil].compactMap { $0 }.joined(separator: ", "))
         .accessibilityHint("Opens your chat with \(profile.shownName).")
         .accessibilityIdentifier("bots.pinned.\(profile.name)")
     }

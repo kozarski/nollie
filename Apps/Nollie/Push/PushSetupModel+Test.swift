@@ -29,7 +29,7 @@ extension PushSetupModel {
     func sendTest(runtime rt: GatewayRuntime) async {
         testPhase = .waiting
         testStartedAt = Date()
-        testStage = "Sending the request to the gateway…"
+        testStage = String(localized: "Sending the request to the gateway…")
         var attempt = Attempt(nonce: UUID().uuidString.lowercased())
         Self.testNonces = Self.testNonces.filter { -$0.value.timeIntervalSinceNow < 1800 }
         Self.testNonces[attempt.nonce] = Date()
@@ -37,10 +37,10 @@ extension PushSetupModel {
             let request = JSONValue.object(["nonce": .string(attempt.nonce), "requested_at": .number(Date().timeIntervalSince1970)])
             try await writeFile(rt, path: pushDir(for: rt) + "/test-request.json", data: JSONEncoder().encode(request), mime: "application/json")
         } catch {
-            testPhase = .done(ok: false, text: "Could not send the request to the gateway: \(error.localizedDescription)")
+            testPhase = .done(ok: false, text: String(localized: "Could not send the request to the gateway: \(error.localizedDescription)"))
             return
         }
-        testStage = "Waiting for the companion to pick it up (it looks every 3 seconds)…"
+        testStage = String(localized: "Waiting for the companion to pick it up (it looks every 3 seconds)…")
         Self.presentedNonces.remove(attempt.nonce)
         Self.lastPresentedAt = nil
 
@@ -69,23 +69,26 @@ extension PushSetupModel {
             let askedAt = Self.testNonces.removeValue(forKey: arrived) ?? attempt.began
             Self.presentedNonces.remove(arrived)
             if arrived == attempt.nonce {
-                return .done(ok: true, text: "It reached \(DeviceWords.this) \(seconds)s after you asked, and the content opened. The whole chain works.")
+                return .done(ok: true, text: String(localized: "It reached \(DeviceWords.this) \(seconds)s after you asked, and the content opened. The whole chain works.",
+                                                    comment: "%1$@ is this iPhone, this iPad or this Mac; %2$lld is seconds"))
             }
-            return .done(ok: true, text: "An earlier test has just reached \(DeviceWords.this), \(Int(-askedAt.timeIntervalSinceNow))s after it was sent, and the content opened. The chain works, though pushes are slow here.")
+            return .done(ok: true, text: String(localized: "An earlier test has just reached \(DeviceWords.this), \(Int(-askedAt.timeIntervalSinceNow))s after it was sent, and the content opened. The chain works, though pushes are slow here.",
+                                                comment: "%1$@ is this iPhone, this iPad or this Mac; %2$lld is seconds"))
         }
         // Something came that is not a known test. The extension's note decides: a decrypt failure is
         // a failure, but "decrypted OK" may be an ordinary reply, so it is not a pass.
         if stray, let note = Self.recentExtensionNote(since: attempt.began),
            ["decrypt failed", "no relay credentials"].contains(where: note.contains) {
-            return .done(ok: false, text: "A push reached \(DeviceWords.this) \(seconds)s after you asked, but its content could not be opened (\(note)). Register \(DeviceWords.this) again (step 1) so the keys match, then test once more.")
+            return .done(ok: false, text: String(localized: "A push reached \(DeviceWords.this) \(seconds)s after you asked, but its content could not be opened (\(note)). Register \(DeviceWords.this) again (step 1) so the keys match, then test once more.",
+                                                 comment: "%1$@ and %4$@ are this iPhone, this iPad or this Mac; %2$lld is seconds; %3$@ is a technical note"))
         }
         attempt.sawUnreadable = attempt.sawUnreadable || stray
         if attempt.companionSentTo == nil, seconds.isMultiple(of: 2) {
             await noteCompanionProgress(&attempt, runtime: rt)
         }
         if seconds == 45 {
-            testStage = attempt.companionSentTo == nil ? "Still waiting for the companion to notice it…"
-                : "Still on its way. Apple can take a minute or more, so there is no need to ask again."
+            testStage = attempt.companionSentTo == nil ? String(localized: "Still waiting for the companion to notice it…")
+                : String(localized: "Still on its way. Apple can take a minute or more, so there is no need to ask again.")
         }
         return nil
     }
@@ -96,26 +99,32 @@ extension PushSetupModel {
         let count = beat.lastTestDevices ?? 0
         attempt.companionSentTo = count
         attempt.relayDetail = beat.lastTestDetail ?? ""
-        testStage = count == 0 ? "The companion has no device to send to" : "The companion has sent it. Waiting for it to arrive…"
+        testStage = count == 0 ? String(localized: "The companion has no device to send to")
+                                : String(localized: "The companion has sent it. Waiting for it to arrive…")
     }
 
     private static func timeoutText(_ attempt: Attempt) -> String {
         let detail = attempt.relayDetail
         let blockedByCloudflare = detail.contains("1010")
-        let relayNote = detail.isEmpty ? ""
-            : blockedByCloudflare ? " A Cloudflare browser check stopped the companion's request to the relay (error 1010). Update the companion; newer ones identify themselves."
-            : " The relay said: \(detail)."
-        let strayNote = attempt.sawUnreadable
-            ? " A push did arrive meanwhile that Nollie could not read. If that happens again, register \(DeviceWords.this) again (step 1)." : ""
+        // Whole sentences, each its own string, joined with a space.
+        let relayNote: String? = detail.isEmpty ? nil
+            : blockedByCloudflare ? String(localized: "A Cloudflare browser check stopped the companion's request to the relay (error 1010). Update the companion; newer ones identify themselves.")
+            : String(localized: "The relay said: \(detail).")
+        let strayNote: String? = attempt.sawUnreadable
+            ? String(localized: "A push did arrive meanwhile that Nollie could not read. If that happens again, register \(DeviceWords.this) again (step 1).") : nil
+        let sentences: [String?]
         switch attempt.companionSentTo {
         case nil:
-            return "The companion did not pick the request up within three minutes. Is it connected (step 5)?\(strayNote)"
+            sentences = [String(localized: "The companion did not pick the request up within three minutes. Is it connected (step 5)?"), strayNote]
         case 0?:
-            let hint = blockedByCloudflare ? "" : " If it says \"unknown device\", register \(DeviceWords.this) again (step 1)."
-            return "The companion tried, but the relay turned the push down for \(DeviceWords.this).\(relayNote)\(hint)"
+            let hint = blockedByCloudflare ? nil : String(localized: "If it says \"unknown device\", register \(DeviceWords.this) again (step 1).")
+            sentences = [String(localized: "The companion tried, but the relay turned the push down for \(DeviceWords.this)."), relayNote, hint]
         case let count?:
-            return "The companion sent it to \(count) device\(count == 1 ? "" : "s"), but nothing reached here in three minutes.\(relayNote) Check that notifications are allowed for Nollie, and the registration in step 1. If it turns up later, the next test will say so.\(strayNote)"
+            sentences = [String(localized: "The companion sent it to \(count) devices, but nothing reached here in three minutes."), relayNote,
+                         String(localized: "Check that notifications are allowed for Nollie, and the registration in step 1. If it turns up later, the next test will say so."),
+                         strayNote]
         }
+        return sentences.compactMap { $0 }.joined(separator: " ")
     }
 
     /// Looks at Notification Center for anything delivered since the request: either a known test

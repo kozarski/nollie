@@ -1,3 +1,4 @@
+import Foundation
 import NollieCore
 
 /// Three user-facing lanes retain the gateway's detailed lifecycle underneath.
@@ -5,16 +6,20 @@ enum KanbanPresentationGroup: String, CaseIterable, Identifiable, Sendable, Hash
     case pending, blocked, done
     var id: String { rawValue }
     var title: String {
-        switch self { case .pending: "Pending"; case .blocked: "Blocked"; case .done: "Done" }
+        switch self {
+        case .pending: String(localized: "Pending", comment: "A lane on the Board")
+        case .blocked: String(localized: "Blocked", comment: "A lane on the Board")
+        case .done: String(localized: "Done", comment: "A lane on the Board")
+        }
     }
     var symbol: String {
         switch self { case .pending: "clock"; case .blocked: "hand.raised"; case .done: "checkmark.circle" }
     }
     var description: String {
         switch self {
-        case .pending: "Working, checking or planned for later."
-        case .blocked: "Needs your help to move forward."
-        case .done: "Finished and ready to revisit."
+        case .pending: String(localized: "Working, checking or planned for later.")
+        case .blocked: String(localized: "Needs your help to move forward.")
+        case .done: String(localized: "Finished and ready to revisit.")
         }
     }
     var statuses: [KanbanStatus] {

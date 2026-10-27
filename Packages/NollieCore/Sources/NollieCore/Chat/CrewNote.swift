@@ -48,10 +48,10 @@ public struct CrewNote: Hashable, Sendable {
 
     private static func label(_ kind: Action.Kind) -> String {
         switch kind {
-        case .meet: "Meet"
-        case .undo: "Undo"
-        case .add: "Add"
-        case .notNow: "Not now"
+        case .meet: String(localized: "Meet", table: "Core", comment: "A button that opens a new crew member's chat")
+        case .undo: String(localized: "Undo", table: "Core", comment: "A button")
+        case .add: String(localized: "Add", table: "Core", comment: "A button that adds a suggested crew member")
+        case .notNow: String(localized: "Not now", table: "Core", comment: "A button")
         }
     }
 }

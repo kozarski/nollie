@@ -24,9 +24,9 @@ enum MenuBarIcon {
     private static func description(of badge: Badge) -> String {
         switch badge {
         case .idle: "Nollie"
-        case .working: "Nollie, working"
-        case .needsYou: "Nollie, needs you"
-        case .usingMac: "Nollie, using this Mac"
+        case .working: String(localized: "Nollie, working", comment: "The menu bar icon, for VoiceOver")
+        case .needsYou: String(localized: "Nollie, needs you", comment: "The menu bar icon, for VoiceOver")
+        case .usingMac: String(localized: "Nollie, using this Mac", comment: "The menu bar icon, for VoiceOver")
         }
     }
 

@@ -336,7 +336,8 @@ extension ChatSession {
         // a late one gets ignored, and finishing the turn releases whatever remains.
         cardWent()
         runtime.cardNotifier?.cardSettled(card, chat: self)
-        addNote(card.method == "approval" ? "Answered on another device" : "The question was closed", symbol: "checkmark.shield")
+        addNote(card.method == "approval" ? String(localized: "Answered on another device", table: "Core", comment: "Safety: an approval was answered elsewhere")
+                : String(localized: "The question was closed", table: "Core"), symbol: "checkmark.shield")
     }
 
     /// Answers a card, using whichever card is currently up for that question. The approval queue's
@@ -375,7 +376,7 @@ extension ChatSession {
             let socket: GatewaySocket = runtime.socket
             await socket.respond(to: card.id, result: result)
         }
-        if isApproval { addNote("Approval: \(result.text("choice") ?? "?")", symbol: "checkmark.shield") }
+        if isApproval { addNote(Self.approvalNote(result.text("choice")), symbol: "checkmark.shield") }
         return true
     }
 
@@ -394,7 +395,20 @@ extension ChatSession {
         cardWent()
         runtime.cardNotifier?.cardSettled(card, chat: self)
         waiter?.resume(returning: .null)
-        addNote("Request withdrawn (\(reason)).", symbol: "xmark.circle")
+        addNote(String(localized: "Request withdrawn (\(reason)).", table: "Core", comment: "The value is the gateway's own reason word, such as timeout"),
+                symbol: "xmark.circle")
+    }
+
+    /// The note after the person answered an approval here: "Approval: once". The choice is the gateway's own word.
+    static func approvalNote(_ choice: String?) -> String {
+        let word = choice ?? "?"
+        return switch choice {
+        case "once": String(localized: "Approval: once", table: "Core", comment: "Safety: the person allowed this one action")
+        case "session": String(localized: "Approval: session", table: "Core", comment: "Safety: the person allowed this for the rest of the chat")
+        case "always": String(localized: "Approval: always", table: "Core", comment: "Safety: the person always allows this")
+        case "deny": String(localized: "Approval: deny", table: "Core", comment: "Safety: the person said no")
+        default: String(localized: "Approval: \(word)", table: "Core", comment: "Safety: the person's answer, in the gateway's own word")
+        }
     }
 
     /// Follow-up once a card is gone. With none left, we stop requesting attention and the activity

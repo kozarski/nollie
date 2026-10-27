@@ -22,7 +22,7 @@ struct CrewPage: View {
                             .accessibilityAddTraits(.isHeader)
                         ForEach(helpers) { HelperRow(helper: $0, stale: stale) }
                         if stale, let made = model.snapshot?.made {
-                            Text("\(WatchWords.lastSeen) \(made.formatted(date: .omitted, time: .shortened))")
+                            Text(WatchWords.seenAt(made.formatted(date: .omitted, time: .shortened)))
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -104,5 +104,5 @@ private struct HelperRow: View {
 
 /// What Stop does, for VoiceOver.
 enum MacStopHint {
-    static let text = "Ends the helper's task on your Mac, stops replies and pauses schedules."
+    static let text = String(localized: "Ends the helper's task on your Mac, stops replies and pauses schedules.", comment: "Safety: what Stop does")
 }

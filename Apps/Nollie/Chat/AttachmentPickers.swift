@@ -83,11 +83,11 @@ enum RecordingSession {
 @MainActor
 final class MicCapture {
     struct Refused: LocalizedError {
-        var errorDescription: String? { "Nollie can't use the microphone. You can allow it in Settings." }
+        var errorDescription: String? { String(localized: "Nollie can't use the microphone. You can allow it in Settings.") }
     }
 
     struct WouldNotStart: LocalizedError {
-        var errorDescription: String? { "Recording didn't start. Please try again." }
+        var errorDescription: String? { String(localized: "Recording didn't start. Please try again.") }
     }
 
     let file: URL

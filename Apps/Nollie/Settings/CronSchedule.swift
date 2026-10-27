@@ -4,7 +4,8 @@ import NollieCore
 /// Words for the schedule shapes people use most. Anything else is shown as the gateway sent it.
 enum CronSchedule {
     /// Extracts schedule text whatever form the gateway used: plain string, object keyed by an
-    /// expression, an interval, or a one-time moment.
+    /// expression, an interval, or a one-time moment. It is the stored schedule (read back with
+    /// `onceDate`, sent back on save), so it stays in English.
     static func expression(of value: JSONValue?) -> String? {
         guard let value else { return nil }
         if let text = value.stringValue { return text }
@@ -23,35 +24,38 @@ enum CronSchedule {
         return value.displayText
     }
 
-    private static let weekdayNames = [
-        "0": "Sunday", "1": "Monday", "2": "Tuesday", "3": "Wednesday",
-        "4": "Thursday", "5": "Friday", "6": "Saturday", "7": "Sunday",
-    ]
-
     /// A cron line in plain words, such as "Weekdays at 9:00 AM". Odd shapes come back unchanged.
     static func describe(_ schedule: String?) -> String {
-        guard let schedule, !schedule.isEmpty else { return "no schedule" }
+        guard let schedule, !schedule.isEmpty else { return String(localized: "no schedule") }
         if let once = onceDate(schedule) {
-            return "Once, \(once.formatted(date: .abbreviated, time: .shortened))"
+            return String(localized: "Once, \(once.formatted(date: .abbreviated, time: .shortened))", comment: "A task that runs one time, then when")
         }
         let fields = schedule.split(separator: " ").map(String.init)
-        guard fields.count == 5, let minute = Int(fields[0]), let hour = Int(fields[1]) else { return schedule }
+        guard fields.count == 5, let minute = Int(fields[0]), let hour = Int(fields[1]),
+              (0..<24).contains(hour), (0..<60).contains(minute),
+              let time = Calendar.current.date(from: DateComponents(hour: hour, minute: minute))
+        else { return schedule }
 
-        let twelve = hour % 12 == 0 ? 12 : hour % 12
-        let clock = String(format: "%d:%02d", twelve, minute) + (hour >= 12 ? " PM" : " AM")
+        let clock = time.formatted(date: .omitted, time: .shortened)
         let (dayOfMonth, month, dayOfWeek) = (fields[2], fields[3], fields[4])
 
         if dayOfMonth == "*" && month == "*" {
             switch dayOfWeek {
-            case "*": return "Every day at \(clock)"
-            case "1-5": return "Weekdays at \(clock)"
-            case "0,6", "6,0": return "Weekends at \(clock)"
-            default:
-                if let name = weekdayNames[dayOfWeek] { return "\(name)s at \(clock)" }
+            case "*": return String(localized: "Every day at \(clock)")
+            case "1-5": return String(localized: "Weekdays at \(clock)")
+            case "0,6", "6,0": return String(localized: "Weekends at \(clock)")
+            case "0", "7": return String(localized: "Sundays at \(clock)")
+            case "1": return String(localized: "Mondays at \(clock)")
+            case "2": return String(localized: "Tuesdays at \(clock)")
+            case "3": return String(localized: "Wednesdays at \(clock)")
+            case "4": return String(localized: "Thursdays at \(clock)")
+            case "5": return String(localized: "Fridays at \(clock)")
+            case "6": return String(localized: "Saturdays at \(clock)")
+            default: break
             }
         }
         if dayOfMonth != "*" && month == "*" && dayOfWeek == "*" {
-            return "Day \(dayOfMonth) of every month at \(clock)"
+            return String(localized: "Day \(dayOfMonth) of every month at \(clock)")
         }
         return schedule
     }

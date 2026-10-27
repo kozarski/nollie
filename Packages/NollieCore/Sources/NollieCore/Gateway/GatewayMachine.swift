@@ -343,6 +343,7 @@ struct GatewayMachine {
             out.append(.question(question))
             return
         }
+        // The gateway's own error replies, read by Hermes and the model, so they stay in English.
         let error: GatewayRPCError
         if declinesNotShown, GatewayConfiguration.windowQuestions.contains(question.method) {
             error = GatewayRPCError(code: GatewayRPCError.notShown, message: "No window that shows this chat is open here.")

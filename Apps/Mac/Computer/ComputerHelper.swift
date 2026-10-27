@@ -18,6 +18,7 @@ protocol ComputerDriving: AnyObject, Sendable {
 /// closes its stdin, quits or crashes. Stop revokes every session, closes stdin and, if it is
 /// still there after half a second, kills it: always gone within a second.
 final class ComputerHelper: ComputerDriving, @unchecked Sendable {
+    /// The descriptions go back to the bot's model, so they stay in English.
     enum Failure: LocalizedError, Equatable {
         case missing, notReady, refused(String), unreadable
         var errorDescription: String? {

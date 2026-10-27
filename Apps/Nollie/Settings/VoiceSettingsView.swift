@@ -5,7 +5,7 @@ import SwiftUI
 struct VoiceSettingsView: View {
     @AppStorage(VoiceSettings.readAloudKey) private var readAloud = false
 
-    private static let sample = "Hello. This is how your replies will sound."
+    private static let sample = String(localized: "Hello. This is how your replies will sound.", comment: "Spoken aloud as a sample of the reply voice")
 
     var body: some View {
         SettingsPage("voice.page") {

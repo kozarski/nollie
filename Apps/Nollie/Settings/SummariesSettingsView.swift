@@ -64,10 +64,10 @@ private enum SummariesReading: Equatable {
     /// Why Apple Intelligence can't write here, in a few words.
     private static var whyNot: String {
         switch SystemLanguageModel.default.availability {
-        case .unavailable(.deviceNotEligible): "\(DeviceWords.This) can't run it."
-        case .unavailable(.appleIntelligenceNotEnabled): "Turn it on in \(DeviceWords.settings) first."
-        case .unavailable(.modelNotReady): "It's still downloading."
-        default: "It isn't available right now."
+        case .unavailable(.deviceNotEligible): String(localized: "\(DeviceWords.This) can't run it.")
+        case .unavailable(.appleIntelligenceNotEnabled): String(localized: "Turn it on in \(DeviceWords.settings) first.")
+        case .unavailable(.modelNotReady): String(localized: "It's still downloading.")
+        default: String(localized: "It isn't available right now.")
         }
     }
 
@@ -75,23 +75,22 @@ private enum SummariesReading: Equatable {
     var face: (symbol: String, title: String, line: String, tint: Color) {
         switch self {
         case .needs(let why):
-            ("apple.intelligence", "Needs Apple Intelligence", why, .orange)
+            ("apple.intelligence", String(localized: "Needs Apple Intelligence"), why, .orange)
         case .off:
-            ("sparkles", "Summaries off", "Nollie can name and sum up your chats.", Ink.text2)
+            ("sparkles", String(localized: "Summaries off"), String(localized: "Nollie can name and sum up your chats."), Ink.text2)
         case .writing(_, 1):
-            ("sparkles", "Writing summaries", "One chat.", .nollie)
+            ("sparkles", String(localized: "Writing summaries"), String(localized: "One chat.", comment: "Writing a summary for one chat"), .nollie)
         case .writing(let current, let total):
-            ("sparkles", "Writing summaries", "\(current) of \(total) chats.", .nollie)
+            ("sparkles", String(localized: "Writing summaries"), String(localized: "\(current) of \(total) chats."), .nollie)
         case .upToDate(let count):
-            ("checkmark.seal.fill", "Up to date", Self.doneLine(count), .green)
+            ("checkmark.seal.fill", String(localized: "Up to date"), Self.doneLine(count), .green)
         }
     }
 
     private static func doneLine(_ count: Int) -> String {
         switch count {
-        case 0: "New chats get one as you go."
-        case 1: "1 chat, summed up on \(DeviceWords.this)."
-        default: "\(count) chats, summed up on \(DeviceWords.this)."
+        case 0: String(localized: "New chats get one as you go.")
+        default: String(localized: "\(count) chats, summed up on \(DeviceWords.this).")
         }
     }
 }
@@ -102,7 +101,7 @@ private struct SummariesHero: View {
 
     var body: some View {
         let face = reading.face
-        PageHero(symbol: face.symbol, title: face.title, line: face.line, tint: face.tint, id: "summaries.hero")
+        PageHero(symbol: face.symbol, title: .verbatim(face.title), line: .verbatim(face.line), tint: face.tint, id: "summaries.hero")
     }
 }
 
@@ -115,15 +114,16 @@ private struct SummariesAdvancedPage: View {
 
     /// Which parts are on, in a few words: "All three on", "Titles only", "Titles and previews".
     private var heroTitle: String {
-        guard ChatSummarizer.isAvailable else { return "Needs Apple Intelligence" }
-        let names = [(parts.titles, "titles"), (parts.previews, "previews"), (parts.statusLine, "status line")]
-            .compactMap { $0.0 ? $0.1 : nil }
-        guard let first = names.first else { return "All three off" }
-        let lead = first.prefix(1).uppercased() + first.dropFirst()
-        switch names.count {
-        case 3: return "All three on"
-        case 1: return lead + " only"
-        default: return lead + " and " + names[1]
+        guard ChatSummarizer.isAvailable else { return String(localized: "Needs Apple Intelligence") }
+        return switch (parts.titles, parts.previews, parts.statusLine) {
+        case (true, true, true): String(localized: "All three on")
+        case (true, true, false): String(localized: "Titles and previews")
+        case (true, false, true): String(localized: "Titles and status line")
+        case (false, true, true): String(localized: "Previews and status line")
+        case (true, false, false): String(localized: "Titles only")
+        case (false, true, false): String(localized: "Previews only")
+        case (false, false, true): String(localized: "Status line only")
+        case (false, false, false): String(localized: "All three off")
         }
     }
 
@@ -131,8 +131,9 @@ private struct SummariesAdvancedPage: View {
         let available = ChatSummarizer.isAvailable
         SettingsPage("summaries.advanced.page") {
             PageHero(symbol: available ? "sparkles" : "apple.intelligence",
-                     title: heroTitle,
-                     line: available ? (forgotten ? "Every summary is forgotten." : "Written only on \(DeviceWords.this).") : nil,
+                     title: .verbatim(heroTitle),
+                     line: .verbatim(available ? (forgotten ? String(localized: "Every summary is forgotten.")
+                                                  : String(localized: "Written only on \(DeviceWords.this).")) : nil),
                      tint: available ? (parts.anyOn ? .nollie : Ink.text2) : .orange,
                      id: "summaries.advanced.hero")
             VStack(spacing: 14) {
@@ -150,7 +151,7 @@ private struct SummariesAdvancedPage: View {
                 PageNote(DeviceWords.isMac ? "Answers on \(DeviceWords.this) during setup. Talk only."
                                            : "Answers on \(DeviceWords.this) when your Mac is out of reach. Talk only.")
             }
-            GlassButton("Forget every summary", symbol: "trash", value: forgotten ? "Forgotten" : nil,
+            GlassButton("Forget every summary", symbol: "trash", value: forgotten ? String(localized: "Forgotten", comment: "Every summary was forgotten") : nil,
                         role: .destructive, id: "summaries.forget") {
                 ChatSummarizer.shared.forgetAll()
                 forgotten = true

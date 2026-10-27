@@ -14,7 +14,7 @@ struct WeeklyNotePage: View {
 
     var body: some View {
         SettingsPage("weekly.note") {
-            PageHero(symbol: WeeklyInk.symbol, title: "Your week", line: line, tint: WeeklyInk.tint, id: "weekly.hero")
+            PageHero(symbol: WeeklyInk.symbol, title: LocalizedStringResource("Your week"), line: .verbatim(line), tint: WeeklyInk.tint, id: "weekly.hero")
             if let note = weekly.note {
                 WeeklyNoteBody(note: note)
             } else if weekly.loading {
@@ -43,7 +43,8 @@ struct WeeklyNotePage: View {
     /// "19 to 25 Oct. 3 helpers busy."
     private var line: String? {
         guard let note = weekly.note else { return nil }
-        return WeeklyNoteDates.range(note.since, note.until) + ". " + note.headline
+        return String(localized: "\(WeeklyNoteDates.range(note.since, note.until)). \(note.headline)",
+                      comment: "The week's dates, then a short summary like 3 helpers busy")
     }
 }
 
@@ -71,17 +72,17 @@ struct WeeklyNoteBody: View {
                     PageNote("Couldn't read \(WeeklyNoteDates.list(note.unread))'s week.", symbol: "exclamationmark.circle", id: "weekly.unread")
                 }
                 if let filter = note.filter {
-                    PageNote(filter, symbol: "exclamationmark.shield", id: "weekly.filter")
+                    PageNote(.verbatim(filter), symbol: "exclamationmark.shield", id: "weekly.filter")
                 }
                 if let problem = weekly.problem {
-                    PageNote(problem, symbol: "exclamationmark.circle", tint: .orange, id: "weekly.problem")
+                    PageNote(.verbatim(problem), symbol: "exclamationmark.circle", tint: .orange, id: "weekly.problem")
                 }
             }
         }
         .animation(.snappy, value: weekly.done)
     }
 
-    private func section<Rows: View>(_ title: String, id: String, @ViewBuilder rows: @escaping () -> Rows) -> some View {
+    private func section<Rows: View>(_ title: LocalizedStringResource, id: String, @ViewBuilder rows: @escaping () -> Rows) -> some View {
         VStack(spacing: 12) {
             PageHeading(title)
             GlassStack(content: rows)
@@ -112,7 +113,7 @@ struct WeeklyHelperSection: View {
                 ForEach(helper.left) { line in WeeklyLineRow(line: line) }
             }
             if helper.morePlaces > 0 {
-                Text(helper.morePlaces == 1 ? "and 1 more place" : "and \(helper.morePlaces) more places")
+                Text("and \(helper.morePlaces) more places", comment: "After a list of places a helper's work went")
                     .font(.subheadline)
                     .foregroundStyle(Ink.text3)
                     .padding(.horizontal, 8)
@@ -233,7 +234,7 @@ struct WeeklyActionButtons: View {
                     .fixedSize()
                     .testID("weekly.done.\(line)")
                 if let undo = done.undo {
-                    button(undo, title: "Undo")
+                    button(undo, title: String(localized: "Undo"))
                 }
             } else {
                 ForEach(actions, id: \.self) { action in button(action, title: action.label) }
@@ -248,13 +249,13 @@ struct WeeklyActionButtons: View {
                 Button("Cancel", role: .cancel) {}
             }
         } message: {
-            Text("This can't be undone.")
+            Text("This can't be undone.", comment: "Safety: removing a schedule; keep exact meaning")
         }
     }
 
     private var confirmTitle: String {
         guard case .remove? = confirming else { return "" }
-        return "Remove this schedule?"
+        return String(localized: "Remove this schedule?", comment: "Safety: asks before removing a schedule")
     }
 
     private func button(_ action: WeeklyAction, title: String) -> some View {
@@ -299,11 +300,13 @@ enum WeeklyNoteDates {
     static func range(_ from: Date, _ to: Date, calendar: Calendar = .current) -> String {
         let sameMonth = calendar.isDate(from, equalTo: to, toGranularity: .month)
         let start = sameMonth ? from.formatted(.dateTime.day()) : from.formatted(.dateTime.day().month(.abbreviated))
-        return "\(start) to \(to.formatted(.dateTime.day().month(.abbreviated)))"
+        return String(localized: "\(start) to \(to.formatted(.dateTime.day().month(.abbreviated)))", comment: "A range of two dates")
     }
 
     /// "Mason", "Mason and Forager", "Scout, Mason and Forager".
     static func list(_ names: [String]) -> String {
-        names.count <= 1 ? names.joined() : names.dropLast().joined(separator: ", ") + " and " + names[names.count - 1]
+        guard names.count > 1, let last = names.last else { return names.joined() }
+        let head = names.dropLast().joined(separator: String(localized: ", ", comment: "Separates names in a list"))
+        return String(localized: "\(head) and \(last)", comment: "The end of a list of names: Scout, Mason and Forager")
     }
 }

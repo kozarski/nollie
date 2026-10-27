@@ -39,9 +39,9 @@ enum MacStop {
 
     nonisolated static func summary(paused: Int) -> String {
         switch paused {
-        case 0: "Nollie ended its task on this Mac and stopped its replies."
-        case 1: "Nollie ended its task on this Mac, stopped its replies and paused 1 schedule. Resume it in Schedules."
-        default: "Nollie ended its task on this Mac, stopped its replies and paused \(paused) schedules. Resume them in Schedules."
+        case 0: String(localized: "Nollie ended its task on this Mac and stopped its replies.", comment: "Safety: what Stop did")
+        default: String(localized: "Nollie ended its task on this Mac, stopped its replies and paused \(paused) schedules. Resume them in Schedules.",
+                        comment: "Safety: what Stop did; the number of schedules paused")
         }
     }
 }

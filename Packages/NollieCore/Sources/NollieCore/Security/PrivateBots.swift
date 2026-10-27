@@ -193,7 +193,7 @@ public final class PrivateBotsStore: @unchecked Sendable {
     }
 
     public struct Failure: LocalizedError {
-        public var errorDescription: String? { "The Private list couldn't be read." }
+        public var errorDescription: String? { String(localized: "The Private list couldn't be read.", table: "Core") }
     }
 
     private let lock = NSLock()
@@ -313,8 +313,8 @@ public struct PrivateBotsSyncError: LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch kind {
-        case .notTold: "Private is on here, but your gateway didn't get it. Try again."
-        case .notChanged: "Couldn't turn Private off. It stays on for now. Try again."
+        case .notTold: String(localized: "Private is on here, but your gateway didn't get it. Try again.", table: "Core")
+        case .notChanged: String(localized: "Couldn't turn Private off. It stays on for now. Try again.", table: "Core")
         }
     }
 }
@@ -429,7 +429,7 @@ extension GatewayRuntime {
         do {
             let reply: PrivateBotsReply = try await api.send("PUT", Self.privateBotsPath,
                                                              body: PrivateBotsReply(profiles: names.sorted(), saved: nil))
-            guard reply.saved != false else { throw HermesAPIError.transport("The gateway didn't keep the list.") }
+            guard reply.saved != false else { throw HermesAPIError.transport(String(localized: "The gateway didn't keep the list.", table: "Core")) }
         } catch HermesAPIError.http(let status, _) where status == 404 {
             return
         }

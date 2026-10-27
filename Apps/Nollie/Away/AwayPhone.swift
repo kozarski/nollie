@@ -25,30 +25,30 @@ enum AwayICloudState: Equatable, Sendable {
 
 /// The phone's words for the mailbox's answers.
 enum AwayWords {
-    static let sent = "Sent through iCloud"
-    static let received = "Your Mac has it"
-    static let notDelivered = "Didn't reach your Mac. It may be asleep."
-    static let asleep = "Your Mac seems to be asleep. It gets this when it wakes."
+    static let sent = String(localized: "Sent through iCloud")
+    static let received = String(localized: "Your Mac has it")
+    static let notDelivered = String(localized: "Didn't reach your Mac. It may be asleep.")
+    static let asleep = String(localized: "Your Mac seems to be asleep. It gets this when it wakes.")
 
     static func refusal(_ reason: AwayRefusal) -> String {
         switch reason {
-        case .slashCommand: "Slash commands work at home."
-        case .privateBot: "Private helpers stay on your Mac."
-        case .tooLong: "That's too long to send away from home."
-        case .empty: "There was nothing to send."
-        case .unknownBot, .unknownChat: "Your Mac couldn't find this chat."
-        case .expired: "That ran out. Answer on your Mac."
-        case .unknownCard: "Answer this on your Mac."
-        case .busy, .notReady: "Your Mac isn't ready. Try again soon."
-        case .notAllowed: "That works at home."
+        case .slashCommand: String(localized: "Slash commands work at home.")
+        case .privateBot: String(localized: "Private helpers stay on your Mac.")
+        case .tooLong: String(localized: "That's too long to send away from home.")
+        case .empty: String(localized: "There was nothing to send.")
+        case .unknownBot, .unknownChat: String(localized: "Your Mac couldn't find this chat.")
+        case .expired: String(localized: "That ran out. Answer on your Mac.")
+        case .unknownCard: String(localized: "Answer this on your Mac.")
+        case .busy, .notReady: String(localized: "Your Mac isn't ready. Try again soon.")
+        case .notAllowed: String(localized: "That works at home.")
         }
     }
 
     static func state(_ state: AwayICloudState) -> String? {
         switch state {
-        case .needsLink: "Link at home once."
-        case .needsICloud: "Sign in to iCloud on both."
-        case .notAvailableYet: "Not available yet."
+        case .needsLink: String(localized: "Link at home once.")
+        case .needsICloud: String(localized: "Sign in to iCloud on both.")
+        case .notAvailableYet: String(localized: "Not available yet.")
         default: nil
         }
     }
@@ -164,7 +164,7 @@ final class AwayPhone {
             chat.banner = AwayWords.refusal(reason)
             return text
         } catch {
-            chat.banner = "Couldn't reach iCloud. Nothing was sent."
+            chat.banner = String(localized: "Couldn't reach iCloud. Nothing was sent.", comment: "Safety: nothing left the phone")
             return text
         }
     }
@@ -180,13 +180,15 @@ final class AwayPhone {
             try await courier.answer(card: card.id, choice: choice)
             chat.cards.removeAll { $0.id == card.id }
             chat.items.append(TranscriptItem(id: "away-answer-" + card.id, kind: .system(
-                text: choice == "deny" ? "You said no" : "You said yes", symbol: "checkmark.shield")))
+                text: choice == "deny" ? String(localized: "You said no", comment: "Safety: an approval was denied from away")
+                                      : String(localized: "You said yes", comment: "Safety: an approval was given from away"),
+                symbol: "checkmark.shield")))
             look()
         } catch .refused(let reason) {
             chat.cards.removeAll { $0.id == card.id }
             chat.banner = AwayWords.refusal(reason)
         } catch {
-            chat.banner = "Couldn't reach iCloud. Nothing was sent."
+            chat.banner = String(localized: "Couldn't reach iCloud. Nothing was sent.", comment: "Safety: nothing left the phone")
         }
     }
 

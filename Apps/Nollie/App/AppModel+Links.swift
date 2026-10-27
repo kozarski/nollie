@@ -96,19 +96,19 @@ extension AppModel {
     /// Tapping a "Messaged X" notice lands here and opens X's own read-only Bot Chat. X is a routing
     /// alias that can match a profile's name or display name. Gives back a reason on failure, else nil.
     func openBotChat(_ handle: String) async -> String? {
-        guard let runtime else { return "Not connected." }
+        guard let runtime else { return String(localized: "Not connected.") }
         let wanted = BotDelivery.key(handle)
         let match = runtime.profiles.first { BotDelivery.key($0.name) == wanted || BotDelivery.key($0.label) == wanted }
-        guard let profile = match else { return "This gateway has no bot named \(handle)." }
+        guard let profile = match else { return String(localized: "This gateway has no bot named \(handle).") }
 
         let session: String?
         do {
             session = try await findBotChat(of: profile, on: runtime)
         } catch {
-            return "Could not list \(profile.shownName)'s chats: \(error.localizedDescription)"
+            return String(localized: "Could not list \(profile.shownName)'s chats: \(error.localizedDescription)")
         }
         guard let session else {
-            return "\(profile.shownName) has no Bot Chat yet. One starts when it first messages another bot."
+            return String(localized: "\(profile.shownName) has no Bot Chat yet. One starts when it first messages another bot.")
         }
         var route = PendingRoute(connectionID: runtime.connection.id, storedSessionID: session, profile: profile.name)
         route.kind = "readonly"
@@ -161,10 +161,10 @@ extension AppModel {
     @discardableResult
     func openMainChat(_ profileName: String? = nil) async -> String? {
         guard !Task.isCancelled else { return nil }
-        guard !lock.isLocked else { return "Unlock Nollie to open your conversation." }
-        guard let runtime else { return "Not connected." }
+        guard !lock.isLocked else { return String(localized: "Unlock Nollie to open your conversation.") }
+        guard let runtime else { return String(localized: "Not connected.") }
         guard let name = profileName ?? runtime.selectedProfile ?? runtime.profiles.first?.name, !name.isEmpty else {
-            return "No bot on this gateway."
+            return String(localized: "No bot on this gateway.")
         }
         let label = runtime.profiles.first(where: { $0.name == name })?.shownName ?? name
 
@@ -179,14 +179,14 @@ extension AppModel {
             session = id
         case .missing:
             guard let started = try? await runtime.newChat(profile: name) else {
-                return "Could not start \(label)'s main chat."
+                return String(localized: "Could not start \(label)'s main chat.")
             }
             if stale() { return nil }
-            await started.rename("Bot Chat")
-            guard !started.storedID.isEmpty else { return "Could not start \(label)'s main chat." }
+            await started.rename("Bot Chat") // A title the gateway matches on, so it stays in English.
+            guard !started.storedID.isEmpty else { return String(localized: "Could not start \(label)'s main chat.") }
             session = started.storedID
         case .unknown:
-            return "Could not reach \(label)'s main chat. Check the connection, then try again."
+            return String(localized: "Could not reach \(label)'s main chat. Check the connection, then try again.")
         }
         if stale() { return nil }
 

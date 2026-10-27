@@ -14,8 +14,9 @@ struct CardsHero: View {
                      line: "Your assistant runs on another computer, so helpers can't pay from here.",
                      tint: .orange, id: "cards.hero")
         } else if let count {
-            PageHero(symbol: "creditcard.fill", title: Self.title(count),
-                     line: "Helpers pay only after your yes. They never see the number.",
+            PageHero(symbol: "creditcard.fill", title: .verbatim(Self.title(count)),
+                     line: LocalizedStringResource("Helpers pay only after your yes. They never see the number.",
+                                  comment: "Safety: payment promise; keep exact meaning"),
                      tint: count == 0 ? .blue : .green, id: "cards.hero")
         } else {
             PageHero(symbol: "lock.fill", title: "Cards", line: DeviceWords.isMac ? "Touch ID shows them." : "Face ID shows them.",
@@ -26,9 +27,8 @@ struct CardsHero: View {
     /// "No cards yet", "1 card", "2 cards".
     static func title(_ count: Int) -> String {
         switch count {
-        case 0: "No cards yet"
-        case 1: "1 card"
-        default: "\(count) cards"
+        case 0: String(localized: "No cards yet")
+        default: String(localized: "\(count) cards")
         }
     }
 
@@ -48,7 +48,7 @@ struct CardRow: View {
     var body: some View {
         GlassRowLabel(title: label, symbol: "creditcard.fill", value: DeviceWords.isMac && !holder.isEmpty ? holder : nil,
                       chevron: false)
-            .accessibilityLabel(holder.isEmpty ? label : "\(label), \(holder)")
+            .accessibilityLabel(holder.isEmpty ? label : String(localized: "\(label), \(holder)", comment: "A saved card, then the name on it"))
     }
 }
 
@@ -68,7 +68,7 @@ struct PhoneCardsView: View {
                 if let cards, !cards.isEmpty {
                     VStack(spacing: 12) {
                         ForEach(cards) { card in
-                            CardRow(label: card.label, holder: card.holder).testID("cards.row.\(card.last4)")
+                            CardRow(label: card.shownLabel, holder: card.holder).testID("cards.row.\(card.last4)")
                         }
                     }
                 }
@@ -78,7 +78,7 @@ struct PhoneCardsView: View {
                 GlassButton("Show cards", symbol: "faceid", id: "cards.show") { Task { await unlock() } }
             }
             if let problem {
-                PageNote(problem, symbol: "exclamationmark.triangle.fill", tint: .orange, id: "cards.problem")
+                PageNote(.verbatim(problem), symbol: "exclamationmark.triangle.fill", tint: .orange, id: "cards.problem")
             }
         }
         .task {
@@ -90,14 +90,15 @@ struct PhoneCardsView: View {
     }
 
     private func unlock() async {
-        guard await RememberedSignInCoordinator.defaultAuthenticator().authenticate(reason: "Show your cards") != nil else { return }
+        let reason = String(localized: "Show your cards", comment: "Safety: Face ID reason; keep exact meaning")
+        guard await RememberedSignInCoordinator.defaultAuthenticator().authenticate(reason: reason) != nil else { return }
         guard let runtime = model.runtime else { return }
         do {
             cards = try await runtime.paymentCards()
             problem = nil
             unlocked = true
         } catch {
-            problem = "Couldn't reach your Mac. Try again."
+            problem = String(localized: "Couldn't reach your Mac. Try again.")
         }
     }
 }

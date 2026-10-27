@@ -11,7 +11,7 @@ struct ProfileComputerTab: View {
     var body: some View {
         let control = SystemControl.shared
         let stance = state.computer.stance
-        PageHero(symbol: stance.symbol, title: stance.title, line: stance.line, tint: stance.tint, id: "profile.computer.hero")
+        PageHero(symbol: stance.symbol, title: .verbatim(stance.title), line: .verbatim(stance.line), tint: stance.tint, id: "profile.computer.hero")
         GlassSwitch("Allow Mac control", isOn: Binding(
             get: { control.isOn(state.name, state.runtime) },
             set: { on in
@@ -72,8 +72,8 @@ struct ProfileChatTab: View {
     var body: some View {
         let percent = chat.usage?.computedContextPercent
         let long = (percent ?? 0) >= 80
-        let name = chat.title.isEmpty ? "Untitled" : chat.title
-        CardHeadline(symbol: "bubble.left.fill", tint: long ? .orange : state.tint, title: name,
+        let name = chat.title.isEmpty ? String(localized: "Untitled", comment: "A chat with no name") : chat.title
+        CardHeadline(symbol: "bubble.left.fill", tint: long ? .orange : state.tint, title: .verbatim(name),
                      titleTint: long ? .orange : Ink.text, line: long ? "Getting long. A new chat starts fresh." : nil,
                      id: "profile.thisChat.hero")
         GlassButton("Name", symbol: "pencil", value: name, id: "profile.rename", action: rename)
@@ -85,7 +85,10 @@ struct ProfileChatTab: View {
         if !chat.modelName.isEmpty || percent != nil {
             AdvancedLink(id: "profile.thisChat.advanced") {
                 ThisChatAdvanced(model: chat.modelName.isEmpty ? nil : chat.modelName,
-                                 context: percent.map { "\($0)% of \((chat.usage?.contextMax ?? 0).formatted())" })
+                                 context: percent.map {
+                                     String(localized: "\($0)% of \((chat.usage?.contextMax ?? 0).formatted())",
+                                            comment: "How full a chat is: a percentage of its context size in tokens")
+                                 })
             }
         }
     }

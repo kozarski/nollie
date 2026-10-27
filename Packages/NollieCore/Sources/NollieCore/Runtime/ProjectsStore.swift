@@ -37,11 +37,11 @@ public final class ProjectsStore {
         public var errorDescription: String? {
             switch self {
             case .unsupported:
-                "This Hermes can't move chats between projects yet. Update it on the gateway, then try again."
+                String(localized: "This Hermes can't move chats between projects yet. Update it on the gateway, then try again.", table: "Core")
             case .noFolder(let who):
-                "\(who) has no folder on the gateway to move this chat into."
+                String(localized: "\(who) has no folder on the gateway to move this chat into.", table: "Core", comment: "The value is a project's name, or: The bot")
             case .stillInProject(let folder, let project):
-                "The bot's own folder (\(folder)) belongs to \(project), so there's no spot outside a project for this chat."
+                String(localized: "The bot's own folder (\(folder)) belongs to \(project), so there's no spot outside a project for this chat.", table: "Core")
             }
         }
     }
@@ -224,7 +224,7 @@ public final class ProjectsStore {
     /// how many chats moved.
     @discardableResult
     public func move(_ sessionIDs: [String], to project: Project?, profile: String? = nil) async throws -> Int {
-        guard let runtime else { throw HermesAPIError.transport("No gateway connected") }
+        guard let runtime else { throw HermesAPIError.transport(String(localized: "No gateway connected", table: "Core")) }
         let folder = try await folder(for: project, profile: profile, runtime: runtime)
         var moved = 0
 
@@ -273,7 +273,7 @@ public final class ProjectsStore {
             return start
         }
         let config = try await runtime.rpc("config.get", ["key": "project"], profile: profile)
-        guard let cwd = config["cwd"]?.stringValue, !cwd.isEmpty else { throw MoveError.noFolder("The bot") }
+        guard let cwd = config["cwd"]?.stringValue, !cwd.isEmpty else { throw MoveError.noFolder(String(localized: "The bot", table: "Core", comment: "As in: The bot has no folder on the gateway to move this chat into.")) }
         return cwd
     }
 

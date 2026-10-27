@@ -32,7 +32,7 @@ struct LockScreenView: View {
     }
 
     private var unlockButton: some View {
-        Button("Unlock with \(model.lock.biometryName)") {
+        Button("Unlock with \(RememberedSignInCopy.shownMethod(model.lock.biometryName))") {
             Task { await model.lock.unlock() }
         }
         .buttonStyle(.nollieGlassProminent)

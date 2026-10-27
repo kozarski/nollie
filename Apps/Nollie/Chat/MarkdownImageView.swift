@@ -30,7 +30,7 @@ struct MarkdownImageView: View {
         return failure || timedOut ? .placeholder : .spinner
     }
 
-    static func placeholderTitle(alt: String) -> String { alt.isEmpty ? "Image unavailable" : alt }
+    static func placeholderTitle(alt: String) -> String { alt.isEmpty ? String(localized: "Image unavailable") : alt }
 
     /// AsyncImage never gives up by itself. After this long a load that is still going shows the
     /// placeholder, and the picture replaces it if it turns up later.
@@ -59,7 +59,9 @@ struct MarkdownImageView: View {
     }
 
     private func askButton(host: String) -> some View {
-        let title = alt.isEmpty ? "Load image from \(host)" : "\(alt) (load from \(host))"
+        let title = alt.isEmpty
+            ? String(localized: "Load image from \(host)", comment: "A web address's host follows")
+            : String(localized: "\(alt) (load from \(host))", comment: "A picture's description, then a web address's host")
         return Button {
             asked = true
         } label: {
@@ -80,7 +82,7 @@ struct MarkdownImageView: View {
         let slot = slotContent
             .spread()
             .task(id: address) { await fetch(address) }
-            .accessibilityLabel(alt.isEmpty ? "Image" : alt)
+            .accessibilityLabel(alt.isEmpty ? String(localized: "Image", comment: "A picture; a noun") : alt)
         if let linkTarget {
             PlainButton { openURL(linkTarget) } label: { slot }
         } else {

@@ -58,7 +58,7 @@ enum CrewAtWork {
 
     /// The bar's words: "Scout is working", "3 helpers working".
     nonisolated static func headline(_ helpers: [WatchWire.Helper]) -> String {
-        if helpers.count == 1, let only = helpers.first { return "\(only.name) is working" }
+        if helpers.count == 1, let only = helpers.first { return String(localized: "\(only.name) is working") }
         return WatchWords.count(helpers.count)
     }
 }

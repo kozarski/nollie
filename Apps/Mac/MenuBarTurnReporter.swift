@@ -20,7 +20,7 @@ final class MenuBarTurnReporter: TurnActivityReporting {
         guard let listed = listedID else {
             began = Date()
             listedID = chat.storedID
-            publish(chat, line: "Thinking…", attention: false)
+            publish(chat, line: String(localized: "Thinking…"), attention: false)
             return
         }
         if listed != chat.storedID {
@@ -38,7 +38,7 @@ final class MenuBarTurnReporter: TurnActivityReporting {
         } else if attention {
             line = Self.waitingLine(for: chat.firstCard)
         } else {
-            line = chat.statusLine ?? "Thinking…"
+            line = chat.statusWords ?? String(localized: "Thinking…")
         }
         publish(chat, line: line, attention: attention)
     }
@@ -53,10 +53,10 @@ final class MenuBarTurnReporter: TurnActivityReporting {
     /// What a turn says while it waits on the person.
     private static func waitingLine(for card: PendingCard?) -> String {
         switch (card?.method, card?.approval?.description) {
-        case ("sudo", _): return "sudo password needed"
+        case ("sudo", _): return String(localized: "sudo password needed")
         case (_, let words?): return words
-        case ("approval", nil): return "Approval needed"
-        default: return "Needs your answer"
+        case ("approval", nil): return String(localized: "Approval needed")
+        default: return String(localized: "Needs your answer")
         }
     }
 

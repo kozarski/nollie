@@ -70,7 +70,7 @@ struct SoftwareUpdateView: View {
         } else if setup.updateNeedsRestart, !setup.updating {
             RestartSteps(setup: setup, runtime: rt)
         } else if setup.updateAvailable || setup.updateOutcome != nil, !setup.updating, setup.updateOutcome?.ok != true {
-            FactStrip(facts: [Fact(symbol: "arrow.down.circle.fill", word: ByteCountFormatter.string(fromByteCount: Int64(PushSetupModel.bundledScriptSize), countStyle: .file)),
+            FactStrip(facts: [Fact(symbol: "arrow.down.circle.fill", word: .verbatim(ByteCountFormatter.string(fromByteCount: Int64(PushSetupModel.bundledScriptSize), countStyle: .file))),
                               setup.runningCanSelfReload ? Fact(symbol: "bolt.fill", word: "No restart")
                                                          : Fact(symbol: "arrow.clockwise", word: "Needs a restart")],
                       id: "softwareUpdate.facts")
@@ -82,7 +82,7 @@ struct SoftwareUpdateView: View {
         }
     }
 
-    private func prominentLabel(_ title: String) -> some View {
+    private func prominentLabel(_ title: LocalizedStringKey) -> some View {
         Text(title).fullWidthLabel()
     }
 
@@ -90,7 +90,7 @@ struct SoftwareUpdateView: View {
     private var detailsGroup: some View {
         DisclosureGroup(isExpanded: $details) {
             VStack(alignment: .leading, spacing: 14) {
-                DetailLine("Installed", setup.installedVersion ?? "Not installed")
+                DetailLine("Installed", setup.installedVersion ?? String(localized: "Not installed"))
                 if let hb = setup.heartbeat { DetailLine("Running", hb.version) }
                 DetailLine("In this app", PushSetupModel.bundledPluginVersion)
                 DetailLine("Size", ByteCountFormatter.string(fromByteCount: Int64(PushSetupModel.bundledScriptSize), countStyle: .file))
@@ -163,16 +163,16 @@ struct SoftwareUpdateHero: View {
         }
         var title: String {
             switch self {
-            case .offline: "Not connected"
-            case .checking: "Checking"
-            case .notInstalled: "Not installed"
-            case .updateReady: "Update ready"
-            case .updating: "Updating"
-            case .restart: "Restart to finish"
-            case .restarting: "Restarting"
-            case .failed: "Update failed"
-            case .updated: "Updated"
-            case .upToDate: "Up to date"
+            case .offline: String(localized: "Not connected")
+            case .checking: String(localized: "Checking")
+            case .notInstalled: String(localized: "Not installed")
+            case .updateReady: String(localized: "Update ready")
+            case .updating: String(localized: "Updating")
+            case .restart: String(localized: "Restart to finish")
+            case .restarting: String(localized: "Restarting")
+            case .failed: String(localized: "Update failed")
+            case .updated: String(localized: "Updated")
+            case .upToDate: String(localized: "Up to date")
             }
         }
         var tint: Color {
@@ -193,22 +193,23 @@ struct SoftwareUpdateHero: View {
     private var line: String? {
         let version = PushSetupModel.bundledPluginVersion
         switch state {
-        case .offline: return "Connect Nollie first."
+        case .offline: return String(localized: "Connect Nollie first.")
         case .checking: return nil
-        case .notInstalled: return "Set it up to get \(DeviceWords.companionBrings)."
-        case .updateReady: return "Nollie Companion \(version)."
+        case .notInstalled: return String(localized: "Set it up to get \(DeviceWords.companionBrings).")
+        case .updateReady: return String(localized: "Nollie Companion \(version).")
         // The stages name the server once ("Restarting Gateway…"); the hero says it plainly.
-        case .updating: return stage.isEmpty ? nil : stage.localizedCaseInsensitiveContains("gateway") ? "Restarting…" : stage
-        case .restart: return "Your bots pause for a few seconds."
-        case .restarting: return "Your bots are back in a moment."
-        case .failed: return "Try again, or open Details."
-        case .updated: return "Nollie Companion \(version) is running."
-        case .upToDate: return "Nollie Companion \(version)."
+        case .updating:
+            return stage.isEmpty ? nil : stage == CompanionUpdateStage.restartingGateway ? String(localized: "Restarting…") : stage
+        case .restart: return String(localized: "Your bots pause for a few seconds.")
+        case .restarting: return String(localized: "Your bots are back in a moment.")
+        case .failed: return String(localized: "Try again, or open Details.")
+        case .updated: return String(localized: "Nollie Companion \(version) is running.")
+        case .upToDate: return String(localized: "Nollie Companion \(version).")
         }
     }
 
     var body: some View {
-        PageHero(symbol: state.symbol, title: state.title, line: line, tint: state.tint, id: "softwareUpdate.hero")
+        PageHero(symbol: state.symbol, title: .verbatim(state.title), line: .verbatim(line), tint: state.tint, id: "softwareUpdate.hero")
     }
 }
 
@@ -256,7 +257,7 @@ private struct RestartSteps: View {
                 if let began = setup.restartBegan {
                     TimelineView(.periodic(from: .now, by: 1)) { clock in
                         let elapsed = max(0, Int(clock.date.timeIntervalSince(began)))
-                        Text(String(format: "%d:%02d", elapsed / 60, elapsed % 60))
+                        Text(Duration.seconds(elapsed).formatted(.time(pattern: .minuteSecond)))
                             .font(.headline.monospacedDigit())
                             .foregroundStyle(Ink.text2)
                     }
@@ -363,7 +364,7 @@ private struct RestartSteps: View {
         }
     }
 
-    fileprivate static func wide(_ title: String) -> some View {
+    fileprivate static func wide(_ title: LocalizedStringKey) -> some View {
         Text(title).font(.headline).frame(maxWidth: .infinity).padding(.vertical, 4)
     }
 }
@@ -381,11 +382,11 @@ private struct ButtonPair<Content: View>: View {
 
 /// One fact in Details: a name and its value, wrapping at large sizes.
 private struct DetailLine: View {
-    var name: String
+    var name: LocalizedStringKey
     var value: String
     @Environment(\.dynamicTypeSize) private var size
 
-    init(_ name: String, _ value: String) {
+    init(_ name: LocalizedStringKey, _ value: String) {
         self.name = name
         self.value = value
     }

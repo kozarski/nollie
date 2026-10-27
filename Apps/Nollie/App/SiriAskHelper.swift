@@ -175,7 +175,7 @@ enum AskHelper {
             return try? await runtime.openChat(storedID: id, profile: profile, waitForResume: true)
         case .missing:
             guard let started = try? await runtime.newChat(profile: profile) else { return nil }
-            await started.rename("Bot Chat")
+            await started.rename("Bot Chat") // A title the gateway matches on, so it stays in English.
             return started.storedID.isEmpty ? nil : started
         case .unknown:
             return nil
@@ -302,31 +302,33 @@ enum AskReply {
 
 /// Everything Ask says. Pure, so tests can hold it to the copy rules.
 enum AskWords {
-    static let whatToAsk = "What would you like to ask?"
-    static let nothingToAsk = "Say what you'd like to ask, then try again."
-    static let notSetUp = "Set up Nollie first, then ask again."
+    static let whatToAsk = String(localized: "What would you like to ask?")
+    static let nothingToAsk = String(localized: "Say what you'd like to ask, then try again.")
+    static let notSetUp = String(localized: "Set up Nollie first, then ask again.")
     static let macAway = MacStopWords.unreachable
-    static let macQuiet = "Your Mac isn't answering. Check it's awake, then try again."
-    static let gatewayQuiet = "Nollie can't reach your helpers right now."
-    static let thisMacQuiet = "Your helpers aren't answering on this Mac. Open Nollie to check."
-    static let unknownHelper = "Nollie can't find that helper."
-    static func privateHelper(_ name: String) -> String { "\(name) is private. Ask in Nollie." }
-    static func noChat(_ name: String) -> String { "Can't open \(name)'s chat right now. Try again in a moment." }
-    static func busy(_ name: String) -> String { "\(name) is busy right now. Ask again when it's done." }
-    static func notSent(_ name: String) -> String { "That didn't reach \(name). Try again in a moment." }
+    static let macQuiet = String(localized: "Your Mac isn't answering. Check it's awake, then try again.")
+    static let gatewayQuiet = String(localized: "Nollie can't reach your helpers right now.")
+    static let thisMacQuiet = String(localized: "Your helpers aren't answering on this Mac. Open Nollie to check.")
+    static let unknownHelper = String(localized: "Nollie can't find that helper.")
+    static func privateHelper(_ name: String) -> String { String(localized: "\(name) is private. Ask in Nollie.") }
+    static func noChat(_ name: String) -> String { String(localized: "Can't open \(name)'s chat right now. Try again in a moment.") }
+    static func busy(_ name: String) -> String { String(localized: "\(name) is busy right now. Ask again when it's done.") }
+    static func notSent(_ name: String) -> String { String(localized: "That didn't reach \(name). Try again in a moment.") }
 
     static func needsYou(_ name: String, before: Bool) -> String {
-        before ? "\(name) is waiting for your yes on something else. It's in Nollie."
-               : "\(name) needs your yes to go on. It's waiting in Nollie."
+        before ? String(localized: "\(name) is waiting for your yes on something else. It's in Nollie.",
+                        comment: "Safety: nothing was answered by Siri; keep exact meaning")
+               : String(localized: "\(name) needs your yes to go on. It's waiting in Nollie.",
+                        comment: "Safety: nothing was answered by Siri; keep exact meaning")
     }
-    static func stillWorking(_ name: String) -> String { "\(name) is still on it. The reply will be in Nollie." }
-    static func doneQuietly(_ name: String) -> String { "\(name) has finished. The details are in Nollie." }
+    static func stillWorking(_ name: String) -> String { String(localized: "\(name) is still on it. The reply will be in Nollie.") }
+    static func doneQuietly(_ name: String) -> String { String(localized: "\(name) has finished. The details are in Nollie.") }
     /// Above the card when the reply is on screen.
-    static func replied(_ name: String) -> String { "\(name) replied." }
+    static func replied(_ name: String) -> String { String(localized: "\(name) replied.") }
 
     /// The snippet's short labels.
-    static let waitingLabel = "Waiting for your yes"
-    static let workingLabel = "Still working"
+    static let waitingLabel = String(localized: "Waiting for your yes", comment: "Safety: a short label; a helper waits for approval")
+    static let workingLabel = String(localized: "Still working", comment: "A short label; a helper has not finished")
 
     /// The longest reply Siri reads out. Longer ones are cut at a sentence and the rest is on the card.
     static let spokenLimit = 400

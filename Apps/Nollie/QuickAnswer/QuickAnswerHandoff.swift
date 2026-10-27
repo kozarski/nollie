@@ -145,7 +145,7 @@ final class QuickAnswerHandoff {
             chat = open
         case .missing:
             guard let started = try? await runtime.newChat(profile: name) else { return .notSent }
-            await started.rename("Bot Chat")
+            await started.rename("Bot Chat") // A title the gateway matches on, so it stays in English.
             chat = started
         case .unknown:
             return .notSent

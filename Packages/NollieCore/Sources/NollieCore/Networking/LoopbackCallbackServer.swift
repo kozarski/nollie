@@ -3,11 +3,18 @@ import Network
 
 /// A tiny web server on 127.0.0.1 that waits for the browser to come back with `?code=&state=`.
 public final class LoopbackCallbackServer: @unchecked Sendable {
-    private static let thanksPage = """
-        <html><body style="font-family:-apple-system;text-align:center;padding-top:4em">\
-        <h2>All signed in</h2><p>You can head back to Nollie now.</p></body></html>
-        """
-    private static let holdPage = "<html><body><p>Waiting for the gateway...</p></body></html>"
+    private static var thanksPage: String {
+        let title = String(localized: "All signed in", table: "Core", comment: "A web page the browser shows after signing in")
+        let line = String(localized: "You can head back to Nollie now.", table: "Core", comment: "A web page the browser shows after signing in")
+        return """
+            <html><body style="font-family:-apple-system;text-align:center;padding-top:4em">\
+            <h2>\(title)</h2><p>\(line)</p></body></html>
+            """
+    }
+    private static var holdPage: String {
+        let line = String(localized: "Waiting for the gateway...", table: "Core", comment: "A web page the browser shows while signing in")
+        return "<html><body><p>\(line)</p></body></html>"
+    }
 
     private let listener: NWListener
     private let queue = DispatchQueue(label: "Nollie.loopback")

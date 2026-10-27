@@ -90,17 +90,17 @@ struct CronJobDetailView: View {
     private var scheduleSummary: String {
         let line = current.schedule ?? ""
         let words = CronSchedule.describe(line)
-        return (developerMode || words != line) ? words : "Custom schedule"
+        return (developerMode || words != line) ? words : String(localized: "Custom schedule")
     }
 
     private var lastCheckSummary: String {
-        if current.lastRunAt == nil && current.lastStatus == nil { return "Not checked yet" }
-        let when = ScheduledWork.date(current.lastRunAt) ?? "Time not reported"
+        if current.lastRunAt == nil && current.lastStatus == nil { return String(localized: "Not checked yet") }
+        let when = ScheduledWork.date(current.lastRunAt) ?? String(localized: "Time not reported")
         return "\(when) \u{00B7} \(ScheduledWork.result(current))"
     }
 
     private var title: String {
-        guard let name = current.name, !name.isEmpty else { return "Scheduled task" }
+        guard let name = current.name, !name.isEmpty else { return String(localized: "Scheduled task") }
         return name
     }
 
@@ -398,7 +398,7 @@ struct CronJobDetailView: View {
             loadDrafts()
         } catch {
             guard allowed else { return }
-            feedback = "Couldn't refresh this task. Reopen Schedules before making changes."
+            feedback = String(localized: "Couldn't refresh this task. Reopen Schedules before making changes.")
             feedbackIsProblem = true
         }
     }
@@ -411,7 +411,7 @@ struct CronJobDetailView: View {
         if developerMode && jsonChanged {
             guard let object = (try? JSONDecoder().decode(JSONValue.self, from: Data(draftJSON.utf8)))?.objectValue
             else {
-                jsonProblem = "The JSON does not parse."
+                jsonProblem = String(localized: "The JSON does not parse.")
                 return
             }
             jsonProblem = nil
@@ -438,7 +438,7 @@ struct CronJobDetailView: View {
                 confirmed = reply
                 loadDrafts(from: reply)
             }
-            feedback = "Saved."
+            feedback = String(localized: "Saved.")
             feedbackIsProblem = false
             isEditing = false
             onChange()
@@ -460,7 +460,8 @@ struct CronJobDetailView: View {
                 throw ScheduleConfirmationError()
             }
             take(reply)
-            feedback = pause ? "Paused. No future checks will start." : "Resumed. Your next check is scheduled."
+            feedback = pause ? String(localized: "Paused. No future checks will start.")
+                : String(localized: "Resumed. Your next check is scheduled.")
             feedbackIsProblem = false
             onChange()
         } catch {
@@ -547,5 +548,5 @@ struct CronJobDetailView: View {
 }
 
 private struct ScheduleConfirmationError: LocalizedError {
-    var errorDescription: String? { "Your assistant did not confirm the change. Refresh before trying again." }
+    var errorDescription: String? { String(localized: "Your assistant did not confirm the change. Refresh before trying again.") }
 }

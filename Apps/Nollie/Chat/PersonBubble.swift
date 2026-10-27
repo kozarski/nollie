@@ -7,11 +7,11 @@ enum BubbleAction {
 
     var title: String {
         switch self {
-        case .copy: "Copy"
-        case .select: "Select Text"
-        case .edit: "Edit & resend"
-        case .reply: "Reply"
-        case .share: "Share"
+        case .copy: String(localized: "Copy", comment: "A menu item that copies a message")
+        case .select: String(localized: "Select Text")
+        case .edit: String(localized: "Edit & resend")
+        case .reply: String(localized: "Reply", comment: "A menu item that replies to a message")
+        case .share: String(localized: "Share", comment: "A menu item that shares a message")
         }
     }
 
@@ -111,7 +111,11 @@ struct SteerBubble: View {
     var status: String
     var onEdit: (String) -> Void
 
-    private var caption: String { status == "queued" ? "Steered · queued" : "Steered" }
+    private var caption: String {
+        status == "queued"
+            ? String(localized: "Steered · queued", comment: "A message sent into a running turn, still waiting to land")
+            : String(localized: "Steered", comment: "A message sent into a running turn")
+    }
 
     var body: some View {
         HStack(spacing: 8) {

@@ -285,7 +285,7 @@ public struct StoredSession: Codable, Hashable, Identifiable, Sendable {
         let named = (title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if !named.isEmpty { return named }
         let opening = (preview ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        return opening.isEmpty ? "New chat" : String(opening.prefix(80))
+        return opening.isEmpty ? String(localized: "New chat", table: "Core") : String(opening.prefix(80))
     }
 
     public var lastDate: Date? {

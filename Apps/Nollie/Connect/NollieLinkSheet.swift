@@ -117,7 +117,7 @@ struct NollieLinkSheet: View {
 
     private var removalTitle: String {
         guard let device = pendingRemoval else { return "" }
-        return "Remove \(device.name)?"
+        return String(localized: "Remove \(device.name)?", comment: "Safety: asks before removing a linked device; %@ is its name")
     }
 
     private var codeState: NollieLinkPanel.CodeState {
@@ -126,7 +126,7 @@ struct NollieLinkSheet: View {
         if !mayShow { return .hidden }
         if let code { return .code(code) }
         if loading { return .loading }
-        return .issue(issue ?? "Couldn't make a code. Try again.")
+        return .issue(issue ?? String(localized: "Couldn't make a code. Try again."))
     }
 
     // MARK: Work
@@ -173,7 +173,7 @@ struct NollieLinkSheet: View {
             guard !Task.isCancelled else { return }
             code = nil
             loading = false
-            issue = "Couldn't make a code. Check that Nollie's background service is on, then try again."
+            issue = String(localized: "Couldn't make a code. Check that Nollie's background service is on, then try again.")
         }
     }
 
@@ -193,7 +193,7 @@ struct NollieLinkSheet: View {
             if let response = try? await NollieLinkMacClient.remove(device.id) {
                 devices = response.devices
             } else {
-                issue = "Couldn't remove \(device.name). Try again."
+                issue = String(localized: "Couldn't remove \(device.name). Try again.")
             }
         }
     }
@@ -238,7 +238,7 @@ struct NollieLinkPanel: View {
     private var hero: NollieLinkHero.State {
         if let linkedName { return .linked(linkedName) }
         switch state {
-        case .linked: return .linked("your iPhone")
+        case .linked: return .linked(String(localized: "your iPhone", comment: "Fills in: Linked to your iPhone"))
         case .locked: return .locked
         case .hidden: return .hidden
         case .loading, .code: return .ready
@@ -286,7 +286,7 @@ struct NollieLinkPanel: View {
     /// The iPhones already linked, one capsule each, with Remove.
     private var deviceList: some View {
         VStack(alignment: .leading, spacing: 12) {
-            PageHeading(devices.count == 1 ? "Linked iPhone" : "Linked iPhones")
+            PageHeading(.verbatim(devices.count == 1 ? String(localized: "Linked iPhone") : String(localized: "Linked iPhones")))
             ForEach(devices) { device in
                 LinkedDeviceRow(device: device, busy: removing == device.id, allowed: canRemove) { remove(device) }
             }
@@ -296,11 +296,12 @@ struct NollieLinkPanel: View {
     }
 
     static func activity(_ device: NollieLinkIPCDevice, now: Date = Date()) -> String {
-        guard let last = device.lastActive else { return "Not used yet" }
-        if now.timeIntervalSince(last) < 60 { return "Active now" }
+        guard let last = device.lastActive else { return String(localized: "Not used yet") }
+        if now.timeIntervalSince(last) < 60 { return String(localized: "Active now") }
         let ago = RelativeDateTimeFormatter()
         ago.unitsStyle = .full
-        return "Last active " + ago.localizedString(for: last, relativeTo: now)
+        let when = ago.localizedString(for: last, relativeTo: now)
+        return String(localized: "Last active \(when)", comment: "%@ is a relative time, such as 5 minutes ago")
     }
 }
 
@@ -356,20 +357,20 @@ struct NollieLinkHero: View {
         }
         var title: String {
             switch self {
-            case .ready: "Use Nollie on your iPhone"
-            case .linked(let name): "Linked to \(name)"
-            case .locked: "Unlock Nollie"
-            case .hidden: "Code hidden"
-            case .issue: "Couldn't make a code"
+            case .ready: String(localized: "Use Nollie on your iPhone")
+            case .linked(let name): String(localized: "Linked to \(name)")
+            case .locked: String(localized: "Unlock Nollie")
+            case .hidden: String(localized: "Code hidden")
+            case .issue: String(localized: "Couldn't make a code")
             }
         }
         var line: String? {
             switch self {
             case .ready: nil
-            case .linked: "You can close this. Your iPhone is finishing up."
-            case .locked: "Then the code shows here."
-            case .hidden: "It comes back when Nollie is in front."
-            case .issue: "Try again in a moment."
+            case .linked: String(localized: "You can close this. Your iPhone is finishing up.")
+            case .locked: String(localized: "Then the code shows here.")
+            case .hidden: String(localized: "It comes back when Nollie is in front.")
+            case .issue: String(localized: "Try again in a moment.")
             }
         }
         var tint: Color {
@@ -386,7 +387,7 @@ struct NollieLinkHero: View {
     var state: State
 
     var body: some View {
-        PageHero(symbol: state.symbol, title: state.title, line: state.line, tint: state.tint, id: "link.hero")
+        PageHero(symbol: state.symbol, title: .verbatim(state.title), line: .verbatim(state.line), tint: state.tint, id: "link.hero")
     }
 }
 
@@ -400,7 +401,7 @@ private struct NollieLinkAdvanced: View {
     var body: some View {
         SettingsPage("link.advanced.page") {
             let hero = self.hero
-            PageHero(symbol: hero.symbol, title: hero.title, line: hero.line, tint: hero.tint, id: "link.advanced.hero")
+            PageHero(symbol: hero.symbol, title: .verbatim(hero.title), line: .verbatim(hero.line), tint: hero.tint, id: "link.advanced.hero")
             if !devices.isEmpty {
                 VStack(alignment: .leading, spacing: 16) {
                     PageHeading("Linked iPhones")
@@ -408,7 +409,7 @@ private struct NollieLinkAdvanced: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(device.name).font(.headline).foregroundStyle(Ink.text)
                             line(NollieLinkPanel.activity(device, now: now))
-                            line("Linked " + device.linkedAt.formatted(date: .abbreviated, time: .shortened))
+                            line(String(localized: "Linked \(device.linkedAt.formatted(date: .abbreviated, time: .shortened))", comment: "%@ is a date and time"))
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityElement(children: .combine)
@@ -425,7 +426,7 @@ private struct NollieLinkAdvanced: View {
             }
             VStack(alignment: .leading, spacing: 8) {
                 PageHeading("The code")
-                line("Nollie's background service on this Mac makes the code. It changes by itself, and hides when you close this, lock Nollie or switch away.")
+                line(String(localized: "Nollie's background service on this Mac makes the code. It changes by itself, and hides when you close this, lock Nollie or switch away."))
             }
         }
         .untitledPage()
@@ -434,11 +435,12 @@ private struct NollieLinkAdvanced: View {
     /// The top of the page: which iPhones are linked, or that linking went wrong.
     private var hero: (symbol: String, title: String, line: String?, tint: Color) {
         if let first = devices.first {
-            let title = devices.count == 1 ? "Linked to \(first.name)" : "\(devices.count) iPhones linked"
-            return ("iphone", title, issue == nil ? nil : "The last try didn't work. It's below.", .green)
+            let title = devices.count == 1 ? String(localized: "Linked to \(first.name)") : String(localized: "\(devices.count) iPhones linked")
+            return ("iphone", title, issue == nil ? nil : String(localized: "The last try didn't work. It's below."), .green)
         }
-        return issue == nil ? ("iphone.slash", "No iPhone linked yet", nil, Ink.text2)
-                            : ("exclamationmark.triangle.fill", "Linking didn't work", "What went wrong is below.", .orange)
+        return issue == nil ? ("iphone.slash", String(localized: "No iPhone linked yet"), nil, Ink.text2)
+                            : ("exclamationmark.triangle.fill", String(localized: "Linking didn't work"),
+                               String(localized: "What went wrong is below."), .orange)
     }
 
     private func line(_ text: String) -> some View {

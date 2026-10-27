@@ -74,7 +74,7 @@ final class CuaSetup {
         case .preparing: .working(.preparing, fraction: nil)
         case .done: .done
         case .needsQuit: .needsQuit
-        case .failed: .failed(response.failure ?? "Couldn't set up Cua by itself.")
+        case .failed: .failed(response.failure ?? String(localized: "Couldn't set up Cua by itself."))
         case .unavailable: .unavailable
         }
     }

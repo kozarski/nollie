@@ -30,13 +30,17 @@ private struct Swatches: View {
     var current: String
 
     private static let offered: [(hex: String, name: String)] = {
-        let extras = [("#FFFFFF", "White"), ("#8E8E93", "Grey"), ("#A2845E", "Brown")]
+        let extras = [("#FFFFFF", String(localized: "White", comment: "A colour")), ("#8E8E93", String(localized: "Grey", comment: "A colour")),
+                      ("#A2845E", String(localized: "Brown", comment: "A colour"))]
         let named: [String: String] = [
-            "#7C5CFF": "Violet", "#0A84FF": "Blue", "#30D158": "Green", "#FF9F0A": "Orange", "#FF375F": "Pink",
-            "#64D2FF": "Cyan", "#BF5AF2": "Purple", "#FFD60A": "Yellow", "#FF6B35": "Tangerine", "#5AC8FA": "Sky blue",
+            "#7C5CFF": String(localized: "Violet", comment: "A colour"), "#0A84FF": String(localized: "Blue", comment: "A colour"),
+            "#30D158": String(localized: "Green", comment: "A colour"), "#FF9F0A": String(localized: "Orange", comment: "A colour"),
+            "#FF375F": String(localized: "Pink", comment: "A colour"), "#64D2FF": String(localized: "Cyan", comment: "A colour"),
+            "#BF5AF2": String(localized: "Purple", comment: "A colour"), "#FFD60A": String(localized: "Yellow", comment: "A colour"),
+            "#FF6B35": String(localized: "Tangerine", comment: "A colour"), "#5AC8FA": String(localized: "Sky blue", comment: "A colour"),
         ]
         var seen = Set<String>()
-        return (BotColors.palette.map { ($0, named[$0.uppercased()] ?? "Colour \($0)") } + extras)
+        return (BotColors.palette.map { ($0, named[$0.uppercased()] ?? String(localized: "Colour \($0)", comment: "A colour by its hex code")) } + extras)
             .filter { seen.insert($0.0.uppercased()).inserted }
     }()
 

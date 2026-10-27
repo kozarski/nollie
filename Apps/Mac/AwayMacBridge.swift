@@ -210,7 +210,8 @@ final class AwayMacBridge {
             default: break
             }
         }
-        return last ?? failed.map { "It stopped: \($0)" } ?? "It finished without a reply."
+        return last ?? failed.map { String(localized: "It stopped: \($0)", comment: "A turn ended with this error") }
+            ?? String(localized: "It finished without a reply.")
     }
     #endif
 }

@@ -20,10 +20,10 @@ struct StagedCard: View {
     /// The pill's word and the stand-in symbol before the preview is ready.
     private var kindFacts: (word: String, symbol: String) {
         let table: [AttachmentPreview.Kind: (String, String)] = [
-            .image: ("Image", "photo"),
-            .pdf: ("PDF", "doc.richtext"),
-            .audio: ("Audio", "waveform"),
-            .video: ("Video", "video"),
+            .image: (String(localized: "Image", comment: "An attached picture; a noun"), "photo"),
+            .pdf: (String(localized: "PDF", comment: "An attached PDF file"), "doc.richtext"),
+            .audio: (String(localized: "Audio", comment: "An attached sound recording; a noun"), "waveform"),
+            .video: (String(localized: "Video", comment: "An attached video; a noun"), "video"),
         ]
         return table[attachment.kind] ?? (fileWord, "doc.text")
     }
@@ -32,9 +32,10 @@ struct StagedCard: View {
     /// shows its extension.
     private var fileWord: String {
         let ext = URL(fileURLWithPath: attachment.name).pathExtension.lowercased()
-        guard let type = UTType(filenameExtension: ext) else { return ext.isEmpty ? "File" : ext.uppercased() }
-        if [UTType.text, .sourceCode].contains(where: type.conforms(to:)) { return "Text" }
-        return ext.isEmpty ? "File" : ext.uppercased()
+        let file = String(localized: "File", comment: "An attached file of unknown kind; a noun")
+        guard let type = UTType(filenameExtension: ext) else { return ext.isEmpty ? file : ext.uppercased() }
+        if [UTType.text, .sourceCode].contains(where: type.conforms(to:)) { return String(localized: "Text", comment: "An attached text file; a noun") }
+        return ext.isEmpty ? file : ext.uppercased()
     }
 
     var body: some View {

@@ -71,7 +71,7 @@ struct NightShiftCard: View {
                 NightShiftRunView(run: run, open: expanded.contains(run.id), expanded: expanded, tap: tap)
             }
             ForEach(card.missed, id: \.self) { missed in
-                PostBotLine(bot: missed.bot, title: missed.title.isEmpty ? "Schedule" : missed.title,
+                PostBotLine(bot: missed.bot, title: missed.title.isEmpty ? NightShiftWords.untitledSchedule : missed.title,
                             detail: NightShiftWords.missedLine(missed), colors: .night)
                     .accessibilityIdentifier("post.nightShift.missed.\(missed.jobId)")
             }
@@ -242,35 +242,44 @@ enum NightShiftWords {
     /// "Since 7:02 yesterday".
     static func since(_ from: Date, now: Date = Date(), calendar: Calendar = .current) -> String {
         let time = from.formatted(.dateTime.hour().minute())
-        if calendar.isDate(from, inSameDayAs: now) { return "Since \(time)" }
+        if calendar.isDate(from, inSameDayAs: now) { return String(localized: "Since \(time)", comment: "%@ is a time today") }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(from, inSameDayAs: yesterday) {
-            return "Since \(time) yesterday"
+            return String(localized: "Since \(time) yesterday", comment: "%@ is a time")
         }
-        return "Since \(from.formatted(.dateTime.weekday(.abbreviated).hour().minute()))"
+        return String(localized: "Since \(from.formatted(.dateTime.weekday(.abbreviated).hour().minute()))",
+                      comment: "%@ is a day and a time")
     }
 
     /// "2 runs · 5 actions · 1 stopped", or the quiet night's line.
     static func counts(_ counts: ConversationPost.Counts) -> String {
-        guard counts.runs > 0 else { return "Quiet night. Nothing ran." }
-        var parts = [plural(counts.runs, "run"), plural(counts.actions, "action")]
-        if counts.held > 0 { parts.append("\(counts.held) held") }
-        if counts.stopped > 0 { parts.append("\(counts.stopped) stopped") }
-        if counts.unrecorded > 0 { parts.append("\(counts.unrecorded) not recorded") }
+        guard counts.runs > 0 else { return String(localized: "Quiet night. Nothing ran.") }
+        var parts = [String(localized: "\(counts.runs) runs", comment: "Night shift: how many schedules ran"),
+                     String(localized: "\(counts.actions) actions", comment: "Night shift: how many things the runs did")]
+        if counts.held > 0 { parts.append(String(localized: "\(counts.held) held", comment: "Night shift: actions held for your yes")) }
+        if counts.stopped > 0 { parts.append(String(localized: "\(counts.stopped) stopped", comment: "Night shift: actions that were stopped")) }
+        if counts.unrecorded > 0 {
+            parts.append(String(localized: "\(counts.unrecorded) not recorded", comment: "Night shift: actions with no receipt"))
+        }
         return parts.joined(separator: " · ")
     }
 
-    static func unwatched(_ bots: [String]) -> String { "Not watched: " + bots.joined(separator: ", ") }
+    static func unwatched(_ bots: [String]) -> String {
+        String(localized: "Not watched: \(bots.joined(separator: ", "))", comment: "%@ is a list of bot names")
+    }
 
     /// Runs the add-on left off a busy night's card.
-    static func moreRuns(_ count: Int) -> String { "\(plural(count, "more run")) not listed" }
+    static func moreRuns(_ count: Int) -> String { String(localized: "\(count) more runs not listed") }
+
+    /// A run or a missed schedule with no title of its own.
+    static let untitledSchedule = String(localized: "Schedule", comment: "Noun: a scheduled job with no name")
 
     static func title(of run: ConversationPost.Run) -> String {
         if !run.title.isEmpty { return run.title }
         switch run.kind {
-        case "board": return "Board task"
-        case "helper": return "Helper"
-        case "rehearsal": return "Rehearsal"
-        default: return "Schedule"
+        case "board": return String(localized: "Board task")
+        case "helper": return String(localized: "Helper", comment: "Noun: a helper bot")
+        case "rehearsal": return String(localized: "Rehearsal", comment: "Noun: a schedule's practice run")
+        default: return untitledSchedule
         }
     }
 
@@ -279,18 +288,21 @@ enum NightShiftWords {
         var parts = [run.botName.isEmpty ? ProfileInfo.shownName(of: run.bot) : run.botName]
         if let outcome = run.outcome { parts.append(outcomeWords(outcome)) }
         if let at = run.finishedAt ?? run.startedAt { parts.append(at.formatted(.dateTime.hour().minute())) }
-        if run.late, let due = run.dueAt { parts.append("Due \(due.formatted(.dateTime.hour().minute()))") }
+        if run.late, let due = run.dueAt {
+            parts.append(String(localized: "Due \(due.formatted(.dateTime.hour().minute()))", comment: "%@ is a time"))
+        }
         return parts.joined(separator: " · ")
     }
 
     /// A schedule that never ran for some of its times: "Scout · Didn't run 3 times · 2:00 AM to 4:00 AM".
     static func missedLine(_ missed: ConversationPost.Missed) -> String {
         var parts = [missed.botName.isEmpty ? ProfileInfo.shownName(of: missed.bot) : missed.botName,
-                     missed.count == 1 ? "Didn't run" : "Didn't run \(missed.count) times"]
+                     String(localized: "Didn't run \(missed.count) times")]
         let time = { (date: Date) in date.formatted(.dateTime.hour().minute()) }
         switch (missed.firstDue, missed.lastDue) {
-        case let (first?, last?) where missed.count > 1 && last > first: parts.append("\(time(first)) to \(time(last))")
-        case let (first?, _): parts.append("Due \(time(first))")
+        case let (first?, last?) where missed.count > 1 && last > first:
+            parts.append(String(localized: "\(time(first)) to \(time(last))", comment: "A range of two times"))
+        case let (first?, _): parts.append(String(localized: "Due \(time(first))", comment: "%@ is a time"))
         default: break
         }
         return parts.joined(separator: " · ")
@@ -298,11 +310,11 @@ enum NightShiftWords {
 
     static func outcomeWords(_ outcome: ConversationPost.Outcome) -> String {
         switch outcome {
-        case .done: "Done"
-        case .failed: "Failed"
-        case .stopped: "Stopped"
-        case .skipped: "Skipped"
-        case .rehearsal: "Rehearsal"
+        case .done: String(localized: "Done", comment: "How a run ended")
+        case .failed: String(localized: "Failed", comment: "How a run ended")
+        case .stopped: String(localized: "Stopped", comment: "How a run ended")
+        case .skipped: String(localized: "Skipped", comment: "How a run ended")
+        case .rehearsal: String(localized: "Rehearsal", comment: "Noun: a schedule's practice run")
         }
     }
 
@@ -310,37 +322,108 @@ enum NightShiftWords {
     /// an Ask first hold: its target already starts with its own verb ("Send with gmail: send email").
     static func verb(_ action: ConversationPost.Action) -> String {
         if heldByAskFirst(action), !action.target.isEmpty { return "" }
-        let (done, notDone) = verbs(action.tool, target: action.target)
-        return action.status == .blocked ? "Tried to " + notDone.lowercased() : done
+        let words = toolWords(action.tool, target: action.target)
+        return action.status == .blocked ? words.tried : words.done
     }
 
     /// A tool's verb as done and as not done ("Ran", "Run"), to go before `target` when there is one. A verb that
     /// already names what it acted on joins its target with "for" ("Used the screen for click").
     static func verbs(_ tool: String, target: String = "") -> (String, String) {
-        let (done, notDone) = plainVerbs(tool)
-        guard !target.isEmpty, done == "Used the screen" else { return (done, notDone) }
-        return (done + " for", notDone + " for")
+        let words = toolWords(tool, target: target)
+        return (words.done, words.notDone)
     }
 
-    private static func plainVerbs(_ tool: String) -> (String, String) {
-        if tool.hasPrefix("mcp__cua_recorder__") || tool.hasPrefix("mcp__nollie_mac__") { return ("Used the screen", "Use the screen") }
+    /// For VoiceOver on a rehearsal: "Would have: run".
+    static func wouldHave(_ tool: String, target: String = "") -> String {
+        toolWords(tool, target: target).wouldHave
+    }
+
+    /// What a look is called; under "Looked at" in a rehearsal it needs no verb of its own.
+    static let lookedAt = String(localized: "Looked at", comment: "Past tense verb before what was looked at")
+
+    /// A tool's verb in each form the cards use: done ("Ran"), not done ("Run"), tried ("Tried to run") and, for a
+    /// rehearsal, would have ("Would have: run"). Each is a whole phrase, since languages build these differently.
+    struct ToolWords: Equatable {
+        var done: String
+        var notDone: String
+        var tried: String
+        var wouldHave: String
+    }
+
+    static func toolWords(_ tool: String, target: String = "") -> ToolWords {
+        let screen = tool.hasPrefix("mcp__cua_recorder__") || tool.hasPrefix("mcp__nollie_mac__") || tool == "computer_use"
+        if screen {
+            if target.isEmpty {
+                return ToolWords(done: String(localized: "Used the screen"), notDone: String(localized: "Use the screen"),
+                                 tried: String(localized: "Tried to use the screen"),
+                                 wouldHave: String(localized: "Would have: use the screen"))
+            }
+            return ToolWords(done: String(localized: "Used the screen for", comment: "Before what was done on the screen, like click"),
+                             notDone: String(localized: "Use the screen for", comment: "Before what is done on the screen, like click"),
+                             tried: String(localized: "Tried to use the screen for", comment: "Before what was tried on the screen, like click"),
+                             wouldHave: String(localized: "Would have: use the screen for", comment: "Before what would have been done on the screen"))
+        }
         switch tool {
-        case "terminal", "shell", "bash", "execute_code", "process": return ("Ran", "Run")
-        case "write_file", "patch": return ("Wrote", "Write")
-        case "web_search", "search_files", "session_search", "search": return ("Searched", "Search")
+        case "terminal", "shell", "bash", "execute_code", "process":
+            return ToolWords(done: String(localized: "Ran", comment: "Past tense verb before a command"),
+                             notDone: String(localized: "Run", comment: "Verb before a command"),
+                             tried: String(localized: "Tried to run", comment: "Before a command"),
+                             wouldHave: String(localized: "Would have: run", comment: "Before a command"))
+        case "write_file", "patch":
+            return ToolWords(done: String(localized: "Wrote", comment: "Past tense verb before a file name"),
+                             notDone: String(localized: "Write", comment: "Verb before a file name"),
+                             tried: String(localized: "Tried to write", comment: "Before a file name"),
+                             wouldHave: String(localized: "Would have: write", comment: "Before a file name"))
+        case "web_search", "search_files", "session_search", "search":
+            return ToolWords(done: String(localized: "Searched", comment: "Past tense verb before what was searched for"),
+                             notDone: String(localized: "Search", comment: "Verb before what to search for"),
+                             tried: String(localized: "Tried to search", comment: "Before what was searched for"),
+                             wouldHave: String(localized: "Would have: search", comment: "Before what would have been searched for"))
         case "read_file", "web_extract", "vision_analyze", "browser_snapshot", "browser_get_images", "browser_console",
              "skill_view", "skills_list":
-            return ("Looked at", "Look at")
-        case "send_message": return ("Sent", "Send")
-        case "computer_use": return ("Used the screen", "Use the screen")
-        case "todo": return ("Noted", "Note")
-        case "cronjob", "cronjob_manage": return ("Scheduled", "Schedule")
-        case "delegate_task": return ("Handed off", "Hand off")
-        case "memory": return ("Remembered", "Remember")
+            return ToolWords(done: lookedAt,
+                             notDone: String(localized: "Look at", comment: "Verb before what to look at"),
+                             tried: String(localized: "Tried to look at", comment: "Before what was looked at"),
+                             wouldHave: String(localized: "Would have: look at", comment: "Before what would have been looked at"))
+        case "send_message":
+            return ToolWords(done: String(localized: "Sent", comment: "Past tense verb before what was sent"),
+                             notDone: String(localized: "Send", comment: "Verb before what to send"),
+                             tried: String(localized: "Tried to send", comment: "Safety: before what was not sent"),
+                             wouldHave: String(localized: "Would have: send", comment: "Safety: before what was not sent"))
+        case "todo":
+            return ToolWords(done: String(localized: "Noted", comment: "Past tense verb before a to-do"),
+                             notDone: String(localized: "Note", comment: "Verb before a to-do"),
+                             tried: String(localized: "Tried to note", comment: "Before a to-do"),
+                             wouldHave: String(localized: "Would have: note", comment: "Before a to-do"))
+        case "cronjob", "cronjob_manage":
+            return ToolWords(done: String(localized: "Scheduled", comment: "Past tense verb before a schedule's name"),
+                             // Its own key: the noun "Schedule" is translated apart from the verb.
+                             notDone: String(localized: "Schedule (verb)", defaultValue: "Schedule",
+                                             comment: "Verb before a schedule's name, set up a schedule"),
+                             tried: String(localized: "Tried to schedule", comment: "Before a schedule's name"),
+                             wouldHave: String(localized: "Would have: schedule", comment: "Before a schedule's name"))
+        case "delegate_task":
+            return ToolWords(done: String(localized: "Handed off", comment: "Past tense verb before a task given to another bot"),
+                             notDone: String(localized: "Hand off", comment: "Verb before a task to give to another bot"),
+                             tried: String(localized: "Tried to hand off", comment: "Before a task given to another bot"),
+                             wouldHave: String(localized: "Would have: hand off", comment: "Before a task given to another bot"))
+        case "memory":
+            return ToolWords(done: String(localized: "Remembered", comment: "Past tense verb before what was remembered"),
+                             notDone: String(localized: "Remember", comment: "Verb before what to remember"),
+                             tried: String(localized: "Tried to remember", comment: "Before what was remembered"),
+                             wouldHave: String(localized: "Would have: remember", comment: "Before what would have been remembered"))
         default:
-            if tool.hasPrefix("browser_") { return ("Browsed", "Browse") }
+            if tool.hasPrefix("browser_") {
+                return ToolWords(done: String(localized: "Browsed", comment: "Past tense verb before a web page"),
+                                 notDone: String(localized: "Browse", comment: "Verb before a web page"),
+                                 tried: String(localized: "Tried to browse", comment: "Before a web page"),
+                                 wouldHave: String(localized: "Would have: browse", comment: "Before a web page"))
+            }
             let name = tool.replacingOccurrences(of: "mcp__", with: "").replacingOccurrences(of: "_", with: " ")
-            return ("Used \(name)", "Use \(name)")
+            return ToolWords(done: String(localized: "Used \(name)", comment: "%@ is a tool's name"),
+                             notDone: String(localized: "Use \(name)", comment: "%@ is a tool's name"),
+                             tried: String(localized: "Tried to use \(name.lowercased())", comment: "%@ is a tool's name"),
+                             wouldHave: String(localized: "Would have: use \(name.lowercased())", comment: "%@ is a tool's name"))
         }
     }
 
@@ -348,23 +431,33 @@ enum NightShiftWords {
     static func receipt(_ action: ConversationPost.Action, in run: ConversationPost.Run) -> String {
         let words: String
         switch action.receipt?.kind {
-        case .tool: words = run.kind == "board" ? "Part of this task's tools" : "Part of this schedule's tools"
-        case .safe: words = "Not a risky command"
-        case .allowlist: words = "On your allow list"
+        case .tool:
+            words = run.kind == "board" ? String(localized: "Part of this task's tools") : String(localized: "Part of this schedule's tools")
+        case .safe: words = String(localized: "Not a risky command")
+        case .allowlist: words = String(localized: "On your allow list")
         case .always:
             if let at = action.receipt?.grantedAt {
-                words = "You chose Always for this on \(at.formatted(.dateTime.month(.abbreviated).day()))"
+                words = String(localized: "You chose Always for this on \(at.formatted(.dateTime.month(.abbreviated).day()))",
+                               comment: "%@ is a date")
             } else {
-                words = "You chose Always for this"
+                words = String(localized: "You chose Always for this")
             }
-        case .held: words = action.receipt?.detail == "ask_first" ? "Held: needs your yes" : "Held for you"
+        case .held:
+            words = action.receipt?.detail == "ask_first"
+                ? String(localized: "Held: needs your yes", comment: "Safety: Ask first held this; keep exact meaning")
+                : heldForYou
         case .blocked: words = stopped(action.receipt?.detail)
-        case .unknown: words = "Allowed. Reason not recorded"
-        case nil: words = action.status == .blocked ? "Stopped" : "Allowed. Reason not recorded"
+        case .unknown: words = String(localized: "Allowed. Reason not recorded")
+        case nil:
+            words = action.status == .blocked ? String(localized: "Stopped", comment: "An action that was stopped")
+                                              : String(localized: "Allowed. Reason not recorded")
         }
         guard action.status == .failed, action.receipt?.kind != .blocked else { return words }
-        return words + " · It failed"
+        return [words, String(localized: "It failed", comment: "An action that ran but did not work")].joined(separator: " · ")
     }
+
+    /// An action held back until the person says yes.
+    static let heldForYou = String(localized: "Held for you", comment: "Safety: an action waiting for your yes")
 
     /// Held by Ask first: it waits for a yes every time, and its target is the plain words a card would use.
     static func heldByAskFirst(_ action: ConversationPost.Action) -> Bool {
@@ -373,21 +466,21 @@ enum NightShiftWords {
 
     static func stopped(_ detail: String?) -> String {
         switch detail ?? "" {
-        case "mac": "Stopped: schedules never use your Mac's screen"
-        case "risky": "Stopped: a risky command needs your OK"
-        case "deny_rule": "Stopped: one of your rules says no"
-        case "hardline": "Stopped: this is never allowed"
-        case "plugin": "Stopped: schedules never change Nollie's own files"
-        default: "Stopped"
+        case "mac": String(localized: "Stopped: schedules never use your Mac's screen")
+        case "risky": String(localized: "Stopped: a risky command needs your OK")
+        case "deny_rule": String(localized: "Stopped: one of your rules says no")
+        case "hardline": String(localized: "Stopped: this is never allowed")
+        case "plugin": String(localized: "Stopped: schedules never change Nollie's own files")
+        default: String(localized: "Stopped", comment: "An action that was stopped")
         }
     }
 
     /// One sentence for VoiceOver: "Ran df -h. Not a risky command."
     static func sentence(verb: String, target: String, receipt: String?) -> String {
-        let action = target.isEmpty ? verb : verb.isEmpty ? target : "\(verb) \(target)"
-        guard let receipt else { return action + "." }
-        return "\(action). \(receipt)."
+        let action = target.isEmpty ? verb
+            : verb.isEmpty ? target
+            : String(localized: "\(verb) \(target)", comment: "A verb, then what it acted on, like Ran df -h")
+        guard let receipt else { return String(localized: "\(action).", comment: "One action as a sentence") }
+        return String(localized: "\(action). \(receipt).", comment: "One action, then why it was allowed or stopped")
     }
-
-    private static func plural(_ count: Int, _ word: String) -> String { "\(count) \(word)\(count == 1 ? "" : "s")" }
 }

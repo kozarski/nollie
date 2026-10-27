@@ -54,6 +54,7 @@ extension TranscriptView {
         guard await SystemControl.shared.set(true, profile: chat.profileName, rt: chat.runtime) else {
             throw SystemControlFailure()
         }
+        // Goes to the model, so it stays in English.
         _ = await chat.send("System control is on now. Carry on.")
     }
 

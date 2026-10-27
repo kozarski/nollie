@@ -491,56 +491,56 @@ struct OnboardingView: View {
 
     private var title: String {
         #if os(iOS)
-        if progress.step != .welcome && progress.step != .ready { return "Set up Nollie on your Mac." }
+        if progress.step != .welcome && progress.step != .ready { return String(localized: "Set up Nollie on your Mac.") }
         #endif
         switch progress.step {
-        case .welcome: return "Meet Nollie."
-        case .home: return "Let's get you started."
-        case .howItWorks: return "How Nollie works"
-        case .team: return "Make it yours."
+        case .welcome: return String(localized: "Meet Nollie.")
+        case .home: return String(localized: "Let's get you started.")
+        case .howItWorks: return String(localized: "How Nollie works")
+        case .team: return String(localized: "Make it yours.")
         case .connection:
-            if progress.route == .importCopy { return "A copy, all your own." }
-            return progress.route == .new ? "A home for \(assistantName)." : "Bring your assistant along."
-        case .model: return "Choose how Nollie thinks."
-        case .computer: return "Their own computers."
-        case .permissions: return "Allow a few things."
-        case .ready: return connected ? "Ready when you are." : "One last connection check."
+            if progress.route == .importCopy { return String(localized: "A copy, all your own.") }
+            return progress.route == .new ? String(localized: "A home for \(assistantName).") : String(localized: "Bring your assistant along.")
+        case .model: return String(localized: "Choose how Nollie thinks.")
+        case .computer: return String(localized: "Their own computers.")
+        case .permissions: return String(localized: "Allow a few things.")
+        case .ready: return connected ? String(localized: "Ready when you are.") : String(localized: "One last connection check.")
         }
     }
 
     private var subtitle: String {
         #if os(iOS)
         if progress.step != .welcome && progress.step != .ready {
-            return "Your Mac does the work. Your iPhone keeps you connected."
+            return String(localized: "Your Mac does the work. Your iPhone keeps you connected.")
         }
         #endif
         switch progress.step {
-        case .welcome: return "A friendly assistant for everyday life."
-        case .home: return "Start fresh, or use a setup you already have."
-        case .howItWorks: return "A few things to know before setup."
-        case .team: return "One assistant for everyday help."
+        case .welcome: return String(localized: "A friendly assistant for everyday life.")
+        case .home: return String(localized: "Start fresh, or use a setup you already have.")
+        case .howItWorks: return String(localized: "A few things to know before setup.")
+        case .team: return String(localized: "One assistant for everyday help.")
         case .connection:
-            if progress.route == .importCopy { return "Review a copy first. Your original stays as it is." }
-            if progress.route == .existing { return "Your bots, chats, models, schedules and Board stay where they are." }
+            if progress.route == .importCopy { return String(localized: "Review a copy first. Your original stays as it is.") }
+            if progress.route == .existing { return String(localized: "Your bots, chats, models, schedules and Board stay where they are.") }
             #if os(macOS)
-            return "A separate setup on this Mac for \(assistantName)."
+            return String(localized: "A separate setup on this Mac for \(assistantName).")
             #else
-            return "Hermes runs on a Mac or server. This device connects to it when it's ready."
+            return String(localized: "Hermes runs on a Mac or server. This device connects to it when it's ready.")
             #endif
-        case .model: return "Where should your assistant think?"
-        case .computer: return "Room to work, away from your files."
-        case .permissions: return "Nollie asks here, so nothing pops up later."
-        case .ready: return connected ? "Start with a question or a task." : "Nollie can't reach your assistant yet."
+        case .model: return String(localized: "Where should your assistant think?")
+        case .computer: return String(localized: "Room to work, away from your files.")
+        case .permissions: return String(localized: "Nollie asks here, so nothing pops up later.")
+        case .ready: return connected ? String(localized: "Start with a question or a task.") : String(localized: "Nollie can't reach your assistant yet.")
         }
     }
 
     private var stepLabel: String {
         #if os(iOS)
-        return progress.step == .ready ? "Ready when you are" : "Connect to your Mac"
+        return progress.step == .ready ? String(localized: "Ready when you are") : String(localized: "Connect to your Mac")
         #else
         let steps = progress.steps.filter { $0 != .welcome && $0 != .ready }
-        guard let index = steps.firstIndex(of: progress.step) else { return "Ready when you are" }
-        return "Step \(index + 1) of \(steps.count)"
+        guard let index = steps.firstIndex(of: progress.step) else { return String(localized: "Ready when you are") }
+        return String(localized: "Step \(index + 1) of \(steps.count)")
         #endif
     }
 
@@ -627,13 +627,13 @@ struct OnboardingView: View {
         case .ready:
             VStack(spacing: 18) {
                 #if os(iOS)
-                statusRow("Your assistant", detail: connected ? "Connected" : "Reconnecting to your Mac", ready: connected)
+                statusRow("Your assistant", detail: connected ? String(localized: "Connected") : String(localized: "Reconnecting to your Mac"), ready: connected)
                 // Asked here, with its reason, and only once the phone is connected.
                 PermissionRows(center: model.permissions, kinds: [.notifications])
                 Text("Keep your Mac awake and online. Other options are in Settings.")
                     .font(.callout).foregroundStyle(.secondary)
                 #else
-                statusRow("Your assistant", detail: connected ? "Connected" : "Not connected", ready: connected)
+                statusRow("Your assistant", detail: connected ? String(localized: "Connected") : String(localized: "Not connected"), ready: connected)
                 statusRow("Model", detail: readyDetail(.model, modelDetail), ready: modelStatus?.isReady == true)
                 statusRow("Computer", detail: readyDetail(.computer, computerDetail), ready: computerConfigured == true ? true : nil)
                 statusRow("Notifications", detail: readyDetail(.permissions, notificationDetail), ready: notificationsAllowed)
@@ -672,7 +672,7 @@ struct OnboardingView: View {
         .accessibilityIdentifier("onboarding.howItWorks")
     }
 
-    private func explanation(_ title: String, _ detail: String, symbol: String) -> some View {
+    private func explanation(_ title: LocalizedStringKey, _ detail: LocalizedStringKey, symbol: String) -> some View {
         HStack(alignment: .top, spacing: 16) {
             Image(systemName: symbol)
                 .font(.title2.weight(.medium)).foregroundStyle(.blue)
@@ -810,9 +810,9 @@ struct OnboardingView: View {
     }
 
     private var onboardingModelDetail: String {
-        if checking && modelStatus == nil { return "Checking your model…" }
-        if checkError != nil && modelStatus == nil { return "Couldn't check your model yet." }
-        if !connected { return "Reconnect to check." }
+        if checking && modelStatus == nil { return String(localized: "Checking your model…") }
+        if checkError != nil && modelStatus == nil { return String(localized: "Couldn't check your model yet.") }
+        if !connected { return String(localized: "Reconnect to check.") }
         return modelDetail
     }
 
@@ -824,9 +824,9 @@ struct OnboardingView: View {
         case .both: "square.stack.3d.up"
         }
         let detail: String = switch preference {
-        case .local: "Private and free. Runs on this Mac."
-        case .cloud: "Uses your ChatGPT or Claude plan."
-        case .both: "This Mac first, online when it helps."
+        case .local: String(localized: "Private and free. Runs on this Mac.")
+        case .cloud: String(localized: "Uses your ChatGPT or Claude plan.")
+        case .both: String(localized: "This Mac first, online when it helps.")
         }
         return Button {
             savedModelMode = preference.rawValue
@@ -857,7 +857,7 @@ struct OnboardingView: View {
             RoundedRectangle(cornerRadius: Ink.cardRadius, style: .continuous).strokeBorder(selected ? Color.blue : .clear, lineWidth: 2)
                 .allowsHitTesting(false)
         }
-        .accessibilityLabel(preference.title + ". " + detail)
+        .accessibilityLabel(String(localized: "\(preference.title). \(detail)", comment: "A choice's name, then its line"))
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("onboarding.modelPreference.\(preference.rawValue)")
@@ -976,22 +976,22 @@ struct OnboardingView: View {
 
     private var primaryTitle: String {
         #if os(iOS)
-        if progress.step != .welcome && progress.step != .ready { return "Scan QR code" }
+        if progress.step != .welcome && progress.step != .ready { return String(localized: "Scan QR code") }
         #endif
         switch progress.step {
-        case .welcome: return "Get started"
-        case .home, .howItWorks, .team: return "Continue"
+        case .welcome: return String(localized: "Get started")
+        case .home, .howItWorks, .team: return String(localized: "Continue")
         case .connection:
-            if progress.route == .importCopy { return "Import is not available yet" }
+            if progress.route == .importCopy { return String(localized: "Import is not available yet") }
             #if os(iOS)
-            return "Scan QR code"
+            return String(localized: "Scan QR code")
             #else
-            if progress.route == .existing { return "Connect" }
-            if managedConnectionRequest != nil { return "Connecting…" }
-            return localSetup.canConnect ? "Connect" : "Finish setup to connect"
+            if progress.route == .existing { return String(localized: "Connect") }
+            if managedConnectionRequest != nil { return String(localized: "Connecting…") }
+            return localSetup.canConnect ? String(localized: "Connect") : String(localized: "Finish setup to connect")
             #endif
-        case .model, .computer, .permissions: return "Continue"
-        case .ready: return connected ? "Start chatting" : "Check connection"
+        case .model, .computer, .permissions: return String(localized: "Continue")
+        case .ready: return connected ? String(localized: "Start chatting") : String(localized: "Check connection")
         }
     }
 
@@ -1088,7 +1088,7 @@ struct OnboardingView: View {
                 return
             } catch {
                 guard isCurrent() else { return }
-                checkError = "Couldn't finish connecting. Check the service, then try again."
+                checkError = String(localized: "Couldn't finish connecting. Check the service, then try again.")
             }
         }
     }
@@ -1203,7 +1203,7 @@ struct OnboardingView: View {
         }
     }
 
-    private func detailSheet<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func detailSheet<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20, content: content)
@@ -1253,30 +1253,30 @@ struct OnboardingView: View {
     }
     private var notificationDetail: String {
         switch model.push.authorization {
-        case .authorized: return "Allowed on this device"
-        case .provisional: return "Quiet notifications allowed"
-        case .denied: return "Off in System Settings"
-        default: return "Not on yet"
+        case .authorized: return String(localized: "Allowed on this device")
+        case .provisional: return String(localized: "Quiet notifications allowed")
+        case .denied: return String(localized: "Off in System Settings")
+        default: return String(localized: "Not on yet")
         }
     }
     /// A step put off during setup says so on the Ready step, right where you look for it.
     private func readyDetail(_ step: OnboardingProgress.Step, _ detail: String) -> String {
-        progress.deferred.contains(step) ? "Set up later in Settings" : detail
+        progress.deferred.contains(step) ? String(localized: "Set up later in Settings") : detail
     }
     private var modelDetail: String {
         switch modelStatus {
         case .ready(let model): return model
-        case .needsSignIn: return "Needs sign-in"
-        case .unverified(let model): return "\(model), not signed in yet"
-        case .notConfigured: return "No model selected yet"
-        case nil: return connected ? "Not checked yet" : "Reconnect to check"
+        case .needsSignIn: return String(localized: "Needs sign-in")
+        case .unverified(let model): return String(localized: "\(model), not signed in yet")
+        case .notConfigured: return String(localized: "No model selected yet")
+        case nil: return connected ? String(localized: "Not checked yet") : String(localized: "Reconnect to check")
         }
     }
     private var computerDetail: String {
         switch computerConfigured {
-        case true: return "Ready"
-        case false: return computerSwitchOn ? "Getting ready" : "Not set up yet. You can turn it on in Bot settings."
-        case nil: return "Not checked yet"
+        case true: return String(localized: "Ready")
+        case false: return computerSwitchOn ? String(localized: "Getting ready") : String(localized: "Not set up yet. You can turn it on in Bot settings.")
+        case nil: return String(localized: "Not checked yet")
         }
     }
 
@@ -1315,7 +1315,7 @@ struct OnboardingView: View {
             computerConfigured = own.map { $0.on && $0.state != .needsYou } ?? false
         } catch {
             guard checkIdentity == identity, currentCheck == check, !Task.isCancelled else { return }
-            checkError = "Couldn't check this setup. Your existing settings are unchanged."
+            checkError = String(localized: "Couldn't check this setup. Your existing settings are unchanged.")
         }
         #endif
     }
@@ -1360,7 +1360,7 @@ struct OnboardingView: View {
         }
     }
 
-    private func feature(_ title: String, _ detail: String, symbol: String) -> some View {
+    private func feature(_ title: LocalizedStringKey, _ detail: LocalizedStringKey, symbol: String) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: symbol).font(.title3).foregroundStyle(.blue)
                 .frame(width: 28).accessibilityHidden(true)
@@ -1373,7 +1373,7 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func choice(_ title: String, detail: String, symbol: String, id: String, primary: Bool = false, found: Bool = false, action: @escaping () -> Void) -> some View {
+    private func choice(_ title: LocalizedStringKey, detail: LocalizedStringKey, symbol: String, id: String, primary: Bool = false, found: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 16) {
                 Image(systemName: symbol).font(.title2).foregroundStyle(primary ? Color.white : found ? Color.readableGreen : Color.blue)
@@ -1412,7 +1412,7 @@ struct OnboardingView: View {
         }
     }
 
-    private func statusRow(_ title: String, detail: String, ready: Bool?) -> some View {
+    private func statusRow(_ title: LocalizedStringKey, detail: String, ready: Bool?) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: ready == true ? "checkmark.circle.fill" : "circle")
                 .foregroundStyle(ready == true ? Color.readableGreen : Color.secondary)

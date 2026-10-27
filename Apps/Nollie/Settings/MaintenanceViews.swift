@@ -10,15 +10,15 @@ private enum MaintenanceChoice: Identifiable {
 
     var question: String {
         switch self {
-        case .update: "Update Hermes?"
-        case .restart: "Restart the gateway?"
+        case .update: String(localized: "Update Hermes?")
+        case .restart: String(localized: "Restart the gateway?")
         }
     }
 
     var action: String {
         switch self {
-        case .update: "Update"
-        case .restart: "Restart"
+        case .update: String(localized: "Update", comment: "Button: update Hermes now")
+        case .restart: String(localized: "Restart", comment: "Button: restart the gateway now")
         }
     }
 
@@ -27,11 +27,14 @@ private enum MaintenanceChoice: Identifiable {
     func explanation(fromBanner: Bool) -> String {
         switch self {
         case .update where fromBanner:
-            "Runs `hermes update` on the gateway machine, then starts the dashboard again, which fixes this. Give it a few minutes; the app reconnects by itself."
+            String(localized: "Runs `hermes update` on the gateway machine, then starts the dashboard again, which fixes this. Give it a few minutes; the app reconnects by itself.",
+                   comment: "Keep the command in backticks as it is")
         case .update:
-            "Runs `hermes update` on the gateway machine, then starts the dashboard again. That also clears a \"restart required\" notice, and takes a few minutes."
+            String(localized: "Runs `hermes update` on the gateway machine, then starts the dashboard again. That also clears a \"restart required\" notice, and takes a few minutes.",
+                   comment: "Keep the command in backticks as it is")
         case .restart:
-            "Runs `hermes gateway restart` on the gateway machine. Any turn in progress stops, and the app reconnects once the gateway is back."
+            String(localized: "Runs `hermes gateway restart` on the gateway machine. Any turn in progress stops, and the app reconnects once the gateway is back.",
+                   comment: "Keep the command in backticks as it is")
         }
     }
 
@@ -137,9 +140,9 @@ struct MaintenanceButtons: View {
         // their labels onto two lines and hid the icon on the tinted one.
         Group {
             if !restartOnly {
-                row("Update Hermes", symbol: "arrow.down.circle", choice: .update)
+                row(String(localized: "Update Hermes"), symbol: "arrow.down.circle", choice: .update)
             }
-            row("Restart gateway", symbol: "arrow.clockwise", choice: .restart)
+            row(String(localized: "Restart gateway"), symbol: "arrow.clockwise", choice: .restart)
             progressLine
             if !compact, !work.actionLog.isEmpty {
                 Text(work.actionLog.suffix(12).joined(separator: "\n"))

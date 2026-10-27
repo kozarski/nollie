@@ -18,7 +18,7 @@ struct BackupChoice: Hashable {
             let id = entry.downloadedModelId ?? entry.modelId ?? entry.id
             guard !(ModelPlace.isLocal(mainProvider) && mainModel == id) else { continue }
             found.append(BackupChoice(route: BackupRoute(provider: "llamacpp", model: id),
-                                      title: "\(entry.displayName) \(ModelPlace.hereInSentence)"))
+                                      title: here(entry.displayName)))
         }
         if !privateBot {
             for provider in options?.providers ?? [] where provider.authenticated == true && provider.slug != mainProvider
@@ -30,10 +30,16 @@ struct BackupChoice: Hashable {
         }
         if let current, !found.contains(where: { $0.route == current }) {
             found.insert(BackupChoice(route: current, title: current.isLocal
-                                      ? "\(BackupRoute.shortName(current.model)) \(ModelPlace.hereInSentence)"
+                                      ? here(BackupRoute.shortName(current.model))
                                       : Papertrail.providerLabel(current.provider) ?? BackupRoute.shortName(current.model)), at: 0)
         }
         return found
+    }
+
+    /// A model's name with where it runs: "Llama 3.2 3B on this Mac".
+    private static func here(_ name: String) -> String {
+        ModelPlace.sentence(mac: String(localized: "\(name) on this Mac", comment: "A model name and where it runs"),
+                            phone: String(localized: "\(name) on your Mac", comment: "A model name and where it runs"))
     }
 }
 
@@ -64,9 +70,9 @@ final class BackupModelSetting {
             let _: JSONValue = try await runtime.api.send("PUT", "/api/config", profile: profile,
                                                           json: BackupModelConfig.update(choosing: choice, in: answer))
             await load(runtime, profile: profile)
-            if current != choice { problem = "Your assistant didn't keep that. Try again." }
+            if current != choice { problem = String(localized: "Your assistant didn't keep that. Try again.") }
         } catch {
-            problem = "Couldn't change it. Nothing was changed."
+            problem = String(localized: "Couldn't change it. Nothing was changed.")
         }
     }
 }
@@ -107,10 +113,12 @@ struct BackupModelSection: View {
                     .disabled(setting.busy)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             } else if choices.isEmpty {
-                PageNote("Download a model \(ModelPlace.hereInSentence) to have one ready.", symbol: "arrow.down.circle",
+                PageNote(.verbatim(ModelPlace.sentence(mac: String(localized: "Download a model on this Mac to have one ready."),
+                                             phone: String(localized: "Download a model on your Mac to have one ready."))),
+                         symbol: "arrow.down.circle",
                          id: "models.backup.none")
             }
-            if let problem = setting.problem { PageNote(problem, id: "models.backup.problem") }
+            if let problem = setting.problem { PageNote(.verbatim(problem), id: "models.backup.problem") }
         }
         .animation(.snappy, value: setting.current)
         .accessibilityElement(children: .contain)
