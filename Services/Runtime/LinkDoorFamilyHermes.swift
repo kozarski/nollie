@@ -31,6 +31,11 @@ final class LinkDoorFamilyHermes: @unchecked Sendable {
 
     /// A GET to Hermes. Nil when Hermes isn't there or didn't answer.
     func get(_ path: String, query: [URLQueryItem] = []) async -> (status: Int, body: Data)? {
+        await send("GET", path, query: query, json: nil)
+    }
+
+    /// One request to Hermes, with a JSON body when given. Nil when Hermes isn't there or didn't answer.
+    func send(_ method: String, _ path: String, query: [URLQueryItem] = [], json: Any?) async -> (status: Int, body: Data)? {
         guard let target = await upstream(), (1024...65535).contains(target.port) else { return nil }
         var components = URLComponents()
         components.scheme = "http"
@@ -40,8 +45,14 @@ final class LinkDoorFamilyHermes: @unchecked Sendable {
         if !query.isEmpty { components.queryItems = query }
         guard let url = components.url else { return nil }
         var request = URLRequest(url: url)
+        request.httpMethod = method
         request.setValue(target.token, forHTTPHeaderField: LinkDoorPolicy.deviceHeader)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let json {
+            guard let body = try? JSONSerialization.data(withJSONObject: json) else { return nil }
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
         guard let (data, response) = try? await session.data(for: request), let http = response as? HTTPURLResponse,
               data.count <= 4 * 1024 * 1024 else { return nil }
         return (http.statusCode, data)
@@ -87,6 +98,31 @@ final class LinkDoorFamilyHermes: @unchecked Sendable {
               let object = try? JSONSerialization.jsonObject(with: reply.body) as? [String: Any],
               let names = object["profiles"] as? [String] else { return nil }
         return Set(names.map { $0.lowercased() }).union(LinkDoorFamily.alwaysPrivate)
+    }
+
+    // MARK: Household copies
+
+    /// Makes a household copy with Hermes's own profile copy: config, instructions, skills and identity,
+    /// none of the memory or chats. True when it was made, or was already there.
+    func makeCopy(_ copy: String, of helper: String, person: String) async -> Bool {
+        let body: [String: Any] = ["name": copy, "clone_from": helper, "description": "For \(person)"]
+        guard let reply = await send("POST", "/api/profiles", json: body) else { return false }
+        return (200..<300).contains(reply.status) || reply.status == 409
+    }
+
+    /// Writes the copy's own `agent.disabled_toolsets` so it can't read this Mac's files, run code or
+    /// reach other helpers, keeping whatever the copy already had off. Read back to prove it took.
+    func lockDown(_ copy: String) async -> Bool {
+        let scope = [URLQueryItem(name: "profile", value: copy)]
+        let raw = [URLQueryItem(name: "profile", value: copy), URLQueryItem(name: "include_defaults", value: "false")]
+        guard let before = await get("/api/config", query: raw), before.status == 200,
+              let config = try? JSONSerialization.jsonObject(with: before.body) as? [String: Any] else { return false }
+        let wanted = LinkDoorFamily.lockedToolsets(existing: (config["agent"] as? [String: Any])?["disabled_toolsets"])
+        guard let saved = await send("PUT", "/api/config", query: scope, json: ["config": ["agent": ["disabled_toolsets": wanted]]]),
+              (200..<300).contains(saved.status),
+              let after = await get("/api/config", query: raw), after.status == 200,
+              let read = try? JSONSerialization.jsonObject(with: after.body) as? [String: Any] else { return false }
+        return LinkDoorFamily.isLockedDown((read["agent"] as? [String: Any])?["disabled_toolsets"])
     }
 
     // MARK: Asking Hermes something on its socket

@@ -28,6 +28,46 @@ enum LinkDoorFamily {
         return !words.isDisjoint(with: all)
     }
 
+    // MARK: Household copies
+
+    /// What a household copy may never use: this Mac's terminal and files, code, the browser and the
+    /// computer, other chats and helpers, schedules, the Board, the owner's calendar, reminders and
+    /// contacts, saved cards and sign-ins, and pictures or videos read from disk. Talk, web search and
+    /// reading, its own memory and the owner's connected send tools stay (sends still wait on the owner).
+    static let householdDropped: [String] = [
+        "terminal", "code_execution", "file", "browser", "computer_use", "debugging", "coding",
+        "session_search", "skills", "delegation", "cronjob", "kanban", "vision", "video",
+        "desktop_ui", "project", "catalog", "onboarding",
+        "nollie_calendar", "nollie_reminders", "nollie_contacts", "nollie_payments", "nollie_sign_in", "nollie_crew",
+        "mcp-cua", "mcp-cua-recorder",
+    ]
+
+    /// Hermes keeps `agent.disabled_toolsets` as a list or a comma-separated string.
+    static func toolsetList(_ value: Any?) -> [String] {
+        if let list = value as? [Any] { return list.compactMap { ($0 as? String)?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty } }
+        if let text = value as? String { return text.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty } }
+        return []
+    }
+
+    /// The copy's list after locking it down: what it already had off, then everything dropped.
+    static func lockedToolsets(existing: Any?) -> [String] {
+        var out = toolsetList(existing)
+        for name in householdDropped where !out.contains(name) { out.append(name) }
+        return out
+    }
+
+    static func isLockedDown(_ value: Any?) -> Bool { Set(householdDropped).isSubset(of: Set(toolsetList(value))) }
+
+    /// The household copy's profile name for a person: the helper's with theirs (`career-sam`), inside
+    /// Hermes's grammar.
+    static func copyName(helper: String, person: String) -> String {
+        let folded = person.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil).lowercased()
+        let slug = String(folded.unicodeScalars.filter { (97...122).contains($0.value) || (48...57).contains($0.value) }
+            .map(Character.init).prefix(16))
+        let suffix = slug.isEmpty ? "home" : slug
+        return String(helper.prefix(64 - 1 - suffix.count)) + "-" + suffix
+    }
+
     // MARK: Small yeses
 
     /// The kinds of ask a member may allow themselves when the owner turned on Small yeses: none yet.
@@ -201,7 +241,8 @@ struct LinkDoorMemberAccess: Sendable {
     init(device: UUID, member: LinkDoorDevices.Member, privateNames: Set<String>?) {
         self.device = device
         person = member.person
-        helpers = Set(member.helpers)
+        // Only copies whose tools are locked down are reachable.
+        helpers = Set(member.helpers).intersection(member.locked ?? [])
         self.privateNames = privateNames
         chats = Set(member.chats)
         small = member.small

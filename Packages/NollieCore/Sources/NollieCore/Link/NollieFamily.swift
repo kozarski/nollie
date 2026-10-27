@@ -123,7 +123,8 @@ public enum NollieFamilyClient {
         try await api.get(overviewPath)
     }
 
-    /// A version 2 code for someone at home, made by the Mac's door.
+    /// A version 2 code for someone at home, made by the Mac's door. `helpers` are the owner's own
+    /// helpers; the door makes the person's copies and the code names those.
     public static func invite(_ api: HermesAPI, person: String, helpers: [String]) async throws -> NollieLinkOffer {
         let code: NollieFamilyCode = try await api.send("POST", "/nollie/family/invite",
                                                          json: .object(["person": .string(person), "helpers": .array(helpers.map(JSONValue.string))]))
@@ -152,15 +153,5 @@ public enum NollieFamilyClient {
     /// The owner's Allow once ("once") or Deny ("deny").
     public static func answer(_ api: HermesAPI, ask: String, choice: String) async throws -> NollieFamilyOverview {
         try await api.send("POST", "/nollie/family/asks/\(ask)", json: .object(["choice": .string(choice)]))
-    }
-
-    /// The household copy's profile name for a person: the helper's with theirs (`career-sam`),
-    /// inside Hermes's grammar.
-    public static func copyName(helper: String, person: String) -> String {
-        let folded = person.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil).lowercased()
-        let slug = String(folded.unicodeScalars.filter { ("a"..."z").contains(Character($0)) || ("0"..."9").contains(Character($0)) }
-            .map(Character.init).prefix(16))
-        let base = String(helper.prefix(64 - 1 - max(slug.count, 4)))
-        return base + "-" + (slug.isEmpty ? "home" : slug)
     }
 }

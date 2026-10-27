@@ -836,6 +836,11 @@ def link_rest(method: str, base: str, payload) -> tuple[int, object] | None:
 # a fixture. POST /api/_mock/family {"role": "owner"|"member", "asks": bool, "reset": true} sets it.
 # As a member the mock also lists only the shared helper and that person's own chats, as the door does.
 FAMILY_SEND_RULE = "plugin_rule:nollie-ask-first:send:" + "0" * 24 + "5a11c0de"
+# What a household copy may never use, as the door writes it into the copy's agent.disabled_toolsets.
+FAMILY_DROPPED = ("terminal", "code_execution", "file", "browser", "computer_use", "debugging", "coding",
+                  "session_search", "skills", "delegation", "cronjob", "kanban", "vision", "video",
+                  "desktop_ui", "project", "catalog", "onboarding", "nollie_calendar", "nollie_reminders",
+                  "nollie_contacts", "nollie_payments", "nollie_sign_in", "nollie_crew", "mcp-cua", "mcp-cua-recorder")
 
 
 def family_fresh() -> dict:
@@ -906,9 +911,17 @@ def family_rest(method: str, base: str, query: dict, payload) -> tuple[int, obje
             return refuse(400, "That can't be shared.")
         if any(private_identity(h) for h in helpers if isinstance(h, str)):
             return refuse(403, "Private helpers stay yours.")
-        FAMILY["log"].append(dict(operation="invite", person=person, helpers=helpers))
+        # The door makes the person's own copy of each helper and locks its tools down.
+        slug = re.sub(r"[^a-z0-9]", "", person.lower())[:16] or "home"
+        copies = [f"{h}-{slug}" for h in helpers]
+        for helper, copy_name in zip(helpers, copies):
+            CREATED_PROFILES.setdefault(copy_name, dict(
+                name=copy_name, path=f"/home/hermes/.hermes/profiles/{copy_name}", is_default=False,
+                description=f"For {person}", provider=PROVIDER, model=MODEL, clone_from=helper,
+                disabled_toolsets=list(FAMILY_DROPPED)))
+        FAMILY["log"].append(dict(operation="invite", person=person, helpers=helpers, copies=copies))
         b64 = lambda raw: base64.urlsafe_b64encode(raw).decode().rstrip("=")
-        shown = [h.split("-")[0].capitalize() for h in helpers]
+        shown = [h.capitalize() for h in helpers]
         return ok(dict(macName="Studio", pin=b64(os.urandom(32)), port=52345, hosts=["192.168.1.20", "studio.local"],
                        tag="0123456789abcdef", secret=b64(os.urandom(32)), expiresAt=time.time() + 120,
                        owner=FAMILY["owner"], helpers=shown))

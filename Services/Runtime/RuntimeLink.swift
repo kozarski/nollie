@@ -88,7 +88,7 @@ actor RuntimeLink {
         case .invite:
             guard let person = request.person, let helpers = request.helpers else { return response(error: .invalidRequest) }
             let invite: LinkDoorDevices.Invite, shown: [String]
-            switch await door.checkShare(person: person, helpers: helpers) {
+            switch await door.prepareShare(person: person, helpers: helpers) {
             case .failure(let failure): return familyFailure(failure)
             case .success(let checked): (invite, shown) = checked
             }

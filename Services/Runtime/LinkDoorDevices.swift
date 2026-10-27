@@ -27,6 +27,9 @@ final class LinkDoorDevices: @unchecked Sendable {
         var small = false
         /// Chats they started, newest last, at most `maximumChats`.
         var chats: [Chat] = []
+        /// Their copies whose tools the door has locked down. Nil in records from before this was kept:
+        /// those copies are locked down on their next use.
+        var locked: [String]? = nil
     }
 
     struct Chat: Codable, Hashable, Sendable {
@@ -161,7 +164,8 @@ final class LinkDoorDevices: @unchecked Sendable {
         guard let name = Self.cleanName(rawName) else { throw .invalidName }
         guard state.devices.count < Self.maximumDevices else { throw .full }
         let credential = Self.randomBytes(32)
-        let member = current.invite.map { Member(person: $0.person, helpers: $0.helpers) }
+        // The door made and locked down these copies before it made the code.
+        let member = current.invite.map { Member(person: $0.person, helpers: $0.helpers, locked: $0.helpers) }
         let device = Device(id: UUID(), name: name, credentialHash: Data(SHA256.hash(data: credential)), linkedAt: now,
                             lastActive: now, member: member)
         var next = state
@@ -226,6 +230,18 @@ final class LinkDoorDevices: @unchecked Sendable {
             try store.save(next)
             state = next
             return true
+        }
+    }
+
+    /// Notes that these copies of a member's are locked down.
+    func markLocked(_ helpers: [String], for id: UUID) {
+        locked {
+            guard let index = state.devices.firstIndex(where: { $0.id == id }), var member = state.devices[index].member else { return }
+            member.locked = Array(Set(member.locked ?? []).union(helpers)).sorted()
+            var next = state
+            next.devices[index].member = member
+            guard next != state, (try? store.save(next)) != nil else { return }
+            state = next
         }
     }
 

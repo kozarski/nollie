@@ -53,9 +53,10 @@ What a helper knows comes with it into every chat. Hermes puts a helper's memory
 search over its past chats, and there is no per-chat switch for either. So a member chatting with your own Scout
 could ask "What do you remember about Corey?" and the door could not stop the answer.
 
-So Share never hands over your helper itself. It makes a household copy for that person, with Hermes's own profile
-copy (`POST /api/profiles` with `clone_from`): the same look, instructions, skills and model, with **none of its
-memory and none of its chats**. In a setup Nollie manages, Ask first is added to every new bot before Hermes
+So Share never hands over your helper itself. The Mac's door makes a household copy for that person, with Hermes's
+own profile copy (`POST /api/profiles` with `clone_from`): the same look, instructions, skills and model, with **none
+of its memory and none of its chats**. The phone and the Mac app only name the owner's helper; the door names and
+makes the copy, so it never changes the owner's own helper. In a setup Nollie manages, Ask first is added to every new bot before Hermes
 publishes it, so the copy holds sends, buys, posts and deletes like the original. One copy per person, so two
 people at home never see each other's chats through a helper's search either. The copy's name is the helper's name
 with the person's (`career-sam`); it still introduces itself as Scout.
@@ -63,15 +64,39 @@ with the person's (`career-sam`); it still introduces itself as Scout.
 What still comes along, and the share screen says so in one line: the instructions you wrote for the helper. If they
 hold something personal, edit the copy's instructions after sharing.
 
-What does not change, and is listed for Corey below: the copy runs on your Mac as you, with the helper's tools. A
-member could ask it to read a file it can reach. Anything that changes something waits for your yes; reading does not.
+**The copy can't reach this Mac.** Before any code is made, the door writes the copy's own Hermes config,
+`agent.disabled_toolsets` (Hermes strips these out of every session, composite toolsets and subagents included),
+and reads it back to prove it took. Whatever the copy already had off stays off, and these are added:
+
+| Dropped | Why |
+| :--- | :--- |
+| `terminal`, `code_execution`, `file`, `debugging`, `coding` | Commands, code and this Mac's files |
+| `browser`, `computer_use`, `mcp-cua`, `mcp-cua-recorder` | The browser and computers on this Mac |
+| `vision`, `video` | Both read pictures and videos from disk by path |
+| `session_search`, `skills`, `delegation` | Other chats, the owner's skill documents, subagents |
+| `cronjob`, `kanban`, `desktop_ui`, `project`, `catalog`, `onboarding` | Schedules, the Board and the owner's app surfaces |
+| `nollie_calendar`, `nollie_reminders`, `nollie_contacts` | The owner's calendar, reminders and contacts |
+| `nollie_payments`, `nollie_sign_in`, `nollie_crew` | Saved cards, saved sign-ins, the crew |
+
+Kept: talk, `web` and `search` (looking things up and reading pages), `clarify`, `todo`, `tts`, `image_gen`, the
+copy's own `memory` (about that person only), and the owner's connected tools (`connections` and the owner's MCP
+servers), whose sends, posts and buys still wait for the owner through Ask first.
+
+There is no switch to turn these back on. The owner can still edit the copy like any other bot on the Mac.
+
+A copy made by an earlier build of this feature (made by the phone, never locked down) is locked down the next time
+that person's phone uses it; until that succeeds the door gives them nothing. The member record keeps which copies
+are locked (`locked` in `link.json`), so this happens once and later owner edits stand.
+
+Residual risk, for Corey: the owner's connected tools and MCP servers stay, because they are how the copy sends on the
+owner's behalf. A connector that reads (an inbox, a drive) reads for the member too; only its sends wait for a yes.
 
 ## Joining
 
 Decided: **in person, by QR code**. Simplest and safe.
 
 1. The owner opens a helper and taps Share. The share screen shows who already has it and one button, Add someone.
-2. They type the person's name ("Sam"). Nollie makes Sam's copy of the helper, then shows a code. On the Mac the
+2. They type the person's name ("Sam"). The door makes Sam's copy of the helper and locks it down, then the code. On the Mac the
    code comes from Nollie Runtime over its signed XPC; on a linked owner phone, from the door
    (`POST /nollie/family/invite`, owners only).
 3. Sam opens Nollie on their iPhone, taps Scan QR code, and sees "Corey shares Scout with you" with one line:
@@ -225,8 +250,7 @@ member on the owner's phone.
 
 - A real two-phone test at home: link Corey's phone as owner, share a helper, scan with a second iPhone, chat, raise
   an approval (ask the copy to send an email), answer it on Corey's phone, remove the second phone mid-chat.
-- Whether household copies should also lose terminal and file tools by default. Today they keep the original's
-  tools, so a member could ask one to read a file it can reach on the Mac.
+- Whether the owner's connectors and MCP servers should stay on household copies (they read as well as send).
 - Whether members should see their own copy's Papertrail.
 - Away from home for members (through the iCloud transport once it exists, never Tailscale).
 - No Apple capability or entitlement is needed: Apple Family Sharing is not used.

@@ -80,14 +80,14 @@ final class FamilyModel {
 
     // MARK: The owner's choices
 
-    /// Makes the household copy of a helper for this person, then a code they scan. The copy has the
-    /// helper's look, instructions and skills, and none of its memory or chats.
+    /// A code this person scans. The Mac's door makes their own copy of the helper first (its look,
+    /// instructions and skills; none of its memory or chats; no files, code or computer), then the code.
     func share(_ profile: String, with person: String, model: AppModel) async throws -> NollieLinkOffer {
         guard let runtime = model.runtime else { throw NollieLinkError.unreachable }
-        let copy = try await makeCopy(of: profile, for: person, runtime: runtime)
+        defer { Task { await runtime.loadProfiles() } }
         #if os(macOS)
         if usesMacHelper(model) {
-            let response = try await NollieLinkMacClient.family(.init(action: .invite, person: person, helpers: [copy]))
+            let response = try await NollieLinkMacClient.family(.init(action: .invite, person: person, helpers: [profile]))
             if let words = response.familyIssue { throw ShareFailure.said(words) }
             guard let made = response.offer, let pin = NollieLinkOffer.decodeBase64URL(made.pin),
                   let secret = NollieLinkOffer.decodeBase64URL(made.secret),
@@ -97,27 +97,10 @@ final class FamilyModel {
         }
         #endif
         do {
-            return try await NollieFamilyClient.invite(runtime.api, person: person, helpers: [copy])
+            return try await NollieFamilyClient.invite(runtime.api, person: person, helpers: [profile])
         } catch HermesAPIError.http(_, let detail) where !detail.isEmpty {
             throw ShareFailure.said(detail)
         }
-    }
-
-    /// `career-sam`, made from `career` with Hermes's own copy (config, instructions, skills; no
-    /// memory, no chats). A copy that is already there is used again.
-    private func makeCopy(of profile: String, for person: String, runtime: GatewayRuntime) async throws -> String {
-        let name = NollieFamilyClient.copyName(helper: profile, person: person)
-        if runtime.profiles.contains(where: { $0.name == name }) { return name }
-        do {
-            let _: JSONValue = try await runtime.api.send("POST", "/api/profiles", json: .object([
-                "name": .string(name), "clone_from": .string(profile),
-                "description": .string("For \(person)"),
-            ]))
-        } catch HermesAPIError.http(let status, _) where status == 409 {
-            return name
-        }
-        await runtime.loadProfiles()
-        return name
     }
 
     func remove(_ member: NollieFamilyMember, model: AppModel) async {

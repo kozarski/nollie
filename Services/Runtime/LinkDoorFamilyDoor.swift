@@ -5,14 +5,14 @@ import Foundation
 /// and asks. The phone's screens follow these answers; they never decide anything.
 extension LinkDoor {
     enum FamilyFailure: Error, Equatable, Sendable {
-        case invalid, privateHelper, unknownHelper, unavailable, notFound, unsaved
+        case invalid, privateHelper, unknownHelper, unavailable, notFound, unsaved, notCopied
 
         var status: Int {
             switch self {
             case .invalid: 400
             case .privateHelper: 403
             case .unknownHelper, .notFound: 404
-            case .unavailable, .unsaved: 503
+            case .unavailable, .unsaved, .notCopied: 503
             }
         }
 
@@ -24,6 +24,7 @@ extension LinkDoor {
             case .notFound: "That isn't here any more."
             case .unavailable: "Your Mac couldn't check your helpers. Try again in a moment."
             case .unsaved: "Your Mac couldn't save that. Try again."
+            case .notCopied: "Your Mac couldn't make their copy of this helper. Try again."
             }
         }
     }
@@ -35,6 +36,8 @@ extension LinkDoor {
     /// Read now, with a Private list no more than five seconds old.
     func memberAccess(_ device: UUID) async -> LinkDoorMemberAccess? {
         guard devices.member(device) != nil else { return nil }
+        // Sharing touched again: copies from before the lock-down get it now, or nothing passes.
+        guard await lockDownOlderCopies(of: device) else { return nil }
         let names = await family.privateNames()
         // Read again after the wait: a member removed meanwhile gets nothing.
         guard let member = devices.member(device) else { return nil }
@@ -173,9 +176,12 @@ extension LinkDoor {
 
     // MARK: Sharing
 
-    /// Checks who and what is being shared: a name, one to eight helpers on this Mac, none Private.
-    /// Gives the invite and the helpers' shown names.
-    func checkShare(person: String, helpers: [String]) async -> Result<(invite: LinkDoorDevices.Invite, shown: [String]), FamilyFailure> {
+    /// Shares helpers with a person: checks the name and the helpers (one to eight on this Mac, none
+    /// Private), makes the person's own copy of each (a name already in `keeping` is already theirs),
+    /// and locks each copy's tools down in its Hermes config. Gives the invite, naming the copies, and
+    /// the helpers' shown names. The owner's own helpers are only ever copied, never changed.
+    func prepareShare(person: String, helpers: [String], keeping: Set<String> = []) async
+        -> Result<(invite: LinkDoorDevices.Invite, shown: [String]), FamilyFailure> {
         guard let name = LinkDoorDevices.cleanName(person), name.count <= 40 else { return .failure(.invalid) }
         guard (1...Self.maximumSharedHelpers).contains(helpers.count), Set(helpers).count == helpers.count,
               helpers.allSatisfy(LinkDoorFamily.validProfile) else { return .failure(.invalid) }
@@ -186,19 +192,37 @@ extension LinkDoor {
               let profiles = object["profiles"] as? [[String: Any]] else { return .failure(.unavailable) }
         let known = Set(profiles.compactMap { $0["name"] as? String })
         guard helpers.allSatisfy(known.contains) else { return .failure(.unknownHelper) }
-        let shown = helpers.map { helper -> String in
+        var copies: [String] = []
+        var shown: [String] = []
+        for helper in helpers {
+            let copy = keeping.contains(helper) ? helper : LinkDoorFamily.copyName(helper: helper, person: name)
+            guard !LinkDoorFamily.isPrivate(copy, list: privateNames) else { return .failure(.privateHelper) }
+            if !known.contains(copy), !(await family.makeCopy(copy, of: helper, person: name)) { return .failure(.notCopied) }
+            guard await family.lockDown(copy) else { return .failure(.notCopied) }
+            copies.append(copy)
             let profile = profiles.first { $0["name"] as? String == helper }
             let display = (profile?["display_name"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-            return LinkDoorDevices.cleanName(display ?? helper.capitalized) ?? helper
+            shown.append(LinkDoorDevices.cleanName(display ?? helper.capitalized) ?? helper)
         }
-        return .success((.init(person: name, helpers: helpers), shown))
+        return .success((.init(person: name, helpers: copies), shown))
+    }
+
+    /// Copies a member had before the door locked copies down (made by an earlier build): locked down
+    /// on their next use. False when that couldn't be done; the member is refused until it can.
+    func lockDownOlderCopies(of device: UUID) async -> Bool {
+        guard let member = devices.member(device) else { return false }
+        let waiting = member.helpers.filter { !(member.locked ?? []).contains($0) }
+        guard !waiting.isEmpty else { return true }
+        for copy in waiting { guard await family.lockDown(copy) else { return false } }
+        devices.markLocked(waiting, for: device)
+        return true
     }
 
     /// A code for someone at home, from a linked owner phone: the fields the Mac's own offer gives,
     /// plus who shares and what.
     func invite(person: String, helpers: [String]) async -> Result<[String: Any], FamilyFailure> {
         let invite: LinkDoorDevices.Invite, shown: [String]
-        switch await checkShare(person: person, helpers: helpers) {
+        switch await prepareShare(person: person, helpers: helpers) {
         case .failure(let failure): return .failure(failure)
         case .success(let checked): (invite, shown) = checked
         }
@@ -222,11 +246,19 @@ extension LinkDoor {
     /// against the new list.
     func updateMember(_ id: UUID, helpers: [String]?, small: Bool?) async -> FamilyFailure? {
         guard let member = devices.member(id) else { return .notFound }
+        var copies: [String]?
         if let helpers {
-            if case .failure(let failure) = await checkShare(person: member.person, helpers: helpers) { return failure }
+            // A helper they don't have yet is copied for them; one they have is theirs already.
+            switch await prepareShare(person: member.person, helpers: helpers, keeping: Set(member.helpers)) {
+            case .failure(let failure): return failure
+            case .success(let checked): copies = checked.invite.helpers
+            }
         }
-        do { try devices.updateMember(id, helpers: helpers, small: small) } catch { return .unsaved }
-        if let helpers, Set(helpers) != Set(member.helpers) { cut(id) }
+        do { try devices.updateMember(id, helpers: copies, small: small) } catch { return .unsaved }
+        if let copies {
+            devices.markLocked(copies, for: id)
+            if Set(copies) != Set(member.helpers) { cut(id) }
+        }
         return nil
     }
 

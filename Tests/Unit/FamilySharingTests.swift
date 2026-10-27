@@ -71,18 +71,6 @@ struct FamilySharingTests {
         #expect(NollieLinkInvite(owner: "Corey", helpers: [" Scout"]) == nil)
     }
 
-    @Test func theHouseholdCopyIsNamedForThePersonInHermessGrammar() {
-        #expect(NollieFamilyClient.copyName(helper: "career", person: "Sam") == "career-sam")
-        #expect(NollieFamilyClient.copyName(helper: "career", person: "Zoë Ann") == "career-zoeann")
-        #expect(NollieFamilyClient.copyName(helper: "career", person: "🙂") == "career-home")
-        let long = NollieFamilyClient.copyName(helper: String(repeating: "a", count: 64), person: "Alexandria-Rose")
-        #expect(long.count <= 64)
-        #expect(long.hasSuffix("-alexandriarose"))
-        for name in [long, NollieFamilyClient.copyName(helper: "x", person: "Mum")] {
-            #expect(name.range(of: #"\A[a-z0-9][a-z0-9_-]{0,63}\z"#, options: .regularExpression) != nil, "\(name)")
-        }
-    }
-
     @Test func anAskReadsAsAnApprovalWithOnlyAllowOnceAndDeny() throws {
         let raw = Data(#"""
         {"members":[{"id":"6f9619ff-8b86-d011-b42d-00c04fc964ff","person":"Sam","device":"Sam's iPhone","helpers":["career-sam"],"small":false,"linkedAt":1761400000}],

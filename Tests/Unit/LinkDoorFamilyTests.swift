@@ -13,7 +13,7 @@ struct LinkDoorFamilyTests {
 
     private func access(helpers: [String] = ["career-sam"], privateNames: Set<String>? = [], chats: [LinkDoorDevices.Chat] = [],
                         small: Bool = false, kinds: Set<String> = []) -> LinkDoorMemberAccess {
-        var made = LinkDoorMemberAccess(device: sam, member: .init(person: "Sam", helpers: helpers, small: small, chats: chats),
+        var made = LinkDoorMemberAccess(device: sam, member: .init(person: "Sam", helpers: helpers, small: small, chats: chats, locked: helpers),
                                         privateNames: privateNames)
         made.smallKinds = kinds
         return made
@@ -44,7 +44,7 @@ struct LinkDoorFamilyTests {
 
         let offer = devices.makeOffer(invite: .init(person: "Sam", helpers: ["career-sam"]))
         let member = try devices.claim(secret: offer.secret, name: "Sam's iPhone")
-        #expect(member.device.member == .init(person: "Sam", helpers: ["career-sam"]))
+        #expect(member.device.member == .init(person: "Sam", helpers: ["career-sam"], locked: ["career-sam"]))
         #expect(member.device.member?.small == false)
         #expect(devices.members.map(\.id) == [member.device.id])
 
@@ -388,6 +388,83 @@ struct LinkDoorFamilyTests {
         #expect(profiles[0]["display_name"] as? String == "Scout")
     }
 
+    // MARK: Household copies
+
+    @Test func aCopysLockDownKeepsWhatWasOffAndDropsTheMacsReach() {
+        let fresh = LinkDoorFamily.lockedToolsets(existing: nil)
+        #expect(fresh == LinkDoorFamily.householdDropped)
+        for name in ["terminal", "code_execution", "file", "browser", "computer_use", "session_search", "cronjob", "skills",
+                     "nollie_calendar", "nollie_contacts", "nollie_payments", "nollie_sign_in", "mcp-cua"] {
+            #expect(fresh.contains(name), "\(name)")
+        }
+        // Talk, the web, its own memory and the owner's connected send tools stay.
+        for kept in ["web", "search", "clarify", "todo", "memory", "connections"] { #expect(!fresh.contains(kept), "\(kept)") }
+        let merged = LinkDoorFamily.lockedToolsets(existing: ["tts", "terminal"])
+        #expect(merged.first == "tts" && merged.filter { $0 == "terminal" }.count == 1)
+        #expect(LinkDoorFamily.lockedToolsets(existing: "tts, x_search").prefix(2) == ["tts", "x_search"])
+        #expect(LinkDoorFamily.isLockedDown(merged))
+        #expect(!LinkDoorFamily.isLockedDown(["terminal", "file"]))
+        #expect(!LinkDoorFamily.isLockedDown(nil))
+    }
+
+    @Test func theHouseholdCopyIsNamedForThePersonInHermessGrammar() {
+        #expect(LinkDoorFamily.copyName(helper: "career", person: "Sam") == "career-sam")
+        #expect(LinkDoorFamily.copyName(helper: "career", person: "Zoë Ann") == "career-zoeann")
+        #expect(LinkDoorFamily.copyName(helper: "career", person: "🙂") == "career-home")
+        let long = LinkDoorFamily.copyName(helper: String(repeating: "a", count: 64), person: "Alexandria-Rose")
+        #expect(long.count <= 64 && long.hasSuffix("-alexandriarose"))
+        #expect(LinkDoorFamily.validProfile(long))
+    }
+
+    @Test func onlyLockedDownCopiesAreReachable() {
+        let older = LinkDoorMemberAccess(device: sam, member: .init(person: "Sam", helpers: ["career-sam"]), privateNames: [])
+        #expect(!older.allows(profile: "career-sam"))
+    }
+
+    /// A member linked by the earlier build: a copy made by the phone, never locked down.
+    private func olderMember(_ helpers: [String]) throws -> (LinkDoorDevices, UUID, String) {
+        let credential = Data((0..<32).map { _ in UInt8.random(in: 0...255) })
+        let id = UUID()
+        let device = LinkDoorDevices.Device(id: id, name: "Sam's iPhone", credentialHash: Data(SHA256.hash(data: credential)),
+                                            linkedAt: Date(), lastActive: nil, member: .init(person: "Sam", helpers: helpers))
+        let devices = try LinkDoorDevices(store: LinkDoorMemoryState(.init(installTag: "0123456789abcdef", devices: [device], away: false)))
+        return (devices, id, credential.map { String(format: "%02x", $0) }.joined())
+    }
+
+    @Test(.timeLimit(.minutes(1))) func copiesMadeBeforeAreLockedDownOnTheirNextUse() async throws {
+        let (devices, id, credential) = try olderMember(["career-sam"])
+        let fixture = try await FamilyDoorFixture.start(devices: devices)
+        defer { fixture.stop() }
+        #expect(devices.member(id)?.locked == nil)
+        let profiles: JSONValue = try await fixture.api(credential).get("/api/profiles")
+        #expect(profiles["profiles"]?.arrayValue?.compactMap { $0["name"]?.stringValue } == ["career-sam"])
+        #expect(LinkDoorFamily.isLockedDown(fixture.hermes.disabled("career-sam")))
+        #expect(devices.member(id)?.locked == ["career-sam"])
+        // Once is enough: the owner may change the copy afterwards as an ordinary bot on the Mac.
+        let writes = fixture.hermes.configWrites
+        let _: JSONValue = try await fixture.api(credential).get("/api/profiles")
+        #expect(fixture.hermes.configWrites == writes)
+    }
+
+    @Test(.timeLimit(.minutes(1))) func aCopyThatCantBeLockedDownIsNeverReached() async throws {
+        let (devices, id, credential) = try olderMember(["career-bob"])
+        let fixture = try await FamilyDoorFixture.start(devices: devices)
+        defer { fixture.stop() }
+        fixture.hermes.refuseConfig("career-bob")
+        let before = fixture.hermes.requests.count
+        let (_, http) = try await fixture.api(credential).raw("GET", "/api/profiles", body: nil, authenticated: true, answers: [503])
+        #expect(http.statusCode == 503)
+        #expect(!fixture.hermes.requests.dropFirst(before).contains { $0.line.hasPrefix("GET /api/profiles") })
+        #expect(devices.member(id)?.locked == nil)
+        // Nor is it shared with anyone new.
+        let owner = try devices.claim(secret: devices.makeOffer().secret, name: "Corey's iPhone")
+        let body = try JSONSerialization.data(withJSONObject: ["person": "Bob", "helpers": ["career"]])
+        let (_, refused) = try await fixture.api(owner.credential).raw("POST", "/nollie/family/invite", body: (body, "application/json"),
+                                                                        authenticated: true, answers: [503])
+        #expect(refused.statusCode == 503)
+        #expect(!devices.hasOpenOffer)
+    }
+
     // MARK: End to end on loopback
 
     @Test(.timeLimit(.minutes(1))) func aMemberReachesOnlyTheirHelperAndTheOwnersRoutesStayTheOwners() async throws {
@@ -447,7 +524,7 @@ struct LinkDoorFamilyTests {
             let (_, http) = try await coreyAPI.raw("POST", "/nollie/family/invite", body: (body, "application/json"), authenticated: true, answers: [400, 403, 404])
             #expect(http.statusCode == status, "\(helpers)")
         }
-        let body = try JSONSerialization.data(withJSONObject: ["person": "Alex", "helpers": ["career-alex"]])
+        let body = try JSONSerialization.data(withJSONObject: ["person": "Alex", "helpers": ["career"]])
         let (data, http) = try await coreyAPI.raw("POST", "/nollie/family/invite", body: (body, "application/json"), authenticated: true)
         #expect(http.statusCode == 200)
         let code = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
@@ -455,6 +532,10 @@ struct LinkDoorFamilyTests {
         #expect(code["helpers"] as? [String] == ["Scout"])
         #expect((code["hosts"] as? [String])?.allSatisfy { !NollieTailnet.isTailnetHost($0) } == true)
         #expect(door.devices.hasOpenOffer)
+        // Alex's own copy was made from the owner's Scout and locked down; the owner's Scout wasn't touched.
+        #expect(fixture.hermes.created == ["career-alex": "career"])
+        #expect(LinkDoorFamily.isLockedDown(fixture.hermes.disabled("career-alex")))
+        #expect(fixture.hermes.disabled("career") == nil)
     }
 
     @Test(.timeLimit(.minutes(1))) func aMembersApprovalGoesToTheOwnerAndRemovalCutsThemOff() async throws {
@@ -541,11 +622,11 @@ struct FamilyDoorFixture {
     let gateway: GatewayURL
     let trustOwner = UUID()
 
-    static func start() async throws -> FamilyDoorFixture {
+    static func start(devices given: LinkDoorDevices? = nil) async throws -> FamilyDoorFixture {
         let hermes = try await FamilyFakeHermes.start()
         let name = "com.coreykozarski.nollie.link.test." + UUID().uuidString
         let identity = try LinkDoorIdentity.loadOrCreate(name: name)
-        let devices = try LinkDoorDevices(store: LinkDoorMemoryState())
+        let devices = try given ?? LinkDoorDevices(store: LinkDoorMemoryState())
         let port = hermes.port
         let configuration = LinkDoor.Configuration(name: "Test Mac", port: 0, loopbackOnly: true, acceptLoopback: true, advertise: false, owner: "Corey")
         let door = LinkDoor(configuration: configuration, identity: identity, devices: devices) {
@@ -582,7 +663,17 @@ final class FamilyFakeHermes: @unchecked Sendable {
     private let seen = DoorTestBox<[Seen]>([])
     private let texts = DoorTestBox<[String]>([])
     private let sockets = DoorTestBox<[NWConnection]>([])
+    /// Each profile's `agent.disabled_toolsets` as the door wrote it, copies made, and profiles whose
+    /// config can't be written.
+    private let configs = DoorTestBox<[String: [String]]>(["career-sam": ["tts"]])
+    private let made = DoorTestBox<[String: String]>([:])
+    private let refused = DoorTestBox<Set<String>>([])
+    private let writes = DoorTestBox(0)
     private(set) var port = 0
+    var created: [String: String] { made.withLock { $0 } }
+    var configWrites: Int { writes.withLock { $0 } }
+    func disabled(_ profile: String) -> [String]? { configs.withLock { $0[profile] } }
+    func refuseConfig(_ profile: String) { refused.withLock { _ = $0.insert(profile) } }
     var requests: [Seen] { seen.withLock { $0 } }
     var socketTexts: [String] { texts.withLock { $0 } }
 
@@ -633,13 +724,20 @@ final class FamilyFakeHermes: @unchecked Sendable {
                 return
             }
             let head = String(decoding: buffer[..<end.upperBound], as: UTF8.self)
+            let length = head.split(separator: "\r\n").first { $0.lowercased().hasPrefix("content-length:") }
+                .flatMap { Int($0.split(separator: ":")[1].trimmingCharacters(in: .whitespaces)) } ?? 0
+            let body = buffer[end.upperBound...]
+            guard body.count >= length else {
+                if error == nil && !complete { self.read(connection, buffer) } else { connection.cancel() }
+                return
+            }
             let line = String(head.split(separator: "\r\n").first ?? "")
             self.seen.withLock { $0.append(Seen(line: line, head: head)) }
-            self.answer(connection, line: line, head: head)
+            self.answer(connection, line: line, head: head, body: Data(body.prefix(length)))
         }
     }
 
-    private func answer(_ connection: NWConnection, line: String, head: String) {
+    private func answer(_ connection: NWConnection, line: String, head: String, body sent: Data = Data()) {
         if line.hasPrefix("GET /api/ws") {
             let key = head.split(separator: "\r\n").first { $0.lowercased().hasPrefix("sec-websocket-key:") }
                 .map { $0.split(separator: ":", maxSplits: 1)[1].trimmingCharacters(in: .whitespaces) } ?? ""
@@ -652,22 +750,60 @@ final class FamilyFakeHermes: @unchecked Sendable {
             })
             return
         }
+        let method = String(line.split(separator: " ").first ?? "")
         let target = line.split(separator: " ").dropFirst().first.map(String.init) ?? ""
         let path = target.split(separator: "?").first.map(String.init) ?? target
+        let profile = URLComponents(string: target)?.queryItems?.first { $0.name == "profile" }?.value ?? ""
+        let fields = (try? JSONSerialization.jsonObject(with: sent)) as? [String: Any] ?? [:]
+        var body: String
+        switch (method, path) {
+        case ("POST", "/api/profiles"):
+            let name = fields["name"] as? String ?? "", from = fields["clone_from"] as? String ?? ""
+            made.withLock { $0[name] = from }
+            body = #"{"ok":true}"#
+        case ("GET", "/api/config"):
+            let list = configs.withLock { $0[profile] } ?? []
+            body = String(decoding: try! JSONSerialization.data(withJSONObject: ["agent": ["disabled_toolsets": list]]), as: UTF8.self)
+        case ("PUT", "/api/config"):
+            if refused.withLock({ $0.contains(profile) }) {
+                body = #"{"detail":"not here"}"#
+            } else {
+                let agent = ((fields["config"] as? [String: Any])?["agent"] as? [String: Any])?["disabled_toolsets"] as? [String] ?? []
+                configs.withLock { $0[profile] = agent }
+                writes.withLock { $0 += 1 }
+                body = #"{"ok":true}"#
+            }
+        default:
+            body = route(path)
+        }
+        if path == "/api/profiles", method == "GET" {
+            // Copies the door made show up in the list, as Hermes's own would.
+            var object = try! JSONSerialization.jsonObject(with: Data(body.utf8)) as! [String: Any]
+            var list = object["profiles"] as! [[String: Any]]
+            for name in made.withLock({ $0.keys.sorted() }) where !list.contains(where: { $0["name"] as? String == name }) {
+                list.append(["name": name, "display_name": "Scout"])
+            }
+            object["profiles"] = list
+            body = String(decoding: try! JSONSerialization.data(withJSONObject: object), as: UTF8.self)
+        }
+        let status = body.contains("not here") ? "404 Not Found" : "200 OK"
+        let reply = "HTTP/1.1 \(status)\r\nContent-Type: application/json\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)"
+        connection.send(content: Data(reply.utf8), completion: .contentProcessed { _ in connection.cancel() })
+    }
+
+    private func route(_ path: String) -> String {
         let body: String
         switch path {
         case "/api/status": body = #"{"version":"fake"}"#
         case "/api/plugins/nollie-workflow/private-bots": body = #"{"profiles":["diary"],"saved":true}"#
         case "/api/profiles":
-            body = #"{"profiles":[{"name":"default","display_name":"Nollie","path":"/Users/corey/.hermes"},{"name":"career","display_name":"Scout"},{"name":"career-sam","display_name":"Scout"},{"name":"career-alex","display_name":"Scout"},{"name":"moss"},{"name":"diary"}]}"#
+            body = #"{"profiles":[{"name":"default","display_name":"Nollie","path":"/Users/corey/.hermes"},{"name":"career","display_name":"Scout"},{"name":"career-sam","display_name":"Scout"},{"name":"career-bob","display_name":"Scout"},{"name":"moss"},{"name":"diary"}]}"#
         case "/api/sessions/20261026_1_ab":
             body = #"{"id":"20261026_1_ab","title":"Birthday ideas","started_at":1761480000,"last_active":1761480100,"system_prompt":"You are Scout"}"#
         case "/api/sessions/20261026_1_ab/messages": body = #"{"messages":[]}"#
         default: body = #"{"detail":"not here"}"#
         }
-        let status = body.contains("not here") ? "404 Not Found" : "200 OK"
-        let reply = "HTTP/1.1 \(status)\r\nContent-Type: application/json\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)"
-        connection.send(content: Data(reply.utf8), completion: .contentProcessed { _ in connection.cancel() })
+        return body
     }
 
     /// Records what the phone sent and answers the calls a chat makes.
