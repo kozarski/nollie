@@ -411,6 +411,10 @@ struct OnboardingView: View {
                     .buttonStyle(OutlinePillStyle())
                     .accessibilityIdentifier("onboarding.back")
             }
+            // Something to ask while Hermes installs or the model downloads.
+            if [.connection, .model, .computer, .permissions].contains(progress.step), !connected || modelStatus?.isReady != true {
+                QuickAnswerButton(place: .macSetup)
+            }
             Spacer()
             if progress.step != .welcome {
                 VStack(alignment: .trailing, spacing: 7) {
@@ -650,6 +654,7 @@ struct OnboardingView: View {
             feature("Pair your iPhone", "On your Mac, open Settings and show the code.", symbol: "qrcode.viewfinder")
             Button("Connect manually") { destination = .gateway }
                 .buttonStyle(.nollieGlass).accessibilityIdentifier("onboarding.connectManually")
+            QuickAnswerButton(place: .phoneSetup)
         }
     }
     #endif

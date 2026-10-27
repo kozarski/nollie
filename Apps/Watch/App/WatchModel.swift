@@ -16,12 +16,13 @@ final class WatchModel: NSObject {
     private(set) var note: String?
     /// Cards being answered, and "stop" while a Stop travels.
     private(set) var sending: Set<String> = []
-    /// The page to show: a card's id, or `crewPage`.
+    /// The page to show: a card's id, `crewPage` or `nightPage`.
     var page: String = WatchModel.crewPage
     /// The phone could not be reached last time.
     private(set) var phoneAway = false
 
     nonisolated static let crewPage = "crew"
+    nonisolated static let nightPage = "night"
     nonisolated static let stopKey = "stop"
 
     private var started = false
@@ -132,10 +133,13 @@ final class WatchModel: NSObject {
         let helpersMoved = snapshot?.helpers != fresh.helpers || snapshot?.canStop != fresh.canStop
         let known = Set(snapshot?.approvals.map(\.id) ?? [])
         snapshot = fresh
-        if page == Self.crewPage, let new = fresh.approvals.first(where: { !known.contains($0.id) }) {
+        let onCard = page != Self.crewPage && page != Self.nightPage
+        if !onCard, let new = fresh.approvals.first(where: { !known.contains($0.id) }) {
             // Something new waits: show it, unless a card is already open.
             page = new.id
-        } else if page != Self.crewPage, !fresh.approvals.contains(where: { $0.id == page }) {
+        } else if page == Self.nightPage, fresh.night == nil {
+            page = Self.crewPage
+        } else if onCard, !fresh.approvals.contains(where: { $0.id == page }) {
             // The card on screen was answered: the next one, or the crew.
             page = fresh.approvals.first?.id ?? Self.crewPage
         }

@@ -2,7 +2,7 @@ import SwiftUI
 import UserNotifications
 import WatchKit
 
-/// Nollie on Apple Watch: approvals to answer and the crew at work, with Stop. Everything goes
+/// Nollie on Apple Watch: approvals to answer, the crew at work with Stop, and the last Night shift note. Everything goes
 /// through the iPhone, which holds the link to the Mac.
 @main
 struct NollieWatchApp: App {
@@ -26,7 +26,7 @@ struct NollieWatchApp: App {
     }
 }
 
-/// The pages: each waiting approval, then the crew.
+/// The pages: each waiting approval, then the crew, then the last Night shift note when there is one.
 struct WatchHome: View {
     @Environment(WatchModel.self) private var model
 
@@ -42,6 +42,11 @@ struct WatchHome: View {
                 CrewPage()
                     .tag(WatchModel.crewPage)
                     .containerBackground(crewTint.gradient, for: .tabView)
+                if let night = model.snapshot?.night {
+                    NightPage(note: night)
+                        .tag(WatchModel.nightPage)
+                        .containerBackground((night.needsLook ? Color.orange : Color.indigo).opacity(0.24).gradient, for: .tabView)
+                }
             }
             .tabViewStyle(.verticalPage)
             .navigationTitle("Nollie")

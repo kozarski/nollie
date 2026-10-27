@@ -72,7 +72,7 @@ struct ManagedRuntimeServiceControl {
 
 enum ManagedRuntimeOperation: Sendable {
     case start(UUID), status, stop
-    case linkOffer, linkStatus, linkCancel, linkRemove(UUID), linkAway(Data)
+    case linkOffer, linkStatus, linkCancel, linkRemove(UUID), linkAway(Data), linkFamily(Data)
     case cuaSetupStart, cuaSetupStatus, cuaWake, prepareRemoval
     var timeout: Duration {
         switch self {
@@ -81,6 +81,8 @@ enum ManagedRuntimeOperation: Sendable {
         case .prepareRemoval: .seconds(120)
         case .stop: .seconds(15)
         case .status, .linkOffer, .linkStatus, .linkCancel, .linkRemove, .linkAway, .cuaSetupStart, .cuaSetupStatus: .seconds(8)
+        // Sharing may make a code or reach Hermes for an answer.
+        case .linkFamily: .seconds(20)
         }
     }
 }
@@ -219,6 +221,7 @@ final class ManagedRuntimeRequest {
         case .linkCancel: proxy.linkCancelOffer(withReply: callbacks.statusReply)
         case .linkRemove(let id): proxy.linkRemove(deviceID: id.uuidString, withReply: callbacks.statusReply)
         case .linkAway(let request): proxy.linkAway(request: request, withReply: callbacks.statusReply)
+        case .linkFamily(let request): proxy.linkFamily(request: request, withReply: callbacks.statusReply)
         case .cuaSetupStart: proxy.cuaSetupStart(withReply: callbacks.statusReply)
         case .cuaSetupStatus: proxy.cuaSetupStatus(withReply: callbacks.statusReply)
         case .cuaWake: proxy.cuaWake(withReply: callbacks.statusReply)

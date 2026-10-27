@@ -77,6 +77,12 @@
 		8C6A0EB43E1B44A69D8A6058 /* ExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 367508B5D4564F9258B282A8 /* ExitRelay.swift */; };
 		B9F9C77C6EBA771563889EAC /* LinkDoorHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */; };
 		EE575C4EAF1C9AC63BFC11A5 /* LinkDoorHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */; };
+		7BD12ACCBA527E3312F7E8A5 /* LinkDoorFamily.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867CC73A89D0B17F327DBE47 /* LinkDoorFamily.swift */; };
+		2CCE8FEA28251440F0956D8F /* LinkDoorFamily.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867CC73A89D0B17F327DBE47 /* LinkDoorFamily.swift */; };
+		2F5C9B78C1D260A18BA662B5 /* LinkDoorFamilyHermes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 337BF9AB134426A181E3F18C /* LinkDoorFamilyHermes.swift */; };
+		EB576DD0F7D6AFB58BD34BCB /* LinkDoorFamilyHermes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 337BF9AB134426A181E3F18C /* LinkDoorFamilyHermes.swift */; };
+		DDEED0E40256BD2C5981FAF4 /* LinkDoorFamilyDoor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7A4AD78F5C465F7C1E1544 /* LinkDoorFamilyDoor.swift */; };
+		17ED125733E9DCCDD41941C4 /* LinkDoorFamilyDoor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7A4AD78F5C465F7C1E1544 /* LinkDoorFamilyDoor.swift */; };
 		706E39E291585EB001EECCEC /* LinkDoorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */; };
 		B312589BDB9B24F9F3C87A06 /* LinkDoorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */; };
 		A30280DA4FC0AE856D769B82 /* LinkDoorDevices.swift in Sources */ = {isa = PBXBuildFile; fileRef = C458E817E144131FF84F5DE6 /* LinkDoorDevices.swift */; };
@@ -278,6 +284,9 @@
 		367508B5D4564F9258B282A8 /* ExitRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelay.swift; path = Services/Runtime/ExitRelay.swift; sourceTree = SOURCE_ROOT; };
 		A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeExitRelay.swift; path = Services/Runtime/RuntimeExitRelay.swift; sourceTree = SOURCE_ROOT; };
 		5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorHTTP.swift; path = Services/Runtime/LinkDoorHTTP.swift; sourceTree = SOURCE_ROOT; };
+		867CC73A89D0B17F327DBE47 /* LinkDoorFamily.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorFamily.swift; path = Services/Runtime/LinkDoorFamily.swift; sourceTree = SOURCE_ROOT; };
+		337BF9AB134426A181E3F18C /* LinkDoorFamilyHermes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorFamilyHermes.swift; path = Services/Runtime/LinkDoorFamilyHermes.swift; sourceTree = SOURCE_ROOT; };
+		FB7A4AD78F5C465F7C1E1544 /* LinkDoorFamilyDoor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorFamilyDoor.swift; path = Services/Runtime/LinkDoorFamilyDoor.swift; sourceTree = SOURCE_ROOT; };
 		38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorPolicy.swift; path = Services/Runtime/LinkDoorPolicy.swift; sourceTree = SOURCE_ROOT; };
 		C458E817E144131FF84F5DE6 /* LinkDoorDevices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorDevices.swift; path = Services/Runtime/LinkDoorDevices.swift; sourceTree = SOURCE_ROOT; };
 		9BD18F8AA46EBEC4E1F4BD9A /* LinkDoorIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorIdentity.swift; path = Services/Runtime/LinkDoorIdentity.swift; sourceTree = SOURCE_ROOT; };
@@ -732,6 +741,9 @@
 				E93A00DD2487995D90F16EAD /* LinkDoor.swift */,
 				9BD18F8AA46EBEC4E1F4BD9A /* LinkDoorIdentity.swift */,
 				C458E817E144131FF84F5DE6 /* LinkDoorDevices.swift */,
+				867CC73A89D0B17F327DBE47 /* LinkDoorFamily.swift */,
+				337BF9AB134426A181E3F18C /* LinkDoorFamilyHermes.swift */,
+				FB7A4AD78F5C465F7C1E1544 /* LinkDoorFamilyDoor.swift */,
 				38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */,
 				5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */,
 				51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */,
@@ -1508,6 +1520,9 @@
 				672C528FA8BA3D8D6B7CB43B /* LinkDoor.swift in Sources */,
 				6B53B0521C10A7B3FC716678 /* LinkDoorIdentity.swift in Sources */,
 				E103AFED34EB03E3DDE9D478 /* LinkDoorDevices.swift in Sources */,
+				7BD12ACCBA527E3312F7E8A5 /* LinkDoorFamily.swift in Sources */,
+				2F5C9B78C1D260A18BA662B5 /* LinkDoorFamilyHermes.swift in Sources */,
+				DDEED0E40256BD2C5981FAF4 /* LinkDoorFamilyDoor.swift in Sources */,
 				B312589BDB9B24F9F3C87A06 /* LinkDoorPolicy.swift in Sources */,
 				EE575C4EAF1C9AC63BFC11A5 /* LinkDoorHTTP.swift in Sources */,
 				E7FCDD3328BD0DC4C31111E8 /* ExitRelayPolicy.swift in Sources */,
@@ -1534,6 +1549,9 @@
 				C1807AFB61CFA12CE919D728 /* LinkDoor.swift in Sources */,
 				35A8180D88664A1206247406 /* LinkDoorIdentity.swift in Sources */,
 				A30280DA4FC0AE856D769B82 /* LinkDoorDevices.swift in Sources */,
+				2CCE8FEA28251440F0956D8F /* LinkDoorFamily.swift in Sources */,
+				EB576DD0F7D6AFB58BD34BCB /* LinkDoorFamilyHermes.swift in Sources */,
+				17ED125733E9DCCDD41941C4 /* LinkDoorFamilyDoor.swift in Sources */,
 				706E39E291585EB001EECCEC /* LinkDoorPolicy.swift in Sources */,
 				B9F9C77C6EBA771563889EAC /* LinkDoorHTTP.swift in Sources */,
 				EF0FA75B48F0A7748A52D617 /* ExitRelayPolicy.swift in Sources */,

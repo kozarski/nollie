@@ -76,6 +76,9 @@ struct RootView: View {
             Group {
                 if isOnboarding {
                     OnboardingView(skipWelcome: Self.forceTour)
+                } else if model.family.isMember(model) {
+                    // Someone at home a helper was shared with: only what was shared.
+                    MemberHomeView()
                 } else {
                     MainTabView()
                 }

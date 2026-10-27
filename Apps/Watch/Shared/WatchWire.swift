@@ -25,6 +25,9 @@ enum WatchWire {
         var canStop: Bool
         /// The phone could reach its gateway when it made this.
         var connected: Bool
+        /// The newest Night shift card of the last day and a half, worded on the phone. Nil when there is none,
+        /// and from a phone that does not send one yet.
+        var night: NightNote? = nil
 
         static func empty(at made: Date = Date(), connected: Bool = false) -> Snapshot {
             Snapshot(made: made, approvals: [], helpers: [], canStop: false, connected: connected)
@@ -62,6 +65,27 @@ enum WatchWire {
         var asksAgain: Bool
         /// The safety check flagged it.
         var flagged: Bool
+    }
+
+    /// What the crew did overnight, as the Night shift card in Settings says it, in a few lines for the wrist.
+    struct NightNote: Codable, Equatable, Sendable {
+        /// When the card's window ended.
+        var at: Date
+        /// "Since 7:02 yesterday".
+        var since: String?
+        /// "2 runs · 5 actions · 1 held", or the quiet night's line.
+        var counts: String
+        /// The first few runs: the schedule or task, and "Scout · Done · 3:10".
+        var runs: [Line]
+        /// Runs past the ones listed.
+        var more: Int
+        /// Something was held or stopped, so the page wears the warning tint.
+        var needsLook: Bool
+
+        struct Line: Codable, Equatable, Sendable {
+            var title: String
+            var detail: String
+        }
     }
 
     enum Answers: String, Codable, Equatable, Sendable {
@@ -217,6 +241,10 @@ enum WatchWords {
     static let gone = "Already answered"
     static let flagged = "The safety check flagged this one."
     static let lastSeen = "Last seen"
+    static let nightShift = "Night shift"
+
+    /// "2 more", under the runs a busy night's note leaves out.
+    static func more(_ n: Int) -> String { "\(n) more" }
 
     /// "2 helpers working", "1 helper working".
     static func count(_ n: Int) -> String {

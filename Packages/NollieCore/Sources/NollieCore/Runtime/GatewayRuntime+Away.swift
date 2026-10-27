@@ -10,7 +10,7 @@ extension GatewayRuntime {
     /// The channel to the linked Mac, once keys were swapped. Nil before that, or for a gateway
     /// that isn't a linked Mac.
     public var awayChannel: AwayChannel? {
-        guard let macKey = connection.linkedMac?.awayKey,
+        guard connection.linkedMac?.sharedBy == nil, let macKey = connection.linkedMac?.awayKey,
               let raw = Keychain.get(account: Self.awayKeyAccount(connection.id)), let own = AwayKey(raw: raw) else { return nil }
         return try? AwayChannel(own: own, side: .phone, otherPublic: macKey)
     }
@@ -20,7 +20,8 @@ extension GatewayRuntime {
     /// phone holds the Mac's key afterwards.
     @discardableResult
     public func swapAwayKeys() async -> Bool {
-        guard connection.linkedMac != nil, !linkDemo else { return false }
+        // A phone that joined as someone a helper was shared with never swaps: the door refuses it too.
+        guard let linked = connection.linkedMac, linked.sharedBy == nil, !linkDemo else { return false }
         let id = connection.id
         guard let own = try? AwayKey.loadOrCreate(account: Self.awayKeyAccount(id)),
               let body = try? JSONSerialization.data(withJSONObject: ["key": AwayBase64URL.encode(own.publicKey)]),

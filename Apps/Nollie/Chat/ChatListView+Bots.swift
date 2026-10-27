@@ -37,8 +37,13 @@ extension ChatListView {
         .scrollDismissesKeyboard(.immediately)
         .overlay(alignment: .bottom) { SummaryProgressStrip().padding(.bottom, 6) }
         .safeAreaInset(edge: .top, spacing: 0) { topBars(runtime) }
-        // Beside a chat, Settings sits at the foot of the sidebar.
-        .safeAreaInset(edge: .bottom, spacing: 0) { if opensBeside { besideFoot } }
+        // Who is working, with Stop, then beside a chat Settings at the foot of the sidebar.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                if !selecting { CrewAtWorkBar(open: openBot) }
+                if opensBeside { besideFoot }
+            }
+        }
         .background((showingBots && searchText.isEmpty ? Ink.canvas : Color(.systemGroupedBackground)).ignoresSafeArea())
         #endif
         .animation(.snappy, value: [runtime.restartRequired == nil, model.needsSignIn == nil])
@@ -64,6 +69,8 @@ extension ChatListView {
                                   iCloud: AwayPhone.shared.isOn) { model.awayPrompt = true }
                 }
                 #endif
+                // Someone at home is waiting on a yes.
+                if model.family.canShare(model) { FamilyAsksSection() }
                 if let errorText, model.needsSignIn == nil {
                     Text(errorText).font(.footnote).foregroundStyle(.red)
                         .inset(h: 12, v: 6)
@@ -236,6 +243,9 @@ extension ChatListView {
                     .padding(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
+            #if os(iOS)
+            QuickAnswerAwayBar(runtime: runtime)
+            #endif
         }
     }
 

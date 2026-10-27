@@ -19,6 +19,10 @@ enum NollieLinkMacClient {
     static func status() async throws -> NollieLinkIPCResponse { try await send(.linkStatus) }
     static func cancel() async { _ = try? await send(.linkCancel) }
     static func remove(_ id: UUID) async throws -> NollieLinkIPCResponse { try await send(.linkRemove(id)) }
+    /// Sharing a helper at home: the people, a code for someone, or the owner's answer to an ask.
+    static func family(_ request: NollieLinkIPCFamilyRequest) async throws -> NollieLinkIPCResponse {
+        try await send(.linkFamily((try? JSONEncoder().encode(request)) ?? Data("{}".utf8)))
+    }
     /// Away from home: reads it, or turns it on or off, or saves a typed-in name ("" clears it).
     static func away(on: Bool? = nil, host: String? = nil) async throws -> NollieLinkIPCAway {
         let request = (try? JSONEncoder().encode(NollieLinkIPCAwayRequest(on: on, host: host))) ?? Data("{}".utf8)

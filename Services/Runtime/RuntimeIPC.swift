@@ -30,6 +30,9 @@ enum NollieRuntimeIPCConfiguration {
     /// Away from home: the switch, Tailscale on this Mac and a typed-in name. A request
     /// `{"on": Bool?, "host": String?}` changes what it names; `{}` only reads.
     func linkAway(request: Data, withReply: @escaping @Sendable (Data) -> Void)
+    /// Sharing a helper at home: `{"action": "list" | "invite" | "update" | "answer", ...}` (see
+    /// `NollieLinkIPCFamilyRequest`). Every answer carries the members and their open asks.
+    func linkFamily(request: Data, withReply: @escaping @Sendable (Data) -> Void)
     /// Remove Nollie: stops Hermes and clears the saved choice, closes the Link door, stops Cua's
     /// background part and deletes this helper's own Keychain items. The app unregisters it next.
     func prepareRemoval(withReply: @escaping @Sendable (Data) -> Void)
@@ -74,6 +77,9 @@ struct NollieLinkIPCOffer: Codable, Equatable, Sendable {
     var tag: String
     var secret: String
     var expiresAt: Date
+    /// A code for someone at home: who shares (the Mac's owner) and the helpers' shown names.
+    var owner: String?
+    var helpers: [String]?
 }
 
 struct NollieLinkIPCDevice: Codable, Equatable, Sendable, Identifiable {
@@ -83,6 +89,53 @@ struct NollieLinkIPCDevice: Codable, Equatable, Sendable, Identifiable {
     var lastActive: Date?
     /// The phone's away public key (base64url), once it swapped one: away through iCloud. Public.
     var awayKey: String?
+    /// Someone at home a helper is shared with, by the name the owner gave; nil for the owner's own phones.
+    var person: String?
+}
+
+/// Someone at home and the helpers shared with them.
+struct NollieLinkIPCMember: Codable, Equatable, Sendable, Identifiable {
+    var id: UUID
+    var person: String
+    /// Their iPhone's name.
+    var device: String
+    var helpers: [String]
+    var small: Bool
+    var linkedAt: Date
+    var lastActive: Date?
+}
+
+/// An approval from a shared helper's chat, waiting on the owner.
+struct NollieLinkIPCAsk: Codable, Equatable, Sendable, Identifiable {
+    var id: String
+    var person: String
+    var helper: String
+    var chat: String
+    var small: Bool
+    var at: Date
+    /// What Hermes said about it, as JSON (description, the redacted command, rule keys, choices).
+    var request: Data
+}
+
+struct NollieLinkIPCFamily: Codable, Equatable, Sendable {
+    var members: [NollieLinkIPCMember] = []
+    var asks: [NollieLinkIPCAsk] = []
+}
+
+struct NollieLinkIPCFamilyRequest: Codable, Equatable, Sendable {
+    enum Action: String, Codable, Sendable { case list, invite, update, answer }
+    var action: Action
+    var person: String?
+    var helpers: [String]?
+    var member: UUID?
+    var small: Bool?
+    var ask: String?
+    var choice: String?
+
+    static func decode(_ data: Data) -> Self? {
+        guard data.count <= 4096 else { return nil }
+        return try? JSONDecoder().decode(Self.self, from: data)
+    }
 }
 
 struct NollieLinkIPCStop: Codable, Equatable, Sendable {
@@ -104,6 +157,10 @@ struct NollieLinkIPCResponse: Codable, Equatable, Sendable {
     var stop: NollieLinkIPCStop?
     /// Away from home, only in answer to `linkAway`.
     var away: NollieLinkIPCAway?
+    /// The people helpers are shared with, and their open asks.
+    var family: NollieLinkIPCFamily?
+    /// Why a sharing request failed, in words for the person.
+    var familyIssue: String?
 
     func encoded() -> Data {
         let encoder = JSONEncoder()
@@ -112,7 +169,7 @@ struct NollieLinkIPCResponse: Codable, Equatable, Sendable {
     }
 
     static func decode(_ data: Data) throws -> Self {
-        guard data.count <= 65_536 else { throw NollieLinkIPCError.invalidRequest }
+        guard data.count <= 1_048_576 else { throw NollieLinkIPCError.invalidRequest }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .secondsSince1970
         let response = try decoder.decode(Self.self, from: data)

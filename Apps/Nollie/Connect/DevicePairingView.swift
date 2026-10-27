@@ -327,10 +327,12 @@ struct PhoneDevicePairingView: View {
                         ContentUnavailableView("Unlock Nollie to continue", systemImage: "lock")
                     } else if let savedConnection {
                         Image(systemName: "checkmark.circle.fill").font(.system(size: 48)).foregroundStyle(.green)
-                        Text(savedConnection.linkedMac != nil ? "Linked to \(savedConnection.name)" : "You're connected")
+                        Text(savedConnection.linkedMac?.sharedBy != nil ? "You joined"
+                             : savedConnection.linkedMac != nil ? "Linked to \(savedConnection.name)" : "You're connected")
                             .font(.title2.bold()).multilineTextAlignment(.center)
                             .accessibilityIdentifier("pairing.connected")
-                        Text(savedConnection.linkedMac != nil ? "Nollie on this iPhone now uses your Mac's assistant."
+                        Text(savedConnection.linkedMac?.sharedBy != nil ? "Your helpers are ready on this iPhone."
+                             : savedConnection.linkedMac != nil ? "Nollie on this iPhone now uses your Mac's assistant."
                              : "\(savedConnection.name) is ready on this iPhone.")
                             .foregroundStyle(.secondary).multilineTextAlignment(.center)
                         Button("Continue") { dismiss() }
@@ -341,13 +343,17 @@ struct PhoneDevicePairingView: View {
                     } else if DevicePairingPreview.linkConfirmation {
                         previewLinkConfirmation
                     } else if let linkOffer {
-                        linkConfirmation(name: linkOffer.macName)
+                        if let invite = linkOffer.invite {
+                            FamilyJoinConfirmation(invite: invite)
+                        } else {
+                            linkConfirmation(name: linkOffer.macName)
+                        }
                         localNetworkNote
                         if busy {
                             ProgressView(phase).accessibilityIdentifier("pairing.progress")
                         } else {
                             Button { link() } label: {
-                                Text(pendingConnection == nil ? "Link" : "Try again")
+                                Text(pendingConnection != nil ? "Try again" : linkOffer.invite == nil ? "Link" : "Join")
                                     .frame(maxWidth: .infinity).padding(.vertical, 5)
                             }
                             .buttonStyle(.nollieGlassProminent).controlSize(.large)
@@ -583,8 +589,10 @@ struct PhoneDevicePairingView: View {
                     phase = "Linking…"
                     let claim = try await NollieLinkClient.claim(offer, host: host, deviceName: UIDevice.current.name)
                     guard !Task.isCancelled, !model.lock.isLocked, operationID == operation else { throw CancellationError() }
-                    let linked = LinkedMac(macName: claim.macName, pin: offer.pin, port: offer.port, hosts: offer.hosts,
+                    var linked = LinkedMac(macName: claim.macName, pin: offer.pin, port: offer.port, hosts: offer.hosts,
                                            installTag: offer.installTag, deviceID: claim.deviceID)
+                    // Joined as someone at home: the Mac's door gives this phone only what was shared.
+                    linked.sharedBy = offer.invite?.owner
                     pendingConnection = GatewayConnection(name: claim.macName, gateway: try linked.gateway(host: host),
                                                           authMode: .sessionToken, connectionKind: "local", linkedMac: linked)
                     pendingSecrets = GatewaySecrets(sessionToken: claim.credential, linkedDevice: true)

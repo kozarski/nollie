@@ -129,6 +129,10 @@ struct AwayFromHomeView: View {
     @Environment(AppModel.self) private var model
     @State private var away = AwayFromHomeModel()
 
+    /// Whether a phone shows this page: linked to a Mac, and never on a member's phone, since
+    /// shared helpers work at home only and never through Tailscale or iCloud.
+    static func shows(reach: NollieLinkReach?, isMember: Bool) -> Bool { reach != nil && !isMember }
+
     /// Away through iCloud on this device.
     private var iCloud: AwayICloudState {
         #if os(macOS)

@@ -37,6 +37,8 @@ final class LinkDoor: @unchecked Sendable {
         var perSourceUnauthenticated = 4
         /// Opens a helper's live picture for `/nollie/live`; nil answers every stream "unavailable".
         var liveProvider: LiveProvider?
+        /// The first name of the person this Mac belongs to, shown to people a helper is shared with.
+        var owner = ""
     }
 
     struct Upstream: Sendable, Equatable {
@@ -52,6 +54,10 @@ final class LinkDoor: @unchecked Sendable {
     let identity: LinkDoorIdentity
     let configuration: Configuration
     private let upstream: UpstreamProvider
+    /// Asks from people a helper is shared with, waiting on the owner.
+    let asks = LinkDoorAsks()
+    /// The door's own calls to Hermes for sharing: the Private list, members' helpers and chats, answers.
+    let family: LinkDoorFamilyHermes
     private let queue = DispatchQueue(label: "com.coreykozarski.nollie.link.door")
     private var listener: NWListener?
     private var listeningPort: UInt16?
@@ -71,6 +77,7 @@ final class LinkDoor: @unchecked Sendable {
         self.identity = identity
         self.devices = devices
         self.upstream = upstream
+        family = LinkDoorFamilyHermes(upstream: upstream)
     }
 
     var port: UInt16? { queue.sync { listeningPort } }
@@ -235,11 +242,12 @@ final class LinkDoor: @unchecked Sendable {
 
     // MARK: Devices
 
-    /// Unlinks a device and closes everything it has open, at once.
+    /// Unlinks a device and closes everything it has open, at once. A member's open asks are answered Deny.
     @discardableResult
     func remove(_ device: UUID) throws -> Bool {
         let removed = try devices.remove(device)
         cut(device)
+        denyAsks(of: device)
         return removed
     }
 
@@ -359,7 +367,7 @@ final class LinkDoor: @unchecked Sendable {
 
     /// Answers `/nollie/link/hosts` and `/nollie/link/away/on|off` for a linked phone. Turning
     /// away from home off also closes every connection that came in through Tailscale.
-    fileprivate func answerAway(_ route: LinkDoorPolicy.Route, _ done: @escaping @Sendable (Data) -> Void) {
+    fileprivate func answerAway(_ route: LinkDoorPolicy.Route, homeOnly: Bool = false, _ done: @escaping @Sendable (Data) -> Void) {
         if route != .hosts {
             do { try devices.setAway(route == .awayOn) } catch {
                 done(LinkDoorHTTP.reply(503, "Your Mac couldn't save that. Try again.")); return
@@ -370,7 +378,8 @@ final class LinkDoor: @unchecked Sendable {
         let devices = devices
         Task {
             let found = await provider()
-            let away = devices.away
+            // Someone a helper is shared with reaches this Mac at home only.
+            let away = devices.away && !homeOnly
             let tailnet = Set(found.hosts.filter { LinkDoorPolicy.isTailnetHost($0) })
             let hosts = away ? found.hosts : found.hosts.filter { !tailnet.contains($0) }
             let object: [String: Any] = ["hosts": hosts, "away": away, "tailscale": found.tailscale]
@@ -403,6 +412,10 @@ final class LinkDoor: @unchecked Sendable {
               let text = object["key"] as? String, let key = LinkDoorBase64URL.decode(text), key.count == 32,
               (try? Curve25519.KeyAgreement.PublicKey(rawRepresentation: key)) != nil else {
             return LinkDoorHTTP.reply(400, "That key could not be read.")
+        }
+        // Members never reach this (their routes stop in handleMember); refused here as well.
+        guard devices.member(device) == nil else {
+            return LinkDoorHTTP.reply(403, "Shared helpers work at home.")
         }
         guard let mac = devices.awayMacKey else {
             return LinkDoorHTTP.reply(503, "Open Nollie on your Mac, then try again.")
@@ -507,6 +520,9 @@ private final class LinkDoorSession: @unchecked Sendable {
     private var injections: [Data] = []
     /// Set when this connection became a live stream the door serves itself.
     private var live: LinkDoorLiveSession?
+    /// A member's chat socket: both ways filtered by what this member may reach.
+    private var memberSocket: LinkDoorMemberSocket?
+    private var serverReader = LinkDoorWebSocket.ClientReader(maximumMessage: 32 * 1024 * 1024, masked: false)
     var isLive: Bool { live != nil }
     private static let chunk = 64 * 1024
     private static let claimBodyLimit = 4096
@@ -581,6 +597,14 @@ private final class LinkDoorSession: @unchecked Sendable {
         authenticated = true
         deviceID = device
         door.devices.touch(device)
+        if LinkDoorFamily.isFamilyPath(request.path) {
+            handleFamily(request, extra: Data(extra), device: device)
+            return
+        }
+        if door.devices.member(device) != nil {
+            handleMember(request, route: route, extra: Data(extra), device: device)
+            return
+        }
         if route == .stop {
             guard request.contentLength == 0, extra.isEmpty else {
                 respond(LinkDoorHTTP.reply(413, "The request was refused."))
@@ -620,6 +644,12 @@ private final class LinkDoorSession: @unchecked Sendable {
             respond(LinkDoorHTTP.reply(403, "This can only be changed on your Mac."))
             return
         }
+        forwardToHermes(request, extra: Data(extra), device: device)
+    }
+
+    /// Passes one allowed request (or socket) on to Hermes.
+    private func forwardToHermes(_ request: LinkDoorHTTP.Request, extra: Data, device: UUID) {
+        guard let door else { close(force: true); return }
         guard LinkDoorPolicy.allowsQuery(path: request.path, query: request.query) else {
             respond(LinkDoorHTTP.reply(403, "This can only be changed on your Mac."))
             return
@@ -633,9 +663,154 @@ private final class LinkDoorSession: @unchecked Sendable {
                     self.respond(LinkDoorHTTP.reply(503, "Your assistant is starting on your Mac. Try again in a moment."))
                     return
                 }
-                self.forward(request, body: Data(extra), to: upstream)
+                self.forward(request, body: extra, to: upstream)
             }
         }
+    }
+
+    // MARK: Sharing at home
+
+    /// `/nollie/family/...`: who this device is, and for owners, sharing itself. The door answers.
+    private func handleFamily(_ request: LinkDoorHTTP.Request, extra: Data, device: UUID) {
+        guard let door else { close(force: true); return }
+        let route = LinkDoorFamily.route(method: request.method, path: request.path, websocket: request.isWebSocketUpgrade)
+        guard route != .refused, request.query?.isEmpty ?? true else {
+            respond(LinkDoorHTTP.reply(404, "The request was refused."))
+            return
+        }
+        if route != .me, door.devices.member(device) != nil {
+            respond(LinkDoorHTTP.reply(403, LinkDoorFamily.ownerOnly))
+            return
+        }
+        guard request.contentLength <= Self.claimBodyLimit, extra.count <= request.contentLength else {
+            respond(LinkDoorHTTP.reply(413, "The request was refused."))
+            return
+        }
+        readBody(extra, until: request.contentLength) { [weak self] body in
+            guard let self, let door = self.door else { return }
+            let queue = self.queue
+            Task { [weak self] in
+                let reply = await door.answerFamily(route, body: body, device: device)
+                queue.async { self?.respond(reply) }
+            }
+        }
+    }
+
+    /// Someone a helper is shared with: home only, their own allowlist, and every helper and chat
+    /// checked against what they were given.
+    private func handleMember(_ request: LinkDoorHTTP.Request, route: LinkDoorPolicy.Route, extra: Data, device: UUID) {
+        guard let door else { close(force: true); return }
+        guard !tailnet else {
+            respond(LinkDoorHTTP.reply(403, "Shared helpers work at home."))
+            return
+        }
+        if route == .hosts {
+            guard request.contentLength == 0, extra.isEmpty else {
+                respond(LinkDoorHTTP.reply(413, "The request was refused."))
+                return
+            }
+            let queue = self.queue
+            door.answerAway(.hosts, homeOnly: true) { [weak self] reply in
+                queue.async { [weak self] in self?.respond(reply) }
+            }
+            return
+        }
+        let decided = route == .hermes
+            ? LinkDoorFamily.memberRoute(method: request.method, path: request.path, query: request.query, websocket: request.isWebSocketUpgrade)
+            : .refused
+        switch decided {
+        case .refused:
+            respond(LinkDoorHTTP.reply(403, LinkDoorFamily.ownerOnly))
+            return
+        case .pass:
+            forwardToHermes(request, extra: extra, device: device)
+            return
+        default:
+            break
+        }
+        let queue = self.queue
+        Task { [weak self] in
+            let access = await door.memberAccess(device)
+            queue.async {
+                guard let self, !self.closed, let door = self.door else { return }
+                guard let access, access.privateNames != nil else {
+                    self.respond(LinkDoorHTTP.reply(503, "Sharing isn't ready on the Mac. Try again in a moment."))
+                    return
+                }
+                switch decided {
+                case .profiles:
+                    Task { [weak self] in
+                        let reply = await door.memberProfiles(access)
+                        queue.async { self?.respond(reply) }
+                    }
+                case .chats(let profile):
+                    guard access.allows(profile: profile) else { self.respond(LinkDoorHTTP.reply(403, LinkDoorFamily.ownerOnly)); return }
+                    Task { [weak self] in
+                        let reply = await door.memberChats(access, profile: profile, query: request.query)
+                        queue.async { self?.respond(reply) }
+                    }
+                case .chat(let chat):
+                    guard access.owns(chat) else { self.respond(LinkDoorHTTP.reply(404, "This chat isn't here.")); return }
+                    self.forwardToHermes(request, extra: extra, device: device)
+                case .socket:
+                    self.memberSocket = LinkDoorMemberSocket()
+                    self.forwardToHermes(request, extra: extra, device: device)
+                case .pass, .refused:
+                    self.respond(LinkDoorHTTP.reply(403, LinkDoorFamily.ownerOnly))
+                }
+            }
+        }
+    }
+
+    /// Hermes to a member's phone: each whole message read, and passed only when it is theirs. The next
+    /// read waits until the phone has taken what was sent.
+    private func pumpMemberDown(_ pending: Data = Data()) {
+        guard let upstream else { return }
+        let process: @Sendable (Data, Bool) -> Void = { [weak self] data, finish in
+            guard let self, !self.closed, let out = self.relayMember(data) else { return }
+            let next: @Sendable () -> Void = { [weak self] in
+                guard let self, !self.closed else { return }
+                if finish { self.close(force: false) } else { self.pumpMemberDown() }
+            }
+            guard !out.isEmpty else { next(); return }
+            self.client.send(content: out, completion: .contentProcessed { [weak self] error in
+                guard error == nil else { self?.close(force: true); return }
+                next()
+            })
+        }
+        if !pending.isEmpty { process(pending, false); return }
+        upstream.receive(minimumIncompleteLength: 1, maximumLength: Self.chunk) { [weak self] data, _, complete, error in
+            guard let self, !self.closed else { return }
+            process(data ?? Data(), complete || error != nil)
+        }
+    }
+
+    /// Reads Hermes's bytes into messages and returns the frames for the member: only theirs. Nil when
+    /// Hermes broke the protocol and the socket was ended.
+    private func relayMember(_ data: Data) -> Data? {
+        guard let door, let device = deviceID else { close(force: true); return nil }
+        let messages: [LinkDoorWebSocket.Message]
+        do throws(LinkDoorWebSocket.Failure) {
+            messages = try serverReader.feed(data)
+        } catch {
+            close(force: true)
+            return nil
+        }
+        var out = Data()
+        for message in messages {
+            switch message {
+            case .text(let text):
+                guard let access = door.memberAccessNow(device), memberSocket != nil else { continue }
+                let (pass, effects) = memberSocket!.down(text, access: access)
+                door.applyFamily(effects, device: device)
+                if pass { out.append(LinkDoorWebSocket.message(.text(text), masked: false)) }
+            case .binary:
+                continue
+            case .ping, .pong, .close:
+                out.append(LinkDoorWebSocket.message(message, masked: false))
+            }
+        }
+        return out
     }
 
     private func startLive(_ request: LinkDoorHTTP.Request, device: UUID) {
@@ -727,6 +902,14 @@ private final class LinkDoorSession: @unchecked Sendable {
                     return
                 }
                 let rest = Data(received.dropFirst(response.headLength))
+                if upgraded, self.memberSocket != nil {
+                    self.client.send(content: LinkDoorPolicy.downstreamHead(response), completion: .contentProcessed { [weak self] error in
+                        guard let self, error == nil else { self?.close(force: true); return }
+                        self.pumpMemberDown(rest)
+                        self.pumpSocketUp()
+                    })
+                    return
+                }
                 var head = LinkDoorPolicy.downstreamHead(response)
                 head.append(rest)
                 if upgraded { self.tracker.consume(rest) }
@@ -818,6 +1001,17 @@ private final class LinkDoorSession: @unchecked Sendable {
                 switch message {
                 case .text(let text):
                     switch self.socketKind {
+                    case .rpc? where self.memberSocket != nil:
+                        guard let door = self.door, let device = self.deviceID, let access = door.memberAccessNow(device) else {
+                            self.inject(LinkDoorWebSocket.message(.text(LinkDoorRPC.error(id: nil)), masked: false))
+                            continue
+                        }
+                        let (decision, effects) = self.memberSocket!.up(text, access: access)
+                        door.applyFamily(effects, device: device)
+                        switch decision {
+                        case .forward: outgoing.append(LinkDoorWebSocket.message(.text(text), masked: true))
+                        case .refuse(let reply): self.inject(LinkDoorWebSocket.message(.text(reply), masked: false))
+                        }
                     case .rpc?:
                         switch LinkDoorRPC.decide(text) {
                         case .forward: outgoing.append(LinkDoorWebSocket.message(.text(text), masked: true))

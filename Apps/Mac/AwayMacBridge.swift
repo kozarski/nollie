@@ -120,10 +120,7 @@ final class AwayMacBridge {
         guard let key = try? AwayKey.loadOrCreate(account: Self.keyAccount) else { state = .unavailable; return 60 }
         if !keyGiven { keyGiven = (try? await NollieLinkMacClient.giveAwayKey(key.publicKey)) != nil }
         guard let status = try? await NollieLinkMacClient.status() else { state = .unavailable; return 30 }
-        let list = status.devices.compactMap { device -> (name: String, key: Data)? in
-            guard let text = device.awayKey, let key = AwayBase64URL.decode(text), AwayKey.validPublic(key) else { return nil }
-            return (device.name, key)
-        }
+        let list = Self.awayPhones(status.devices)
         phones = list.count
         if desk == nil {
             let saved = defaults.data(forKey: Self.seenKey).flatMap { try? JSONDecoder().decode(AwaySeenList.self, from: $0) } ?? AwaySeenList()
@@ -156,6 +153,16 @@ final class AwayMacBridge {
         state = .unavailable
         return 3600
         #endif
+    }
+
+    /// The phones that may use the iCloud away path: an owner's own, with a valid swapped key. A
+    /// member (someone a helper is shared with) never does, even if the helper handed on a key.
+    nonisolated static func awayPhones(_ devices: [NollieLinkIPCDevice]) -> [(name: String, key: Data)] {
+        devices.compactMap { device in
+            guard device.person == nil, let text = device.awayKey, let key = AwayBase64URL.decode(text),
+                  AwayKey.validPublic(key) else { return nil }
+            return (device.name, key)
+        }
     }
 
     #if NOLLIE_DIRECT

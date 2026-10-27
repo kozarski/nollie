@@ -18,6 +18,9 @@ public struct LinkedMac: Codable, Hashable, Sendable {
     /// The Mac's away public key, swapped over the door: away from home through iCloud. Nil until
     /// the first swap, or from a Mac before 1.2.
     public var awayKey: Data?
+    /// Set when this phone joined as someone at home a helper was shared with: the owner's first
+    /// name (may be empty). The Mac's door decides what such a phone may reach; this only picks the screen.
+    public var sharedBy: String?
 
     public init(macName: String, pin: Data, port: Int, hosts: [String], installTag: String, deviceID: UUID) {
         self.macName = macName

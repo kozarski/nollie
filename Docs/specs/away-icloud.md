@@ -100,6 +100,15 @@ forgets its key at once: records from it are ignored.
   life: someone who later steals a device's private key and has kept old records could open them. Records live at
   most a day, which bounds this.
 
+## Shared helpers (members)
+
+Someone a helper is shared with (a member, see sharing on the Link door) never gets this path. Shared helpers work
+at home only. The door refuses `/nollie/link/seal` to a member (their requests stop in the member allowlist, and
+the seal answer checks again); a member's device never keeps an away key: one found on load, or on any change to the
+member, is dropped and saved; the helper never hands a member's key to the Mac app; the Mac app listens only to
+devices without a `person`; and removing a device forgets its key with it. On a member's phone the Away from home
+page, its switch and the iCloud carrying are off, and the phone never asks to swap.
+
 ## Records
 
 One custom zone, `NollieAwayV1`, in the private database of the container `iCloud.com.coreykozarski.nollie`.
@@ -292,6 +301,8 @@ Unit (Swift Testing, `NollieTests` and `NollieMacTests`):
   records are deleted after reading; the courier never repeats a send by itself.
 - Door: `/nollie/link/seal` stores the phone's key, answers the Mac's, refuses a bad key, a body on the wrong
   method, no credential, and 503 before the app gave its key.
+- Members: `LinkDoorFamilyAwayTests` (no key kept, dropped on load and on change, 403 from the door) and
+  `AwayFamilyTests` (no channel or swap on a member's phone, page hidden, the Mac hears owners' phones only).
 
 Screens: the Away from home page in light and dark (phone), iCloud ready and off.
 

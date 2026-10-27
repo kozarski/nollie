@@ -214,6 +214,8 @@ struct NollieLinkDoorTests {
             ("GET", "/nollie/live", true), ("POST", "/nollie/stop", false),
             ("POST", "/api/plugins/nollie-computer/take-over", false), ("POST", "/api/plugins/nollie-computer/hand-back", false),
             ("GET", "/nollie/link/hosts", false), ("POST", "/nollie/link/away/on", false), ("POST", "/nollie/link/away/off", false),
+            ("GET", "/api/plugins/nollie-crew/crew", false), ("POST", "/api/plugins/nollie-crew/members", false),
+            ("POST", "/api/plugins/nollie-crew/undo", false),
         ]
         for (method, path, socket) in allowed {
             #expect(LinkDoorPolicy.route(method: method, path: path, websocket: socket) != .refused, "\(method) \(path)")
@@ -940,6 +942,27 @@ extension NollieLinkDoorTests {
         // The profile-only routes keep their own rule.
         #expect(!LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "bot=default"))
         #expect(LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "profile=default"))
+    }
+
+    @Test func readyMadeHelpersAllowOnlyTheRosterAddAndUndo() {
+        let base = "/api/plugins/nollie-crew"
+        for (method, path) in [("GET", base + "/crew"), ("POST", base + "/members"), ("POST", base + "/undo")] {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .hermes, "\(method) \(path)")
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: true) == .refused, "\(method) \(path)")
+        }
+        let refused: [(String, String)] = [
+            // A suggestion's Add can bring a schedule, so it stays on the Mac, and so does everything else.
+            ("POST", base + "/suggestions/abc"), ("GET", base + "/suggestions/abc"), ("POST", base + "/suggestions"),
+            ("POST", base + "/crew"), ("PUT", base + "/crew"), ("DELETE", base + "/crew"), ("GET", base + "/members"),
+            ("PUT", base + "/members"), ("DELETE", base + "/members"), ("PATCH", base + "/members"), ("GET", base + "/undo"),
+            ("POST", base + "/members/scout"), ("DELETE", base + "/members/scout"), ("POST", base + "/undo/abc"),
+            ("POST", base + "/retire"), ("POST", base + "/settings"), ("GET", base), ("POST", base), ("GET", base + "/"),
+            ("POST", base + "/members/"), ("POST", base + "//members"), ("POST", "/api/plugins/nollie-crew%2fmembers"),
+            ("POST", "/api/plugins/nollie-crewx/members"), ("GET", "/dashboard-plugins/nollie-crew/index.js"),
+        ]
+        for (method, path) in refused {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .refused, "\(method) \(path)")
+        }
     }
 
     @Test func takeOverAndHandBackPassAsPostsWithOnlyAProfile() {

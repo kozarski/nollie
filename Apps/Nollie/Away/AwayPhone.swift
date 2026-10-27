@@ -94,7 +94,13 @@ final class AwayPhone {
     // MARK: Setting up
 
     /// Looks at the keys, iCloud and the person's choice, and makes sure this phone hears its Mac.
-    func refresh(_ runtime: GatewayRuntime?) async {
+    func refresh(_ runtime: GatewayRuntime?, isMember: Bool? = nil) async {
+        // A member's phone (someone a helper is shared with) never gets the iCloud away path.
+        if isMember ?? AppModel.shared.family.isMember(AppModel.shared) {
+            courier = nil
+            state = .unavailable
+            return
+        }
         if DemoMode.isOn {
             // The demo copy's flag, which the switch can then turn off and on.
             let flagged = DemoMode.iCloud ?? .needsLink

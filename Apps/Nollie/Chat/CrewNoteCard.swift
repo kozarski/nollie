@@ -73,8 +73,15 @@ struct CrewNoteCard: View {
                 let result = try await runtime.answerCrew(action)
                 answered = result.note ?? (action.kind == .undo ? "Undone" : "Done")
             } catch {
-                problem = "That didn't go through. Try again."
+                problem = Self.problem(error, linked: model.runtime?.connection.linkedMac != nil)
             }
         }
+    }
+
+    /// What a tap that didn't go through says. A suggestion's Add can bring a schedule, so a phone linked
+    /// to a Mac is refused it by the link; trying again would not help, so it says where to answer.
+    static func problem(_ error: Error, linked: Bool) -> String {
+        if linked, case HermesAPIError.http(status: 403, _)? = error as? HermesAPIError { return "Answer this on your Mac." }
+        return "That didn't go through. Try again."
     }
 }
