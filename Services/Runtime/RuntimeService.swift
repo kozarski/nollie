@@ -229,7 +229,7 @@ actor RuntimeService {
         .init(snapshot: .init(phase: .init(rawValue: snapshot.phase.rawValue) ?? .failed,
                              installationID: snapshot.installationID, endpoint: snapshot.endpoint,
                              restartCount: snapshot.restartCount, failure: snapshot.failure?.rawValue,
-                             enabledInstallationID: enabledInstallationID), error: error)
+                             enabledInstallationID: enabledInstallationID, keysLeftInFiles: snapshot.keysLeftInFiles), error: error)
     }
 }
 
@@ -302,7 +302,9 @@ final class RuntimeIPCExport: NSObject, NollieRuntimeIPC {
             await relay?.close()
             let cuaStopped = await cua?.stopDaemon() ?? true
             #if NOLLIE_DIRECT
-            let cleared = RuntimeKeychainCredentials.forgetAll()
+            let tokensCleared = RuntimeKeychainCredentials.forgetAll()
+            let keysCleared = RuntimeKeychainKeys.forgetAll()
+            let cleared = tokensCleared && keysCleared
             LinkDoorIdentity.remove(name: "com.coreykozarski.nollie.link.identity")
             #else
             let cleared = true

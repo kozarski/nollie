@@ -23,6 +23,10 @@ struct RuntimeSupervisorTests {
             #expect(values["OPENAI_API_KEY"] == nil)
             #expect(values["SSH_AUTH_SOCK"] == nil)
             #expect(values["HERMES_DASHBOARD_SESSION_TOKEN"] == (role == .api ? token : nil))
+            // Keys come on their own pipe; none is ever in the environment.
+            #expect(values["NOLLIE_KEYS_FD"] == "4")
+            #expect(values["NOLLIE_OWNER_FD"] == "3")
+            #expect(values.keys.filter(RuntimeKeyNames.isKey).isEmpty)
             #expect(plan.arguments(for: role).first == "-I")
             #expect(!plan.arguments(for: role).contains(token))
         }
@@ -68,6 +72,17 @@ struct RuntimeSupervisorTests {
         try FileManager.default.removeItem(at: root.appendingPathComponent("user"))
         try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("user"), withDestinationURL: root.appendingPathComponent("home"))
         #expect(throws: (any Error).self) { try NativeRuntimeBackend.validateOwnership(root, installationID: id) }
+    }
+    @Test func keysLeftInFilesReachTheSnapshot() async throws {
+        var prepared = plan()
+        prepared.keysLeftInFiles = 0
+        let backend = FakeRuntimeBackend(plan: prepared)
+        let supervisor = NollieRuntimeSupervisor(backend: backend, pollInterval: .milliseconds(1), startupPolls: 10)
+        let id = prepared.installationID
+        #expect(await supervisor.snapshot().keysLeftInFiles == nil)
+        let result = try await supervisor.start(installationID: id, token: token, consent: .init(installationID: id))
+        #expect(result.keysLeftInFiles == 0)
+        await supervisor.stop()
     }
     @Test func bothVerifiedChildrenAreRequiredBeforeReady() async throws {
         let backend = FakeRuntimeBackend(plan: plan())

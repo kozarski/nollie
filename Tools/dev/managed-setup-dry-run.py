@@ -101,20 +101,26 @@ def smoke(installation, report):
     (i / "runtime/store").mkdir(parents=True, exist_ok=True)
     children, logs = {}, {}
     try:
+        # A fake key for the main bot, as Nollie Runtime hands keys over from the Keychain.
+        keys = json.dumps({"version": 1, "profiles": {"default": {"OPENROUTER_API_KEY": "fake-dry-run-key"}}}).encode()
         for role in ("api", "gateway"):
             read_end, write_end = os.pipe()
+            keys_read, keys_write = os.pipe()
             env = {**environment(i), "HERMES_RUNTIME_DIR": str(i / "runtime/store"), "HERMES_INSTALL_ROOT": str(i / "hermes"),
                    "HERMES_DISABLE_LAZY_INSTALLS": "1", "PYTHONPATH": str(i / "hermes"),
                    "PATH": str(i / "environment/bin") + ":/usr/bin:/bin:/usr/sbin:/sbin", "PYTHONUNBUFFERED": "1",
-                   "NOLLIE_OWNER_FD": str(read_end)}
+                   "NOLLIE_OWNER_FD": str(read_end), "NOLLIE_KEYS_FD": str(keys_read)}
             env.pop("HTTPS_PROXY", None)
             if role == "api":
                 env["HERMES_DASHBOARD_SESSION_TOKEN"] = token
             logs[role] = open(i / f"smoke-{role}.log", "w")
             process = subprocess.Popen([str(i / "environment/bin/python"), "-I", "-B", str(entry), "--source", str(i / "hermes"),
                                         "--role", role], cwd=i / "hermes", env=env, stdin=subprocess.DEVNULL, stdout=logs[role],
-                                       stderr=subprocess.STDOUT, pass_fds=(read_end,))
+                                       stderr=subprocess.STDOUT, pass_fds=(read_end, keys_read))
             os.close(read_end)
+            os.close(keys_read)
+            with os.fdopen(keys_write, "wb") as handle:
+                handle.write(keys)
             children[role] = (process, write_end)
         port = None
         deadline = time.time() + 90
@@ -143,6 +149,9 @@ def smoke(installation, report):
                                                   "/api/plugins/nollie-workflow/private-bots",
                                                   "/api/plugins/nollie-workflow/papertrail?days=1",
                                                   "/api/plugins/nollie-crew/crew")}
+        _, options = get("/api/model/options?profile=default")
+        # A fresh setup lists OpenRouter only once Hermes holds a key for it.
+        signed_in = [p.get("slug") for p in (options or {}).get("providers", []) if isinstance(p, dict) and p.get("authenticated")]
         time.sleep(10)  # Let the gateway load its plugins and settle.
         gateway_alive = children["gateway"][0].poll() is None
         gateway_log = (i / "smoke-gateway.log").read_text(errors="replace")
@@ -150,8 +159,12 @@ def smoke(installation, report):
                          if "nollie" in line.lower() and any(word in line.lower() for word in ("error", "traceback", "failed"))]
         report["smoke"] = {"api_identity": status == 200 and bool(identity and identity.get("ok")),
                            "routes": routes, "gateway_running_after_10s": gateway_alive,
+                           "key_from_pipe_reaches_hermes": "openrouter" in signed_in,
+                           "no_key_in_files": "fake-dry-run-key" not in (i / "home/.env").read_text(errors="replace")
+                           if (i / "home/.env").exists() else True,
                            "gateway_plugin_errors": plugin_errors[:10]}
-        return report["smoke"]["api_identity"] and gateway_alive and not plugin_errors
+        return (report["smoke"]["api_identity"] and gateway_alive and not plugin_errors
+                and report["smoke"]["key_from_pipe_reaches_hermes"] and report["smoke"]["no_key_in_files"])
     finally:
         for role, (process, write_end) in children.items():
             os.close(write_end)  # Closing the owner pipe is how Nollie Runtime stops a role.

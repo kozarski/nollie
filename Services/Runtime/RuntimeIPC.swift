@@ -51,6 +51,8 @@ struct NollieRuntimeIPCSnapshot: Codable, Equatable, Sendable {
     var restartCount = 0
     var failure: String?
     var enabledInstallationID: UUID?
+    /// API keys the last start couldn't move out of the setup's files (0: all in the Keychain).
+    var keysLeftInFiles: Int?
 }
 
 struct NollieRuntimeIPCResponse: Codable, Equatable, Sendable {
