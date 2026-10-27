@@ -74,15 +74,11 @@ class Workflow:
         target = Path(home) / "plugins" / WORKFLOW
         if (target.exists() and not restoring) or target.is_symlink() or target.parent.is_symlink():
             raise CrewError("The new bot's add-on folder needs repair.")
-        recorder_only = not restoring or not target.is_dir() or (target / "recorder-only").exists()
+        # Every crew bot keeps a Papertrail from the start, like the main bot.
         if target.exists():
             shutil.rmtree(target)
         shutil.copytree(self.source, target,
                         ignore=shutil.ignore_patterns("tests", "__pycache__", "*.pyc", "recorder-only"))
-        if recorder_only:
-            marker = target / "recorder-only"
-            marker.write_text("Papertrail is off in this bot. A copy made with --papertrail-bots turns it on.\n")
-            marker.chmod(0o600)
 
     def ensure_into(self, profile_id, home):
         self.prepare(profile_id)
@@ -99,8 +95,9 @@ class Workflow:
         expected = {p.relative_to(self.source): p for p in self.source.rglob("*")
                     if p.is_file() and "__pycache__" not in p.parts and "tests" not in p.parts
                     and p.suffix != ".pyc" and p.name != "recorder-only"}
-        if all(not (target / name).is_symlink() and (target / name).is_file()
-               and (target / name).read_bytes() == source.read_bytes() for name, source in expected.items()):
+        if not (target / "recorder-only").exists() and all(
+                not (target / name).is_symlink() and (target / name).is_file()
+                and (target / name).read_bytes() == source.read_bytes() for name, source in expected.items()):
             return
         backups = home / "plugin-backups"
         if backups.is_symlink():
@@ -109,8 +106,6 @@ class Workflow:
             staged_home = Path(temporary)
             self.copy_into(profile_id, staged_home)
             staged = staged_home / "plugins" / WORKFLOW
-            if not (target / "recorder-only").exists():
-                (staged / "recorder-only").unlink()
             backups.mkdir(mode=0o700, exist_ok=True)
             target.rename(backups / f"{WORKFLOW}-{datetime.now().strftime('%Y%m%d-%H%M%S-%f')}")
             staged.rename(target)

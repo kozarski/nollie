@@ -440,9 +440,9 @@ python3 ~/.hermes/plugins/nollie-workflow/control.py night-shift on
 python3 ~/.hermes/plugins/nollie-workflow/control.py rehearsals on
 ```
 
-`--recorder` copies the add-on into each followed profile's `plugins/` and enables it there. A profile not named in
-`--papertrail-bots` gets a `recorder-only` marker in its copy, so it only records and guards there and Papertrail
-stays off; a profile named there also gets Papertrail. The plan output says which is which. Then restart the gateway
+`--recorder` copies the add-on into each followed profile's `plugins/` and enables it there. Every copy records,
+guards and keeps a Papertrail (1.2; before, a copy not named in `--papertrail-bots` held a `recorder-only` marker and
+kept Papertrail off, and that marker is now ignored and dropped on the next update). Then restart the gateway
 while idle. Not done in this change.
 
 ## Known gaps

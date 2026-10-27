@@ -371,10 +371,9 @@ Version 0.3 adds two features, both off until turned on. The design is in
 | `sleep_watch.py` | When the Mac was asleep, off or without Hermes, from the service's own ticks |
 
 In the default profile `register` keeps everything above and also loads the recorder.
-Every other profile loads the recorder, and only when it is not Private. It also loads
-Papertrail when its copy came from `--papertrail-bots`; a copy that `--recorder` made
-alone holds a `recorder-only` marker, so there it loads only the recorder. A damaged
-Private list loads no recorder anywhere until it is repaired.
+Every other profile loads the recorder and Papertrail, and only when it is not Private. A
+`recorder-only` marker an older installer left in a copy no longer keeps Papertrail off. A
+damaged Private list loads no recorder anywhere until it is repaired.
 
 ### The recorder
 
@@ -496,14 +495,11 @@ python3 ~/.hermes/plugins/nollie-workflow/control.py night-shift on
 python3 ~/.hermes/plugins/nollie-workflow/control.py rehearsals on
 ```
 
-The first command prints which profiles get the recorder only and which also get
-Papertrail. `--recorder` copies the add-on into each followed profile's `plugins/` (backing up a previous copy in
+The first command prints which profiles get the recorder and Papertrail. `--recorder` copies the add-on into each followed profile's `plugins/` (backing up a previous copy in
 `~/.hermes/plugin-backups/nollie-workflow-<profile>-<stamp>`) and runs
 `hermes --profile <profile> plugins enable nollie-workflow`. It never installs into a
 Private profile or one named `private`, and installs none when the Private list is
-damaged. A profile not named in `--papertrail-bots` in the same run gets the
-`recorder-only` marker in its copy (0600), so Papertrail stays off there; a later
-`--papertrail-bots` copy replaces the folder and turns Papertrail on. Restart the
+damaged. Every copy keeps a Papertrail. Restart the
 gateway while idle afterwards. Profiles added later need the
 installer again; until then the card names them as not watched.
 

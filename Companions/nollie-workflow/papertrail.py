@@ -7,6 +7,10 @@ replies, queries, URLs or arguments. Stdlib only here; Hermes is imported lazily
 Each line also says why it went, in ids and short names only: what started the work (a chat, a schedule,
 a Board task, a schedule's helper), on which chat app, how many messages went, whether the bot's backup
 model answered, and the person's approval answers in the same turn.
+
+Nollie Runtime's door writes "door" lines into the same files: one per connection Hermes or a program it
+started made, with the host, port, time and kind of program (``hermes``, ``terminal``, ``code``, ``mcp``,
+``model``, ``reader``, ``program``). The reader puts each with the reply it happened in, by time.
 """
 from __future__ import annotations
 
@@ -42,7 +46,14 @@ HOOKS = ("post_api_request", "api_request_error", "post_auxiliary_call", "post_t
 # "icloud": a note Nollie on the Mac sealed for the person's own linked iPhone and put in their iCloud.
 ROUTES = frozenset({"mac", "network", "online", "icloud"})
 # An "approval" line is a person's answer, kept for the turn's Why. Older readers skip it by its source.
-SOURCES = frozenset({"model", "helper", "tool", "approval", "away"})
+SOURCES = frozenset({"model", "helper", "tool", "approval", "away", "door"})
+# What kind of program made a connection through the door.
+DOOR_KINDS = frozenset({"hermes", "terminal", "code", "mcp", "model", "reader", "program"})
+# A connection this close to a reply's own calls belongs to that reply; otherwise it stands alone,
+# with the others of its bot in the same hour.
+DOOR_SLACK = 5
+DOOR_WINDOW = 3600
+DOOR_HOST = re.compile(r"[A-Za-z0-9._:-]{1,255}\Z")
 # What the Mac app may say it sent through iCloud: kinds of note only, never their words.
 AWAY_KINDS = frozenset({"reply", "card", "helpers", "stopped"})
 ORIGINS = frozenset({"chat", "schedule", "board", "helper"})
@@ -584,6 +595,13 @@ def _calls(path, since):
             call = {key: line.get(key) if isinstance(line.get(key), str) else ""
                     for key in ("provider", "model", "task", "tool", "turn", "session", "job", "board", "platform",
                                 "choice", "ask")}
+            if line["source"] == "door":
+                host_, port = line.get("host"), line.get("port")
+                if (not isinstance(host_, str) or not DOOR_HOST.match(host_) or isinstance(port, bool)
+                        or not isinstance(port, int) or not 0 < port < 65536 or line["route"] == "mac"):
+                    continue
+                call.update(kind=line.get("kind") if line.get("kind") in DOOR_KINDS else "program", port=port,
+                            turn="", session="")
             call.update({key: _count(line.get(key))
                          for key in ("in", "out", "cache", "think", "searches", "pages", "images", "messages")})
             call.update(at=float(at), route=line["route"], source=line["source"],
@@ -647,7 +665,7 @@ def _entry(key, group, provider_name, titles=None):
         return None
     routes = {}
     for call in left:
-        if call["source"] != "tool":
+        if call["source"] not in ("tool", "door"):
             totals = routes.setdefault((call["route"], call["provider"], call["host"], call["model"]), [0, 0])
             totals[0] += _tokens(call)
             totals[1] += 1
@@ -667,7 +685,7 @@ def _entry(key, group, provider_name, titles=None):
         "provider_name": provider_name(provider) if provider else None,
         "host": host_,
         "model": model or None,
-        "calls": len(left),
+        "calls": sum(call["source"] != "door" for call in left),
         "helpers": sorted({call["task"] for call in left if call["source"] == "helper" and call["task"]}),
         "services": sorted({call["provider"] for call in left
                             if call["source"] == "tool" and call["searches"] and call["provider"]}),
@@ -686,11 +704,39 @@ def _entry(key, group, provider_name, titles=None):
         # What the turn read on this Mac before its words went out: "calendar", "reminders", "contacts".
         "local_reads": sorted({LOCAL_READS[call["tool"]] for call in group
                                if call["source"] == "tool" and call["tool"] in LOCAL_READS}),
+        # Every connection the door saw in it: where to, by which kind of program, how many times.
+        "connections": _connections(left),
     }
     why = _why(group, left, titles)
     if why is not None:
         entry["why"] = why
     return entry
+
+
+def _connections(calls):
+    found = {}
+    for call in calls:
+        if call["source"] == "door":
+            key = (call["host"], call["port"], call["kind"])
+            found.setdefault(key, {"host": call["host"], "port": call["port"], "kind": call["kind"],
+                                   "route": call["route"], "count": 0})["count"] += 1
+    return sorted(found.values(), key=lambda item: (-item["count"], item["host"], item["port"], item["kind"]))
+
+
+def _place_doors(groups, doors):
+    """Each door connection into the reply it happened in (the group whose own calls span its time, with a
+    few seconds either side; the latest-starting when several do), else into its hour."""
+    spans = []
+    for key, group in groups.items():
+        if all(call["source"] == "approval" for call in group):
+            continue
+        times = [call["at"] for call in group]
+        spans.append((min(times) - DOOR_SLACK, max(times) + DOOR_SLACK, key))
+    spans.sort(key=lambda span: span[0])
+    for call in doors:
+        inside = [span for span in spans if span[0] <= call["at"] <= span[1]]
+        key = max(inside, key=lambda span: span[0])[2] if inside else ("door", int(call["at"] // DOOR_WINDOW))
+        groups.setdefault(key, []).append(call)
 
 
 def read(home, bot, days, *, now=None, provider_name=None, titles=None):
@@ -716,11 +762,14 @@ def read(home, bot, days, *, now=None, provider_name=None, titles=None):
             if first <= day <= today:
                 calls.extend(_calls(path, since))
     groups = {}
+    doors = [call for call in calls if call["source"] == "door"]
+    calls = [call for call in calls if call["source"] != "door"]
     for call in calls:
         # One entry per turn. Calls outside a turn group by session, route and a 10 minute window.
         key = (("turn", call["turn"]) if call["turn"]
                else ("window", call["session"], call["route"], int(call["at"] // WINDOW_SECONDS)))
         groups.setdefault(key, []).append(call)
+    _place_doors(groups, doors)
     names = {}
 
     def cached_name(provider):

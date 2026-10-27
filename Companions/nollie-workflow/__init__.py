@@ -1,4 +1,4 @@
-"""Papertrail for the main bot and the bots chosen for it, the Night shift recorder, saved sign-ins, saved cards and
+"""Papertrail for every bot that is not private, the Night shift recorder, saved sign-ins, saved cards and
 the Mac's Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
 keeps a typed password out of screenshots, load in every bot that is not private. Nothing loads for a private bot.
 """
@@ -34,8 +34,8 @@ def _register_papertrail(ctx, profile, default_home):
     import logging
     try:
         from pathlib import Path
-        if profile != "default" and (Path(__file__).parent / "recorder-only").exists():
-            return  # The installer copied the add-on here for the Night shift recorder only.
+        # Every bot that is not private keeps a Papertrail. A "recorder-only" marker left by an older
+        # installer no longer turns it off: Nollie Runtime's door records there anyway.
         from hermes_constants import get_hermes_home
         from .private_bots import Watch
         bot_home = Path(get_hermes_home()).resolve()

@@ -6,8 +6,8 @@ import Foundation
 /// command, saved-PID adoption or process-name scan enters this implementation.
 actor NativeRuntimeBackend: NollieRuntimeBackend {
     typealias Contract = NollieRuntimeContract
-    static let entrypointDigest = "37b75fcb6df97cafc3b30e574fdd4b777cb84898242536079cd37fe1ce9198d8"
-    static let addonsDigest = "6b64789b4f296fb41b3d34d10be9391da40b2e55413dd21250421c992ade276c"
+    static let entrypointDigest = "e3daa133da1f446d869a7087736318ff36b6571b240ca3c4bc38e21bf7b9de09"
+    static let addonsDigest = "a95bc01015dca09b77bedd38967e057d9158bf2aeb109af53c8a2d2faa8149cc"
     private let installations: URL
     private let entrypoint: URL
     private var lease: Int32 = -1
@@ -15,6 +15,8 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
     private var activePlan: Contract.Plan?
     private var children: [UUID: ChildProcess] = [:]
     private let session: URLSession
+    /// Papertrail's door: open while Hermes runs, so every connection it makes is noted.
+    private var door: PapertrailDoor?
 
     private struct ChildProcess {
         let handle: Contract.Child
@@ -68,8 +70,14 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         }
         guard flock(lock, LOCK_EX | LOCK_NB) == 0 else { close(lock); throw Contract.Failure.alreadyRunning }
         lease = lock
-        let plan = Contract.Plan(installationID: installationID, installation: root,
+        var plan = Contract.Plan(installationID: installationID, installation: root,
                                  executable: root.appendingPathComponent("environment/bin/python"), entrypoint: entrypoint)
+        // No door, no start: nothing Hermes sends may go out unnoted.
+        guard let door = await openDoor(home: plan.home) else {
+            flock(lock, LOCK_UN); close(lock); lease = -1
+            throw Contract.Failure.launchFailed
+        }
+        plan.door = door
         activePlan = plan
         return plan
     }
@@ -228,8 +236,19 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         preparation = UUID()
         for child in children.values.map(\.handle) { await stop(child) }
         guard children.isEmpty else { return }
+        door?.stop()
+        door = nil
         if lease >= 0 { flock(lease, LOCK_UN); close(lease); lease = -1 }
         activePlan = nil
+    }
+
+    /// A fresh door with a fresh secret for each run.
+    private func openDoor(home: URL) async -> Contract.Door? {
+        door?.stop()
+        let made = PapertrailDoor(book: PapertrailDoorBook(home: home))
+        guard let port = try? await made.start() else { made.stop(); door = nil; return nil }
+        door = made
+        return Contract.Door(port: port, secret: made.secret)
     }
 }
 

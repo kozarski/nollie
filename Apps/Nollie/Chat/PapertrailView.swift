@@ -334,6 +334,12 @@ private struct PapertrailDetails: View {
                 Text(place).font(.callout.monospaced()).foregroundStyle(Ink.text2).textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            // Every place it connected to, each once.
+            let hosts = entry.outsideHosts.joined(separator: "\n")
+            if !hosts.isEmpty {
+                Text(hosts).font(.callout.monospaced()).foregroundStyle(Ink.text2).textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .spread()
         .accessibilityElement(children: .combine)

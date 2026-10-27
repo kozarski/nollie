@@ -35,11 +35,39 @@ enum NollieRuntimeContract {
     /// Persisting this choice belongs to the authenticated service registration flow.
     struct StartConsent: Sendable { let installationID: UUID }
 
+    /// Papertrail's door for this run: where Hermes's traffic goes out, and the secret it must carry.
+    struct Door: Equatable, Sendable {
+        let port: UInt16
+        let secret: String
+        /// A connection whose program can't be placed with a bot. The door passes it on unrecorded:
+        /// guessing could put a private bot's connection in another bot's Papertrail.
+        static let unplaced = "unplaced.program"
+
+        func proxyURL(label: String = unplaced) -> String { "http://\(label):\(secret)@127.0.0.1:\(port)" }
+
+        /// Every proxy variable programs read, both spellings, with loopback kept direct. Node reads
+        /// them only when asked to.
+        var environment: [String: String] {
+            let url = proxyURL()
+            var result: [String: String] = [:]
+            for name in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"] {
+                result[name] = url
+                result[name.lowercased()] = url
+            }
+            result["NO_PROXY"] = "localhost,127.0.0.1,::1"
+            result["no_proxy"] = result["NO_PROXY"]
+            result["NODE_USE_ENV_PROXY"] = "1"
+            return result
+        }
+    }
+
     struct Plan: Sendable {
         let installationID: UUID
         let installation: URL
         let executable: URL
         let entrypoint: URL
+        /// Papertrail's door, when it is listening. Without it Hermes starts without a proxy.
+        var door: Door?
         var source: URL { installation.appendingPathComponent("hermes") }
         var home: URL { installation.appendingPathComponent("home") }
 
@@ -62,6 +90,7 @@ enum NollieRuntimeContract {
             // Where the computer add-on reads whether the exit relay carries the computers' traffic.
             result["NOLLIE_EXIT_RELAY"] = NolliePaths.current.runtimeService.appendingPathComponent(NollieExitRelayRecord.fileName).path
             if role == .api { result["HERMES_DASHBOARD_SESSION_TOKEN"] = token }
+            if let door { result.merge(door.environment) { _, new in new } }
             return result
         }
     }

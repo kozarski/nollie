@@ -51,8 +51,11 @@ class PapertrailFixtureTests(unittest.TestCase):
         self.assertEqual(list(body), ["bot", "days", "now", "today_starts_at", "tomorrow_starts_at", "since", "recording_since",
                                       "stayed", "left", "entries", "more"])
         self.assertEqual((body["bot"], body["days"], body["more"]), ("default", 7, 0))
-        # Entries kept before 1.1 have no reason; the rest carry it last.
-        self.assertTrue(all(list(entry) in (ENTRY_KEYS, ENTRY_KEYS + ["why"]) for entry in body["entries"]))
+        # Entries kept before 1.1 have no reason; the door's connections come before it when it saw any.
+        self.assertTrue(all(list(entry) in (ENTRY_KEYS, ENTRY_KEYS + ["why"], ENTRY_KEYS + ["connections"],
+                                            ENTRY_KEYS + ["connections", "why"]) for entry in body["entries"]))
+        connections = [c for entry in body["entries"] for c in entry.get("connections", [])]
+        self.assertTrue(connections and all(set(c) == {"host", "port", "kind", "route", "count"} for c in connections))
         times = [entry["at"] for entry in body["entries"]]
         self.assertEqual(times, sorted(times, reverse=True))
         self.assertTrue(all(body["since"] <= at <= body["now"] for at in times))
@@ -60,8 +63,10 @@ class PapertrailFixtureTests(unittest.TestCase):
         self.assertEqual(body["left"]["window"], len(body["entries"]))
         routes = {entry["route"] for entry in body["entries"]}
         self.assertEqual(routes, {"online", "network"})
-        search_only = [e for e in body["entries"] if e["provider"] is None]
-        self.assertTrue(search_only and all(e["model"] is None and e["searches"] for e in search_only))
+        search_only = [e for e in body["entries"] if e["provider"] is None and e["searches"]]
+        self.assertTrue(search_only and all(e["model"] is None for e in search_only))
+        door_only = [e for e in body["entries"] if e["provider"] is None and not e["searches"]]
+        self.assertTrue(door_only and all(e["connections"] for e in door_only))
         self.assertTrue(any(e["helpers"] for e in body["entries"]))
         network = next(e for e in body["entries"] if e["route"] == "network")
         self.assertEqual(network["host"], "http://192.168.1.40:8080")

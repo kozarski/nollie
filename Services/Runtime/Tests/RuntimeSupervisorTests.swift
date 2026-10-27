@@ -27,6 +27,22 @@ struct RuntimeSupervisorTests {
             #expect(!plan.arguments(for: role).contains(token))
         }
     }
+    @Test func hermesLeavesOnlyThroughPapertrailsDoor() {
+        var plan = plan()
+        #expect(plan.environment(for: .api, token: token)["HTTPS_PROXY"] == nil)
+        plan.door = C.Door(port: 41_234, secret: String(repeating: "cd", count: 32))
+        let url = "http://unplaced.program:\(String(repeating: "cd", count: 32))@127.0.0.1:41234"
+        for role in [C.Role.api, .gateway] {
+            let values = plan.environment(for: role, token: token)
+            for name in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"] {
+                #expect(values[name] == url, "\(name)")
+            }
+            #expect(values["NO_PROXY"] == "localhost,127.0.0.1,::1")
+            #expect(values["no_proxy"] == "localhost,127.0.0.1,::1")
+            #expect(values["NODE_USE_ENV_PROXY"] == "1")
+            #expect(values["HERMES_HOME"] == plan.home.path)
+        }
+    }
     @Test func readinessRejectsPublicHealthAndOtherProcesses() throws {
         try C.verifyIdentity(Data(#"{"ok":true,"protocolVersion":1,"pid":123,"role":"serve","servesSpa":false}"#.utf8), expectedPID: 123)
         for body in [#"{"ok":true}"#, #"{"ok":true,"protocolVersion":1,"pid":124,"role":"serve","servesSpa":false}"#,

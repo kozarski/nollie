@@ -2,13 +2,21 @@
 
 [← Architecture](../architecture.md)
 
-Status: written before the code (20 Oct 2026). Papertrail is the per-bot record of what left your Mac.
+Status: written before the code (20 Oct 2026); the door added in 1.2 (27 Oct). Papertrail is the per-bot record of
+what left your Mac.
 
 ## Purpose
 
-Nollie's pitch is local models first. Papertrail makes that visible: for each bot, every reply or background
-job that sent something to an online model or service, with when, which route and roughly how much. Replies
-that stayed on this Mac are counted, not listed. It lives in Bot settings, beside the future plan meter.
+Papertrail shows, for each bot, every reply or background job that sent something off this Mac: when, which route,
+roughly how much, and every place it connected to. Replies that stayed on this Mac are counted, not listed. It lives in
+Bot settings, and Settings sums it up across bots.
+
+It has two sources, both writing the same day files:
+
+- the workflow add-on's Hermes hooks: model and helper calls (with tokens), searches, pages, pictures, payments and
+  the person's answers (why it went);
+- Nollie Runtime's door (1.2): one line per connection that Hermes, or any program it starts, makes through it, with
+  the host, port, time and kind of program. See [The door](#the-door-nollie-runtime).
 
 Out of scope for now: costs in money, the plan meter itself, history from before Papertrail was turned on,
 and anything the private bots do (they never record).
@@ -81,6 +89,9 @@ that left lists them in `local_reads` (`["calendar"]`), and the row says "read y
 - `register(ctx)` (`__init__.py`): for any bot whose name is not private (`private`, `moss` or a saved private
   name), register the four hooks above with the bot's home taken at register time. The board service and
   follow-up tool stay default-only, as today.
+- Every bot that is not private records, crew bots included, from the moment they are made (1.2). The managed setup
+  and the crew add-on copy the add-on into each bot without the old `recorder-only` marker, an update drops a marker
+  an older Nollie left, and the add-on no longer honours one.
 - `install.py --papertrail-bots career,nowhere,forager` (default is always included) also copies the add-on
   into each named bot's `<home>/plugins/nollie-workflow` and, with `--enable`, enables it there. Private
   names are refused. A bot that has the copy but no `state.json` still records Papertrail; only the default
@@ -200,21 +211,76 @@ OpenAI, OpenRouter, Nous Portal, Google, xAI, Exa, ...); otherwise `provider_nam
 (a busy week with today and earlier rows, a network row, a search-only row), 404 for a bot with Papertrail
 off, 403 for private names. Seeded provider strings must read well after `--neutral-models`.
 
-## Not seen yet
+## The door (Nollie Runtime)
 
-Said plainly in the spec, not on the screen:
+`Services/Runtime/PapertrailDoor.swift` (the proxy) and `PapertrailDoorBook.swift` (the lines). Built for the managed
+setup the Direct Mac app runs; a Hermes you run yourself has no door.
 
-- Memory providers (Hindsight here) sync outside the tool loop; their own traffic is not seen.
-- MCP servers, gateway voice transcription and automatic spoken replies.
-- Codex app-server turns and scripted prelude steps fire no API hooks.
+- **Where it listens.** 127.0.0.1, a free port chosen at each start, loopback clients only. A fresh 64-hex secret per
+  run. Hermes does not start without it (`NativeRuntimeBackend.prepare`).
+- **How Hermes is pointed at it.** Both children get `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY` and their lowercase
+  twins set to `http://unplaced.program:<secret>@127.0.0.1:<port>`, `NO_PROXY=localhost,127.0.0.1,::1` and
+  `NODE_USE_ENV_PROXY=1` (`RuntimeContract.Door.environment`).
+- **Labels.** `runtime_entry.py` (`_label_door`), before Hermes is imported, swaps the user name for `<bot>.<kind>`:
+  for Hermes's own requests (`urllib.request.getproxies_environment`, which requests, httpx, aiohttp and urllib all
+  read) the bot is the Hermes home of the work in hand and the kind `hermes`; for every child started through
+  `subprocess` (terminal, code, MCP servers, the reader's helper, a model's own program) the bot is the same and the
+  kind comes from the Hermes module that started it: `terminal`, `code`, `mcp`, `reader`, `model`, else `program`.
+  The proxy variables are put back into a child's environment when Hermes left them out (it gives MCP servers only a
+  few variables). A proxy a program chose itself is left alone.
+- **What it speaks.** `CONNECT host:port` and plain `http://` requests, read with the exit relay's strict parser.
+  No secret, or the wrong one: 407, nothing passed, nothing written. Bytes pass through unread.
+- **What it writes.** Before connecting, one line in the bot's own Papertrail, under the add-on's lock:
+  `{"v":1,"at":…,"route":"online|network","source":"door","kind":"terminal","host":"github.com","port":443}`.
+  Never a path, query, header or byte. Loopback is not a line. Nothing is written for a bot on the Private list (or
+  `private`, `moss`), for any bot while the list can't be read, for a bot with no home, or for the `unplaced` label.
+  The folder is made 0700 when missing (so every bot with a home is "on"), day files 0600, links refused, files over
+  35 days old pruned.
+- **Reading.** `papertrail.read` puts each door line into the reply whose own calls span its time (5 s either side;
+  the latest-starting one when several do); the rest group by bot and hour. Entries gain `connections`:
+  `[{"host","port","kind","route","count"}]`, most used first. `calls` still counts model and tool calls only. A
+  reply that stayed on this Mac but whose terminal reached the internet is listed, not counted as stayed.
+- **The screen.** A row named only by connections shows the place it reached most. Why? names who connected ("Scout
+  ran a command that connected to github.com.") and "Connected to …" lists every place, up to six by name. Advanced
+  lists every host.
+
+## What Papertrail still can't see
+
+Said plainly here, not hidden:
+
+- **Programs that ignore proxy settings**, started by Hermes or not: SSH and anything over it (`git` with an SSH
+  remote, `scp`, `rsync`), raw sockets, mail sent with `smtplib` or read with `imaplib` (Hermes's email platform),
+  UDP and QUIC, and name lookups a program makes for itself. Node honours the variables only from versions that read
+  `NODE_USE_ENV_PROXY`; older ones go direct. The network filter (below) is the answer to these; it is off.
+- **Children started without `subprocess`** (`os.system`, `os.exec*`, `os.posix_spawn`) keep the `unplaced` label:
+  the door passes them on and writes nothing, rather than guess at a private bot.
+- **A connection made in a context with no bot**, or by an HTTP client one bot made and another reuses, is labelled
+  with the bot whose home Hermes reports at that moment (the main bot outside any reply). A kept-alive connection is
+  one line, however many requests it carries.
+- **Not Hermes:** helpers' own computers (their traffic goes through the exit relay, which logs nothing), Nollie.app's
+  own (iCloud alerts, update checks), remote images in cards, setup downloads.
+- **A Hermes you run yourself** has the add-on's hooks but no door.
 - Image providers billed per picture are counted as pictures, without tokens.
+
+## The network filter (built, off)
+
+See [Network filter](network-filter.md): a Network Extension content filter in the Direct edition that records any
+connection from Hermes's process tree that did not come through the door, and can refuse it. Off until the developer
+portal has the capability.
 
 ## Tests
 
 - Python (`Companions/nollie-workflow/tests/test_papertrail.py`): route rule table; recorder writes one
   wordless line per call, refuses symlinks, survives a damaged file, prunes after 35 days; grouping, local
   counting and the 200 cap; the route's 403/404/422 answers and no-store header; `register` skips private
-  bots. When `NOLLIE_HERMES_PYTHON` is set, a throwaway Hermes home fires the real hooks.
+  bots; door lines join their reply or their hour and keep no words. When `NOLLIE_HERMES_PYTHON` is set, a
+  throwaway Hermes home fires the real hooks.
+- Door labels (`Tools/runtime-helper/test_runtime_entry.py`): requests and each kind of child carry the bot and kind,
+  a program's own proxy is kept, nothing changes without the door.
+- Swift (`Tests/Unit/PapertrailDoorTests.swift`, NollieMacTests): the route rule, labels, the private rule, one
+  wordless 0600 line in a 0700 folder, nothing for private, loopback, missing or linked homes, pruning, and the door
+  on loopback (tunnel, 407 without the secret, a line before an unreachable host, credentials never passed on).
+  `RuntimeSupervisorTests` checks the proxy environment.
 - Mock (`Tools/mock-gateway/test_papertrail.py`).
 - Swift (`Tests/Unit/PapertrailTests.swift`): decoding, labels, amounts, Today split; the Link door rule.
 - UI: `PapertrailUITests` (golden) opens the tab on the mock; `DesignShotsUITests` shoots it light and dark.

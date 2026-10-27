@@ -37,6 +37,15 @@ signed install to prove.
 
 `LinkDoor*.swift` and `RuntimeLink.swift` add the TLS 1.3 door a linked iPhone uses. It listens only while a device is linked or a pairing code is showing, accepts private source addresses only, checks a device credential on every request, refuses routes outside its allowlist, reads every socket frame the phone sends and passes only the app's own JSON-RPC calls, and swaps in the session token before passing a request to the API child on loopback. A device credential is still powerful: it can chat with every bot and answer their approval cards. Device credentials are stored as hashes in `RuntimeService/link.json`; the TLS key lives in this helper's Keychain group. The app reaches it through four more XPC requests (offer, status, cancel, remove), which never return credentials. `LinkDoorLive.swift` answers `/nollie/live` itself, the live picture of a helper's computer: it relays a provider's messages to one linked phone, dropping video rather than queueing it, and never reaches Hermes. Its provider is `LiveRelay.swift`, which asks Nollie.app for the picture over a second Mach service, `com.coreykozarski.nollie.runtime.live`. That listener makes the same checks as the main one (the current UID, and the exact signed host as its code-signing requirement). The app calls it three ways (register, push, end) and answers three (open, control, close); every message is size-capped and read strictly on arrival, and the app captures only Nollie Computer's approved window or asks the computer add-on. The latest app to register is asked. With no app registered, a stream ends "unavailable" and the phone keeps its snapshots. Design: [The live picture](../../Docs/live-picture.md). Protocol, threat model and tests: [Nollie Link](../../Docs/nollie-link.md).
 
+## Papertrail's door
+
+`PapertrailDoor.swift` and `PapertrailDoorBook.swift`. Each start opens a door on 127.0.0.1 (a free port, a fresh
+secret) before Hermes is launched; without it Hermes does not start. Both children get every proxy variable pointing
+at it, loopback kept direct, and `runtime_entry.py` labels each request and child with its bot and kind of program.
+The door answers `CONNECT` and plain `http://` requests that carry the secret, writes one line per connection into
+that bot's Papertrail (host, port, time, kind; never for a private bot, loopback or an unplaced program) and passes
+the bytes through unread. It closes when Hermes stops. Design, and what it can't see: [Papertrail](../../Docs/specs/papertrail.md#the-door-nollie-runtime).
+
 ## Exit relay for helpers' computers
 
 `ExitRelayPolicy.swift`, `ExitRelayWire.swift`, `ExitRelay.swift` and `RuntimeExitRelay.swift`. While the Mac

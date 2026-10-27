@@ -1,8 +1,10 @@
 import Foundation
 
-/// Papertrail: a bot's record of what left this Mac, kept by the workflow add-on in each bot's
-/// home and read from `GET /api/plugins/nollie-workflow/papertrail?bot=`. Only when, which route
-/// and roughly how much; never the words. Replies that stayed on this Mac are counted, not listed.
+/// Papertrail: a bot's record of what left this Mac, kept in each bot's home by the workflow add-on
+/// (model calls, searches, pages) and by Nollie Runtime's door (every connection Hermes and the
+/// programs it starts make through it), read from `GET /api/plugins/nollie-workflow/papertrail?bot=`.
+/// Only when, where to and roughly how much; never the words. Replies that stayed on this Mac are
+/// counted, not listed.
 public struct Papertrail: Decodable, Equatable, Sendable {
     /// Entries counted since local midnight on the Mac, and over the whole window.
     public struct Counts: Decodable, Equatable, Sendable {
@@ -39,6 +41,22 @@ public struct Papertrail: Decodable, Equatable, Sendable {
         public var payments: [Payment]?
         /// Notes sealed for the person's own iPhone and put in their iCloud while they were away.
         public var icloudNotes: Int?
+        /// Every connection the door saw in it, most used first.
+        public var connections: [Connection]?
+
+        /// One place it connected to, and how many times.
+        public struct Connection: Decodable, Equatable, Sendable {
+            public var host: String
+            public var port: Int?
+            /// `hermes` (Hermes itself), `terminal`, `code`, `mcp` (a connected app), `model`, `reader` or `program`.
+            public var kind: String?
+            public var route: String?
+            public var count: Int?
+
+            public init(host: String, port: Int? = 443, kind: String? = "hermes", route: String? = "online", count: Int? = 1) {
+                self.host = host; self.port = port; self.kind = kind; self.route = route; self.count = count
+            }
+        }
 
         /// One card sent to a site.
         public struct Payment: Decodable, Equatable, Sendable {
@@ -53,10 +71,12 @@ public struct Papertrail: Decodable, Equatable, Sendable {
 
         public init(id: String, at: Double, route: String? = "online", provider: String? = nil, providerName: String? = nil,
                     host: String? = nil, model: String? = nil, services: [String]? = nil, inputTokens: Int? = nil,
-                    outputTokens: Int? = nil, searches: Int? = nil, pages: Int? = nil, images: Int? = nil, calls: Int? = nil) {
+                    outputTokens: Int? = nil, searches: Int? = nil, pages: Int? = nil, images: Int? = nil, calls: Int? = nil,
+                    connections: [Connection]? = nil) {
             self.id = id; self.at = at; self.route = route; self.provider = provider; self.providerName = providerName
             self.host = host; self.model = model; self.services = services; self.inputTokens = inputTokens
             self.outputTokens = outputTokens; self.searches = searches; self.pages = pages; self.images = images; self.calls = calls
+            self.connections = connections
         }
     }
 
@@ -177,8 +197,19 @@ public extension Papertrail.Entry {
             if (searches ?? 0) > 0, let service = services?.lazy.compactMap(Papertrail.serviceLabel).first { return service }
             return "Web"
         }
+        // Only connections: the place it reached most.
+        if let host = outsideHosts.first { return host }
         return "Online"
     }
+
+    /// The places it connected to that are off this Mac, most used first, each once.
+    var outsideHosts: [String] {
+        var seen = Set<String>()
+        return (connections ?? []).filter { $0.route != "mac" }.map(\.host).filter { seen.insert($0).inserted }
+    }
+
+    /// How many connections the door saw.
+    var connectionCount: Int { (connections ?? []).reduce(0) { $0 + max(1, $1.count ?? 1) } }
 
     /// The host without its scheme, for the label; Developer Mode shows the whole `host`.
     var hostName: String? {
@@ -209,6 +240,7 @@ public extension Papertrail.Entry {
         }
         if let n = icloudNotes, n > 0 { parts.append(Papertrail.count(n, "note to your iPhone", "notes to your iPhone")) }
         if parts.isEmpty, let n = calls, n > 0 { parts.append(Papertrail.count(n, "request", "requests")) }
+        if connectionCount > 0 { parts.append(Papertrail.count(connectionCount, "connection", "connections")) }
         let read = AppleDataArea.allCases.filter { localReads?.contains($0.rawValue) ?? false }.map { $0.title.lowercased() }
         if !read.isEmpty {
             let names = read.count == 1 ? read[0] : read.dropLast().joined(separator: ", ") + " and " + read[read.count - 1]
@@ -236,6 +268,10 @@ public extension Papertrail.Entry {
     func why(bot: String, time: (Date) -> String = { $0.formatted(.dateTime.hour().minute()) }) -> PapertrailWhy {
         let sent = sentText
         guard let why, let origin = why.origin, Papertrail.origins.contains(origin) else {
+            // Connections alone: the door kept who made them, so that is the reason.
+            if !outsideHosts.isEmpty, let went = wentLine(bot: bot, backup: false) {
+                return PapertrailWhy(reason: went, sent: sent, kept: true)
+            }
             return PapertrailWhy(reason: PapertrailWhy.notKept, sent: sent, kept: false)
         }
         var lines = [Papertrail.startLine(origin: origin, task: why.task, platform: why.platform, bot: bot)]
@@ -248,7 +284,7 @@ public extension Papertrail.Entry {
     private func wentLine(bot: String, backup: Bool) -> String? {
         let label = routeLabel
         let hasModel = !(model ?? "").isEmpty || !(provider ?? "").isEmpty || hostName != nil
-        if route == "network" {
+        if route == "network", hasModel || outsideHosts.isEmpty {
             return "\(bot)'s model runs on another computer on your network, so it went there."
         }
         if route == "icloud" {
@@ -264,6 +300,9 @@ public extension Papertrail.Entry {
         }
         if (pages ?? 0) > 0 { return "\(bot) read pages on the web." }
         if (images ?? 0) > 0 { return "\(bot) asked an online service for a picture." }
+        if let first = (connections ?? []).first(where: { $0.route != "mac" }) {
+            return Papertrail.connectionLine(kind: first.kind ?? "program", host: first.host, bot: bot)
+        }
         return nil
     }
 
@@ -284,6 +323,13 @@ public extension Papertrail.Entry {
             if let words = Papertrail.helperWords[helper] { parts.append(words) }
         }
         var text = parts.isEmpty ? nil : "What went: " + Papertrail.list(parts) + "."
+        let hosts = outsideHosts
+        if !hosts.isEmpty {
+            // Exactly where: every place, up to six by name.
+            let named = hosts.count > 6 ? Array(hosts.prefix(5)) + ["\(hosts.count - 5) more"] : hosts
+            let line = "Connected to \(Papertrail.list(named))."
+            text = text.map { $0 + " " + line } ?? line
+        }
         let read = AppleDataArea.allCases.filter { localReads?.contains($0.rawValue) ?? false }.map { $0.title.lowercased() }
         if !read.isEmpty {
             let first = "It read your \(Papertrail.list(read)) on your Mac first."
@@ -299,6 +345,19 @@ public extension Papertrail {
     /// Hermes's own small requests a reply can make on the side, in plain words.
     static let helperWords = ["title_generation": "a request to name the chat",
                               "compression": "a request to shorten a long chat"]
+
+    /// Who connected, when nothing else in the entry says: "Scout ran a command that connected to github.com."
+    static func connectionLine(kind: String, host: String, bot: String) -> String {
+        switch kind {
+        case "terminal": "\(bot) ran a command that connected to \(host)."
+        case "code": "\(bot) ran code that connected to \(host)."
+        case "mcp": "\(bot) used a connected app that reached \(host)."
+        case "model": "\(bot)'s model connected to \(host)."
+        case "reader": "\(bot) read a page at \(host)."
+        case "hermes": "\(bot) connected to \(host) by itself, outside a reply."
+        default: "A program \(bot) started connected to \(host)."
+        }
+    }
 
     /// What started the work, and who did it.
     static func startLine(origin: String, task: String?, platform: String?, bot: String) -> String {

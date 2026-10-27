@@ -171,7 +171,7 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.assertIn("nollie-workflow", self.config()["plugins"]["enabled"])
         self.assertEqual(json.loads((scout / "config.yaml").read_text())["plugins"],
                          {"enabled": ["custom", "nollie-workflow"], "disabled": ["nollie-reader"]})
-        self.assertTrue((scout / "plugins/nollie-workflow/recorder-only").is_file())
+        self.assertFalse((scout / "plugins/nollie-workflow/recorder-only").exists(), "every helper keeps a Papertrail")
         self.assertEqual(self.snapshot(hidden), before)
         current = self.snapshot(self.home)
         self.assertEqual(self.install(), 0)
@@ -236,7 +236,7 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.assertEqual(addons.ensure_profile_workflow(self.home, "juniper", staged), ["juniper"])
         self.assertEqual(json.loads((staged / "config.yaml").read_text())["plugins"]["enabled"],
                          ["nollie-workflow"])
-        self.assertTrue((staged / "plugins/nollie-workflow/recorder-only").is_file())
+        self.assertFalse((staged / "plugins/nollie-workflow/recorder-only").exists())
         self.assertEqual((staged / "nollie-workflow/ask-first-initialized").read_text(), "1\n")
         self.assertFalse((self.home / "profiles/juniper").exists())
 
@@ -324,12 +324,13 @@ class ManagedAddOnsTests(unittest.TestCase):
             addons.ensure_workflow(self.home)
         self.assertEqual(self.snapshot(self.home), before)
 
-    def test_profile_copy_updates_keep_papertrail_choice_and_old_copy(self):
+    def test_profile_copy_updates_drop_an_old_marker_and_keep_the_old_copy(self):
         self.seed_workflow()
         scout = self.bot("scout")
         addons.ensure_workflow(self.home, "first")
         target = scout / "plugins/nollie-workflow"
-        (target / "recorder-only").unlink()
+        # An older Nollie left this marker to keep Papertrail off; the next update takes it away.
+        (target / "recorder-only").write_text(addons.RECORDER_NOTE)
         original = (target / "plugin.yaml").read_bytes()
         (self.home / "plugins/nollie-workflow/plugin.yaml").write_bytes(original + b"\n# newer\n")
         addons.ensure_workflow(self.home, "second")
