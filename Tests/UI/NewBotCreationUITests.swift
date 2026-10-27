@@ -5,6 +5,13 @@ import XCTest
 final class NewBotCreationUITests: XCTestCase {
     private var app: XCUIApplication!
 
+    /// One mock gateway serves every flow in a run: the bots made here go again, so the flows after
+    /// this one find the demo's own two (a fourth bot would pin the first three to the top).
+    override func tearDownWithError() throws {
+        DemoCase.resetMock("api/_mock/profile-creation", [:])
+        try super.tearDownWithError()
+    }
+
     private struct Fixture: Decodable {
         struct Profile: Decodable { let name: String; let provider: String; let model: String }
         struct Request: Decodable {

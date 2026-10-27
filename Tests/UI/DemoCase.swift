@@ -67,7 +67,7 @@ class DemoCase: XCTestCase {
         var flags = ["-companionPromptShown", "YES", "-colorSchemePreference", look.rawValue, "-approvals.ownerCheck", "NO"]
         if withGateway {
             flags += ["-nollie-demo-gateway", address, "mock-token", "Studio",
-                      "-notificationsSetupCardDone", "YES", "-bots.animate", "NO"]
+                      "-notificationsSetupCardDone", "YES", "-bots.animate", "NO"] + Self.weeklyCardPutAway
         }
         app.launchArguments = flags + extra
         app.launch()
@@ -75,6 +75,28 @@ class DemoCase: XCTestCase {
         if withGateway, waitForBots {
             XCTAssertTrue(find("bots.list").waitForExistence(timeout: 30), "the bots list did not come up")
         }
+    }
+
+    /// The weekly note's card sits at the top of the main chat and stays put while the chat scrolls,
+    /// so a flow about something else starts with it put away, like the other first-run cards. A flow
+    /// about the note leaves this flag out.
+    static let weeklyCardPutAway = ["-nollie.weekly.putAway", "<date>2099-01-01T00:00:00Z</date>"]
+
+    /// Posts a control call to the local mock gateway and waits for its answer, without the main actor:
+    /// safe in any tear-down, even after a failure stopped the flow. Nothing happens without the mock.
+    nonisolated static func resetMock(_ path: String, _ body: [String: Any]) {
+        let env = ProcessInfo.processInfo.environment
+        guard let address = env["HERMES_E2E_URL"], let base = URL(string: address), base.scheme == "http",
+              ["127.0.0.1", "localhost", "::1"].contains(base.host ?? ""), env["HERMES_E2E_TOKEN"] == "mock-token" else { return }
+        var request = URLRequest(url: base.appendingPathComponent(path))
+        request.httpMethod = "POST"
+        request.timeoutInterval = 8
+        request.setValue("Bearer mock-token", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        let answered = DispatchSemaphore(value: 0)
+        URLSession.shared.dataTask(with: request) { _, _, _ in answered.signal() }.resume()
+        _ = answered.wait(timeout: .now() + 10)
     }
 
     /// Runs `body` once in light and once in dark, each on a fresh launch (the app is ended after).
