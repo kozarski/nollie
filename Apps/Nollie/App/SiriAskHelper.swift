@@ -18,7 +18,8 @@ struct AskHelperIntent: AppIntent {
         IntentDescription("Asks a helper and gives you the reply. Anything that needs your yes waits for you in Nollie.",
                           categoryName: "Helpers")
     }
-    static var openAppWhenRun: Bool { false }
+    /// Runs without opening Nollie. Only a card waiting for a yes brings Nollie forward, at the chat.
+    static var supportedModes: IntentModes { [.background, .foreground(.dynamic)] }
     /// The request goes out as you and the reply can be personal, so the device must be unlocked.
     static var authenticationPolicy: IntentAuthenticationPolicy { .requiresAuthentication }
     static var parameterSummary: some ParameterSummary { Summary("Ask \(\.$helper) \(\.$request)") }
@@ -46,21 +47,34 @@ struct AskHelperIntent: AppIntent {
         case .problem(let words):
             throw AskProblem(words: words)
         case .needsYou(let asked, _):
-            // The card is in the helper's chat: open it there, never answer it here.
-            let chat = ChatEntity(id: asked.chatID, title: asked.name, bot: asked.profile)
-            return .result(value: line, opensIntent: OpenChatIntent(chat: chat), dialog: IntentDialog(stringLiteral: line), view: card)
-        case .replied(_, let text):
-            return .result(value: text.isEmpty ? line : text, dialog: IntentDialog(stringLiteral: line), view: card)
+            // The card is in the helper's chat: Nollie opens there, and nothing answers it here.
+            await openWaitingChat(asked, saying: line)
+            return .result(value: line, dialog: IntentDialog(stringLiteral: line), view: card)
+        case .replied(let asked, let text):
+            // Siri reads the reply; on screen the card shows it, so the line above the card stays short.
+            let dialog = IntentDialog(full: LocalizedStringResource(stringLiteral: line),
+                                      supporting: LocalizedStringResource(stringLiteral: AskWords.replied(asked.name)))
+            return .result(value: text.isEmpty ? line : text, dialog: dialog, view: card)
         case .stillWorking:
             return .result(value: line, dialog: IntentDialog(stringLiteral: line), view: card)
         }
     }
 }
 
-extension OpenChatIntent {
-    init(chat: ChatEntity) {
-        self.init()
-        self.chat = chat
+extension AskHelperIntent {
+    /// Brings Nollie forward at the chat where the card waits. If the person would rather not open
+    /// it now, the card stays where it is for later.
+    @MainActor
+    private func openWaitingChat(_ asked: AskedHelper, saying line: String) async {
+        do {
+            try await continueInForeground(IntentDialog(stringLiteral: line), alwaysConfirm: false)
+        } catch {
+            return
+        }
+        #if os(macOS)
+        MacWindow.bringMainForward()
+        #endif
+        AppModel.shared.openStoredChat(id: asked.chatID, profile: asked.profile)
     }
 }
 
@@ -307,6 +321,8 @@ enum AskWords {
     }
     static func stillWorking(_ name: String) -> String { "\(name) is still on it. The reply will be in Nollie." }
     static func doneQuietly(_ name: String) -> String { "\(name) has finished. The details are in Nollie." }
+    /// Above the card when the reply is on screen.
+    static func replied(_ name: String) -> String { "\(name) replied." }
 
     /// The snippet's short labels.
     static let waitingLabel = "Waiting for your yes"
@@ -358,8 +374,9 @@ struct AskSnippet: View {
             if let asked {
                 Image(CharacterDrawing.avatarName(BotAvatarStore.look(for: asked.profile)))
                     .resizable()
-                    .scaledToFit()
-                    .frame(width: 52, height: 52)
+                    .scaledToFill()
+                    .frame(width: 56, height: 56)
+                    .clipShape(Circle())
                     .accessibilityHidden(true)
                 Text(asked.name)
                     .font(.headline)

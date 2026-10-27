@@ -87,8 +87,8 @@ import Testing
         #expect(AskRules.deliverable("/") == nil)
     }
 
-    @Test func askingNeverOpensTheAppAndNeedsAnUnlock() {
-        #expect(AskHelperIntent.openAppWhenRun == false)
+    @Test func askingRunsWithoutTheAppAndNeedsAnUnlock() {
+        #expect(AskHelperIntent.supportedModes.contains(.background))
         #expect(AskHelperIntent.authenticationPolicy == .requiresAuthentication)
         // The control's open-the-chat intent stays out of Shortcuts, so there is one Ask Nollie there.
         #expect(AskNollieIntent.isDiscoverable == false)
@@ -206,7 +206,7 @@ import Testing
                      AskWords.gatewayQuiet, AskWords.thisMacQuiet, AskWords.unknownHelper, AskWords.privateHelper("Moss"),
                      AskWords.noChat("Scout"), AskWords.busy("Scout"), AskWords.notSent("Scout"),
                      AskWords.needsYou("Scout", before: true), AskWords.needsYou("Scout", before: false),
-                     AskWords.stillWorking("Scout"), AskWords.doneQuietly("Scout"), AskWords.waitingLabel, AskWords.workingLabel,
+                     AskWords.stillWorking("Scout"), AskWords.doneQuietly("Scout"), AskWords.replied("Scout"), AskWords.waitingLabel, AskWords.workingLabel,
                      StopControlWords.control, StopControlWords.controlDescription]
         for line in lines {
             #expect(!line.contains("\u{2014}"), "no em-dash in \(line)")
@@ -234,3 +234,30 @@ import Testing
         #expect(SiriLines.shown(approvals: true).map(\.words).last == "Answer the approval in Nollie")
     }
 }
+
+#if os(iOS)
+import SwiftUI
+
+/// Pictures of the card under Siri's words, light and dark, attached to the test run.
+@MainActor @Suite struct SiriAskSnippetPictures {
+    @Test func theAskCards() {
+        let scout = AskedHelper(profile: "career", name: "Scout", chatID: "c1")
+        let cards: [(String, AskOutcome)] = [
+            ("reply", .replied(scout, text: "You have two things today: the dentist at 4pm, and Sam's birthday dinner at 7. I've put a reminder on the dinner.")),
+            ("needs-yes", .needsYou(scout, before: false)),
+            ("still-working", .stillWorking(scout)),
+        ]
+        for (name, outcome) in cards {
+            for scheme in [ColorScheme.light, .dark] {
+                let renderer = ImageRenderer(content: AskSnippet(outcome: outcome)
+                    .frame(width: 360)
+                    .background(scheme == .dark ? Color(white: 0.11) : Color(white: 0.96))
+                    .environment(\.colorScheme, scheme))
+                renderer.scale = 3
+                guard let data = renderer.uiImage?.pngData() else { Issue.record("no picture for \(name)"); continue }
+                Attachment.record(data, named: "ask-snippet-\(name)-\(scheme == .dark ? "dark" : "light").png")
+            }
+        }
+    }
+}
+#endif
