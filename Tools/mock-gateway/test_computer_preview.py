@@ -57,6 +57,34 @@ class PreviewFixtureTests(unittest.IsolatedAsyncioTestCase):
         response = await mock.process_request(None, request("/api/_mock/computer-preview", "POST", {"reset_log": True}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(mock.COMPUTER_PREVIEW["requests"], [])
+        self.assertEqual(mock.COMPUTER_PREVIEW["writes"], 0, "A fresh log counts only the writes after it")
+        mock.seed_managed_files()
+
+    async def test_demo_bots_start_off_and_a_written_lease_is_kept(self):
+        def request(path, method="GET", body=None):
+            return SimpleNamespace(path=path, method=method, body=json.dumps(body or {}).encode(), headers={})
+        def read(path):
+            response = mock.process_request(None, request("/api/fs/read-text?path=" + path))
+            return response.status_code, json.loads(response.body)
+        mock.seed_managed_files()
+        config = json.loads(mock.process_request(None, request("/api/config?profile=work")).body)["config"]
+        self.assertIn("computer_use", config["agent"]["disabled_toolsets"], "Setup switched Hermes's computer_use off")
+        for home in ("/home/hermes/.hermes", "/home/hermes/.hermes-work"):
+            status, body = read(home + "/bot-desktop/lease.json")
+            self.assertEqual(status, 200)
+            self.assertEqual(json.loads(body["text"])["holder"], "human", "This Mac starts off")
+        new_bot = "/home/hermes/.hermes/profiles/new/bot-desktop/lease.json"
+        self.assertEqual(read(new_bot)[0], 404, "No lease yet")
+        lease = 'data:application/json;base64,eyJob2xkZXIiOiAiaHVtYW4ifQ=='
+        written = mock.process_request(None, request("/api/files/upload", "POST",
+                                                     {"path": new_bot, "data_url": lease, "overwrite": False}))
+        self.assertEqual((written.status_code, json.loads(written.body)["path"]), (200, new_bot))
+        self.assertEqual(json.loads(read(new_bot)[1]["text"]), {"holder": "human"}, "Read back as written")
+        again = mock.process_request(None, request("/api/files/upload", "POST",
+                                                   {"path": new_bot, "data_url": lease, "overwrite": False}))
+        self.assertEqual(again.status_code, 409, "Never written over unless asked")
+        self.assertEqual(mock.COMPUTER_PREVIEW["writes"], 2)
+        mock.seed_managed_files()
 
     async def test_take_over_holds_the_helper_and_hand_back_returns_it(self):
         def request(path, method="POST"):
