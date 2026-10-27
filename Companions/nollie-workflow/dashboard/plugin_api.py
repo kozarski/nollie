@@ -20,6 +20,7 @@ if _name not in sys.modules:
 _core = __import__(_name + ".workflow_core", fromlist=["status"])
 _adapter = __import__(_name + ".hermes_adapter", fromlist=["BoardSource"])
 _private = __import__(_name + ".private_bots", fromlist=["read"])
+_looks = __import__(_name + ".bot_looks", fromlist=["read"])
 _papertrail = __import__(_name + ".papertrail", fromlist=["read"])
 _posts = __import__(_name + ".posts", fromlist=["PostStore"])
 _night = __import__(_name + ".night_service", fromlist=["turn_on"])
@@ -105,6 +106,40 @@ def save_private_bots(body: PrivateBots):
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from None
     return JSONResponse({"profiles": names, "saved": True}, headers=NO_STORE)
+
+
+@router.get("/bot-looks")
+def bot_looks():
+    """Each bot's look as chosen on any of the person's devices. Private bots' looks are left out."""
+    target = home()
+    try:
+        bots, saved = _looks.read(target)
+        private = _private.names(target)
+    except (OSError, ValueError):
+        raise HTTPException(503, "The bots' looks cannot be read.") from None
+    return JSONResponse({"bots": _looks.visible(bots, private), "saved": saved}, headers=NO_STORE)
+
+
+class BotLook(BaseModel):
+    look: str | None = None
+    colour: str | None = None
+
+
+@router.put("/bot-looks/{profile}")
+def save_bot_look(profile: str, body: BotLook):
+    """Keeps one bot's look. A private bot's look stays on the device that chose it."""
+    target = home()
+    try:
+        private = _private.names(target)
+    except (OSError, ValueError):
+        raise HTTPException(503, "The Private list cannot be read.") from None
+    if _private.excluded(profile.strip().lower(), private):
+        raise HTTPException(403, "A private bot's look stays on its device.", headers=NO_STORE)
+    try:
+        bots = _looks.save(target, profile, {"look": body.look, "colour": body.colour})
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+    return JSONResponse({"bots": _looks.visible(bots, private), "saved": True}, headers=NO_STORE)
 
 
 def bot_home(bot, default_home):

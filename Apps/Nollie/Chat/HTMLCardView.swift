@@ -19,6 +19,11 @@ struct HTMLCardView: View {
     static let awayGrace: TimeInterval = 4
 
     private let corner: CGFloat = 12
+    /// The full screen button's drawn circle, growing with the text size.
+    @ScaledMetric(relativeTo: .caption) private var buttonFace: CGFloat = 28
+    private let buttonInset: CGFloat = 6
+    /// How far the button's fingertip square reaches into the card from its top trailing corner.
+    private var buttonReach: CGFloat { buttonInset + Ink.target(face: buttonFace).side - Ink.target(face: buttonFace).overhang }
     @Environment(\.threadViewport) private var viewport
     private var cap: CGFloat { HTMLCard.heightCap(viewport: viewport) }
     private var shownHeight: CGFloat { min(max(measured, 48), cap) }
@@ -56,7 +61,8 @@ struct HTMLCardView: View {
         if failed {
             CardNotDrawn(html: html)
         } else if onScreen {
-            HTMLWebView(document: page, scrolls: false, height: $measured, loaded: $ready, failed: $failed, actions: menu)
+            HTMLWebView(document: page, scrolls: false, height: $measured, loaded: $ready, failed: $failed, actions: menu,
+                        clearCorner: ready ? buttonReach : 0)
                 .frame(height: shownHeight)
                 .opacity(ready ? 1 : 0.01)
             if !ready { DrawingLabel() }
@@ -77,13 +83,20 @@ struct HTMLCardView: View {
             .frame(height: 28)
     }
 
+    /// A small round face in the corner, inside a full fingertip square that is the button itself.
+    /// The square is the button's real size, not a shape hung round a smaller one (a button takes
+    /// taps only inside its own frame), and it reaches a little past the card's edge so the face
+    /// sits where it always did.
     private var fullScreenButton: some View {
-        PlainButton { showingFull = true } label: {
+        let reach = Ink.target(face: buttonFace)
+        return PlainButton { showingFull = true } label: {
             Glyph("arrow.up.left.and.arrow.down.right", .caption.weight(.semibold))
-                .padding(7)
+                .frame(square: buttonFace)
                 .background(Circle().fill(.thinMaterial))
+                .frame(square: reach.side)
+                .contentShape(.rect)
         }
-        .padding(6)
+        .offset(x: reach.overhang - buttonInset, y: buttonInset - reach.overhang)
         .accessibilityLabel("Open the card full screen")
         .opacity(ready ? 1 : 0)
     }

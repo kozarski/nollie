@@ -371,6 +371,51 @@ def private_bots_rest(method: str, base: str, query: dict, payload) -> tuple[int
     return ok(dict(profiles=PRIVATE_BOTS["profiles"], saved=True))
 
 
+# Each bot's look, as nollie-workflow serves it (GET /api/plugins/nollie-workflow/bot-looks and PUT
+# …/bot-looks/<profile>), kept in memory: what one device picks, the others draw. A private bot's
+# look is neither kept nor shown. POST /api/_mock/bot-looks forgets them all.
+BOT_LOOKS: dict = dict(bots={}, saved=False)
+LOOK_ID = re.compile(r"[a-z][a-z0-9_-]{0,31}\Z")
+LOOK_COLOUR = re.compile(r"#[0-9A-F]{6}\Z")
+
+
+def bot_looks_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    if base == "/api/_mock/bot-looks" and method == "POST":
+        BOT_LOOKS.update(bots={}, saved=False)
+        return ok(dict(bots={}, saved=False))
+    root = "/api/plugins/nollie-workflow/bot-looks"
+    if base != root and not base.startswith(root + "/"):
+        return None
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+
+    def shown():
+        return {name: look for name, look in BOT_LOOKS["bots"].items() if not private_identity(name)}
+
+    if base == root:
+        return ok(dict(bots=shown(), saved=BOT_LOOKS["saved"])) if method == "GET" else refuse(405, "Method Not Allowed")
+    if method != "PUT":
+        return refuse(405, "Method Not Allowed")
+    profile = unquote(base[len(root) + 1:]).strip().lower()
+    if not PRIVATE_PROFILE_NAME.match(profile):
+        return refuse(422, "The bot must be a Hermes profile name.")
+    if private_identity(profile):
+        return refuse(403, "A private bot's look stays on its device.")
+    fields = payload if isinstance(payload, dict) else {}
+    look, colour = fields.get("look"), fields.get("colour")
+    colour = colour.upper() if isinstance(colour, str) else colour
+    if (look is not None and not (isinstance(look, str) and LOOK_ID.match(look))) or (
+            colour is not None and not (isinstance(colour, str) and LOOK_COLOUR.match(colour))):
+        return refuse(422, "Send a character id and a #RRGGBB colour.")
+    entry = {key: value for key, value in (("look", look), ("colour", colour)) if value is not None}
+    if entry:
+        BOT_LOOKS["bots"][profile] = entry
+    else:
+        BOT_LOOKS["bots"].pop(profile, None)
+    BOT_LOOKS["saved"] = True
+    return ok(dict(bots=shown(), saved=True))
+
+
 # Papertrail, as nollie-workflow serves it (GET /api/plugins/nollie-workflow/papertrail?bot=&days=):
 # what left the Mac for each bot, one entry per reply or job, with the replies that stayed only
 # counted. Seeded for "default" (a busy week) and "work" (a lighter one), placed relative to now so
@@ -3343,6 +3388,7 @@ def process_request(connection, request):
         ("quiet", lambda: family_rest(method, base, query, body)),
         ("normal", lambda: profile_creation(method, base, fields)),
         ("normal", lambda: private_bots_rest(method, base, query, body)),
+        ("quiet", lambda: bot_looks_rest(method, base, query, body)),
         ("normal", lambda: backup_rest(method, base, query, body)),
         ("quiet", lambda: sign_ins_rest(method, base, query, body)),
         ("normal", lambda: crew_rest(method, base, body)),
@@ -4214,6 +4260,18 @@ class Gateway:
         await self.stream_words(s, text)
         await self.settle(s, prompt, [text], text)
 
+    async def _media_marks_turn(self, s, prompt):
+        """MEDIA marks written the ways Hermes itself accepts them: in bold, in code, after a space,
+        and quoted round a name with spaces. Each is a picture or a file, never words."""
+        await self.begin_message(s)
+        text = ("Here is the chart and the report.\n\n**MEDIA:/home/hermes/.hermes/images/disk-week.png**\n"
+                "`MEDIA:/home/hermes/.hermes/images/disk-today.png`\n"
+                "MEDIA: /home/hermes/out/report.pdf\n"
+                'MEDIA:"/home/hermes/out/raw numbers.csv"\n\n'
+                "Both files are from this morning's run.\n")
+        await self.stream_words(s, text)
+        await self.settle(s, prompt, [text], text)
+
     async def _fail_turn(self, s, prompt):
         """The bot's provider requires a CLI that the gateway lacks (a tester's Claude subscription
         plugin), so the gateway can't start the turn."""
@@ -4312,6 +4370,7 @@ class Gateway:
         ("starts", "chart", "_card_turn"),
         ("starts", "marathon", "_marathon_turn"),
         ("starts", "files", "_files_turn"),
+        ("starts", "media marks", "_media_marks_turn"),
         ("starts", "fail", "_fail_turn"),
         ("starts", "backup", "_backup_turn"),
         ("starts", "plan back", "_plan_back_turn"),

@@ -11,7 +11,7 @@ removes a flow. Status: as of the v1 plan (19 Oct 2026); flows marked "planned" 
 | Web searches and pages | Your Hermes | Search services with free tiers (Exa, Parallel, Firecrawl, Keenable), then the sites themselves, over your own internet connection | Those services and sites | Research you ask for |
 | Short alert previews (bot name, up to 240 characters) | Nollie's helper on your Mac | Your private iCloud database (CloudKit), then your other devices | Apple, under your iCloud account | Notifications when the app is closed; kept up to 7 days |
 | Push wake-ups | Apple | Your devices | Apple | Delivering those alerts |
-| The Private list, bot looks, pins | Nollie | Your Hermes on your Mac (Private list) and the device's own storage | You | Settings |
+| The Private list, bot looks, pins | Nollie | Your Hermes on your Mac (Private list, and each bot's character and colour, never a private bot's) and the device's own storage (pins, photos) | You | Settings; every device draws a bot the same way |
 | Sign-in to your Hermes (tokens) | Nollie | The device's Keychain (never iCloud Keychain in v1) | You, on your device | Staying signed in |
 | Downloads during setup (Python, Hermes, a local model) | Nollie Runtime | Pinned release files from GitHub and model hosts, each checked against its hash | Those hosts | Installing the engine |
 | Crash and performance reports | Nollie | Apple, only through TestFlight or the App Store, and only if you share analytics with developers | Apple | Fixing bugs |

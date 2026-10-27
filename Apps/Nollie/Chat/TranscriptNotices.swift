@@ -115,7 +115,7 @@ struct InjectedNoteRow: View {
     }
 
     private var details: some View {
-        Text(note.body)
+        Text(TranscriptMedia.words(of: note.body, naming: 0))
             .font(.caption.monospaced())
             .textSelection(.enabled)
             .spread()
@@ -146,10 +146,11 @@ struct BotMessageNotice: View {
         self.onOpen = onOpen
     }
 
-    /// The text, unless it is missing or only blank space.
+    /// The text without any `MEDIA:` mark, unless that leaves nothing or only blank space.
     private var message: String? {
-        guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-        return text
+        guard let text else { return nil }
+        let words = TranscriptMedia.words(of: text, naming: 0)
+        return words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : words
     }
 
     private var stateWord: String {
