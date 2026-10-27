@@ -2,8 +2,8 @@ import SwiftUI
 import UserNotifications
 import NollieCore
 
-/// The weekly note at the top of the main chat, under the bot's header: a glass capsule with the week in a few
-/// words. A tap opens the note; the cross puts it away until next week's.
+/// The weekly note at the top of the main chat's thread, scrolling with it: a glass capsule with the week in a
+/// few words. A tap opens the note; the cross puts it away until next week's.
 struct WeeklyNoteStrip: View {
     var chat: ChatSession
     @Environment(AppModel.self) private var model
@@ -23,7 +23,8 @@ struct WeeklyNoteStrip: View {
                 })
                 .frame(maxWidth: Ink.column)
                 .fixedSize(horizontal: false, vertical: true)
-                .inset(h: 16, v: 6)
+                .padding(.vertical, 6)
+                .spread(.center)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }

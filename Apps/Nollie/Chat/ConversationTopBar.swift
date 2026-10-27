@@ -19,7 +19,6 @@ struct ConversationTopBar: View {
             WatchPill(chat: chat) { actions.show(.watch) }
                 .padding(.top, 6)
                 .animation(.snappy, value: BotComputerActivity.isActive(runtime: chat.runtime, profile: chat.profileName))
-            WeeklyNoteStrip(chat: chat)
             BoardContextStrip(chat: chat)
         }
         // The overlay gets the thread's full height; the stack stays at its content height so

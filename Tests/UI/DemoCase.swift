@@ -77,9 +77,9 @@ class DemoCase: XCTestCase {
         }
     }
 
-    /// The weekly note's card sits at the top of the main chat and stays put while the chat scrolls,
-    /// so a flow about something else starts with it put away, like the other first-run cards. A flow
-    /// about the note leaves this flag out.
+    /// The weekly note's card opens the main chat's thread and moves the first messages down, so a
+    /// flow about something else starts with it put away, like the other first-run cards. A flow about
+    /// the note leaves this flag out.
     static let weeklyCardPutAway = ["-nollie.weekly.putAway", "<date>2099-01-01T00:00:00Z</date>"]
 
     /// Posts a control call to the local mock gateway and waits for its answer, without the main actor:
