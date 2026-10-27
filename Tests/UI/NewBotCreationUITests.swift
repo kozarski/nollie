@@ -52,10 +52,11 @@ final class NewBotCreationUITests: XCTestCase {
         app.launch()
         addTeardownBlock { [app] in app?.terminate() }
         visible(app.buttons["chats.newBot"].firstMatch, timeout: 30).tap()
-        // The mock has the crew add-on, so the sheet opens on the gallery; the form is "Your own".
+        // The mock has the crew add-on, so the sheet opens on the gallery; the form is "Your own",
+        // the gallery's last tile, made only once it scrolls into view.
+        XCTAssertTrue(app.buttons["gallery.add.home-admin"].firstMatch.waitForExistence(timeout: 15))
         let own = app.buttons["newBot.custom"].firstMatch
-        XCTAssertTrue(own.waitForExistence(timeout: 15))
-        app.swipeUp()
+        for _ in 0..<8 where !(own.exists && own.isHittable) { app.swipeUp() }
         visible(own).tap()
         _ = visible(app.textFields["newBot.name"].firstMatch)
         return base
