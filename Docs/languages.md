@@ -37,6 +37,8 @@ Before switching a language on:
 
 To try a language without switching it on, override the setting for one build only:
 `xcodebuild ... XCSTRINGS_LANGUAGES_TO_COMPILE="en de fr es ja" build`.
+A build folder that once held more languages keeps their old `.lproj` folders, so after trying one, clean the
+build (or use a fresh `-derivedDataPath`) before checking what an English-only build ships. Archives are clean.
 
 ## Where the words live
 
