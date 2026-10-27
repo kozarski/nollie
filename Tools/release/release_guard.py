@@ -15,6 +15,7 @@ import urllib.request
 import zipfile
 
 BUNDLE_ID = "com.coreykozarski.nollie"
+OWNER = "Corey Kozarski"
 TEAM_ID = "5985LRZFZS"
 CLOUD_CONTAINER = "iCloud.com.coreykozarski.nollie"
 API = "https://api.appstoreconnect.apple.com/v1"
@@ -126,6 +127,17 @@ def require_archive(archive, build_number):
     info = app_info(app)
     if info.get("CFBundleIdentifier") != BUNDLE_ID or str(info.get("CFBundleVersion")) != build_number:
         raise GuardError("Archived app identity or build number is incorrect.")
+    details = subprocess.run(["codesign", "-d", "--verbose=2", str(app)], capture_output=True)
+    require_named_signer(line.split("=", 1)[1] for line in details.stderr.decode().splitlines()
+                         if line.startswith("Authority="))
+
+
+def require_named_signer(authorities):
+    """The archive is signed with one of Corey's own certificates, never one an API key created."""
+    leaf = next(iter(authorities), "")
+    if "Created via API" in leaf or OWNER not in leaf:
+        raise GuardError(f"The archive is signed by \"{leaf or 'nothing'}\", not one of {OWNER}'s certificates. "
+                         "Sign in to Xcode with his Apple Account and archive again.")
 
 
 def require_export_metadata(info, identifier, team, entitlements, profile, platform, build_number):

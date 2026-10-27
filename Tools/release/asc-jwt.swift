@@ -1,7 +1,8 @@
 // Writes a signed App Store Connect API token to stdout.
 //
-// The environment must provide ASC_ISSUER_ID, ASC_KEY_ID and ASC_KEY_PATH, the last being the .p8
-// file. The token stays valid for 18 minutes, though Apple permits up to 20. Run it with
+// The environment must provide ASC_KEY_ID and ASC_KEY_PATH, the last being the .p8 file, and either
+// ASC_ISSUER_ID for a team key or ASC_KEY_KIND=individual for Corey's own key. Work done with the
+// individual key shows his name in App Store Connect; a team key shows "API user". The token stays valid for 18 minutes, though Apple permits up to 20. Run it with
 // `swift asc-jwt.swift`.
 import CryptoKit
 import Foundation
@@ -30,8 +31,10 @@ func stop(_ message: String) -> Never {
     exit(1)
 }
 
-guard let keyID = setting("ASC_KEY_ID"), let issuer = setting("ASC_ISSUER_ID"), let keyPath = setting("ASC_KEY_PATH") else {
-    stop("ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_PATH must be set")
+let individual = setting("ASC_KEY_KIND") == "individual"
+guard let keyID = setting("ASC_KEY_ID"), let keyPath = setting("ASC_KEY_PATH"),
+      individual || setting("ASC_ISSUER_ID") != nil else {
+    stop("ASC_KEY_ID and ASC_KEY_PATH must be set, with ASC_ISSUER_ID or ASC_KEY_KIND=individual")
 }
 
 do {
@@ -40,7 +43,9 @@ do {
 
     let issuedAt = Int(Date().timeIntervalSince1970)
     let head: [String: Any] = ["alg": "ES256", "kid": keyID, "typ": "JWT"]
-    let claims: [String: Any] = ["iss": issuer, "iat": issuedAt, "exp": issuedAt + 18 * 60, "aud": "appstoreconnect-v1"]
+    var claims: [String: Any] = ["iat": issuedAt, "exp": issuedAt + 18 * 60, "aud": "appstoreconnect-v1"]
+    // An individual key names no issuer; Apple reads the person from the key itself.
+    if individual { claims["sub"] = "user" } else { claims["iss"] = setting("ASC_ISSUER_ID") }
 
     let signingInput = try [head, claims]
         .map { try JSONSerialization.data(withJSONObject: $0).jwtSegment }

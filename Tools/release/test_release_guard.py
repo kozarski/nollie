@@ -90,6 +90,15 @@ class IdentityTests(unittest.TestCase):
             self.assertEqual(requests, [("GET", guard.API + "/apps/123?fields[apps]=bundleId")])
 
 
+class SignerTests(unittest.TestCase):
+    def test_only_coreys_own_certificates_sign_an_archive(self):
+        guard.require_named_signer(["Apple Development: Corey Kozarski (G7LTSB66HB)", "Apple Root CA"])
+        guard.require_named_signer(iter(["Apple Distribution: Corey Kozarski (5985LRZFZS)"]))
+        for leaf in (["Apple Development: Created via API (LA7B5435SG)"], ["Apple Development: Someone Else"], []):
+            with self.assertRaises(guard.GuardError):
+                guard.require_named_signer(leaf)
+
+
 class ExportTests(unittest.TestCase):
     def test_store_client_cannot_include_direct_services(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -198,7 +207,12 @@ class ArchiveTests(unittest.TestCase):
             (app / "Info.plist").write_bytes(plistlib.dumps(info))
             metadata = {**info, "ApplicationPath": "Applications/Nollie.app"}
             (archive / "Info.plist").write_bytes(plistlib.dumps({"ApplicationProperties": metadata}))
-            guard.require_archive(archive, "7")
+            signed = subprocess.CompletedProcess([], 0, stdout=b"", stderr=b"Authority=Apple Development: Corey Kozarski (G7LTSB66HB)\n")
+            by_api = subprocess.CompletedProcess([], 0, stdout=b"", stderr=b"Authority=Apple Development: Created via API (LA7B5435SG)\n")
+            with patch("subprocess.run", return_value=signed):
+                guard.require_archive(archive, "7")
+            with patch("subprocess.run", return_value=by_api), self.assertRaises(guard.GuardError):
+                guard.require_archive(archive, "7")
             with self.assertRaises(guard.GuardError): guard.require_archive(archive, "8")
             info["CFBundleIdentifier"] = "com.example.other-app"
             (app / "Info.plist").write_bytes(plistlib.dumps(info))
