@@ -740,10 +740,10 @@ def _place_doors(groups, doors):
         groups.setdefault(key, []).append(call)
 
 
-def read(home, bot, days, *, now=None, provider_name=None, titles=None):
+def read(home, bot, days, *, now=None, provider_name=None, titles=None, limit=MAX_ENTRIES):
     """The Papertrail answer for one bot home over ``days`` local days ending today. ``titles`` maps
     ``("schedule", job id)`` and ``("board", task id)`` to the names the person gave them, read now, never
-    kept in the record."""
+    kept in the record. ``limit`` caps the entries listed (None lists them all, for the weekly note's counts)."""
     root = Path(home) / "nollie-workflow" / "papertrail"
     now = time.time() if now is None else now
     today = _local_day(now)
@@ -801,6 +801,6 @@ def read(home, bot, days, *, now=None, provider_name=None, titles=None):
         "recording_since": _midnight(oldest) if oldest else None,
         "stayed": stayed,
         "left": {"today": left_today, "window": len(entries)},
-        "entries": entries[:MAX_ENTRIES],
-        "more": max(0, len(entries) - MAX_ENTRIES),
+        "entries": entries if limit is None else entries[:limit],
+        "more": 0 if limit is None else max(0, len(entries) - limit),
     }

@@ -100,6 +100,9 @@ enum NollieRuntimeContract {
             }
             // Where the computer add-on reads whether the exit relay carries the computers' traffic.
             result["NOLLIE_EXIT_RELAY"] = NolliePaths.current.runtimeService.appendingPathComponent(NollieExitRelayRecord.fileName).path
+            // Where the weekly note reads whether Papertrail's network filter is on (`NetworkFilterPolicy.Switch.fileName`,
+            // not compiled into every target that shares this file). Only read there, never written.
+            result["NOLLIE_NETWORK_FILTER"] = NolliePaths.current.runtimeService.appendingPathComponent("network-filter.json").path
             if role == .api { result["HERMES_DASHBOARD_SESSION_TOKEN"] = token }
             if let door { result.merge(door.environment) { _, new in new } }
             return result
