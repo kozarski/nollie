@@ -29,7 +29,7 @@ final class CrewSummaryModel {
         let key = runtime.connection.id.uuidString
         if self.key != key { bots = nil; night = nil; loaded = false; self.key = key }
         async let days = Self.days(runtime)
-        async let card = Self.night(runtime)
+        async let card = Self.latestNight(runtime)
         let (read, latest) = await (days, card)
         guard !Task.isCancelled, self.key == key else { return }
         bots = read
@@ -46,7 +46,8 @@ final class CrewSummaryModel {
         return found.isEmpty ? nil : found
     }
 
-    private static func night(_ runtime: GatewayRuntime) async -> ConversationPost.NightShift? {
+    /// The newest Night shift card of the last day and a half, or nil. The Watch's note reads it too.
+    static func latestNight(_ runtime: GatewayRuntime) async -> ConversationPost.NightShift? {
         let posts = try? await HermesConversationPosts(api: runtime.api).posts(since: Date().addingTimeInterval(-36 * 3600))
         return posts?.filter { $0.nightShift != nil }.max { $0.at < $1.at }?.nightShift
     }
