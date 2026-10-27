@@ -7,6 +7,40 @@ It is Nollie's build of Cua Driver (MIT), carried inside the Direct Mac edition 
 `Nollie.app/Contents/Helpers/Nollie Computer`. Because it is not an app of its own, macOS charges its
 Accessibility and Screen Recording use to Nollie, so Privacy & Security lists only Nollie.
 
+## Only in the apps you pick, on a model on this Mac
+
+- **The apps you pick.** A bot's settings, Computer, Advanced, **Apps on this Mac**
+  (`ComputerAppsPage`) has the switch, the model and one switch per app, all off to start. The list
+  is kept on this Mac by bundle id (`ComputerPickedApps`, `nollie.computer.apps`) and only narrows
+  what `ComputerAppRules` allows. `mac_start` refuses an app that isn't picked ("Not picked" on the
+  card), nothing starts while none is, and an app turned off mid-task is refused from the next
+  action. There is no action that opens an app, and another app coming forward after a step ends
+  the task, as before.
+- **The window, checked below the model.** Before every action and again after any card,
+  `ComputerWindowGuard` asks the window server: the window must still be the picked app's own, a
+  task app or Nollie must be in front, and nothing of another app's may cover the spot a click or
+  scroll lands on. A look is a picture of that one window only (the driver's window capture), and
+  one that is bigger than that window at the screen's scale, or of a window that isn't the app's,
+  is thrown away before anyone sees it.
+- **A model on this Mac does the clicking.** A bot never sees the screen. It calls
+  `mac_do(app, step)`; Nollie looks, hands the picture and the window's element rows to a vision
+  model running on this Mac (`ComputerScreenClient`, only ever `http://127.0.0.1` or `[::1]`, no
+  proxy, no redirects), which picks one action at a time as JSON the engine holds it to. Each action
+  goes through every rule and card below, and only one short line (at most 240 characters) goes back
+  to the bot. The add-on passes on words only, and the broker refuses the old single actions that
+  returned pictures. Hermes's own `computer_use`, which sent whole screenshots to the bot's model,
+  is kept switched off for every bot and refused by nollie-workflow (`mac_screen.py`).
+- **Which model.** Nollie uses the engine of its own local model setup (the Models page): the
+  state file `runtimes/llamacpp/server.json` in the Hermes home says where it listens and its key,
+  and `presets.ini` says which models see pictures (a `mmproj` file on disk). Qwen3.6 35B-A3B comes
+  first: a mixture of experts with about 3B active, so each step takes about a second on Apple
+  silicon, and it reads app windows well. Qwen3.8 27B and Flash Next also work. With none,
+  using this Mac stays off and the page offers **Get a model**.
+- **Allow Mac control** (each bot's Computer tab) is now that bot's permission to ask; it no longer
+  turns Hermes's own computer_use on.
+- **Papertrail.** When a task ends, one line goes in the bot's Papertrail: the apps, how many
+  actions and looks, and that no picture left (`POST /api/plugins/nollie-workflow/papertrail/mac-session`).
+
 ## What keeps a bot in check
 
 The boundary between a bot and this Mac is the person, not a check on processes. A bot's own tools
@@ -141,7 +175,8 @@ socket, `~/Library/Application Support/Nollie/Computer/control.sock` (this user 
 4. **Show.** While the task runs, a floating "Using Notes · Stop" panel sits at the top of the
    screen on every Space, the Dock menu has Stop, and Control-Option-Command-Period stops it from any
    app (registered only while a task runs).
-5. **Act.** One action at a time reaches Nollie with the task's secret id. Nollie reads the element
+5. **Act.** A step (`mac_do`) reaches Nollie with the task's secret id, and the model on this Mac
+   turns it into actions, one at a time, up to ten a step. Nollie reads the element
    it lands on from its own last look at the window (never from the bot's description): an element
    token from that look, or a point in that screenshot's pixels. Each look is good for one action.
    Nollie then asks the app itself what is there now (by its own Accessibility permission): a click
@@ -220,9 +255,15 @@ Stop on the iPhone: when a task starts, the Mac sends the iPhone a "Scout starte
 alert with Stop (needs iCloud alerts on, on both, and notification details shown on the iPhone); while
 the iPhone can see the work, Stop sits on its Lock Screen too. Not built yet: a short local activity
 log, x86_64 and a stripped, notarized helper.
-The older System control switch (Hermes's own `computer_use`, which
-starts its own driver and so is charged to Hermes) still exists beside this; while it is on for
-any bot, or a standalone Cua Driver is running, Nollie Computer won't start.
+Hermes's own `computer_use` is kept switched off for every bot that isn't private, and
+nollie-workflow refuses it; while it could still act for any bot, or a standalone Cua Driver is
+running, Nollie Computer won't start. A private bot loads nothing of Nollie's, so its own
+computer_use isn't refused by the add-on.
+
+The model was tried for real on this Mac (`ComputerScreenLiveModelTests`, Qwen3.6 35B-A3B on the
+pinned llama.cpp): whole steps through Nollie's own loop, rules and cards in a throwaway window the
+test draws, with a stand-in for the helper. The helper itself couldn't take part: this Mac hasn't
+given Nollie Accessibility or Screen Recording.
 
 Not done yet: Nollie's own child processes (uv and Python from `NativeDependencyInstaller`) still
 inherit its Accessibility and Screen Recording, because macOS charges them to Nollie. They should be

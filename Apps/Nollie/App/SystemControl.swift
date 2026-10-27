@@ -5,12 +5,12 @@ import NollieCore
 /// Turning System control on didn't work.
 struct SystemControlFailure: Error {}
 
-/// System control: whether a bot may use this Mac's apps and screen (Hermes's computer_use), as one
-/// switch per bot.
+/// System control: whether a bot may ask to use this Mac's apps, as one switch per bot.
 ///
-/// On: the bot may use the screen, and its desktop lease is the agent's. Each screen action is
-/// allowed for the chat it asks in, never always, so a scheduled or unattended run (with no one to
-/// answer) can't drive the Mac. Nothing goes on the bot's always-allowed list.
+/// On: the bot's desktop lease is the agent's, and it may ask Nollie Computer for the apps the
+/// person picked, where a model on this Mac does the clicking. Hermes's own computer_use stays
+/// switched off for every bot either way (it sends whole screenshots to the bot's own model), and
+/// Nollie's add-on refuses it too, so screenshots never leave the Mac.
 /// Off: the bot's desktop lease is a person's (`<home>/bot-desktop/lease.json`, holder "human").
 /// Hermes reads that file before every screen action, captures included, in every process and chat,
 /// and refuses the action before any approval card (tools/bot_desktop/lease.py,
@@ -123,9 +123,20 @@ final class SystemControl {
         spaces[key] = cfg.spaces
         guard let lease = try? await readLease(rt, home) else { return }
         guard !busy.contains(key), writeGeneration[key] == generation, rt.connection.gateway == gateway else { return }
-        states[key] = lease.explicitAgent && !cfg.disabled.contains("computer_use")
+        states[key] = lease.explicitAgent
         source[key] = gateway
+        // Older versions switched Hermes's own computer_use on: it goes off again, once, never for a
+        // private bot (whose settings Nollie doesn't touch). This only ever takes a tool away.
+        if !cfg.disabled.contains("computer_use"), !keptOff.contains(key),
+           !PrivateBots.isPrivate(profile, connection: rt.connection.id), profile.lowercased() != "private" {
+            keptOff.insert(key)
+            let body: [String: JSONValue] = ["agent": .object(["disabled_toolsets": .array((cfg.disabled + ["computer_use"]).map { .string($0) })])]
+            let _: JSONValue? = try? await rt.api.send("PUT", "/api/config", profile: profile, json: ["config": .object(body)])
+        }
     }
+
+    /// Bots whose computer_use was switched off this run, so it is asked for once at most.
+    private var keptOff: Set<Key> = []
 
     /// Whether Hermes's own computer_use could act on this Mac for a bot now, by Hermes's own
     /// rule: the tools aren't switched off and the lease isn't a person's (no lease file is the
@@ -151,9 +162,10 @@ final class SystemControl {
 
     // MARK: Writing
 
-    /// Turns a bot's System control on or off. On: the lease goes to the agent, and computer_use comes
-    /// out of its switched-off tools. Off: the lease goes to a person, which stops the bot's next
-    /// screen action. Either way, screen rules an older version left on the always-allowed list go.
+    /// Turns a bot's System control on or off. On: the lease goes to the agent, so it may ask Nollie
+    /// Computer. Off: the lease goes to a person, which stops the bot's next screen action. Either
+    /// way computer_use stays among its switched-off tools, and screen rules an older version left
+    /// on the always-allowed list go.
     @discardableResult
     func set(_ on: Bool, profile: String, rt: GatewayRuntime) async -> Bool {
         let key = Self.key(profile, rt)
@@ -176,12 +188,13 @@ final class SystemControl {
             var body: [String: JSONValue] = [:]
             let kept = Self.withoutScreenRules(cfg.allow)
             if kept.count != cfg.allow.count { body["command_allowlist"] = .array(kept.map { .string($0) }) }
-            if on, cfg.disabled.contains("computer_use") {
-                body["agent"] = .object(["disabled_toolsets": .array(cfg.disabled.filter { $0 != "computer_use" }.map { .string($0) })])
+            if !cfg.disabled.contains("computer_use") {
+                body["agent"] = .object(["disabled_toolsets": .array((cfg.disabled + ["computer_use"]).map { .string($0) })])
             }
             if !body.isEmpty {
                 let _: JSONValue = try await rt.api.send("PUT", "/api/config", profile: profile, json: ["config": .object(body)])
             }
+            keptOff.insert(key)
             lastError = nil
             readAt[key] = Date()
             return true

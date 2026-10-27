@@ -186,7 +186,7 @@ struct ComputerPeer: Equatable, Sendable {
     var profile: String
 
     /// SHA-256 of Companions/nollie-mac/server.py as Nollie ships it (a test keeps the two in step).
-    static let addOnDigest = "993e56327e569c9dce789b8f74a9ba9da501d65f57b3e3468c74a69fd33ee6a5"
+    static let addOnDigest = "ad74465311de22e3d9914229ed51864961ab06cdb4bcf9a2d3a00a798270d112"
 
     /// The peer of a connected Unix socket, or nil when it isn't the add-on run by Hermes.
     static func of(socket fd: Int32, hermesHome: String = NSHomeDirectory() + "/.hermes") -> ComputerPeer? {

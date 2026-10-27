@@ -106,6 +106,37 @@ import Testing
         #expect(answer(control, a) == "session")
     }
 
+    /// Hermes's own computer_use sends whole screenshots to the bot's model: it stays switched off,
+    /// whichever way the switch goes, and an older version's "on" is taken back once. Never for a
+    /// private bot, whose settings Nollie doesn't touch.
+    @Test func hermesOwnComputerUseStaysOff() async throws {
+        let fixture = ScopeFixture(leases: ["a.invalid": "human"])
+        ScopeStub.use(fixture)
+        defer { ScopeStub.reset() }
+        let a = try runtime("a.invalid")
+        let control = SystemControl()
+        #expect(await control.set(true, profile: "default", rt: a))
+        #expect(fixture.disabledWritten("a.invalid") == [["computer_use"]])
+        #expect(control.isOn("default", a))
+        await control.refresh("default", a)
+        await control.refresh("default", a)
+        // The pretend gateway still reports nothing switched off: already asked this run, so left alone.
+        #expect(fixture.disabledWritten("a.invalid") == [["computer_use"]])
+        #expect(control.isOn("default", a), "the switch is the lease alone")
+        // A bot an older version left with it on: taken back once on the next read. Where the
+        // Private list can't be read (an unsigned simulator has no Keychain), every bot counts as
+        // private and nothing is written.
+        let readable = !PrivateBots.isPrivate("career", connection: a.connection.id)
+        a.profiles.append(ProfileInfo(name: "career", path: "/fixture/a.invalid/career"))
+        await control.refresh("career", a)
+        await control.refresh("career", a)
+        let written = readable ? 2 : 1
+        #expect(fixture.disabledWritten("a.invalid") == Array(repeating: ["computer_use"], count: written))
+        a.profiles.append(ProfileInfo(name: "private", path: "/fixture/a.invalid/private"))
+        await control.refresh("private", a)
+        #expect(fixture.disabledWritten("a.invalid").count == written)
+    }
+
     @Test func aFailedWriteRestoresWhatWasKnownForThatGatewayOnly() async throws {
         let fixture = ScopeFixture(leases: ["a.invalid": "agent", "b.invalid": "agent"])
         ScopeStub.use(fixture)
@@ -131,6 +162,7 @@ private final class ScopeFixture: @unchecked Sendable {
     private var reads: [String: Int] = [:]
     private var uploadsFail: Set<String> = []
     private var holdFirst: Set<String> = []
+    private var disabled: [String: [[String]]] = [:]
     let heldRead = AsyncStream<Void>.makeStream()
 
     init(leases: [String: String]) { self.leases = leases }
@@ -139,6 +171,8 @@ private final class ScopeFixture: @unchecked Sendable {
     func leaseReads(_ host: String) -> Int { lock.withLock { reads[host] ?? 0 } }
     func failUploads(_ host: String) { lock.withLock { _ = uploadsFail.insert(host) } }
     func holdFirstLeaseRead(_ host: String) { lock.withLock { _ = holdFirst.insert(host) } }
+    /// Each switched-off tool list a config write sent.
+    func disabledWritten(_ host: String) -> [[String]] { lock.withLock { disabled[host] ?? [] } }
 
     func waitForHeldRead() async {
         var iterator = heldRead.stream.makeAsyncIterator()
@@ -163,6 +197,9 @@ private final class ScopeFixture: @unchecked Sendable {
             case ("GET", "/api/config"):
                 return .reply(ScopeStub.Reply(200, ["config": ["command_allowlist": [String](), "agent": ["disabled_toolsets": [String]()]]]))
             case ("PUT", "/api/config"):
+                let body = (try? JSONSerialization.jsonObject(with: ScopeStub.body(request))) as? [String: Any]
+                let agent = (body?["config"] as? [String: Any])?["agent"] as? [String: Any]
+                if let tools = agent?["disabled_toolsets"] as? [String] { disabled[host, default: []].append(tools) }
                 return .reply(ScopeStub.Reply(200, [:]))
             case ("POST", "/api/files/upload"):
                 if uploadsFail.contains(host) { return .reply(ScopeStub.Reply(503, [:])) }

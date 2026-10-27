@@ -86,7 +86,8 @@ struct ComputerApprovalCard: View {
                 ComputerAppRow(bundleID: app.bundleID, name: app.name, note: app.viewOnly ? "View only" : nil)
             }
             ForEach(approval.refused, id: \.self) { refused in
-                ComputerAppRow(bundleID: "", name: refused.name, note: "Not allowed", dimmed: true)
+                ComputerAppRow(bundleID: "", name: refused.name,
+                               note: refused.reason == ComputerPickedApps.notPicked(refused.name) ? "Not picked" : "Not allowed", dimmed: true)
                     .help(refused.reason)
             }
         }

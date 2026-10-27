@@ -405,7 +405,7 @@ import LocalAuthentication
 /// ends: another driver with Accessibility could press Nollie's own Allow, and two ways in at once
 /// can't be kept apart. Checked before the card, again after Touch ID, and every second of a task.
 enum ComputerOtherControl {
-    static let systemControlOn = "Mac control is on for %@ in its settings. The person needs to turn it off before a bot can use apps this way."
+    static let systemControlOn = "%@ can still control the Mac outside Nollie. The person can turn Allow Mac control off and on again in its settings to fix that."
     static let otherDriver = "Another computer-control helper is running on this Mac, outside Nollie. The person needs to quit it first."
 
     static let cantList = "Nollie couldn't check the bots' Mac control just now, so it won't start. Try again in a moment."
