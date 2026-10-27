@@ -568,9 +568,16 @@ def papertrail_rest(method: str, base: str, query: dict, payload) -> tuple[int, 
 # new connected app, more questions than usual and a filter that is off) and "work" (a new, paused schedule). Each
 # schedule reads its paused state from the schedules themselves, so Pause in the note shows up here.
 # PUT /api/plugins/nollie-workflow/week/switch turns a seeded app or the web tools off and on again.
-# POST /api/_mock/week {"state": "busy"|"quiet"} empties every bot's week; "reset" restores the switches.
+# POST .../week/remove-app takes a seeded app out for good and keeps it as a change the person made.
+# GET .../mutes and PUT .../mutes/<bot> keep each helper's mute for every device; GET/PUT .../weekly-note the note's
+# switch and day; POST .../weekly-note/live is the Mac saying it sends the note itself.
+# POST /api/_mock/week {"state": "busy"|"quiet"} empties every bot's week; "reset" restores the switches, the removed
+# apps, the mutes and the note's settings.
 WEEK = dict(state="busy")
 WEEK_SWITCHES: dict = {}
+WEEK_REMOVED: list = []
+WEEK_MUTED: set = set()
+WEEK_NOTE = dict(on=True, weekday=1, live_at=None, saved=False)
 WEEK_SEED = dict(
     default=dict(
         replies=dict(stayed=40, left=11, online=10),
@@ -619,14 +626,18 @@ def week_view(bot: str, now: float | None = None) -> dict:
                               created_at=midnight(seeded["created_day"]) + 9 * 3600,
                               paused=job.get("enabled") is False or job.get("state") == "paused", finished=False,
                               runs=runs))
-    apps = [dict(app, on=WEEK_SWITCHES.get((bot, "app", app["name"]), app["on"])) for app in seed["apps"]]
+    removed = {change["name"] for change in WEEK_REMOVED if change["bot"] == bot}
+    apps = [dict(app, on=WEEK_SWITCHES.get((bot, "app", app["name"]), app["on"])) for app in seed["apps"]
+            if app["name"] not in removed]
+    changes = [dict(at=change["at"], kind="app_removed", name=change["name"])
+               for change in reversed(WEEK_REMOVED) if change["bot"] == bot]
     return dict(bot=bot, days=7, now=int(now), since=midnight(6), recording_since=midnight(30), papertrail=True,
                 replies=dict(stayed=0, left=0, online=0) if quiet else seed["replies"], places=places,
                 places_more=0, answers=dict(once=0, session=0, always=0, deny=0) if quiet else seed["answers"],
                 asks={} if quiet else seed["asks"], earlier_answers=seed["earlier_answers"], schedules=schedules,
                 runs_kept=True, schedules_kept=True,
                 board=dict(done=0, stopped=0, failed=0) if quiet else seed["board"], apps=apps,
-                web=dict(on=WEEK_SWITCHES.get((bot, "web", None), True), service="exa"), filter="off")
+                web=dict(on=WEEK_SWITCHES.get((bot, "web", None), True), service="exa"), filter="off", changes=changes)
 
 
 def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
@@ -634,12 +645,20 @@ def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object
         state = payload.get("state", "busy") if isinstance(payload, dict) else None
         if state == "reset":
             WEEK_SWITCHES.clear()
+            WEEK_REMOVED.clear()
+            WEEK_MUTED.clear()
+            WEEK_NOTE.update(on=True, weekday=1, live_at=None, saved=False)
             WEEK["state"] = "busy"
         elif state in ("busy", "quiet"):
             WEEK["state"] = state
         else:
             return refuse(422, "Send a state: busy, quiet or reset.")
         return ok(dict(state=WEEK["state"]))
+    settings = weekly_settings_rest(method, base, query, payload)
+    if settings is not None:
+        return settings
+    if base == "/api/plugins/nollie-workflow/week/remove-app":
+        return week_remove_app(method, query, payload)
     if base not in ("/api/plugins/nollie-workflow/week", "/api/plugins/nollie-workflow/week/switch"):
         return None
     if query.get("profile", "default") != "default":
@@ -662,7 +681,7 @@ def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object
                            replies=dict(stayed=0, left=0, online=0), places=[], places_more=0,
                            answers=dict(once=0, session=0, always=0, deny=0), asks={}, earlier_answers=[], schedules=[],
                            runs_kept=True, schedules_kept=True, board=dict(done=0, stopped=0, failed=0), apps=[],
-                           web=dict(on=True, service=None), filter="off"))
+                           web=dict(on=True, service=None), filter="off", changes=[]))
         return ok(week_view(bot))
     kind, name, on = fields.get("kind"), fields.get("name"), fields.get("on")
     if kind not in ("app", "web") or not isinstance(on, bool) or (kind == "app" and not isinstance(name, str)):
@@ -671,6 +690,81 @@ def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object
         return refuse(404, "This bot has no such app.")
     WEEK_SWITCHES[(bot, kind, name if kind == "app" else None)] = on
     return ok(dict(bot=bot, kind=kind, name=name if kind == "app" else None, on=on))
+
+
+def _week_bot(bot):
+    """None for a bot the weekly routes may name, else the refusal."""
+    if not isinstance(bot, str) or not PRIVATE_PROFILE_NAME.match(bot):
+        return refuse(422, "Send a bot's Hermes profile name.")
+    if private_identity(bot) or set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names():
+        return refuse(403, "The weekly note leaves private bots out.")
+    if bot not in PROFILES and bot not in CREATED_PROFILES:
+        return refuse(404, "No such bot.")
+    return None
+
+
+def week_remove_app(method, query, payload):
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+    if method != "POST":
+        return refuse(405, "Method Not Allowed")
+    fields = payload if isinstance(payload, dict) else {}
+    bot, name = fields.get("bot"), fields.get("name")
+    refused = _week_bot(bot)
+    if refused:
+        return refused
+    if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}", name):
+        return refuse(422, "Send an app's name.")
+    removed = {change["name"] for change in WEEK_REMOVED if change["bot"] == bot}
+    if name in removed or not any(app["name"] == name for app in WEEK_SEED.get(bot, {}).get("apps", [])):
+        return refuse(404, "This bot has no such app.")
+    WEEK_REMOVED.append(dict(bot=bot, name=name, at=int(time.time())))
+    return ok(dict(bot=bot, name=name, removed=True))
+
+
+def _visible_mutes():
+    return sorted(bot for bot in WEEK_MUTED if not private_identity(bot)
+                  and not set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names())
+
+
+def weekly_settings_rest(method, base, query, payload):
+    prefix = "/api/plugins/nollie-workflow/"
+    if not base.startswith(prefix):
+        return None
+    rest = base[len(prefix):]
+    if rest != "mutes" and not rest.startswith("mutes/") and rest not in ("weekly-note", "weekly-note/live"):
+        return None
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+    fields = payload if isinstance(payload, dict) else {}
+    if rest == "mutes":
+        if method != "GET":
+            return refuse(405, "Method Not Allowed")
+        return ok(dict(muted=_visible_mutes(), saved=bool(WEEK_MUTED)))
+    if rest.startswith("mutes/"):
+        if method != "PUT":
+            return refuse(405, "Method Not Allowed")
+        bot = unquote(rest[len("mutes/"):]).strip().lower()
+        refused = _week_bot(bot)
+        if refused:
+            return refused
+        if set(fields) != {"muted"} or type(fields["muted"]) is not bool:
+            return refuse(422, "Send muted true or false.")
+        (WEEK_MUTED.add if fields["muted"] else WEEK_MUTED.discard)(bot)
+        return ok(dict(muted=_visible_mutes(), saved=True))
+    if rest == "weekly-note/live":
+        if method != "POST":
+            return refuse(405, "Method Not Allowed")
+        WEEK_NOTE.update(live_at=int(time.time()), saved=True)
+        return ok(dict(live_at=WEEK_NOTE["live_at"]))
+    if method == "PUT":
+        on, weekday = fields.get("on"), fields.get("weekday")
+        if type(on) is not bool or type(weekday) is not int or not 1 <= weekday <= 7:
+            return refuse(422, "Send on true or false and a weekday from 1 to 7.")
+        WEEK_NOTE.update(on=on, weekday=weekday, saved=True)
+    elif method != "GET":
+        return refuse(405, "Method Not Allowed")
+    return ok(dict(WEEK_NOTE))
 
 
 # Ask first starts on for every demo bot. POST /api/_mock/ask-first resets the choices.

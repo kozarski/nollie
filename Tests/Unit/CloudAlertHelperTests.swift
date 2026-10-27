@@ -247,6 +247,108 @@ struct CloudAlertHelperTests {
         #expect(fixture.cloud.created.count == 1)
     }
 
+    // MARK: Mute and the weekly note
+
+    @Test func aMutedHelpersReplyStaysQuietAndDoesNotArriveOnUnmute() async throws {
+        let fixture = HelperFixture()
+        fixture.source.muted = ["default"]
+        _ = try await fixture.observer().tick(fixture.config)
+        #expect(fixture.cloud.created.isEmpty)
+        #expect(fixture.persistence.journal?.seen.count == 1)
+        #expect(fixture.persistence.journal?.muted == ["default"])
+        // The gateway out of reach: its last word holds.
+        fixture.source.muted = nil
+        fixture.source.page = .init(profile: "default", messages: [
+            .init(role: "assistant", text: "Second", timestamp: fixture.now.timeIntervalSince1970, rowId: 8, finishReason: "stop")])
+        _ = try await fixture.observer().tick(fixture.config)
+        #expect(fixture.cloud.created.isEmpty)
+        fixture.source.muted = []
+        _ = try await fixture.observer().tick(fixture.config)
+        #expect(fixture.cloud.created.isEmpty, "unmuting doesn't send what came while muted")
+        // Something going wrong still comes through.
+        fixture.source.muted = ["default"]
+        fixture.source.page = .init(profile: "default", messages: [
+            .init(role: "error", text: "Failed", timestamp: fixture.now.timeIntervalSince1970, rowId: 9)])
+        _ = try await fixture.observer().tick(fixture.config)
+        #expect(fixture.cloud.created.map(\.kind) == [.needsAttention])
+    }
+
+    private func weeklyFixture() -> HelperFixture {
+        let fixture = HelperFixture()
+        fixture.now = Calendar.current.nextDate(after: fixture.now, matching: DateComponents(hour: 18, minute: 0, second: 20, weekday: 1),
+                                                matchingPolicy: .nextTime)!
+        fixture.source.rows = []
+        fixture.source.page = .init(profile: "default", messages: [])
+        fixture.source.weekly = WeeklyNoteSettings(on: true, weekday: 1)
+        fixture.source.helpers = [.init(profile: "default", name: "Nollie"), .init(profile: "career", name: "Scout"),
+                                  .init(profile: "private", name: "Moss")]
+        let since = fixture.now.timeIntervalSince1970 - 6 * 86_400
+        func week(_ bot: String, board: WeekRecord.Board? = nil, schedules: [WeekRecord.Schedule] = [],
+                  places: [WeekRecord.Place] = []) -> WeekRecord {
+            WeekRecord(bot: bot, since: since, recordingSince: since - 28 * 86_400, places: places, schedules: schedules, board: board)
+        }
+        fixture.source.weeks = [
+            "default": week("default", board: .init(done: 3)),
+            "career": week("career", schedules: [.init(id: "abc", name: "Prices", createdAt: since - 40 * 86_400, runs: .init(done: 2))],
+                           places: [.init(kind: "search", count: 2, firstAt: since - 20 * 86_400, service: "exa")]),
+            "private": week("private", board: .init(done: 9)),
+        ]
+        return fixture
+    }
+
+    @Test func theWeeklyNoteGoesOutOnceWithCountsReadWhenItIsSent() async throws {
+        let fixture = weeklyFixture()
+        _ = try await fixture.observer().tick(fixture.config)
+        let sent = try #require(fixture.cloud.created.first)
+        #expect(fixture.cloud.created.count == 1)
+        #expect(sent.kind == .weeklyNote)
+        #expect(sent.preview?.title == "Your week")
+        let line = try #require(sent.preview?.body)
+        #expect(line.hasSuffix(" did 5 things. 1 place online."), "\(line)")
+        #expect(line.contains("Nollie") && line.contains("Scout") && !line.contains("Moss"))
+        #expect(sent.target?.profile == "default")
+        #expect(sent.target?.sessionID == "new", "a tap opens the main chat, with the note over it")
+        #expect(fixture.source.liveMarks == 1)
+        #expect(fixture.source.weeklyRecorded == 1, "Papertrail keeps that it went to iCloud")
+        // A minute later: the same week, so nothing more; the Mac said it is live a moment ago.
+        fixture.now = fixture.now.addingTimeInterval(60)
+        fixture.source.weeks["default"] = nil
+        _ = try await fixture.observer().tick(fixture.config)
+        #expect(fixture.cloud.created.count == 1)
+        #expect(fixture.source.liveMarks == 1)
+    }
+
+    @Test func theFixedLineGoesWhenTheRecordsCantBeRead() async throws {
+        let fixture = weeklyFixture()
+        fixture.source.weeks["career"] = nil
+        _ = try await fixture.observer().tick(fixture.config)
+        #expect(fixture.cloud.created.first?.preview?.body == WeeklyNote.notificationFallback, "never a count that's short")
+        let unlisted = weeklyFixture()
+        unlisted.source.helpers = nil
+        _ = try await unlisted.observer().tick(unlisted.config)
+        #expect(unlisted.cloud.created.first?.preview?.body == WeeklyNote.notificationFallback)
+    }
+
+    @Test func theWeeklyNoteWaitsForItsDayAndStaysOffWhenTurnedOff() async throws {
+        let off = weeklyFixture()
+        off.source.weekly = WeeklyNoteSettings(on: false, weekday: 1)
+        _ = try await off.observer().tick(off.config)
+        #expect(off.cloud.created.isEmpty)
+        #expect(off.source.weekReads.isEmpty, "nothing is read for a note that isn't going out")
+        let other = weeklyFixture()
+        other.source.weekly = WeeklyNoteSettings(on: true, weekday: 4)
+        _ = try await other.observer().tick(other.config)
+        #expect(other.cloud.created.isEmpty)
+        let late = weeklyFixture()
+        late.now = late.now.addingTimeInterval(13 * 3600)
+        _ = try await late.observer().tick(late.config)
+        #expect(late.cloud.created.isEmpty, "a Mac asleep all night doesn't send last Sunday's note on Monday")
+        let oldAddOn = weeklyFixture()
+        oldAddOn.source.weekly = nil
+        _ = try await oldAddOn.observer().tick(oldAddOn.config)
+        #expect(oldAddOn.cloud.created.isEmpty)
+    }
+
     @Test func restartDoesNotDuplicateAnAlreadyDeliveredOutcome() async throws {
         let fixture = HelperFixture()
         _ = try await fixture.observer().tick(fixture.config)
@@ -539,6 +641,19 @@ private final class HelperFixture {
     func messages(sessionID: String, profile: String) async throws -> CloudAlertObservedMessages {
         messageReads.append(sessionID); afterRead?(); return page
     }
+    var muted: Set<String>?
+    var weekly: WeeklyNoteSettings?
+    var helpers: [WeeklyNoteSending.Helper]?
+    var weeks: [String: WeekRecord] = [:]
+    var weekReads: [String] = []
+    var liveMarks = 0
+    var weeklyRecorded = 0
+    func mutedHelpers() async -> Set<String>? { muted }
+    func weeklySettings() async -> WeeklyNoteSettings? { weekly }
+    func weeklyHelpers() async -> [WeeklyNoteSending.Helper]? { helpers }
+    func week(bot: String) async -> WeekRecord? { weekReads.append(bot); return weeks[bot] }
+    func markWeeklyLive() async -> Bool { liveMarks += 1; return true }
+    func recordWeeklySent() async { weeklyRecorded += 1 }
 }
 
 @MainActor private final class HelperPersistenceProbe: CloudAlertHelperPersistence {

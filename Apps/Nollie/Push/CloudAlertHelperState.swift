@@ -86,6 +86,14 @@ struct CloudAlertHelperJournal: Codable, Sendable {
     var checkpoints: [String: String] = [:]
     var pending: [String: CloudAlertHelperPending] = [:]
     var lastCleanup: Date?
+    /// The helpers muted on every device, as the gateway last said.
+    var muted: [String]? = nil
+    /// The weekly note's switch and day, as the gateway last said.
+    var weekly: WeeklyNoteSettings? = nil
+    /// The note time last sent, so each week's goes out once.
+    var weeklySentFor: Date? = nil
+    /// When this Mac last told the gateway it sends the note itself.
+    var weeklyLiveAt: Date? = nil
 
     mutating func prune(now: Date) {
         seen = seen.filter { now.timeIntervalSince($0.value) < CloudAlertEvent.retention }

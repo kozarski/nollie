@@ -115,6 +115,12 @@ enum LinkDoorPolicy {
         // off or on again. The add-on refuses private bots and never removes anything; the door allows nothing but
         // `?bot=` on the read (see `allowsQuery`).
         Rule(["GET"], "/api/plugins/nollie-workflow/week"), Rule(["PUT"], "/api/plugins/nollie-workflow/week/switch"),
+        // Remove asks first on the phone; the add-on removes through Hermes's own config code and records it.
+        Rule(["POST"], "/api/plugins/nollie-workflow/week/remove-app"),
+        // Each helper's mute and the note's day, the same on every device. Only the Mac's own alert helper says
+        // it sends the note itself (`weekly-note/live`), so a phone never reaches that.
+        Rule(["GET"], "/api/plugins/nollie-workflow/mutes"), Rule(["PUT"], "/api/plugins/nollie-workflow/mutes/*"),
+        Rule(["GET", "PUT"], "/api/plugins/nollie-workflow/weekly-note"),
         // Each bot's character and colour, so a look picked on the phone is the Mac's too. The add-on
         // refuses a private bot's.
         Rule(["GET"], "/api/plugins/nollie-workflow/bot-looks"), Rule(["PUT"], "/api/plugins/nollie-workflow/bot-looks/*"),

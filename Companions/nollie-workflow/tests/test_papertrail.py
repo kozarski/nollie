@@ -315,7 +315,7 @@ class ReaderTests(unittest.TestCase):
             "provider": SUBSCRIPTION, "provider_name": None, "host": None, "model": "claude-sonnet-5-5",
             "calls": 4, "helpers": ["title_generation"], "services": ["exa"], "input_tokens": 18005,
             "output_tokens": 901, "cache_read_tokens": 52000, "reasoning_tokens": 0,
-            "searches": 1, "pages": 3, "images": 0, "icloud_notes": 0, "payments": [], "local_reads": [],
+            "searches": 1, "pages": 3, "images": 0, "icloud_notes": 0, "weekly_notes": 0, "payments": [], "local_reads": [],
             "connections": []})
         self.assertEqual((second["id"], second["route"], second["host"], second["provider"]),
                          ("t-1", "network", "http://192.168.1.9:8000", "custom"))
@@ -366,6 +366,17 @@ class ReaderTests(unittest.TestCase):
         # A model call in the same window still names the entry by where the words went to be answered.
         self.model(NOW - 40, "t-9", i=10)
         self.assertEqual({e["route"] for e in self.read()["entries"]}, {"icloud", "online"})
+
+    def test_the_weekly_note_sent_through_icloud_alerts_is_kept_apart_from_away_notes(self):
+        self.clock.now = NOW - 100
+        self.assertTrue(self.recorder.icloud("weekly"))
+        self.clock.now = NOW
+        self.recorder.flush()
+        lines = [json.loads(line) for line in next(self.home.glob("nollie-workflow/papertrail/*.jsonl")).read_text().splitlines()]
+        self.assertEqual([(l["route"], l["source"], l["tool"], l.get("origin")) for l in lines],
+                         [("icloud", "alert", "weekly", None)])
+        entry = self.read()["entries"][0]
+        self.assertEqual((entry["route"], entry["icloud_notes"], entry["weekly_notes"], entry.get("why")), ("icloud", 0, 1, None))
 
     def test_a_mac_session_keeps_the_apps_and_counts_only(self):
         self.clock.now = NOW - 100
@@ -734,7 +745,7 @@ class PapertrailRouteTests(unittest.TestCase):
         self.assertEqual((body["bot"], body["days"], body["left"]["window"]), ("career", 3, 1))
         self.assertEqual(body["entries"][0]["provider"], "anthropic")
         self.assertEqual(set(body), {"bot", "days", "now", "today_starts_at", "tomorrow_starts_at", "since", "recording_since",
-                                     "stayed", "left", "entries", "more", "mac_sessions"})
+                                     "stayed", "left", "entries", "more", "changes", "mac_sessions"})
         default = self.get()
         self.assertEqual((default.status_code, default.json()["bot"], default.json()["days"]), (200, "default", 7))
 

@@ -16,7 +16,7 @@ spec = importlib.util.spec_from_file_location(NAME, ROOT / "__init__.py", submod
 package = importlib.util.module_from_spec(spec)
 sys.modules[NAME] = package
 spec.loader.exec_module(package)
-from weekly_test_package import private_bots, weekly
+from weekly_test_package import papertrail, private_bots, weekly, weekly_settings
 
 try:
     import fastapi
@@ -240,6 +240,132 @@ class WeeklySwitchTests(unittest.TestCase):
         self.assertEqual(config.saves, 0)
 
 
+class ChangeRecordTests(unittest.TestCase):
+    def setUp(self):
+        temp = TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.home = Path(temp.name)
+
+    def test_a_removed_app_is_a_change_listed_apart_and_never_a_reply(self):
+        recorder = papertrail.Recorder(self.home, clock=lambda: at(1))
+        self.assertTrue(recorder.change("app_removed", "notes"))
+        self.assertFalse(recorder.change("app_added", "notes"))
+        self.assertFalse(recorder.change("app_removed", "../x"))
+        self.assertTrue(recorder.flush())
+        trail = papertrail.read(self.home, "career", 7, now=NOW, provider_name=lambda _: None)
+        self.assertEqual(trail["changes"], [{"at": int(at(1)), "kind": "app_removed", "name": "notes"}])
+        self.assertEqual((trail["stayed"]["window"], trail["left"]["window"]), (0, 0))
+        week = weekly.read(self.home, "career", now=NOW, provider_name=lambda _: None, environ={},
+                           ledger=self.home / "none.db")
+        self.assertEqual([c["name"] for c in week["changes"]], ["notes"])
+        self.assertEqual(week["places"], [])
+
+
+class FakeApps:
+    def __init__(self, config, plugin=False, stays=False):
+        self.config, self.plugin, self.stays, self.removed = config, plugin, stays, []
+
+    def remove(self, name):
+        if self.plugin:
+            raise weekly.FromPlugin(name)
+        servers = self.config.setdefault("mcp_servers", {})
+        if name not in servers:
+            return False
+        self.removed.append(name)
+        if not self.stays:
+            del servers[name]
+        return True
+
+
+class RemoveAppTests(unittest.TestCase):
+    def setUp(self):
+        temp = TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.home = Path(temp.name)
+        self.config_path = self.home / "config.yaml"
+
+    def write(self, config):
+        self.config_path.write_text(json.dumps(config))  # JSON is YAML, so Hermes's reader takes it.
+
+    def test_removing_reads_the_config_again_and_records_the_change(self):
+        hermes = FakeApps({"mcp_servers": {"notes": {"url": "https://mcp.notes.example.com"}}})
+        recorder = papertrail.Recorder(self.home, clock=lambda: NOW - 60)
+        removed = []
+
+        class Removing(FakeApps):
+            pass
+        original = hermes.remove
+
+        def remove(name):
+            done = original(name)
+            self.write(hermes.config)
+            removed.append(name)
+            return done
+        hermes.remove = remove
+        self.write(hermes.config)
+        self.assertTrue(weekly.remove_app(hermes, self.config_path, recorder, "notes"))
+        self.assertEqual(removed, ["notes"])
+        trail = papertrail.read(self.home, "career", 7, now=NOW, provider_name=lambda _: None)
+        self.assertEqual([c["name"] for c in trail["changes"]], ["notes"])
+        self.assertFalse(weekly.remove_app(hermes, self.config_path, recorder, "notes"), "already gone")
+
+    def test_an_app_still_in_the_config_afterwards_is_not_called_removed(self):
+        config = {"mcp_servers": {"notes": {"url": "https://mcp.notes.example.com"}}}
+        self.write(config)
+        recorder = papertrail.Recorder(self.home, clock=lambda: NOW - 60)
+        with self.assertRaises(RuntimeError):
+            weekly.remove_app(FakeApps(config, stays=True), self.config_path, recorder, "notes")
+        recorder.flush()
+        self.assertEqual(papertrail.read(self.home, "career", 7, now=NOW, provider_name=lambda _: None)["changes"], [])
+
+    def test_a_plugins_app_and_a_bad_name_change_nothing(self):
+        with self.assertRaises(weekly.FromPlugin):
+            weekly.remove_app(FakeApps({}, plugin=True), self.config_path, None, "notes")
+        with self.assertRaises(weekly.NoSuchSwitch):
+            weekly.remove_app(FakeApps({}), self.config_path, None, "../x")
+
+
+class WeeklySettingsTests(unittest.TestCase):
+    def setUp(self):
+        temp = TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.home = Path(temp.name)
+
+    def test_defaults_before_anything_is_saved(self):
+        self.assertEqual(weekly_settings.read(self.home), ({"muted": [], "note": {"on": True, "weekday": 1},
+                                                            "live_at": None}, False))
+
+    def test_mute_one_helper_at_a_time_and_unmute(self):
+        weekly_settings.mute(self.home, "career", True)
+        weekly_settings.mute(self.home, "Nowhere", True)
+        self.assertEqual(weekly_settings.read(self.home)[0]["muted"], ["career", "nowhere"])
+        weekly_settings.mute(self.home, "career", False)
+        self.assertEqual(weekly_settings.read(self.home)[0]["muted"], ["nowhere"])
+        for bad in (("../x", True), ("career", "yes")):
+            with self.assertRaises(ValueError):
+                weekly_settings.mute(self.home, *bad)
+
+    def test_private_bots_are_left_out_of_what_is_shown(self):
+        weekly_settings.mute(self.home, "moss", True)
+        weekly_settings.mute(self.home, "career", True)
+        settings, _ = weekly_settings.read(self.home)
+        self.assertEqual(weekly_settings.visible(settings, {"moss"})["muted"], ["career"])
+
+    def test_the_note_day_and_the_macs_word_are_kept(self):
+        weekly_settings.set_note(self.home, False, 6)
+        weekly_settings.mark_live(self.home, now=1234)
+        self.assertEqual(weekly_settings.read(self.home)[0], {"muted": [], "note": {"on": False, "weekday": 6},
+                                                              "live_at": 1234})
+        for bad in ((True, 0), (True, 8), ("on", 1), (True, True)):
+            with self.assertRaises(ValueError):
+                weekly_settings.set_note(self.home, *bad)
+
+    def test_a_damaged_file_is_never_read_as_nobody_muted(self):
+        (self.home / weekly_settings.FILE_NAME).write_text("{damaged")
+        with self.assertRaises(ValueError):
+            weekly_settings.read(self.home)
+
+
 @unittest.skipUnless(fastapi and TestClient, "FastAPI and its test client are available in the Hermes runtime")
 class WeeklyRouteTests(unittest.TestCase):
     PATH = "/api/plugins/nollie-workflow/week"
@@ -324,6 +450,65 @@ class WeeklyRouteTests(unittest.TestCase):
             for body in ({"bot": "career", "kind": "shell", "on": False}, {"bot": "career", "kind": "app", "name": "../x", "on": False}):
                 self.assertEqual(self.client.put(self.PATH + "/switch", json=body).status_code, 422)
             self.assertEqual(self.client.put(self.PATH + "/switch", json={"bot": "moss", "kind": "web", "on": False}).status_code, 403)
+
+    def test_remove_goes_through_hermes_and_is_recorded(self):
+        config = {"mcp_servers": {"notes": {"url": "https://mcp.notes.example.com"}}}
+        (self.bots["career"] / "config.yaml").write_text(json.dumps(config))
+        profiles = []
+
+        def opened(profile):
+            profiles.append(profile)
+            apps = FakeApps(config)
+            original = apps.remove
+
+            def remove(name):
+                done = original(name)
+                (self.bots["career"] / "config.yaml").write_text(json.dumps(config))
+                return done
+            apps.remove = remove
+            return apps
+        with patch.object(self.api._weekly, "HermesApps", opened):
+            response = self.client.post(self.PATH + "/remove-app", json={"bot": "career", "name": "notes"})
+            self.assertEqual(response.json(), {"bot": "career", "name": "notes", "removed": True})
+            self.assertEqual(profiles, ["career"], "Hermes's own scope for that bot")
+            self.assertEqual(self.client.post(self.PATH + "/remove-app", json={"bot": "career", "name": "notes"}).status_code, 404)
+            self.assertEqual(self.client.post(self.PATH + "/remove-app", json={"bot": "moss", "name": "notes"}).status_code, 403)
+            self.assertEqual(self.client.post(self.PATH + "/remove-app", json={"bot": "career", "name": "../x"}).status_code, 422)
+        plugin_error = self.api._weekly.FromPlugin
+
+        class PluginApps:
+            def __init__(self, profile):
+                pass
+
+            def remove(self, name):
+                raise plugin_error(name)
+        with patch.object(self.api._weekly, "HermesApps", PluginApps):
+            self.assertEqual(self.client.post(self.PATH + "/remove-app", json={"bot": "career", "name": "notes"}).status_code, 409)
+        week = self.client.get(self.PATH, params={"bot": "career"}).json()
+        self.assertEqual([c["name"] for c in week["changes"]], ["notes"])
+
+    def test_mutes_and_the_note_are_kept_for_every_device(self):
+        base = "/api/plugins/nollie-workflow"
+        self.assertEqual(self.client.get(base + "/mutes").json(), {"muted": [], "saved": False})
+        response = self.client.put(base + "/mutes/career", json={"muted": True})
+        self.assertEqual((response.status_code, response.json()), (200, {"muted": ["career"], "saved": True}))
+        self.assertEqual(response.headers.get("cache-control"), "no-store")
+        self.assertEqual(self.client.put(base + "/mutes/moss", json={"muted": True}).status_code, 403)
+        self.assertEqual(self.client.put(base + "/mutes/career", json={"muted": "yes"}).status_code, 422)
+        self.assertEqual(self.client.put(base + "/mutes/career", json={"muted": False}).json()["muted"], [])
+        self.assertEqual(self.client.get(base + "/weekly-note").json(),
+                         {"on": True, "weekday": 1, "live_at": None, "saved": True})
+        self.assertEqual(self.client.put(base + "/weekly-note", json={"on": True, "weekday": 6}).json()["weekday"], 6)
+        self.assertEqual(self.client.put(base + "/weekly-note", json={"on": True, "weekday": 9}).status_code, 422)
+        self.assertIsInstance(self.client.post(base + "/weekly-note/live").json()["live_at"], int)
+        # The Mac's alerts helper sent the note through iCloud: Papertrail keeps it, as the person's iCloud.
+        self.assertEqual(self.client.post(base + "/papertrail/icloud", json={"bot": "career", "kind": "weekly"}).json(),
+                         {"recorded": True})
+        self.assertEqual(self.client.post(base + "/papertrail/icloud", json={"bot": "career", "kind": "monthly"}).status_code, 422)
+        places = self.client.get(self.PATH, params={"bot": "career"}).json()["places"]
+        self.assertEqual([place["count"] for place in places if place["kind"] == "icloud"], [1])
+        self.active = "career"
+        self.assertEqual(self.client.get(base + "/mutes").status_code, 403)
 
 
 if __name__ == "__main__":
