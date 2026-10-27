@@ -65,7 +65,8 @@ extension ChatListView {
             LazyVStack(alignment: .leading, spacing: 2) {
                 #if os(iOS)
                 if let reach = model.linkReach {
-                    LinkReachLine(reach: reach, alertsOn: model.cloudAlerts.isEnabled || DemoMode.alertsOn) { model.awayPrompt = true }
+                    LinkReachLine(reach: reach, alertsOn: model.cloudAlerts.isEnabled || DemoMode.alertsOn,
+                                  iCloud: AwayPhone.shared.isOn) { model.awayPrompt = true }
                 }
                 #endif
                 // Someone at home is waiting on a yes.

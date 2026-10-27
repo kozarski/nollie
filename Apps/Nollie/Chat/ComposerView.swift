@@ -273,6 +273,15 @@ struct ComposerView: View {
     }
 
     private func send() async {
+        #if os(iOS)
+        // Away from home, words alone go through iCloud to the Mac.
+        if chat.staged.isEmpty, AwayPhone.shared.carries(AppModel.shared) {
+            let outgoing = QuotedMessage.wrap(text, quoting: quote)
+            (quote, text, focused) = ("", "", true)
+            if let back = await AwayPhone.shared.send(outgoing, in: chat) { text = back }
+            return
+        }
+        #endif
         // Away from home without Tailscale the app says so and keeps what was typed.
         guard !AppModel.shared.awayBlocks() else { return }
         let outgoing = QuotedMessage.wrap(text, quoting: quote)

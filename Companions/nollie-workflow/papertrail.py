@@ -39,9 +39,12 @@ LOCK_WAIT_SECONDS = 2.0
 MAX_WAITING = 5000
 HOOKS = ("post_api_request", "api_request_error", "post_auxiliary_call", "post_tool_call",
          "post_approval_response")
-ROUTES = frozenset({"mac", "network", "online"})
+# "icloud": a note Nollie on the Mac sealed for the person's own linked iPhone and put in their iCloud.
+ROUTES = frozenset({"mac", "network", "online", "icloud"})
 # An "approval" line is a person's answer, kept for the turn's Why. Older readers skip it by its source.
-SOURCES = frozenset({"model", "helper", "tool", "approval"})
+SOURCES = frozenset({"model", "helper", "tool", "approval", "away"})
+# What the Mac app may say it sent through iCloud: kinds of note only, never their words.
+AWAY_KINDS = frozenset({"reply", "card", "helpers", "stopped"})
 ORIGINS = frozenset({"chat", "schedule", "board", "helper"})
 CHOICES = frozenset({"once", "session", "always", "deny"})
 ASK_KINDS = frozenset({"send", "buy", "post", "delete", "unsure"})
@@ -315,6 +318,15 @@ class Recorder:
     def post_approval_response(self, choice="", pattern_key="", pattern_keys=None, session_id="", turn_id="",
                                session_key="", **_):
         self._safely(self._approval, choice, pattern_key, pattern_keys, turn_id, session_id or session_key)
+
+    # Away from home through iCloud. Not a Hermes hook: the Mac app reports it through the add-on.
+
+    def icloud(self, kind, session=""):
+        """One note sealed for the person's linked iPhone and put in their own iCloud. False for an unknown kind."""
+        if kind not in AWAY_KINDS:
+            return False
+        self._safely(lambda: self._line(route="icloud", source="away", tool=kind, session=_id(session), origin="chat"))
+        return True
 
     # Lines.
 
@@ -650,7 +662,7 @@ def _entry(key, group, provider_name, titles=None):
         "id": key[1] if key[0] == "turn" else "w-" + hashlib.sha256(json.dumps(key).encode()).hexdigest()[:16],
         "at": int(max(call["at"] for call in group)),
         "started_at": int(min(call["at"] for call in group)),
-        "route": "online" if went_online else "network",
+        "route": "online" if went_online else "network" if any(call["route"] == "network" for call in left) else "icloud",
         "provider": provider,
         "provider_name": provider_name(provider) if provider else None,
         "host": host_,
@@ -666,6 +678,8 @@ def _entry(key, group, provider_name, titles=None):
         "searches": sum(call["searches"] for call in left),
         "pages": sum(call["pages"] for call in left),
         "images": sum(call["images"] for call in left),
+        # Notes sealed for the person's own iPhone and put in their iCloud, while they were away.
+        "icloud_notes": sum(call["route"] == "icloud" for call in left),
         # Cards filled in and sent to a site: the site and the card's last four digits only.
         "payments": [{"site": call["host"], "card": call["card"] or None} for call in left
                      if call["source"] == "tool" and call["paid"] and call["host"]],

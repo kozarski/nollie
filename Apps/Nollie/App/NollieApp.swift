@@ -99,6 +99,10 @@ struct NollieApp: App {
         for step in follow {
             Task { await step() }
         }
+        #if os(iOS)
+        // Away through iCloud: what the Mac wrote while Nollie was closed.
+        Task { await AwayPhone.shared.refresh(model.runtime); await AwayPhone.shared.collect() }
+        #endif
     }
 
     private func wentToBackground() {

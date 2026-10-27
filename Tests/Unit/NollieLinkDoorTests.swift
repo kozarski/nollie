@@ -1077,6 +1077,69 @@ extension NollieLinkDoorTests {
         #expect(fixture.hermes.requests.isEmpty)
     }
 
+    @Test func theAwayKeySwapIsItsOwnRouteAndThePhoneNeverReachesPapertrailsWriter() {
+        #expect(LinkDoorPolicy.route(method: "POST", path: "/nollie/link/seal", websocket: false) == .seal)
+        for (method, path, socket) in [("GET", "/nollie/link/seal", false), ("PUT", "/nollie/link/seal", false),
+                                       ("POST", "/nollie/link/seal", true), ("POST", "/nollie/link/seal/", false),
+                                       ("POST", "/api/nollie/link/seal", false), ("POST", "/nollie/link/Seal", false)] {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: socket) == .refused, "\(method) \(path)")
+        }
+        // Only the Mac app records what it sent through iCloud.
+        #expect(LinkDoorPolicy.route(method: "POST", path: "/api/plugins/nollie-workflow/papertrail/icloud", websocket: false) == .refused)
+        #expect(LinkDoorPolicy.route(method: "GET", path: "/api/plugins/nollie-workflow/papertrail", websocket: false) == .hermes)
+    }
+
+    @Test(.timeLimit(.minutes(1))) func aLinkedPhoneSwapsAwayKeysAndOnlyPublicKeysPass() async throws {
+        let fixture = try await DoorFixture.start()
+        defer { fixture.stop() }
+        let door = fixture.door
+        let linked = try door.devices.claim(secret: door.devices.makeOffer().secret, name: "Corey's iPhone")
+        try await door.refresh()
+        let port = Int(try #require(door.port))
+        let pin = door.identity.pin
+        let phone = AwayKey()
+        let body = Data(#"{"key":"\#(AwayBase64URL.encode(phone.publicKey))"}"#.utf8)
+
+        let stranger = "POST /nollie/link/seal HTTP/1.1\r\nHost: h\r\nContent-Length: \(body.count)\r\n\r\n" + String(decoding: body, as: UTF8.self)
+        #expect(try await RawTLS.exchange(port: port, pin: pin, send: Data(stranger.utf8)).hasPrefix("HTTP/1.1 401 "))
+
+        let gateway = try GatewayURL.normalize("https://127.0.0.1:\(port)")
+        let owner = UUID()
+        GatewayTrust.shared.register(pin: pin, host: "127.0.0.1", port: port, owner: owner)
+        defer { GatewayTrust.shared.forget(owner: owner) }
+        let api = HermesAPI(gateway: gateway, signer: RequestSigner(authMode: .sessionToken, secrets: .init(sessionToken: linked.credential, linkedDevice: true)))
+
+        // Before the Mac app gave its key, the door says to open Nollie on the Mac.
+        var (reply, http) = try await api.raw("POST", NollieLinkClient.sealPath, body: (body, "application/json"), authenticated: true, answers: [503])
+        #expect(http.statusCode == 503)
+        #expect(door.devices.devices.first?.awayKey == nil)
+
+        let mac = AwayKey()
+        try door.devices.setAwayMacKey(mac.publicKey)
+        (reply, http) = try await api.raw("POST", NollieLinkClient.sealPath, body: (body, "application/json"), authenticated: true)
+        #expect(http.statusCode == 200)
+        let answer = try #require(try JSONSerialization.jsonObject(with: reply) as? [String: String])
+        #expect(answer == ["key": AwayBase64URL.encode(mac.publicKey)])
+        #expect(door.devices.devices.first?.awayKey == phone.publicKey)
+
+        // Both ends now make the same channel.
+        let phoneEnd = try AwayChannel(own: phone, side: .phone, otherPublic: try #require(AwayBase64URL.decode(answer["key"] ?? "")))
+        let macEnd = try AwayChannel(own: mac, side: .mac, otherPublic: try #require(door.devices.devices.first?.awayKey))
+        #expect(phoneEnd.macTag == macEnd.macTag && phoneEnd.phoneTag == macEnd.phoneTag)
+
+        // Odd bodies are refused and change nothing.
+        for bad in [#"{"key":"short"}"#, #"{"key":"\#(AwayBase64URL.encode(phone.publicKey))","extra":1}"#, #"{}"#, "not json"] {
+            (_, http) = try await api.raw("POST", NollieLinkClient.sealPath, body: (Data(bad.utf8), "application/json"), authenticated: true, answers: [400])
+            #expect(http.statusCode == 400, "\(bad)")
+        }
+        #expect(door.devices.devices.first?.awayKey == phone.publicKey)
+
+        // A new Mac key forgets the phones' keys: each swaps again at home.
+        try door.devices.setAwayMacKey(AwayKey().publicKey)
+        #expect(door.devices.devices.first?.awayKey == nil)
+        #expect(fixture.hermes.requests.isEmpty)
+    }
+
     @Test(.timeLimit(.minutes(1))) func takeOverReachesHermesOnlyWithAProfile() async throws {
         let fixture = try await DoorFixture.start()
         defer { fixture.stop() }

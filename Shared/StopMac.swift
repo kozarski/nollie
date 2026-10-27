@@ -6,6 +6,7 @@ enum MacStopWords {
     static let notLinked = "Link Nollie to your Mac first, then Stop will work."
     static let unreachable = "Can't reach your Mac right now. Try at home, or with Tailscale on both."
     static let notSent = "That didn't get through, so nothing was stopped."
+    static let sentThroughICloud = "Sent to your Mac through iCloud. It stops as soon as it hears."
 }
 
 #if os(iOS)

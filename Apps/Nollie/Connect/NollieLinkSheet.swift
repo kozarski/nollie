@@ -32,6 +32,13 @@ enum NollieLinkMacClient {
         return away
     }
 
+    /// Away through iCloud: hands the helper this Mac's away public key, for linked phones to swap.
+    static func giveAwayKey(_ key: Data) async throws {
+        let request = try JSONEncoder().encode(NollieLinkIPCAwayRequest(sealKey: AwayBase64URL.encode(key)))
+        let response = try await send(.linkAway(request))
+        if response.error != nil { throw ManagedRuntimeFailure.invalidResponse }
+    }
+
     private static func send(_ operation: ManagedRuntimeOperation) async throws -> NollieLinkIPCResponse {
         guard NativeSetupPlan.directAvailable, !DemoMode.isOn else { throw ManagedRuntimeFailure.unavailable }
         let response = try NollieLinkIPCResponse.decode(try await ManagedRuntimeRequest.send(operation).data)

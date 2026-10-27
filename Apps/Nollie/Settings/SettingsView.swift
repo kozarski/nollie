@@ -90,7 +90,7 @@ struct SettingsView: View {
         #if os(macOS)
         DemoMode.isOn || NollieLinkMacClient.isAvailable(for: model.runtime?.connection)
         #else
-        model.linkReach != nil
+        AwayFromHomeView.shows(reach: model.linkReach, isMember: model.family.isMember(model))
         #endif
     }
 

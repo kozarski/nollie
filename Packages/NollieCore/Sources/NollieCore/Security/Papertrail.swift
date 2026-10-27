@@ -15,7 +15,7 @@ public struct Papertrail: Decodable, Equatable, Sendable {
         public var id: String
         public var at: Double
         public var startedAt: Double?
-        /// `online` when any part went online, else `network`.
+        /// `online` when any part went online, else `network`, else `icloud` (notes for the person's own iPhone).
         public var route: String?
         public var provider: String?
         public var providerName: String?
@@ -37,6 +37,8 @@ public struct Papertrail: Decodable, Equatable, Sendable {
         public var why: Why?
         /// Cards Nollie filled in and sent to a site in this reply: the site and the last four digits only.
         public var payments: [Payment]?
+        /// Notes sealed for the person's own iPhone and put in their iCloud while they were away.
+        public var icloudNotes: Int?
 
         /// One card sent to a site.
         public struct Payment: Decodable, Equatable, Sendable {
@@ -122,7 +124,8 @@ public struct Papertrail: Decodable, Equatable, Sendable {
     public var leftCount: Int { left?.window ?? 0 }
     /// What went online: everything that left, less the replies that only reached your network.
     /// Rows past the 200 listed are counted as online, since Papertrail errs on the side of saying so.
-    public var onlineCount: Int { max(0, leftCount - (entries ?? []).filter { $0.route == "network" }.count) }
+    /// Entries that went online: not to the home network, and not to the person's own iPhone through iCloud.
+    public var onlineCount: Int { max(0, leftCount - (entries ?? []).filter { $0.route == "network" || $0.route == "icloud" }.count) }
     /// The Mac's next midnight, when Today needs reading again. An older add-on sends only today's.
     public var nextDayStartsAt: Double? { tomorrowStartsAt ?? todayStartsAt.map { $0 + 86_400 } }
 
@@ -159,6 +162,7 @@ public extension Papertrail.Entry {
     /// Where it went, in a few words: "Claude plan", "OpenRouter", "Your network", "Exa".
     var routeLabel: String {
         if route == "network" { return "Your network" }
+        if route == "icloud" { return "Your iCloud" }
         let provider = (provider ?? "").trimmingCharacters(in: .whitespaces).lowercased()
         // A model on your network with a search that went online: the search names the row,
         // not the machine down the hall.
@@ -203,6 +207,7 @@ public extension Papertrail.Entry {
             let card = payment.card.map { spoken ? ", card ending \($0.map(String.init).joined(separator: " "))" : ", card ending \($0)" } ?? ""
             parts.append("paid \(payment.site)\(card)")
         }
+        if let n = icloudNotes, n > 0 { parts.append(Papertrail.count(n, "note to your iPhone", "notes to your iPhone")) }
         if parts.isEmpty, let n = calls, n > 0 { parts.append(Papertrail.count(n, "request", "requests")) }
         let read = AppleDataArea.allCases.filter { localReads?.contains($0.rawValue) ?? false }.map { $0.title.lowercased() }
         if !read.isEmpty {
@@ -245,6 +250,9 @@ public extension Papertrail.Entry {
         let hasModel = !(model ?? "").isEmpty || !(provider ?? "").isEmpty || hostName != nil
         if route == "network" {
             return "\(bot)'s model runs on another computer on your network, so it went there."
+        }
+        if route == "icloud" {
+            return "You were away from home, so it went to your iPhone through your own iCloud, sealed for your devices."
         }
         if hasModel, label != "Web" {
             if backup { return "\(bot)'s main model didn't answer, so its backup, \(label), took over." }

@@ -653,6 +653,75 @@ struct LinkDoorFamilyTests {
     }
 }
 
+// MARK: Away through iCloud is for the owner's own phones
+
+/// Someone a helper is shared with never gets the iCloud away path: the door won't swap keys with
+/// them, their device never holds a key, and the Mac app is never handed one.
+struct LinkDoorFamilyAwayTests {
+    private let key = Data(repeating: 9, count: 32)
+
+    @Test func aMembersDeviceNeverKeepsAnAwayKey() throws {
+        let devices = try LinkDoorDevices(store: LinkDoorMemoryState())
+        try devices.setAwayMacKey(Data(repeating: 1, count: 32))
+        let owner = try devices.claim(secret: devices.makeOffer().secret, name: "Corey's iPhone")
+        let member = try devices.claim(secret: devices.makeOffer(invite: .init(person: "Sam", helpers: ["career-sam"])).secret, name: "Sam's iPhone")
+        #expect(try devices.setAwayKey(key, for: owner.device.id))
+        #expect(try !devices.setAwayKey(key, for: member.device.id))
+        let byID = Dictionary(uniqueKeysWithValues: devices.devices.map { ($0.id, $0) })
+        #expect(byID[owner.device.id]?.shareableAwayKey == key)
+        #expect(byID[member.device.id]?.awayKey == nil && byID[member.device.id]?.shareableAwayKey == nil)
+    }
+
+    @Test func aKeySwappedBeforeBecomingAMemberIsDropped() throws {
+        // A state file where a member somehow holds a key (an earlier build, or a hand edit).
+        let device = LinkDoorDevices.Device(id: UUID(), name: "Sam's iPhone", credentialHash: Data(repeating: 2, count: 32),
+                                            linkedAt: Date(), lastActive: nil, awayKey: key,
+                                            member: .init(person: "Sam", helpers: ["career-sam"]))
+        let store = LinkDoorMemoryState(.init(installTag: "0123456789abcdef", devices: [device], away: false))
+        let devices = try LinkDoorDevices(store: store)
+        #expect(devices.devices.first?.awayKey == nil)
+        #expect(store.current?.devices.first?.awayKey == nil, "and the drop is saved")
+        // Even a member record that kept one in memory hands nothing on.
+        var held = device
+        held.awayKey = key
+        #expect(held.shareableAwayKey == nil)
+    }
+
+    @Test func changingOrRemovingAMemberDropsAnyKey() throws {
+        let device = LinkDoorDevices.Device(id: UUID(), name: "Sam's iPhone", credentialHash: Data(repeating: 3, count: 32),
+                                            linkedAt: Date(), lastActive: nil, member: .init(person: "Sam", helpers: ["career-sam"]))
+        let devices = try LinkDoorDevices(store: LinkDoorMemoryState(.init(installTag: "0123456789abcdef", devices: [device], away: false)))
+        #expect(try devices.updateMember(device.id, small: true))
+        #expect(devices.devices.first?.awayKey == nil)
+        #expect(try devices.remove(device.id))
+        #expect(devices.devices.isEmpty)
+    }
+
+    @Test(.timeLimit(.minutes(1))) func theDoorRefusesTheKeySwapToAMember() async throws {
+        let devices = try LinkDoorDevices(store: LinkDoorMemoryState())
+        let fixture = try await FamilyDoorFixture.start(devices: devices)
+        defer { fixture.stop() }
+        try devices.setAwayMacKey(Data(repeating: 1, count: 32))
+        let member = try devices.claim(secret: devices.makeOffer(invite: .init(person: "Sam", helpers: ["career-sam"])).secret, name: "Sam's iPhone")
+        let owner = try devices.claim(secret: devices.makeOffer().secret, name: "Corey's iPhone")
+        let phone = AwayKey()
+        let body = Data(#"{"key":"\#(AwayBase64URL.encode(phone.publicKey))"}"#.utf8)
+
+        let (_, refused) = try await fixture.api(member.credential).raw("POST", NollieLinkClient.sealPath, body: (body, "application/json"),
+                                                                       authenticated: true, answers: [403])
+        #expect(refused.statusCode == 403)
+        #expect(devices.devices.first { $0.id == member.device.id }?.awayKey == nil)
+        // The door's own answer says no too, whoever calls it.
+        #expect(String(decoding: fixture.door.seal(body, device: member.device.id), as: UTF8.self).hasPrefix("HTTP/1.1 403 "))
+
+        let (_, allowed) = try await fixture.api(owner.credential).raw("POST", NollieLinkClient.sealPath, body: (body, "application/json"),
+                                                                       authenticated: true)
+        #expect(allowed.statusCode == 200)
+        #expect(devices.devices.first { $0.id == owner.device.id }?.shareableAwayKey == phone.publicKey)
+        #expect(fixture.hermes.requests.isEmpty)
+    }
+}
+
 /// A door on loopback in front of a fake Hermes that knows a few helpers, a Private list and two chats.
 struct FamilyDoorFixture {
     let door: LinkDoor

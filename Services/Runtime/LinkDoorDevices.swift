@@ -13,9 +13,14 @@ final class LinkDoorDevices: @unchecked Sendable {
         let credentialHash: Data
         let linkedAt: Date
         var lastActive: Date?
+        /// The phone's away public key (X25519), swapped over this link for iCloud's sealed mailbox.
+        var awayKey: Data?
         /// Someone at home a helper was shared with. Nil for an owner: every device linked before
         /// sharing existed, and every one linked with an ordinary code.
         var member: Member?
+
+        /// The away key the Mac app may use: an owner's phones only. A member's is never handed on.
+        var shareableAwayKey: Data? { member == nil ? awayKey : nil }
     }
 
     /// What a member may reach: the helpers shared with them and the chats they started.
@@ -57,6 +62,8 @@ final class LinkDoorDevices: @unchecked Sendable {
         var away: Bool?
         /// A Tailscale name or address the person typed in, for when Nollie can't find it.
         var awayHost: String?
+        /// The Mac app's away public key, given over XPC. Its private half stays in the app's Keychain.
+        var awayMacKey: Data?
     }
 
     struct Offer: Equatable, Sendable {
@@ -89,6 +96,11 @@ final class LinkDoorDevices: @unchecked Sendable {
         if let saved = try store.load() {
             guard saved.version == 1, Self.validTag(saved.installTag) else { throw LinkDoorStateError.invalid }
             state = saved
+            // A member never has the iCloud away path, even with a key swapped before sharing existed.
+            if saved.devices.contains(where: { $0.member != nil && $0.awayKey != nil }) {
+                for index in state.devices.indices where state.devices[index].member != nil { state.devices[index].awayKey = nil }
+                try? store.save(state)
+            }
             if saved.away == nil {
                 // Decided once: phones linked before this setting keep working where they did.
                 state.away = !saved.devices.isEmpty
@@ -113,6 +125,38 @@ final class LinkDoorDevices: @unchecked Sendable {
             guard next != state else { return }
             try store.save(next)
             state = next
+        }
+    }
+
+    // MARK: Away through iCloud
+
+    var awayMacKey: Data? { locked { state.awayMacKey } }
+
+    /// The Mac app's away public key. A new one means the phones' keys were swapped with the old
+    /// one, so theirs are forgotten and each swaps again at home.
+    func setAwayMacKey(_ key: Data) throws {
+        try locked {
+            guard key.count == 32, state.awayMacKey != key else { return }
+            var next = state
+            next.awayMacKey = key
+            for index in next.devices.indices { next.devices[index].awayKey = nil }
+            try store.save(next)
+            state = next
+        }
+    }
+
+    /// Keeps a linked phone's away public key. False when the device is gone, or is a member's:
+    /// someone a helper is shared with never gets the iCloud away path.
+    func setAwayKey(_ key: Data, for id: UUID) throws -> Bool {
+        try locked {
+            guard key.count == 32, let index = state.devices.firstIndex(where: { $0.id == id }),
+                  state.devices[index].member == nil else { return false }
+            guard state.devices[index].awayKey != key else { return true }
+            var next = state
+            next.devices[index].awayKey = key
+            try store.save(next)
+            state = next
+            return true
         }
     }
 
@@ -230,6 +274,8 @@ final class LinkDoorDevices: @unchecked Sendable {
             if let small { member.small = small }
             var next = state
             next.devices[index].member = member
+            // Defence in depth: a member's device holds no away key, whatever came before.
+            next.devices[index].awayKey = nil
             guard next != state else { return true }
             try store.save(next)
             state = next

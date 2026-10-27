@@ -15,6 +15,9 @@ public struct LinkedMac: Codable, Hashable, Sendable {
     /// whether Tailscale is ready on it ("ready", "stopped" or "missing"). Nil until it says.
     public var away: Bool?
     public var tailscale: String?
+    /// The Mac's away public key, swapped over the door: away from home through iCloud. Nil until
+    /// the first swap, or from a Mac before 1.2.
+    public var awayKey: Data?
     /// Set when this phone joined as someone at home a helper was shared with: the owner's first
     /// name (may be empty). The Mac's door decides what such a phone may reach; this only picks the screen.
     public var sharedBy: String?
@@ -61,6 +64,8 @@ public enum NollieLinkClient {
     public static let hostsPath = "/nollie/link/hosts"
     public static let awayOnPath = "/nollie/link/away/on"
     public static let awayOffPath = "/nollie/link/away/off"
+    /// Away through iCloud: this phone's away key in, the Mac's out.
+    public static let sealPath = "/nollie/link/seal"
 
     // MARK: Pairing
 

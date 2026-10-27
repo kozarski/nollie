@@ -48,6 +48,17 @@ import Testing
         #expect(sparse.stayedCount == 0)
     }
 
+    @Test func notesForTheIPhoneThroughICloudAreNamedAndNotCountedAsOnline() throws {
+        let json = #"{"left": {"today": 2, "window": 2}, "entries": [{"id": "w-1", "at": 1760969000, "route": "icloud", "calls": 2,"#
+            + #" "icloud_notes": 2, "why": {"origin": "chat"}}, {"id": "t-1", "at": 1760968000, "route": "online", "provider": "anthropic"}]}"#
+        let trail = try JSONCoding.decoder.decode(Papertrail.self, from: Data(json.utf8))
+        let note = try #require(trail.entries?.first)
+        #expect(note.routeLabel == "Your iCloud")
+        #expect(note.amountText == "2 notes to your iPhone")
+        #expect(note.why(bot: "Scout").reason.contains("through your own iCloud"))
+        #expect(trail.onlineCount == 1)
+    }
+
     @Test func anEmptyAnswerIsNotPapertrail() throws {
         // An older gateway or the mock answers unknown routes with 200 and nothing in it.
         let empty = try JSONCoding.decoder.decode(Papertrail.self, from: Data("{}".utf8))

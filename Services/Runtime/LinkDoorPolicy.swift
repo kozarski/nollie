@@ -57,11 +57,14 @@ enum LinkDoorPolicy {
         case hosts
         case awayOn
         case awayOff
+        /// Away through iCloud: the phone's away key in, the Mac's out. Answered by the door itself.
+        case seal
     }
 
     static let claimPath = "/nollie/link/claim"
     static let stopPath = "/nollie/stop"
     static let livePath = "/nollie/live"
+    static let sealPath = "/nollie/link/seal"
 
     /// One allowed route: methods and a path pattern, where `*` is one segment that is not a
     /// reserved word and `**` is any further segments (kanban only). Sockets list no methods.
@@ -157,6 +160,7 @@ enum LinkDoorPolicy {
         if path == claimPath { return method == "POST" && !websocket ? .claim : .refused }
         if path == stopPath { return method == "POST" && !websocket ? .stop : .refused }
         if path == livePath { return method == "GET" && websocket ? .live : .refused }
+        if path == sealPath { return method == "POST" && !websocket ? .seal : .refused }
         if let own = awayRoutes[path] { return method == (own == .hosts ? "GET" : "POST") && !websocket ? own : .refused }
         let segments = path.split(separator: "/", omittingEmptySubsequences: false).dropFirst().map { $0 }
         guard !segments.contains(where: \.isEmpty) else { return .refused }

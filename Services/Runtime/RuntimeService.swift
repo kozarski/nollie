@@ -272,7 +272,7 @@ final class RuntimeIPCExport: NSObject, NollieRuntimeIPC {
     func linkAway(request: Data, withReply reply: @escaping @Sendable (Data) -> Void) {
         guard let link else { reply(NollieLinkIPCResponse(error: .unavailable).encoded()); return }
         guard let asked = NollieLinkIPCAwayRequest.decode(request) else { reply(NollieLinkIPCResponse(error: .invalidRequest).encoded()); return }
-        Task { reply(await link.away(on: asked.on, host: asked.host).encoded()) }
+        Task { reply(await link.away(on: asked.on, host: asked.host, sealKey: asked.sealKey).encoded()) }
     }
     func linkFamily(request: Data, withReply reply: @escaping @Sendable (Data) -> Void) {
         guard let link else { reply(NollieLinkIPCResponse(error: .unavailable).encoded()); return }

@@ -65,6 +65,8 @@ public final class GatewayRuntime {
     var awaitingManagedStartup = false
     var managedLifecycleGeneration = UUID()
     @ObservationIgnored var linkRefreshing = false
+    /// Away keys were swapped with the linked Mac during this run.
+    @ObservationIgnored var awayKeysSwapped = false
 
     /// How this phone reaches its linked Mac right now. Nil when it isn't linked to one.
     public var linkReach: NollieLinkReach? {

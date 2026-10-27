@@ -81,6 +81,10 @@ private enum AlertArrivals {
 
     /// A silent push from the cloud relay. True when it brought something new.
     static func silentPush(_ info: [AnyHashable: Any]) async -> Bool {
+        if CloudKitAwayCloud.isAwayPush(info) {
+            await AwayPhone.shared.collect()
+            return true
+        }
         let seen = CloudAlertTransport.inspectPayload(info)
         CloudAlertTransport.shared.recordCallback(.remote, result: seen.result)
         guard let eventID = seen.eventID else { return false }
@@ -90,6 +94,11 @@ private enum AlertArrivals {
     // MARK: Arriving while the app is open
 
     static func presentation(for info: [AnyHashable: Any]) async -> UNNotificationPresentationOptions {
+        // Away through iCloud, with Nollie open: the reply or card goes straight into its chat.
+        if CloudKitAwayCloud.isAwayPush(info) {
+            await AwayPhone.shared.collect()
+            return [.list]
+        }
         let seen = CloudAlertTransport.inspectPayload(info)
         CloudAlertTransport.shared.recordCallback(.foreground, result: seen.result)
 

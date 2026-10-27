@@ -315,7 +315,7 @@ class ReaderTests(unittest.TestCase):
             "provider": SUBSCRIPTION, "provider_name": None, "host": None, "model": "claude-sonnet-5-5",
             "calls": 4, "helpers": ["title_generation"], "services": ["exa"], "input_tokens": 18005,
             "output_tokens": 901, "cache_read_tokens": 52000, "reasoning_tokens": 0,
-            "searches": 1, "pages": 3, "images": 0, "payments": [], "local_reads": []})
+            "searches": 1, "pages": 3, "images": 0, "icloud_notes": 0, "payments": [], "local_reads": []})
         self.assertEqual((second["id"], second["route"], second["host"], second["provider"]),
                          ("t-1", "network", "http://192.168.1.9:8000", "custom"))
 
@@ -348,6 +348,23 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual((entry["route"], entry["provider"], entry["host"], entry["model"]),
                          ("online", None, None, None))
         self.assertEqual((entry["searches"], entry["input_tokens"]), (1, 500))
+
+    def test_notes_sealed_for_the_iphone_show_as_icloud_without_their_words(self):
+        self.clock.now = NOW - 100
+        self.assertTrue(self.recorder.icloud("card"))
+        self.clock.now = NOW - 50
+        self.assertTrue(self.recorder.icloud("reply"))
+        self.assertFalse(self.recorder.icloud("secret-reply"))
+        self.clock.now = NOW
+        self.recorder.flush()
+        lines = [json.loads(line) for line in next(self.home.glob("nollie-workflow/papertrail/*.jsonl")).read_text().splitlines()]
+        self.assertEqual([(l["route"], l["source"], l["tool"]) for l in lines], [("icloud", "away", "card"), ("icloud", "away", "reply")])
+        entry = self.read()["entries"][0]
+        self.assertEqual((entry["route"], entry["icloud_notes"], entry["calls"], entry["provider"]), ("icloud", 2, 2, None))
+        self.assertEqual(entry["why"]["origin"], "chat")
+        # A model call in the same window still names the entry by where the words went to be answered.
+        self.model(NOW - 40, "t-9", i=10)
+        self.assertEqual({e["route"] for e in self.read()["entries"]}, {"icloud", "online"})
 
     def test_calls_without_a_turn_group_by_session_route_and_ten_minutes(self):
         start = TODAY + 3 * 3600
@@ -632,6 +649,21 @@ class PapertrailRouteTests(unittest.TestCase):
         private_bots.save(self.home, ["career"])
         self.assertEqual(self.get(bot="career").status_code, 403)
         self.assertEqual(self.get(bot="moss").status_code, 403, "the carried-over names always count")
+
+    def test_the_mac_app_records_a_note_it_sent_through_icloud(self):
+        path = self.PATH + "/icloud"
+        response = self.client.post(path, json={"bot": "career", "kind": "reply"})
+        self.assertEqual((response.status_code, response.json()), (200, {"recorded": True}))
+        self.assertEqual(response.headers.get("cache-control"), "no-store")
+        entries = self.get(bot="career").json()["entries"]
+        self.assertIn("icloud", {e["route"] for e in entries})
+        for body in ({"bot": "career", "kind": "shell"}, {"bot": "../x", "kind": "reply"}):
+            self.assertEqual(self.client.post(path, json=body).status_code, 422)
+        self.assertEqual(self.client.post(path, json={"bot": "moss", "kind": "reply"}).status_code, 403)
+        # A bot with Papertrail off: nothing is made for it.
+        response = self.client.post(path, json={"bot": "mason", "kind": "card"})
+        self.assertEqual(response.json(), {"recorded": False})
+        self.assertFalse((self.bots["mason"] / "nollie-workflow" / "papertrail").exists())
 
     def test_unknown_bots_and_bots_without_papertrail_get_404(self):
         response = self.get(bot="scout")

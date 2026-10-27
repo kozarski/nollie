@@ -1,4 +1,5 @@
 #if os(macOS)
+import CryptoKit
 import Foundation
 import Network
 import Security
@@ -404,6 +405,37 @@ final class LinkDoor: @unchecked Sendable {
         }
     }
 
+    /// Away through iCloud: keeps the phone's away key and answers with the Mac app's. Only public
+    /// keys pass here; the pin and the device credential make the swap as sure as the link.
+    func seal(_ body: Data, device: UUID) -> Data {
+        guard let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any], Set(object.keys) == ["key"],
+              let text = object["key"] as? String, let key = LinkDoorBase64URL.decode(text), key.count == 32,
+              (try? Curve25519.KeyAgreement.PublicKey(rawRepresentation: key)) != nil else {
+            return LinkDoorHTTP.reply(400, "That key could not be read.")
+        }
+        // Members never reach this (their routes stop in handleMember); refused here as well.
+        guard devices.member(device) == nil else {
+            return LinkDoorHTTP.reply(403, "Shared helpers work at home.")
+        }
+        guard let mac = devices.awayMacKey else {
+            return LinkDoorHTTP.reply(503, "Open Nollie on your Mac, then try again.")
+        }
+        do {
+            guard try devices.setAwayKey(key, for: device) else { return LinkDoorHTTP.reply(401, "This device isn't linked to this Mac.") }
+        } catch {
+            return LinkDoorHTTP.reply(503, "Your Mac couldn't save that. Try again.")
+        }
+        let reply = (try? JSONSerialization.data(withJSONObject: ["key": LinkDoorBase64URL.encode(mac)], options: [.sortedKeys])) ?? Data()
+        var head = LinkDoorHTTP.serializeResponse(status: 200, reason: "OK", headers: [
+            .init(name: "Content-Type", value: "application/json"),
+            .init(name: "Content-Length", value: String(reply.count)),
+            .init(name: "Cache-Control", value: "no-store"),
+            .init(name: "Connection", value: "close"),
+        ])
+        head.append(reply)
+        return head
+    }
+
     fileprivate func claim(_ body: Data) -> Data {
         struct Claim: Decodable { let secret: String; let name: String }
         guard let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
@@ -583,6 +615,17 @@ private final class LinkDoorSession: @unchecked Sendable {
         }
         if route == .live {
             startLive(request, device: device)
+            return
+        }
+        if route == .seal {
+            guard request.contentLength > 0, request.contentLength <= Self.claimBodyLimit else {
+                respond(LinkDoorHTTP.reply(413, "The request was refused."))
+                return
+            }
+            readBody(Data(extra), until: request.contentLength) { [weak self] body in
+                guard let self, let door = self.door else { return }
+                self.respond(door.seal(body, device: device))
+            }
             return
         }
         if route == .hosts || route == .awayOn || route == .awayOff {
