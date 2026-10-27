@@ -4089,6 +4089,18 @@ class Gateway:
         await self.stream_words(s, text)
         await self.settle(s, prompt, [text], text)
 
+    async def _media_marks_turn(self, s, prompt):
+        """MEDIA marks written the ways Hermes itself accepts them: in bold, in code, after a space,
+        and quoted round a name with spaces. Each is a picture or a file, never words."""
+        await self.begin_message(s)
+        text = ("Here is the chart and the report.\n\n**MEDIA:/home/hermes/.hermes/images/disk-week.png**\n"
+                "`MEDIA:/home/hermes/.hermes/images/disk-today.png`\n"
+                "MEDIA: /home/hermes/out/report.pdf\n"
+                'MEDIA:"/home/hermes/out/raw numbers.csv"\n\n'
+                "Both files are from this morning's run.\n")
+        await self.stream_words(s, text)
+        await self.settle(s, prompt, [text], text)
+
     async def _fail_turn(self, s, prompt):
         """The bot's provider requires a CLI that the gateway lacks (a tester's Claude subscription
         plugin), so the gateway can't start the turn."""
@@ -4187,6 +4199,7 @@ class Gateway:
         ("starts", "chart", "_card_turn"),
         ("starts", "marathon", "_marathon_turn"),
         ("starts", "files", "_files_turn"),
+        ("starts", "media marks", "_media_marks_turn"),
         ("starts", "fail", "_fail_turn"),
         ("starts", "backup", "_backup_turn"),
         ("starts", "plan back", "_plan_back_turn"),

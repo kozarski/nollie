@@ -106,4 +106,29 @@ import Testing
         let reply = "All set.\n\nMEDIA:/srv/bot/out/summary.pdf\n\nFigures: [the table](</srv/bot/out/the table.csv>).\n/srv/bot/out/pack.zip\nEnd."
         #expect(MediaScan.textWithoutMedia(reply) == "All set.\n\nFigures: the table.\nEnd.")
     }
+    // MARK: MEDIA marks as the gateway reads them
+
+    @Test func aMediaMarkInCodeBoldQuotesOrAfterASpaceIsStillAPicture() {
+        let reply = """
+        Here you go:
+        `MEDIA:/srv/bot/out/code.png`
+        **MEDIA:/srv/bot/out/bold.png**
+        MEDIA: /srv/bot/out/spaced.png
+        MEDIA:"/srv/bot/out/My Screen Shot.png"
+        _MEDIA:'/srv/bot/out/quoted.jpg'_
+        Done.
+        """
+        #expect(MediaScan.images(in: reply).map(\.name) == ["code.png", "bold.png", "spaced.png", "My Screen Shot.png", "quoted.jpg"])
+        #expect(MediaScan.textWithoutMedia(reply) == "Here you go:\nDone.")
+    }
+
+    @Test func aMediaMarkForAnyFileGivesACardAndOneThatCantBeShownStillLeavesTheWords() {
+        let reply = "Config:\nMEDIA:/srv/bot/Caddyfile\nMEDIA:/srv/bot/out/\nMEDIA:out/relative.png\nThat is all."
+        #expect(MediaScan.files(in: reply).map(\.name) == ["Caddyfile"])
+        #expect(MediaScan.images(in: reply).isEmpty)
+        // Nothing here can be drawn, yet no mark is left among the words.
+        #expect(MediaScan.textWithoutMedia(reply) == "Config:\nThat is all.")
+        #expect(MediaScan.hasMediaMark(reply) && !MediaScan.hasMediaMark("Plain words, MEDIA free."))
+        #expect(MediaScan.textWithoutMedia("Saved under MEDIA: the usual folder.") == "Saved under MEDIA: the usual folder.")
+    }
 }
