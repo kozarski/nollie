@@ -9,10 +9,14 @@ Every carried file is checked against kit.json before it is copied. An add-on th
 current is left alone; an older copy moves to <home>/plugin-backups/<name>-<time> first. The
 page reader gets its own environment from a hash-locked requirements file (wheels only). The
 add-ons are then listed in Hermes's plugins.enabled, with a dated backup of config.yaml. Ask first
-starts once in every non-private bot, then keeps the person's choice. Other disabled add-ons stay
-disabled. Board follow-through starts on the first install only. Workflow's Hermes helpers stay
-inside its plugin folder; this installer never writes Hermes source. Never touches ~/.hermes, private
-bots, chats, schedules or the Board.
+is on in every bot, Private ones too, and stays on: the person's Ask first switch is its own file
+(nollie-workflow/ask-first.json) and covers only what Nollie can't read, so an add-on an older Nollie
+switched off comes back on with that switch off. Every bot's use of this Mac starts off: a bot with
+no desktop lease gets a person's (bot-desktop/lease.json), since Hermes reads no lease as the bot's.
+Other disabled add-ons stay disabled. Board follow-through starts on the first install only.
+Workflow's Hermes helpers stay inside its plugin folder; this installer never writes Hermes source.
+Never touches ~/.hermes, the always-private bots (private, moss), chats, schedules or the Board; a
+Private bot gets only Ask first and the lease, and nothing in it is read but its config.yaml.
 """
 import argparse
 from datetime import datetime
@@ -27,6 +31,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 READER = "nollie-reader"
 WORKFLOW = "nollie-workflow"
@@ -34,6 +39,8 @@ WORKFLOW_INITIALIZED = "ask-first-initialized"
 MARKER = "nollie-lock.sha256"
 RECORDER_ONLY = "recorder-only"
 RECORDER_NOTE = "Papertrail is off in this bot. A copy made with --papertrail-bots turns it on.\n"
+SWITCH = "ask-first.json"
+LEASE_REASON = "System control is off in the Nollie app"
 
 
 class Refused(Exception):
@@ -285,13 +292,15 @@ def workflow_item(source):
 
 
 def workflow_profiles(home, policy, private):
-    profiles = [] if policy.excluded("default", private) else [("default", home)]
+    """Every bot Ask first covers: all of them, Private ones included, but never the always-private names."""
+    always = policy.carried_over_names()
+    profiles = [] if policy.excluded("default", always) else [("default", home)]
     folder = home / "profiles"
     if not unlinked(folder):
         raise Refused("refusing a linked profiles folder")
     if folder.is_dir():
         for path in sorted(folder.iterdir()):
-            if not policy.PROFILE_NAME.fullmatch(path.name) or policy.excluded(path.name, private):
+            if not policy.PROFILE_NAME.fullmatch(path.name) or policy.excluded(path.name, always):
                 continue
             if not unlinked(path):
                 raise Refused("refusing a linked bot folder")
@@ -325,6 +334,42 @@ def mark_workflow_initialized(home):
         handle.write("1\n")
 
 
+def keep_ask_first_on(home, stamp):
+    """An add-on switched off by an older Nollie's Ask first switch comes back on, with the switch itself off:
+    sending, buying, posting and deleting ask whatever it says. Returns the names newly listed. A config that
+    can't be read is left as it is, as Hermes will find it."""
+    config = home / "config.yaml"
+    if not unlinked(config) or not config.is_file():
+        return []
+    switch = home / WORKFLOW / SWITCH
+    if not unlinked(switch):
+        raise Refused("refusing a linked Ask first switch")
+    try:
+        added = enable(home, [WORKFLOW], stamp, required=(WORKFLOW,))
+    except (Refused, ValueError):
+        return []
+    if added and not switch.exists():
+        descriptor = os.open(switch, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(descriptor, "w") as handle:
+            json.dump({"version": 1, "enabled": False}, handle)
+    return added
+
+
+def ensure_human_lease(home):
+    """A bot with no desktop lease gets a person's, so it can't use this Mac until the person turns This Mac on.
+    An existing lease is the person's choice and stays. Returns True when one was written."""
+    folder = home / "bot-desktop"
+    lease = folder / "lease.json"
+    if not unlinked(lease) or os.path.lexists(lease) or (folder.exists() and not folder.is_dir()):
+        return False
+    folder.mkdir(mode=0o700, exist_ok=True)
+    body = {"holder": "human", "viewer_id": "nollie-app", "since": time.time(), "reason": LEASE_REASON, "epoch": 1}
+    descriptor = os.open(lease, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(descriptor, "w") as handle:
+        json.dump(body, handle, sort_keys=True)
+    return True
+
+
 def _ensure_workflow(home, source, stamp, policy, private, profiles=None):
     profiles = workflow_profiles(home, policy, private) if profiles is None else profiles
     item = workflow_item(source)
@@ -336,18 +381,20 @@ def _ensure_workflow(home, source, stamp, policy, private, profiles=None):
             target = profile_home / "plugins" / WORKFLOW
             recorder_only = not target.is_dir() or (target / RECORDER_ONLY).exists()
             copied = install_addon(source.parent, profile_home, item, stamp, recorder_only)
-        added = []
         if not initialized:
             added = enable(profile_home, [WORKFLOW], stamp, required=(WORKFLOW,),
                            create=profile != "default")
             mark_workflow_initialized(profile_home)
-        if added or copied != "current":
+        else:
+            added = keep_ask_first_on(profile_home, stamp)
+        leased = ensure_human_lease(profile_home)
+        if added or copied != "current" or leased:
             changed.append(profile)
     return changed
 
 
 def ensure_workflow(home, stamp=None, *, profiles=None):
-    """Before Hermes starts, cover every managed non-private bot without fetching anything."""
+    """Before Hermes starts, cover every managed bot (never the always-private names) without fetching anything."""
     global TRUSTED
     home = Path(home).absolute()
     TRUSTED = home.parent
