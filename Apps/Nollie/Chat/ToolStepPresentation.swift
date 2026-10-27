@@ -81,6 +81,9 @@ struct ToolStepPresentation: Sendable {
                 }
                 if name.lowercased().hasPrefix("mcp__cua__"), key.hasPrefix("computer_") || key.hasPrefix("space_") {
                     self = .computer
+                } else if key == "todo_list" {
+                    // Hermes' own to-do tool, the one most bots use: named in the person's language.
+                    self = .unknown(String(localized: "Todo list", comment: "A step a bot takes: keeping its to-do list"))
                 } else {
                     let words = leaf.replacingOccurrences(of: "([a-z0-9])([A-Z])", with: "$1 $2", options: .regularExpression)
                         .replacingOccurrences(of: "_", with: " ").replacingOccurrences(of: "-", with: " ")

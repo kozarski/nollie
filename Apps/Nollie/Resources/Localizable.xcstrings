@@ -33,7 +33,7 @@
       }
     },
     "%@ %@" : {
-      "comment" : "A verb, then what it acted on, like Ran df -h\nA weekday, then a time, like Tuesday 5:34 PM",
+      "comment" : "A verb, then what it acted on, like Ran df -h\nA weekday, then a time, like Tuesday 5:34 PM\nThe week's dates, already ending in a full stop, then a short summary",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1145,16 +1145,16 @@
             "value" : "%@ im Ordner von Nollie ist ein Link, deshalb hat Nollie es nicht angerührt."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ dans le dossier de Nollie est un lien, donc Nollie n'y a pas touché."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@ en la carpeta de Nollie es un enlace, así que Nollie no lo ha tocado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ dans le dossier de Nollie est un lien, donc Nollie n'y a pas touché."
           }
         },
         "ja" : {
@@ -1174,16 +1174,16 @@
             "value" : "%@ im Ordner von Nollie wurde nicht von Nollie erstellt, deshalb bleibt es."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ dans le dossier de Nollie n'a pas été créé par Nollie, donc il reste."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@ en la carpeta de Nollie no lo creó Nollie, así que se queda."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ dans le dossier de Nollie n'a pas été créé par Nollie, donc il reste."
           }
         },
         "ja" : {
@@ -4378,16 +4378,16 @@
             "value" : "Der Computer von %@ bleibt."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'ordinateur de %@ reste."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "El ordenador de %@ se queda."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'ordinateur de %@ reste."
           }
         },
         "ja" : {
@@ -4401,28 +4401,28 @@
     "%@'s computer stays. %@" : {
       "comment" : "Safety: Remove Nollie, what stayed; the placeholders are a helper's name and a reason in English; keep exact meaning",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@'s computer stays. %2$@"
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Der Computer von %1$@ bleibt. %2$@"
           }
         },
-        "fr" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'ordinateur de %1$@ reste. %2$@"
+            "state" : "new",
+            "value" : "%1$@'s computer stays. %2$@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "El ordenador de %1$@ se queda. %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'ordinateur de %1$@ reste. %2$@"
           }
         },
         "ja" : {
@@ -9094,16 +9094,16 @@
             "value" : "Einiges konnte nicht erledigt werden"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Certaines choses n'ont pas pu être faites"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Algunas cosas no se han podido hacer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Certaines choses n'ont pas pu être faites"
           }
         },
         "ja" : {
@@ -9123,16 +9123,16 @@
             "value" : "Ein paar Dinge brauchen dich."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Quelques points ont besoin de vous."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Algunas cosas te necesitan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Quelques points ont besoin de vous."
           }
         },
         "ja" : {
@@ -9237,16 +9237,16 @@
             "value" : "Ein Ordner in den Einrichtungen von Nollie, den Nollie nicht erstellt hat, bleibt, wo er ist."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Un dossier dans les configurations de Nollie que Nollie n'a pas créé reste où il est."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Una carpeta de las configuraciones de Nollie que Nollie no creó se queda donde está."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un dossier dans les configurations de Nollie que Nollie n'a pas créé reste où il est."
           }
         },
         "ja" : {
@@ -17507,16 +17507,16 @@
             "value" : "Backups, die du selbst gesichert hast."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les sauvegardes que vous avez faites vous-même."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Las copias de seguridad que guardaste tú."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les sauvegardes que vous avez faites vous-même."
           }
         },
         "ja" : {
@@ -27709,16 +27709,16 @@
             "value" : "%@ konnte nicht gelöscht werden. Du kannst es im Finder löschen."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Impossible de supprimer %@. Vous pouvez le supprimer dans le Finder."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "No se ha podido eliminar %@. Puedes eliminarlo en Finder."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de supprimer %@. Vous pouvez le supprimer dans le Finder."
           }
         },
         "ja" : {
@@ -28019,16 +28019,16 @@
             "value" : "%@ konnte nicht in den Papierkorb gelegt werden. Du kannst es im Finder dorthin ziehen."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Impossible de placer %@ dans la Corbeille. Vous pouvez l'y faire glisser dans le Finder."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "No se ha podido trasladar %@ a la Papelera. Puedes arrastrarlo allí en Finder."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de placer %@ dans la Corbeille. Vous pouvez l'y faire glisser dans le Finder."
           }
         },
         "ja" : {
@@ -28132,16 +28132,16 @@
             "value" : "Nollie Runtime war nicht erreichbar. Es stoppt, sobald es aus den Anmeldeobjekten entfernt ist."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Impossible de joindre Nollie Runtime. Il s'arrête quand il est retiré d'Ouverture."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "No se ha podido conectar con Nollie Runtime. Se detiene cuando se quita de Ítems de inicio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de joindre Nollie Runtime. Il s'arrête quand il est retiré d'Ouverture."
           }
         },
         "ja" : {
@@ -28161,16 +28161,16 @@
             "value" : "iCloud war nicht erreichbar, deshalb bleiben die Hinweise von Nollie dort. Sie laufen innerhalb einer Woche von selbst ab."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Impossible de joindre iCloud, donc les alertes de Nollie y restent. Elles expirent d'elles-mêmes d'ici une semaine."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "No se ha podido conectar con iCloud, así que las alertas de Nollie se quedan allí. Caducan solas en el plazo de una semana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de joindre iCloud, donc les alertes de Nollie y restent. Elles expirent d'elles-mêmes d'ici une semaine."
           }
         },
         "ja" : {
@@ -28359,16 +28359,16 @@
             "value" : "Die Einstellungen deines Hermes konnten nicht gelesen werden, deshalb führen sie die Add-ons von Nollie noch auf."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Impossible de lire les réglages de votre Hermes, ils mentionnent donc encore les modules de Nollie."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "No se han podido leer los ajustes de tu Hermes, así que todavía incluyen los complementos de Nollie."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de lire les réglages de votre Hermes, ils mentionnent donc encore les modules de Nollie."
           }
         },
         "ja" : {
@@ -28752,16 +28752,16 @@
             "value" : "Die Computer deiner Helfer konnten nicht ausgeschaltet werden. Schalte jeden in den Bot-Einstellungen aus."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Impossible d'éteindre les ordinateurs de vos assistants. Éteignez-les un par un dans Réglages du bot."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "No se han podido apagar los ordenadores de tus ayudantes. Apaga cada uno en Ajustes del bot."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible d'éteindre les ordinateurs de vos assistants. Éteignez-les un par un dans Réglages du bot."
           }
         },
         "ja" : {
@@ -28781,16 +28781,16 @@
             "value" : "Die Einstellungen deines Hermes konnten nicht aktualisiert werden, deshalb führen sie die Add-ons von Nollie noch auf."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Impossible de mettre à jour les réglages de votre Hermes, ils mentionnent donc encore les modules de Nollie."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "No se han podido actualizar los ajustes de tu Hermes, así que todavía incluyen los complementos de Nollie."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de mettre à jour les réglages de votre Hermes, ils mentionnent donc encore les modules de Nollie."
           }
         },
         "ja" : {
@@ -29739,16 +29739,16 @@
             "value" : "Cua bleibt im Ordner „Programme“, weil du es selbst installiert hast."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cua reste dans Applications, car vous l'avez installé vous-même."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Cua se queda en Aplicaciones, porque lo instalaste tú."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cua reste dans Applications, car vous l'avez installé vous-même."
           }
         },
         "ja" : {
@@ -29768,16 +29768,16 @@
             "value" : "Der Hintergrundteil von Cua wurde nicht gestoppt. Er stoppt, wenn du dich abmeldest."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La partie en arrière-plan de Cua ne s'est pas arrêtée. Elle s'arrête quand vous fermez votre session."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "La parte en segundo plano de Cua no se ha detenido. Se detiene cuando cierras sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La partie en arrière-plan de Cua ne s'est pas arrêtée. Elle s'arrête quand vous fermez votre session."
           }
         },
         "ja" : {
@@ -30510,16 +30510,16 @@
             "value" : "Hinweise von Nollie in iCloud löschen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer les alertes de Nollie dans iCloud"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminar las alertas de Nollie en iCloud"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supprimer les alertes de Nollie dans iCloud"
           }
         },
         "ja" : {
@@ -30539,16 +30539,16 @@
             "value" : "Chats, Bilder und Einstellungen von Nollie hier löschen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer ici les discussions, images et réglages de Nollie"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminar aquí los chats, imágenes y ajustes de Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supprimer ici les discussions, images et réglages de Nollie"
           }
         },
         "ja" : {
@@ -30568,16 +30568,16 @@
             "value" : "Verbindungen und gespeicherte Anmeldungen von Nollie aus dem Schlüsselbund löschen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer du trousseau les connexions et les connexions enregistrées de Nollie"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminar del llavero las conexiones e inicios de sesión guardados de Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supprimer du trousseau les connexions et les connexions enregistrées de Nollie"
           }
         },
         "ja" : {
@@ -30597,16 +30597,16 @@
             "value" : "Ordner und Einstellungen von Nollie auf diesem Mac löschen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer le dossier et les réglages de Nollie sur ce Mac"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminar la carpeta y los ajustes de Nollie en este Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supprimer le dossier et les réglages de Nollie sur ce Mac"
           }
         },
         "ja" : {
@@ -30712,16 +30712,16 @@
             "value" : "Den Assistenten löschen, den Nollie auf diesem Mac eingerichtet hat"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer l'assistant que Nollie a configuré sur ce Mac"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminar el asistente que Nollie configuró en este Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supprimer l'assistant que Nollie a configuré sur ce Mac"
           }
         },
         "ja" : {
@@ -32409,16 +32409,16 @@
             "value" : "Zieh Nollie aus dem Ordner „Programme“ in den Papierkorb."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Faites glisser Nollie depuis Applications vers la Corbeille."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Arrastra Nollie de Aplicaciones a la Papelera."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Faites glisser Nollie depuis Applications vers la Corbeille."
           }
         },
         "ja" : {
@@ -34023,16 +34023,16 @@
             "value" : "Alles, was Nollie auf diesem Mac eingerichtet hat, ist weg."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tout ce que Nollie a configuré sur ce Mac a disparu."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Todo lo que Nollie configuró en este Mac ha desaparecido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tout ce que Nollie a configuré sur ce Mac a disparu."
           }
         },
         "ja" : {
@@ -34220,16 +34220,16 @@
             "value" : "Alles auf der Liste ist erledigt."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tout ce qui figure sur la liste est fait."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Todo lo de la lista está hecho."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tout ce qui figure sur la liste est fait."
           }
         },
         "ja" : {
@@ -41699,16 +41699,16 @@
             "value" : "Seine Caches, Protokolle und Aufzeichnungen in ~/Library/Application Support/Nollie."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ses caches, journaux et enregistrements, dans ~/Library/Application Support/Nollie."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Sus cachés, registros e historiales, en ~/Library/Application Support/Nollie."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ses caches, journaux et enregistrements, dans ~/Library/Application Support/Nollie."
           }
         },
         "ja" : {
@@ -47841,16 +47841,16 @@
             "value" : "Nollie in den Papierkorb legen und beenden"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Placer Nollie dans la Corbeille et quitter"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Trasladar Nollie a la Papelera y salir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Placer Nollie dans la Corbeille et quitter"
           }
         },
         "ja" : {
@@ -51308,16 +51308,16 @@
             "value" : "Nollie Runtime hat nicht bestätigt, dass dein Assistent gestoppt ist. Er stoppt zusammen mit Nollie Runtime."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nollie Runtime n'a pas confirmé l'arrêt de votre assistant. Il s'arrête avec Nollie Runtime."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollie Runtime no ha confirmado que tu asistente se haya detenido. Se detiene junto con Nollie Runtime."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie Runtime n'a pas confirmé l'arrêt de votre assistant. Il s'arrête avec Nollie Runtime."
           }
         },
         "ja" : {
@@ -51899,16 +51899,16 @@
             "value" : "Nollie hat das Python deines Hermes nicht gefunden, deshalb bleiben die eigenen Computer deiner Helfer eingeschaltet. Schalte jeden in den Bot-Einstellungen aus und entferne dann Nollie."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nollie n'a pas trouvé le Python de votre Hermes, donc les propres ordinateurs de vos assistants restent allumés. Éteignez-les un par un dans Réglages du bot, puis supprimez Nollie."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollie no ha encontrado el Python de tu Hermes, así que los propios ordenadores de tus ayudantes siguen encendidos. Apaga cada uno en Ajustes del bot y luego elimina Nollie."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie n'a pas trouvé le Python de votre Hermes, donc les propres ordinateurs de vos assistants restent allumés. Éteignez-les un par un dans Réglages du bot, puis supprimez Nollie."
           }
         },
         "ja" : {
@@ -51956,16 +51956,16 @@
             "value" : "Nollie konnte sich nicht selbst in den Papierkorb legen. Zieh Nollie aus dem Ordner „Programme“ dorthin."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nollie n'a pas pu se placer dans la Corbeille. Faites glisser Nollie depuis Applications vers la Corbeille."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollie no ha podido trasladarse a la Papelera. Arrastra Nollie allí desde Aplicaciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie n'a pas pu se placer dans la Corbeille. Faites glisser Nollie depuis Applications vers la Corbeille."
           }
         },
         "ja" : {
@@ -52350,16 +52350,16 @@
             "value" : "Nollie ist fast weg"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nollie est presque parti"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollie casi se ha ido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie est presque parti"
           }
         },
         "ja" : {
@@ -52407,16 +52407,16 @@
             "value" : "Nollie ist im Papierkorb"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nollie est dans la Corbeille"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollie está en la Papelera"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie est dans la Corbeille"
           }
         },
         "ja" : {
@@ -52576,16 +52576,16 @@
             "value" : "Nollie hat %@ nicht angerührt, weil Nollie es nicht entfernen darf."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nollie n'a pas touché à %@, car ce n'est pas à Nollie de le supprimer."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollie no ha tocado %@, porque no le corresponde a Nollie eliminarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie n'a pas touché à %@, car ce n'est pas à Nollie de le supprimer."
           }
         },
         "ja" : {
@@ -52970,16 +52970,16 @@
             "value" : "Nollies Daten sind weg"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les données de Nollie ont disparu"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Los datos de Nollie han desaparecido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les données de Nollie ont disparu"
           }
         },
         "ja" : {
@@ -52999,16 +52999,16 @@
             "value" : "Der Ordner von Nollie ist ein Link, deshalb hat Nollie ihn und sein Ziel nicht angerührt."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le dossier de Nollie est un lien, donc Nollie n'a touché ni au lien ni à ce vers quoi il pointe."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "La carpeta de Nollie es un enlace, así que Nollie no ha tocado ni el enlace ni aquello a lo que apunta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le dossier de Nollie est un lien, donc Nollie n'a touché ni au lien ni à ce vers quoi il pointe."
           }
         },
         "ja" : {
@@ -53028,16 +53028,16 @@
             "value" : "Die Einträge von Nollie unter „Datenschutz & Sicherheit“. macOS behält sie. Du kannst sie danach dort entfernen."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les lignes de Nollie dans Confidentialité et sécurité. macOS les conserve ; vous pouvez les y supprimer ensuite."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Las filas de Nollie en Privacidad y seguridad. macOS las conserva; puedes eliminarlas allí después."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les lignes de Nollie dans Confidentialité et sécurité. macOS les conserve ; vous pouvez les y supprimer ensuite."
           }
         },
         "ja" : {
@@ -57425,16 +57425,16 @@
             "value" : "Datenschutz & Sicherheit öffnen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ouvrir Confidentialité et sécurité"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Abrir Privacidad y seguridad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ouvrir Confidentialité et sécurité"
           }
         },
         "ja" : {
@@ -62767,16 +62767,16 @@
             "value" : "Nollie beenden"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Quitter Nollie"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Salir de Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Quitter Nollie"
           }
         },
         "ja" : {
@@ -65209,16 +65209,16 @@
             "value" : "Cua entfernen, das Nollie eingerichtet hat"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer Cua, que Nollie a configuré"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminar Cua, que configuró Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supprimer Cua, que Nollie a configuré"
           }
         },
         "ja" : {
@@ -65267,16 +65267,16 @@
             "value" : "Nollie von diesem Mac entfernen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer Nollie de ce Mac"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminar Nollie de este Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supprimer Nollie de ce Mac"
           }
         },
         "ja" : {
@@ -65325,16 +65325,16 @@
             "value" : "Nollies Daten entfernen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer les données de Nollie"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminar los datos de Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supprimer les données de Nollie"
           }
         },
         "ja" : {
@@ -65383,16 +65383,16 @@
             "value" : "Frühere Einrichtung von Nollie entfernen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Supprimer l'ancienne configuration de Nollie"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminar la configuración anterior de Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supprimer l'ancienne configuration de Nollie"
           }
         },
         "ja" : {
@@ -65695,16 +65695,16 @@
             "value" : "Nollie wird entfernt"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Suppression de Nollie"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminando Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Suppression de Nollie"
           }
         },
         "ja" : {
@@ -65752,16 +65752,16 @@
             "value" : "Frühere Einrichtung wird entfernt"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Suppression de l'ancienne configuration"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Eliminando la configuración anterior"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Suppression de l'ancienne configuration"
           }
         },
         "ja" : {
@@ -76223,16 +76223,16 @@
             "value" : "Einige Keys von Nollie Runtime bleiben im Schlüsselbund."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Certaines clés de Nollie Runtime restent dans le trousseau."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Algunas claves de Nollie Runtime se quedan en el llavero."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Certaines clés de Nollie Runtime restent dans le trousseau."
           }
         },
         "ja" : {
@@ -76252,16 +76252,16 @@
             "value" : "Einige Add-ons von Nollie in deinem Hermes sind Links, deshalb hat Nollie sie nicht angerührt."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Certains modules de Nollie dans votre Hermes sont des liens, donc Nollie n'y a pas touché."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Algunos complementos de Nollie en tu Hermes son enlaces, así que Nollie no los ha tocado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Certains modules de Nollie dans votre Hermes sont des liens, donc Nollie n'y a pas touché."
           }
         },
         "ja" : {
@@ -76281,16 +76281,16 @@
             "value" : "Einige Schlüsselbundeinträge von Nollie bleiben. Du kannst sie in der Schlüsselbundverwaltung löschen."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Certains éléments du trousseau de Nollie restent. Vous pouvez les supprimer dans Trousseaux d'accès."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Algunos ítems del llavero de Nollie se quedan. Puedes eliminarlos en Acceso a Llaveros."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Certains éléments du trousseau de Nollie restent. Vous pouvez les supprimer dans Trousseaux d'accès."
           }
         },
         "ja" : {
@@ -78039,16 +78039,16 @@
             "value" : "Nollie Runtime und Nollie Notifications stoppen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Arrêter Nollie Runtime et Nollie Notifications"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Detener Nollie Runtime y Nollie Notifications"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêter Nollie Runtime et Nollie Notifications"
           }
         },
         "ja" : {
@@ -79725,16 +79725,16 @@
             "value" : "Add-ons von Nollie aus deinem Hermes entfernen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Retirer les modules de Nollie de votre Hermes"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Quitar los complementos de Nollie de tu Hermes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retirer les modules de Nollie de votre Hermes"
           }
         },
         "ja" : {
@@ -83243,16 +83243,16 @@
             "value" : "Die frühere Einrichtung ist weg"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'ancienne configuration a disparu"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "La configuración anterior ha desaparecido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'ancienne configuration a disparu"
           }
         },
         "ja" : {
@@ -87977,16 +87977,16 @@
             "value" : "Dieser Kopie von Nollie fehlt eine Datei, die sie zum Ausschalten der Computer deiner Helfer braucht. Schalte jeden in den Bot-Einstellungen aus."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Il manque à cette copie de Nollie un fichier nécessaire pour éteindre les ordinateurs de vos assistants. Éteignez-les un par un dans Réglages du bot."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "A esta copia de Nollie le falta un archivo que necesita para apagar los ordenadores de tus ayudantes. Apaga cada uno en Ajustes del bot."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Il manque à cette copie de Nollie un fichier nécessaire pour éteindre les ordinateurs de vos assistants. Éteignez-les un par un dans Réglages du bot."
           }
         },
         "ja" : {
@@ -89969,6 +89969,35 @@
         }
       }
     },
+    "Todo list" : {
+      "comment" : "A step a bot takes: keeping its to-do list",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "To-do-Liste"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lista de tareas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Liste de tâches"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ToDoリスト"
+          }
+        }
+      }
+    },
     "Todo list, %lld of %lld done" : {
       "localizations" : {
         "de" : {
@@ -91263,16 +91292,16 @@
             "value" : "Die eigenen Computer deiner Helfer ausschalten und löschen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Éteindre les propres ordinateurs de vos assistants et les supprimer"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Apagar los propios ordenadores de tus ayudantes y eliminarlos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Éteindre les propres ordinateurs de vos assistants et les supprimer"
           }
         },
         "ja" : {
@@ -97032,16 +97061,16 @@
             "value" : "Was entfernt wird"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ce qui est supprimé"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Lo que se elimina"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce qui est supprimé"
           }
         },
         "ja" : {
@@ -97343,16 +97372,16 @@
             "value" : "Was bleibt"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ce qui reste"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Lo que se queda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce qui reste"
           }
         },
         "ja" : {
@@ -98412,16 +98441,16 @@
             "value" : "Mit seinen Chats, seinem Gedächtnis und seinen Einstellungen."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Avec ses discussions, sa mémoire et ses réglages."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Con sus chats, su memoria y sus ajustes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avec ses discussions, sa mémoire et ses réglages."
           }
         },
         "ja" : {
@@ -98469,16 +98498,16 @@
             "value" : "Mit den Computern deiner Helfer und den Einstellungen von Cua."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Avec les ordinateurs de vos assistants et les réglages de Cua."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Con los ordenadores de tus ayudantes y los ajustes de Cua."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avec les ordinateurs de vos assistants et les réglages de Cua."
           }
         },
         "ja" : {
@@ -100684,16 +100713,16 @@
             "value" : "Dein Hermes-Ordner ist ein Link, deshalb hat Nollie seine Add-ons dort gelassen. Du kannst sie in Hermes entfernen."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Votre dossier Hermes est un lien, donc Nollie y a laissé ses modules. Vous pouvez les supprimer dans Hermes."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Tu carpeta de Hermes es un enlace, así que Nollie ha dejado allí sus complementos. Puedes quitarlos en Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre dossier Hermes est un lien, donc Nollie y a laissé ses modules. Vous pouvez les supprimer dans Hermes."
           }
         },
         "ja" : {
@@ -101554,16 +101583,16 @@
             "value" : "Dein Assistent auf diesem Mac wird zuerst gestoppt."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Votre assistant sur ce Mac s'arrête d'abord."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Tu asistente en este Mac se detiene primero."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre assistant sur ce Mac s'arrête d'abord."
           }
         },
         "ja" : {
@@ -101724,16 +101753,16 @@
             "value" : "Deine Bots und Chats auf deinem Hermes."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Vos bots et discussions sur votre Hermes."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Tus bots y chats en tu Hermes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vos bots et discussions sur votre Hermes."
           }
         },
         "ja" : {
@@ -101809,16 +101838,16 @@
             "value" : "Deine Bots, Chats und dein Gedächtnis bleiben. Die Add-ons kommen in den Papierkorb."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Vos bots, discussions et mémoire restent. Les modules vont dans la Corbeille."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Tus bots, chats y memoria se quedan. Los complementos van a la Papelera."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vos bots, discussions et mémoire restent. Les modules vont dans la Corbeille."
           }
         },
         "ja" : {
@@ -102483,16 +102512,16 @@
             "value" : "Der Computer deines Haupthelfers bleibt."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'ordinateur de votre assistant principal reste."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "El ordenador de tu ayudante principal se queda."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'ordinateur de votre assistant principal reste."
           }
         },
         "ja" : {
@@ -102512,16 +102541,16 @@
             "value" : "Der Computer deines Haupthelfers bleibt. %@"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'ordinateur de votre assistant principal reste. %@"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "El ordenador de tu ayudante principal se queda. %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'ordinateur de votre assistant principal reste. %@"
           }
         },
         "ja" : {
@@ -105008,16 +105037,16 @@
             "value" : "macOS hat Nollie Notifications noch nicht aus den Anmeldeobjekten entfernt. Du kannst es unter Anmeldeobjekte ausschalten."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "macOS n'a pas encore retiré Nollie Notifications d'Ouverture. Vous pouvez le désactiver dans Ouverture."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "macOS aún no ha quitado Nollie Notifications de Ítems de inicio. Puedes desactivarlo en Ítems de inicio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "macOS n'a pas encore retiré Nollie Notifications d'Ouverture. Vous pouvez le désactiver dans Ouverture."
           }
         },
         "ja" : {
@@ -105037,16 +105066,16 @@
             "value" : "macOS hat Nollie Runtime noch nicht aus den Anmeldeobjekten entfernt. Du kannst es unter Anmeldeobjekte ausschalten."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "macOS n'a pas encore retiré Nollie Runtime d'Ouverture. Vous pouvez le désactiver dans Ouverture."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "macOS aún no ha quitado Nollie Runtime de Ítems de inicio. Puedes desactivarlo en Ítems de inicio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "macOS n'a pas encore retiré Nollie Runtime d'Ouverture. Vous pouvez le désactiver dans Ouverture."
           }
         },
         "ja" : {
@@ -105066,16 +105095,16 @@
             "value" : "macOS behält ein paar Einträge für Nollie unter „Datenschutz & Sicherheit“. Du kannst sie dort entfernen."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "macOS conserve quelques lignes pour Nollie dans Confidentialité et sécurité. Vous pouvez les y supprimer."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "macOS conserva algunas filas de Nollie en Privacidad y seguridad. Puedes eliminarlas allí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "macOS conserve quelques lignes pour Nollie dans Confidentialité et sécurité. Vous pouvez les y supprimer."
           }
         },
         "ja" : {
