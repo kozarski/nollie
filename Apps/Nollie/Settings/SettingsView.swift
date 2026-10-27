@@ -107,7 +107,8 @@ struct SettingsView: View {
 
     #if DEBUG
     /// For pictures: `-nollie-demo-settings <page>` opens that page (its raw name),
-    /// `left` or `night` the summary pages, and `bot-<tab>` the default bot's settings.
+    /// `left` or `night` the summary pages, `models-advanced` Models › Advanced, and `bot-<tab>`
+    /// the default bot's settings.
     private func openDemoPage() async {
         let words = ProcessInfo.processInfo.arguments
         guard let flag = words.firstIndex(of: "-nollie-demo-settings"), flag + 1 < words.count, path.isEmpty else { return }
@@ -179,6 +180,8 @@ private struct DemoSettingsPage: View {
             NightShiftPage(summary: summary)
         } else if name == "permissions" {
             PermissionsSettingsView().untitledPage()
+        } else if name == "models-advanced" {
+            DemoModelsAdvanced()
         } else if name.hasPrefix("bot-") {
             ProfileCardView(
                 profileName: model.runtime?.defaultProfile ?? "default",
@@ -186,6 +189,19 @@ private struct DemoSettingsPage: View {
         } else {
             LeftYourMacPage(summary: summary)
         }
+    }
+}
+
+/// Models › Advanced on its own, checked against the demo gateway as the Models page would.
+private struct DemoModelsAdvanced: View {
+    @Environment(AppModel.self) private var model
+    @State private var check = ModelCheck()
+    @State private var download = LocalModelDownload()
+
+    var body: some View {
+        ModelsAdvancedView(check: check, download: download, refresh: {})
+            .untitledPage()
+            .task { await check.refresh(model, identity: { "demo" }) }
     }
 }
 #endif

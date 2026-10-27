@@ -366,6 +366,23 @@ private struct ModelChoiceRow: View {
     }
 }
 
+/// Whether the assistant's API keys are in this Mac's Keychain: only for the assistant Nollie runs
+/// here, and only when its helper found none left in a file at its last start.
+enum ManagedKeysPlace {
+    @MainActor static func inKeychain(_ runtime: GatewayRuntime?) async -> Bool {
+        #if os(macOS) && NOLLIE_DIRECT
+        #if DEBUG
+        if DemoMode.isOn { return DemoMode.keys == "keychain" }
+        #endif
+        guard let installation = runtime?.connection.managedInstallationID,
+              let status = try? await ManagedRuntimeClient.readStatus() else { return false }
+        return status.snapshot.installationID == installation && status.snapshot.keysLeftInFiles == 0
+        #else
+        return false
+        #endif
+    }
+}
+
 /// Models › Advanced: the model in use and where it runs at the top, then the other ways to choose,
 /// the download's own extras, and the computer it runs on.
 struct ModelsAdvancedView: View {
@@ -375,6 +392,7 @@ struct ModelsAdvancedView: View {
     var refresh: () -> Void
     @Environment(AppModel.self) private var model
     @AppStorage(ModelPreferenceStore.key) private var savedMode = ModelSetupMode.local.rawValue
+    @State private var keysInKeychain = false
 
     private var mode: ModelSetupMode { ModelSetupMode(rawValue: savedMode) ?? .local }
     private var runtime: GatewayRuntime? { model.runtime }
@@ -393,9 +411,11 @@ struct ModelsAdvancedView: View {
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     PageHeading("Use an API key")
-                    PageNote("Add a key in Hermes \(ModelPlace.hereInSentence). Nollie uses whichever key your assistant has.",
-                             symbol: "key.fill")
+                    PageNote(keysInKeychain ? "Add a key in Hermes \(ModelPlace.hereInSentence). Nollie moves it to your Keychain."
+                                            : "Add a key in Hermes \(ModelPlace.hereInSentence). Nollie uses whichever key your assistant has.",
+                             symbol: "key.fill", id: "models.keys")
                 }
+                .task(id: runtime?.connection.id) { keysInKeychain = await ManagedKeysPlace.inKeychain(runtime) }
             }
             currentModel
             downloaded
