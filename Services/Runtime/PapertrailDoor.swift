@@ -44,9 +44,12 @@ final class PapertrailDoor: @unchecked Sendable {
     private var sessions: [ObjectIdentifier: PapertrailDoorSession] = [:]
     private var tally = Counts()
     private var sweep: DispatchSourceTimer?
+    /// Starts as the configuration says; the network filter's switch can change it while Hermes runs.
+    private var refusing: Bool
 
     init(configuration: Configuration = .init(), book: PapertrailDoorBook?, secret: String = PapertrailDoor.newSecret()) {
         self.configuration = configuration
+        self.refusing = configuration.refuseUnplaced
         self.book = book
         self.secret = secret
     }
@@ -60,6 +63,10 @@ final class PapertrailDoor: @unchecked Sendable {
     }
 
     var port: UInt16? { queue.sync { listeningPort } }
+    var refusesUnplaced: Bool { queue.sync { refusing } }
+
+    /// With the network filter refusing, programs the door can't place with a bot are refused too.
+    func setRefuseUnplaced(_ refuse: Bool) { queue.sync { refusing = refuse } }
     var counts: Counts { queue.sync { var counts = tally; counts.open = sessions.count; return counts } }
 
     /// The proxy address for one label, as Hermes's environment carries it.
@@ -177,6 +184,8 @@ final class PapertrailDoor: @unchecked Sendable {
     fileprivate func countMalformed() { tally.malformed += 1 }
     fileprivate func countRefusedSecret() { tally.refusedSecret += 1 }
     fileprivate func countRefusedUnplaced() { tally.refusedUnplaced += 1 }
+    /// On the door's queue, where sessions run.
+    fileprivate var refusingNow: Bool { refusing }
     fileprivate func countUpstream(_ ok: Bool) { if ok { tally.passed += 1 } else { tally.upstreamFailures += 1 } }
 
     /// The label behind a request, when its secret is this run's. Constant time over the secret.
@@ -325,7 +334,7 @@ private final class PapertrailDoorSession: @unchecked Sendable {
                 answer(PapertrailDoorRequest.refusal(407))
                 return
             }
-            if label.bot.isEmpty, door.configuration.refuseUnplaced {
+            if label.bot.isEmpty, door.refusingNow {
                 door.countRefusedUnplaced()
                 answer(PapertrailDoorRequest.refusal(403))
                 return

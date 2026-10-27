@@ -181,6 +181,10 @@ struct LeftYourMacPage: View {
                     }
                 }
             }
+            #if os(macOS) && NOLLIE_DIRECT
+            // Papertrail's network filter: on, nothing leaves around Nollie's door.
+            PapertrailFilterToggle()
+            #endif
         }
         .untitledPage()
     }

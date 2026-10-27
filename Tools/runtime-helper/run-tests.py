@@ -55,14 +55,14 @@ with (OUTPUT / "entry-tests.log").open("w") as log:
     subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", str(ROOT / "Tools/runtime-helper"), "-p", "test_*.py"],
                    stdout=log, stderr=subprocess.STDOUT, check=True)
 results["entrypoint"] = "passed"
-# Papertrail's network filter has no target until the developer portal has its capability: it is typechecked here.
+# Papertrail's network filter, typechecked on its own as well as built by the NollieNetworkFilter target.
 with (OUTPUT / "network-filter-typecheck.log").open("w") as log:
     subprocess.run(["xcrun", "swiftc", "-swift-version", "6", "-D", "NOLLIE_DIRECT", "-D", "NOLLIE_NETWORK_FILTER",
                     "-parse-as-library", "-typecheck", "Services/NetworkFilter/PapertrailFilterProvider.swift",
                     "Services/NetworkFilter/NetworkFilterPolicy.swift", "Services/NetworkFilter/NetworkFilterXPC.swift",
                     "Services/Runtime/PapertrailDoorBook.swift", "Services/Runtime/ExitRelayWire.swift",
                     "Services/Runtime/LinkDoorHTTP.swift"], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)
-results["network_filter"] = "typechecked (no target yet)"
+results["network_filter"] = "typechecked (the NollieNetworkFilter target builds it)"
 results["helper_entrypoints"] = "Direct and Store typechecks passed"
 results["scope"] = "Swift lifecycle fixtures and temporary Python stub modules only. No Hermes service launched or registered."
 (OUTPUT / "validation.json").write_text(json.dumps(results, indent=2) + "\n")

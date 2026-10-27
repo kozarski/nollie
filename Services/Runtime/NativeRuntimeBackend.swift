@@ -22,6 +22,8 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
     private var door: PapertrailDoor?
     /// Papertrail's network filter link, while Hermes runs and the switch is on.
     private var filter: RuntimeNetworkFilter?
+    /// Rereads the filter's switch while Hermes runs, so turning it on or off needs no restart.
+    private var switchWatch: Task<Void, Never>?
 
     private struct ChildProcess {
         let handle: Contract.Child
@@ -282,6 +284,8 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         preparation = UUID()
         for child in children.values.map(\.handle) { await stop(child) }
         guard children.isEmpty else { return }
+        switchWatch?.cancel()
+        switchWatch = nil
         filter?.stop()
         filter = nil
         door?.stop()
@@ -303,12 +307,32 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         let made = PapertrailDoor(configuration: configuration, book: book)
         guard let port = try? await made.start() else { made.stop(); door = nil; return nil }
         door = made
-        if state.on {
-            let link = RuntimeNetworkFilter(book: book, switch: state)
-            link.start()
-            filter = link
+        apply(state, book: book)
+        switchWatch?.cancel()
+        switchWatch = Task { [weak self] in
+            var seen = state
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                let now = RuntimeNetworkFilter.readSwitch(directory: NolliePaths.current.runtimeService)
+                if now != seen, !Task.isCancelled { seen = now; await self?.apply(now, book: book) }
+            }
         }
         return Contract.Door(port: port, secret: made.secret)
+    }
+
+    /// The filter's switch as it is now: the door refuses unplaced programs when Refuse is on, and the
+    /// filter link runs while On is.
+    private func apply(_ state: NetworkFilterPolicy.Switch, book: PapertrailDoorBook) {
+        door?.setRefuseUnplaced(state.refuse)
+        if filter?.state != state {
+            filter?.stop()
+            filter = nil
+            if state.on {
+                let link = RuntimeNetworkFilter(book: book, switch: state)
+                link.start()
+                filter = link
+            }
+        }
     }
 }
 

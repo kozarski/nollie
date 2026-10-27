@@ -238,6 +238,11 @@ struct PapertrailDoorTests {
         #expect(try await DoorClient.exchange(port, Data(placed.utf8), until: "HTTP/1.1 200 Connection established\r\n\r\nhi").hasSuffix("hi"))
         #expect(upstream.connections == 1)
         #expect(door.counts.refusedUnplaced == 1)
+        // The switch turned off while Hermes runs: unplaced programs pass again, still without a line.
+        door.setRefuseUnplaced(false)
+        #expect(!door.refusesUnplaced)
+        let again = "CONNECT 127.0.0.1:\(upstream.port) HTTP/1.1\r\nProxy-Authorization: \(basic("unplaced.program", door.secret))\r\n\r\nok"
+        #expect(try await DoorClient.exchange(port, Data(again.utf8), until: "HTTP/1.1 200 Connection established\r\n\r\nok").hasSuffix("ok"))
     }
 
     @Test func malformedRequestsAreAnsweredAndClosed() async throws {

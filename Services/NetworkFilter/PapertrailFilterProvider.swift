@@ -10,8 +10,8 @@ import Security
 /// Hermes's process tree that did not go to loopback (so did not come through Papertrail's door), and drops
 /// it when Refuse is on. Every other flow is allowed without a look at its bytes; none is ever read.
 ///
-/// Built only with `NOLLIE_NETWORK_FILTER`, in a target that has the Network Extensions capability
-/// (content filter, system extension). See Docs/specs/network-filter.md.
+/// Built by the `NollieNetworkFilter` target (`NOLLIE_NETWORK_FILTER`), embedded only once the portal has the
+/// Network Extensions capability and `NOLLIE_NETWORK_FILTER_READY` is YES. See Docs/specs/network-filter.md.
 final class PapertrailFilterProvider: NEFilterDataProvider {
     private let reports = NetworkFilterReporter()
 

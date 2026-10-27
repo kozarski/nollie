@@ -2,8 +2,8 @@
 
 [← Papertrail](papertrail.md)
 
-Status: built and tested as code, **off and not shipped** (27 Oct 2026). It needs the Network Extensions capability,
-which only Corey can add in the developer portal. Until then the filter has no Xcode target and nothing installs it.
+Status: built, embedded behind one project switch, and **off** (27 Oct 2026). The only step left is Corey's in the
+developer portal, then flipping `NOLLIE_NETWORK_FILTER_READY` to `YES`.
 
 ## Why
 
@@ -17,21 +17,48 @@ Papertrail, and, with Refuse on, drops them.
 
 | File | What it does | Compiled in |
 | :--- | :--- | :--- |
-| `Services/NetworkFilter/NetworkFilterPolicy.swift` | The rules: the switch, the verdict, loopback, reading `KERN_PROCARGS2`, the bot from a process's door label, the report | Nollie Runtime, NollieMacTests |
-| `Services/NetworkFilter/NetworkFilterXPC.swift` | The Mach service protocol both sides speak, and the code-signing requirements each side demands of the other | Nollie Runtime, NollieMacTests |
-| `Services/NetworkFilter/PapertrailFilterProvider.swift` | The `NEFilterDataProvider`, the process tree walk, the Mach service that sends reports | No target yet; typechecked by `Tools/runtime-helper/run-tests.py` |
-| `Services/NetworkFilter/Info.plist`, `NollieNetworkFilter.entitlements` | The future target's bundle and entitlements | No target yet |
+| `Services/NetworkFilter/NetworkFilterPolicy.swift` | The rules: the switch, the verdict, loopback, reading `KERN_PROCARGS2`, the bot from a process's door label, the report | Nollie Runtime, the filter, NollieMacTests |
+| `Services/NetworkFilter/NetworkFilterXPC.swift` | The Mach service protocol both sides speak, and the code-signing requirements each side demands of the other | Nollie Runtime, the filter, NollieMacTests |
+| `Services/NetworkFilter/PapertrailFilterProvider.swift` | The `NEFilterDataProvider`, the process tree walk, the Mach service that sends reports | Target `NollieNetworkFilter` |
+| `Services/NetworkFilter/Info.plist`, `NollieNetworkFilter.entitlements` | The extension's bundle and its entitlements | Target `NollieNetworkFilter` |
 | `Services/Runtime/RuntimeNetworkFilter.swift` | Nollie Runtime's side: subscribes while Hermes runs and the switch is on, writes each report as a `direct` line | Nollie Runtime |
+| `Tools/network-filter/embed-network-filter.sh` | Puts the extension in `Contents/Library/SystemExtensions` of the Direct app, only when the project switch is `YES` | NollieMac's "Embed Network Filter" phase |
+| `Apps/Mac/PapertrailFilterSwitch.swift` | The switch on Settings › What left your Mac, the install and approval flow, the switch file | NollieMac, Direct configurations only |
+| `Apps/Mac/NollieMacDirectFilter.entitlements` | The Direct app's entitlements plus `system-extension.install` and the content filter | Used only when the project switch is `YES` |
 
-**The switch.** `~/Library/Application Support/Nollie/RuntimeService/network-filter.json`:
-`{"version": 1, "on": true, "refuse": false}`. Missing, unreadable or any other version is off; Refuse means nothing
-without On. Nollie Runtime reads it at each Hermes start. Nothing in the app writes it yet.
+**The target.** `NollieNetworkFilter` (macOS system extension, bundle id `com.coreykozarski.nollie.network-filter`,
+product `com.coreykozarski.nollie.network-filter.systemextension`, links `libbsm`). NollieMac depends on it in every
+configuration, the way it depends on Nollie Runtime, but only the Direct configurations can embed it, and the embed
+script fails a client (store) build that somehow carries one. In Debug and Release (store) it is always signed ad hoc
+and never leaves the build folder.
+
+**The project switch.** `NOLLIE_NETWORK_FILTER_READY` in the project's DirectDebug and DirectRelease settings, `NO`
+today. While `NO`: the extension is signed ad hoc (no profile is asked for, nothing in the portal changes), it is not
+embedded, and the Direct app keeps its usual entitlements (`NollieMacDirect.entitlements`). At `YES`: the extension is
+signed automatically with `NollieNetworkFilter.entitlements`, embedded, and the app signs with
+`NollieMacDirectFilter.entitlements`. Unsigned builds (`CODE_SIGNING_ALLOWED=NO`) build either way.
+
+**The switch people see.** One toggle, "Stop what Papertrail can't see", on Settings › What left your Mac, Direct
+edition only. Off until the extension is approved, and disabled with "Not in this version of Nollie yet." while this
+copy of Nollie doesn't carry it. Turning it on:
+
+1. asks macOS to install the extension (`OSSystemExtensionRequest`). macOS shows its own notice; the page says
+   "Allow Nollie Papertrail in System Settings › Login Items & Extensions." with an Open System Settings button;
+2. once installed, turns the filter on (`NEFilterManager`, sockets only). macOS asks "Allow" or "Don't Allow"; the
+   page says "Choose Allow when your Mac asks about filtering.";
+3. once allowed, writes `RuntimeService/network-filter.json` as `{"version": 1, "on": true, "refuse": true}`.
+
+On always means Refuse (Corey, 27 Oct): with it on, nothing Hermes starts leaves without a line. Nollie Runtime rereads
+the file every 5 seconds while Hermes runs, so it applies without a restart: the door starts refusing programs it
+can't place with a bot, and the filter link subscribes. Turning it off writes `on: false` and turns the filter off;
+the extension stays installed. Saying Don't Allow leaves everything off. Nollie never answers a macOS prompt for the
+person. The demo copy never asks macOS for anything; `-nollie-demo-filter on|waiting|asking` shows a state for pictures.
 
 **How a flow is judged.** The filter takes the flow's audit token, walks the process's parents (at most 32) by
 `sysctl`, and checks each against Nollie Runtime's signature (identifier `com.coreykozarski.nollie.runtime`, team
 `5985LRZFZS`). A flow from a process below Nollie Runtime, to anywhere but loopback, went around the door. Nollie
 Runtime's own flows (the door's upstream connections among them) are not below it, so they pass. With nobody
-subscribed the filter allows everything without a look: turning Nollie off turns it off.
+subscribed the filter allows everything without a look.
 
 **Whose it was.** The process's start-time environment (`KERN_PROCARGS2`) carries its door label in its proxy
 variables; the nearest labelled parent's is used when its own has none. No label, no line (it is counted).
@@ -40,34 +67,24 @@ variables; the nearest labelled parent's is used when its own has none. No label
 knows it, else the address), port, `tcp` or `udp`, the bot, and whether it was refused. Never an argument, a path
 beyond the file name, or a byte. A refused flow never left, so it is counted, not written.
 
-**With Refuse on**, the door also turns away programs it cannot place with a bot (403), so nothing Hermes starts
-leaves without a line.
+## What Corey needs to do
 
-## What Corey needs to do in the developer portal
+In the developer portal (Certificates, Identifiers & Profiles):
 
-1. Certificates, Identifiers & Profiles › Identifiers › `com.coreykozarski.nollie` (the Direct app): turn on
-   **Network Extensions** and **System Extension**.
+1. Identifiers › `com.coreykozarski.nollie`: turn on **Network Extensions** and **System Extension**.
 2. Register a new App ID, `com.coreykozarski.nollie.network-filter`, with **Network Extensions** on.
-3. Make two **Developer ID** provisioning profiles, one for each App ID above (Network Extension entitlements in a
-   Developer ID build need explicit profiles), and install them.
-4. The app group `5985LRZFZS.com.coreykozarski.nollie.network-filter` is team-prefixed, so macOS needs no
-   registration for it; if the portal asks, register it and add it to the extension's App ID.
+3. Make a **Developer ID** provisioning profile for each of those two App IDs (for `direct-release.sh`), and install
+   them. Development builds can let Xcode make development profiles once 1 and 2 are done.
 
-Then, in the project (a lead or helper can do this once the profiles exist):
+Then in the project:
 
-5. Add a target, macOS › System Extension › Network Extension, named `NollieNetworkFilter`, bundle id
-   `com.coreykozarski.nollie.network-filter`, Info.plist and entitlements from `Services/NetworkFilter/`, sources
-   `PapertrailFilterProvider.swift`, `NetworkFilterPolicy.swift`, `NetworkFilterXPC.swift`,
-   `PapertrailDoorBook.swift`, `ExitRelayWire.swift`, `LinkDoorHTTP.swift`, with `NOLLIE_DIRECT NOLLIE_NETWORK_FILTER`
-   in its Swift conditions. Embed it in NollieMacDirect only, in `Contents/Library/SystemExtensions`.
-6. Give NollieMacDirect `com.apple.developer.system-extension.install` and
-   `com.apple.developer.networking.networkextension` = `content-filter-provider-systemextension`.
-7. Build the app side, still to do: a Papertrail switch (Direct edition, off by default) that asks to install the
-   extension (`OSSystemExtensionRequest`), turns the filter on (`NEFilterManager`, `filterSockets` on), writes the
-   switch file, and restarts Hermes. macOS then asks the person to allow it in System Settings; Nollie never clicks
-   that for them.
-8. Prove it on a signed, notarized build: `ssh`, `git` over SSH, `nc`, a Python socket and old Node from a bot's
-   terminal each show as `direct` lines, and are dropped with Refuse on; the door's own traffic is not reported.
+4. Set `NOLLIE_NETWORK_FILTER_READY = YES` in the project's DirectDebug and DirectRelease build settings (one line
+   each in `Nollie.xcodeproj`), and point `direct-release.sh`'s export options at the two new profiles if it names
+   profiles explicitly.
+5. Build, notarize and install a Direct copy, turn on "Stop what Papertrail can't see", and allow it twice in macOS.
+   Check: `ssh`, `git` over SSH, `nc`, a Python socket and old Node from a bot's terminal are refused; a program a
+   helper starts through `os.system` is refused by the door; ordinary chats, searches and pages still work; the door's
+   own traffic is not reported.
 
 ## What "exactly" still misses, even with the filter on
 
@@ -88,5 +105,8 @@ Then, in the project (a lead or helper can do this once the profiles exist):
   switch, loopback, `KERN_PROCARGS2` parsing, labels.
 - `Services/Runtime/Tests/RuntimeNetworkFilterTests.swift` (run-tests.py): reports become `direct` lines; refused,
   unplaced and malformed ones are only counted; the switch file.
-- `Tests/Unit/PapertrailDoorTests.swift`: with Refuse on, the door refuses an unplaced program.
-- `Tools/runtime-helper/run-tests.py` typechecks the provider with `NOLLIE_NETWORK_FILTER`.
+- `Tests/Unit/PapertrailDoorTests.swift`: with Refuse on, the door refuses an unplaced program, and lets it pass
+  again when the switch goes off while Hermes runs.
+- `Tests/Unit/PapertrailFilterSwitchTests.swift` (NollieMacTests): On always writes Refuse, the words for each state,
+  and that this build carries no extension.
+- `Tools/runtime-helper/run-tests.py` also typechecks the provider; the `NollieNetworkFilter` target builds it.

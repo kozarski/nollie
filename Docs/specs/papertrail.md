@@ -266,9 +266,10 @@ Said plainly here, not hidden:
 
 ## The network filter (built, off)
 
-See [Network filter](network-filter.md): a Network Extension content filter in the Direct edition that records any
-connection from Hermes's process tree that did not come through the door, and can refuse it. Off until the developer
-portal has the capability.
+See [Network filter](network-filter.md): a Network Extension content filter in the Direct edition, with one switch on
+Settings › What left your Mac, that refuses (and reports) any connection from Hermes's process tree that did not
+come through the door. With it on, "exactly" holds for Hermes and everything it starts, less what that page lists.
+It waits on the developer portal step.
 
 ## Tests
 
