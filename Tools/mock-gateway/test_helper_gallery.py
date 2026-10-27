@@ -64,6 +64,21 @@ class HelperGalleryMockTests(unittest.TestCase):
         self.assertEqual((status, body["status"]), (409, "full"))
         self.assertEqual(self.roster()["room"], 0)
 
+    def test_an_added_helper_can_keep_a_schedule_the_person_turns_on(self):
+        before = list(mock.CRON_JOBS)
+        self.addCleanup(lambda: mock.CRON_JOBS.__setitem__(slice(None), before))
+        job = {"name": "Planner: Today's plan", "prompt": "Make a short plan for today.", "schedule": "30 7 * * *",
+               "deliver": "bot-chat"}
+        self.assertEqual(mock.cron_collection("POST", {"profile": "planner"}, dict(job))[0], 400)
+        mock.crew_rest("POST", "/api/plugins/nollie-crew/members", dict(PLANNER))
+        status, made = mock.cron_collection("POST", {"profile": "planner"}, dict(job))
+        self.assertEqual(status, 200)
+        self.assertEqual((made["profile"], made["name"], made["deliver"]), ("planner", job["name"], "bot-chat"))
+        _, listed = mock.cron_collection("GET", {"profile": "planner"}, None)
+        self.assertEqual([j["name"] for j in listed["jobs"]], [job["name"]])
+        status, paused = mock.cron_update(made["job_id"], "POST", {}, "pause", "planner")
+        self.assertEqual((status, paused["state"]), (200, "paused"))
+
 
 if __name__ == "__main__":
     unittest.main()

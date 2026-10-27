@@ -1,9 +1,10 @@
 import SwiftUI
 import NollieCore
 
-/// The ready-made helpers: a grid of characters, each with its name, one line and one Add. A tap
-/// adds the helper with its look and instructions; its character drops into the crew along the
-/// bottom, and the same pill becomes Undo until the sheet closes. The last tile makes your own.
+/// The ready-made helpers, in a few plain sections: a grid of characters, each with its name, one
+/// line and one Add. A tap on Add adds the helper with its look and instructions; its character
+/// drops into the crew along the bottom, and the same pill becomes Undo until the sheet closes. A
+/// tap on the character opens its page. The last tile makes your own.
 struct HelperGalleryView: View {
     var runtime: GatewayRuntime
     var gallery: HelperGallery
@@ -13,6 +14,8 @@ struct HelperGalleryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The helper whose page is open.
+    @State private var shown: ReadyMadeHelper?
 
     /// Bots shown in the crew, never one on the Private list. (Bots on a local model count as
     /// private elsewhere; crew helpers run locally and belong here.)
@@ -45,17 +48,30 @@ struct HelperGalleryView: View {
 
     private var grid: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 34) {
-                ForEach(ReadyMadeHelper.gallery) { helper in
-                    HelperTile(helper: helper, state: gallery.state(of: helper, bots: botNames),
-                               working: gallery.working == helper.id, locked: app.lock.isLocked || gallery.working != nil,
-                               add: { Task { await add(helper) } }, undo: { Task { await undo(helper) } })
+            VStack(spacing: 40) {
+                let sections = ReadyMadeHelper.sections
+                ForEach(sections, id: \.self) { section in
+                    VStack(spacing: 20) {
+                        PageHeading(section.title)
+                            .padding(.horizontal, 4)
+                            .testID("gallery.section.\(section.rawValue)")
+                        LazyVGrid(columns: columns, spacing: 34) {
+                            ForEach(ReadyMadeHelper.helpers(in: section)) { helper in tile(helper) }
+                            // Your own closes the last section, so it never stands alone.
+                            if section == sections.last {
+                                OwnHelperTile(action: makeOwn).id("gallery.own")
+                            }
+                        }
+                    }
                 }
-                OwnHelperTile(action: makeOwn).id("gallery.own")
             }
             .padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 28)
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
+        }
+        .navigationDestination(item: $shown) { helper in
+            HelperDetailView(helper: helper, runtime: runtime, gallery: gallery,
+                             add: { Task { await add(helper) } }, undo: { Task { await undo(helper) } })
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { crewBar }
         // The crew below needs the bots; a gateway opened straight into this sheet may not have them yet.
@@ -69,7 +85,22 @@ struct HelperGalleryView: View {
             try? await Task.sleep(for: .seconds(2.5))
             await add(helper)
         }
+        // `-nollie-demo-gallery-helper <id>` opens that helper's page.
+        .task {
+            let words = ProcessInfo.processInfo.arguments
+            guard DemoMode.isOn, let flag = words.firstIndex(of: "-nollie-demo-gallery-helper"), words.indices.contains(flag + 1),
+                  let helper = ReadyMadeHelper.gallery.first(where: { $0.id == words[flag + 1] }) else { return }
+            // After a demo add, which happens on this page, so its page opens with the helper there.
+            try? await Task.sleep(for: .seconds(words.contains("-nollie-demo-gallery-add") ? 4 : 1))
+            shown = helper
+        }
         #endif
+    }
+
+    private func tile(_ helper: ReadyMadeHelper) -> some View {
+        HelperTile(helper: helper, state: gallery.state(of: helper, bots: botNames),
+                   working: gallery.working == helper.id, locked: app.lock.isLocked || gallery.working != nil,
+                   open: { shown = helper }, add: { Task { await add(helper) } }, undo: { Task { await undo(helper) } })
     }
 
     // MARK: The crew along the bottom
@@ -129,11 +160,13 @@ struct HelperGalleryView: View {
 // MARK: - A tile
 
 /// One ready-made helper: the character carries it, with the name, one line and a single pill.
+/// A tap on the character or its words opens the helper's page.
 private struct HelperTile: View {
     var helper: ReadyMadeHelper
     var state: HelperGallery.TileState
     var working: Bool
     var locked: Bool
+    var open: () -> Void
     var add: () -> Void
     var undo: () -> Void
 
@@ -144,53 +177,34 @@ private struct HelperTile: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            CharacterView(look: helper.look, state: pose, size: 92, seed: CharacterLookID.seed(helper.id))
-                .frame(width: 104, height: 104)
-                .accessibilityHidden(true)
-            VStack(spacing: 4) {
-                Text(helper.name)
-                    .font(.headline)
-                    .foregroundStyle(Ink.text)
-                Text(helper.promise)
-                    .font(.subheadline)
-                    .foregroundStyle(Ink.text2)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+            Button(action: open) {
+                VStack(spacing: 10) {
+                    CharacterView(look: helper.look, state: pose, size: 92, seed: CharacterLookID.seed(helper.id))
+                        .frame(width: 104, height: 104)
+                        .accessibilityHidden(true)
+                    VStack(spacing: 4) {
+                        Text(helper.name)
+                            .font(.headline)
+                            .foregroundStyle(Ink.text)
+                        Text(helper.promise)
+                            .font(.subheadline)
+                            .foregroundStyle(Ink.text2)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .contentShape(.rect)
             }
+            .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
+            .accessibilityHint("Shows what \(helper.name) does")
+            .testID("gallery.open.\(helper.id)")
             Spacer(minLength: 0)
-            pill
+            HelperAddPill(helper: helper, state: state, working: working, locked: locked, add: add, undo: undo)
         }
         .frame(maxWidth: .infinity)
         .animation(.snappy, value: state)
-    }
-
-    @ViewBuilder private var pill: some View {
-        switch state {
-        case .available, .full:
-            Button(action: add) {
-                Label("Add", systemImage: "plus")
-            }
-            .buttonStyle(OutlinePillStyle())
-            .disabled(locked || state == .full)
-            .accessibilityLabel("Add \(helper.name)")
-            .testID("gallery.add.\(helper.id)")
-        case .justAdded:
-            Button(action: undo) {
-                Label("Undo", systemImage: "arrow.uturn.backward")
-            }
-            .buttonStyle(OutlinePillStyle())
-            .disabled(locked)
-            .accessibilityLabel("Undo adding \(helper.name)")
-            .testID("gallery.undo.\(helper.id)")
-        case .inCrew:
-            Label("Added", systemImage: "checkmark")
-                .font(.body.weight(.medium))
-                .foregroundStyle(Ink.text2)
-                .padding(.vertical, 12)
-                .accessibilityLabel("\(helper.name) is in your crew")
-                .testID("gallery.added.\(helper.id)")
-        }
     }
 }
 
