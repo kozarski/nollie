@@ -1,4 +1,10 @@
-"""A per-bot Ask first switch, available even while the workflow add-on is off."""
+"""A per-bot Ask first switch, available even while the workflow add-on is off.
+
+The switch covers only the calls Nollie can't read. Sending, buying, posting and deleting ask whatever it says,
+so changing it never turns the workflow add-on off: it writes ``<bot home>/nollie-workflow/ask-first.json``,
+which the running rule reads before each call, and turns the add-on back on if an older Nollie had switched it
+off.
+"""
 from contextlib import contextmanager
 import fcntl
 import json
@@ -9,6 +15,7 @@ import tempfile
 
 WORKFLOW = "nollie-workflow"
 MARKER = "ask-first-initialized"
+SWITCH = "ask-first.json"
 PROFILE_NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,63}\Z")
 
 
@@ -82,6 +89,20 @@ def is_enabled(document):
             and not any(matches(name) for name in plugins.get("disabled", [])))
 
 
+def read_switch(path, root):
+    """Off only when the file says exactly so. A missing file is on; a linked or damaged one raises."""
+    if not unlinked(path, root):
+        raise ValueError("linked Ask first switch")
+    if not path.exists():
+        return True
+    if not path.is_file() or path.stat().st_size > 4096:
+        raise ValueError("invalid Ask first switch")
+    document = json.loads(path.read_text())
+    if not isinstance(document, dict) or document.get("version") != 1 or type(document.get("enabled")) is not bool:
+        raise ValueError("invalid Ask first switch")
+    return document["enabled"]
+
+
 def atomic_write(path, write):
     descriptor, temporary = tempfile.mkstemp(prefix=".ask-first-", dir=path.parent)
     try:
@@ -115,12 +136,13 @@ class AskFirst:
         return root, home
 
     def status(self, profile):
-        _, home = self._home(profile)
+        root, home = self._home(profile)
         try:
             document, _ = read_config(home / "config.yaml")
+            switch = read_switch(home / WORKFLOW / SWITCH, root)
         except Exception:
             raise Refused(503, "Ask first cannot be read right now.") from None
-        return {"profile": profile, "enabled": is_enabled(document)}
+        return {"profile": profile, "enabled": is_enabled(document) and switch}
 
     @contextmanager
     def _locked(self, root, home):
@@ -150,11 +172,14 @@ class AskFirst:
                 self._home(profile)
                 config = home / "config.yaml"
                 document, yaml = read_config(config)
+                switch = home / WORKFLOW / SWITCH
+                read_switch(switch, root)
+                # Either way the add-on stays on: it is what asks before sending, buying, posting or deleting.
                 plugins = document.setdefault("plugins", {})
-                on = [name for name in plugins.get("enabled", []) if not matches(name)]
+                on = [name for name in plugins.get("enabled", []) if not matches(name)] + [WORKFLOW]
                 off = [name for name in plugins.get("disabled", []) if not matches(name)]
-                (on if enabled else off).append(WORKFLOW)
-                if on != plugins.get("enabled", []) or off != plugins.get("disabled", []):
+                started = on != plugins.get("enabled", []) or off != plugins.get("disabled", [])
+                if started:
                     plugins.update(enabled=on, disabled=off)
                     def write(handle):
                         if yaml is None:
@@ -163,14 +188,17 @@ class AskFirst:
                         else:
                             yaml.dump(document, handle)
                     atomic_write(config, write)
+                atomic_write(switch, lambda handle: json.dump({"version": 1, "enabled": enabled}, handle))
                 if not marker.exists():
                     atomic_write(marker, lambda handle: handle.write("1\n"))
-                try:
-                    self.refresh(profile, home, enabled)
-                except Refused:
-                    raise
-                except Exception:
-                    raise Refused(503, "Ask first is saved, but could not be updated. Try again in a moment.") from None
+                if started:
+                    try:
+                        self.refresh(profile, home, True)
+                    except Refused:
+                        raise
+                    except Exception:
+                        raise Refused(503, "Ask first is saved, but could not be updated. Try again in a moment.") \
+                            from None
                 return self.status(profile)
         except Refused:
             raise

@@ -48,4 +48,19 @@ final class AskFirstUITests: DemoCase {
             if look == .light { answer("approval.deny", expecting: "didn't send") } else { answer("approval.once", expecting: "Sent.") }
         }
     }
+
+    /// Turning Ask first off for a bot says what stays: sending, buying, posting and deleting still ask.
+    func testTurningItOffSaysTheFourStillAsk() throws {
+        try requireMock()
+        try inBothLooks { look in
+            mock("/api/_mock/ask-first", [:])
+            try startDemo(["-nollie-demo-bot-page", "settings", "-nollie-demo-bot-tab", "instructions"], look: look)
+            flip(scrollTo("profile.askFirst"))
+            let still = text("Sending, buying, posting and deleting still wait for your yes. Steps Nollie can't read won't ask.")
+            XCTAssertTrue(still.waitForExistence(timeout: 10), "the turn-off question doesn't say what still asks")
+            XCTAssertFalse(text("It will send, buy, post and delete without asking.").exists)
+            shot("ask-first-turn-off-\(look)")
+            press("Cancel")
+        }
+    }
 }

@@ -586,5 +586,122 @@ class HermesScreenTests(unittest.TestCase):
                                     task_id="task", session_id="chat"))
 
 
+
+DIALOG_PAGE = "\n".join([
+    '- heading "Photos" [level=1, ref=e1]',
+    '- button "Share" [ref=e2]',
+    '- dialog "Are you sure?" [ref=e3]:',
+    '  - text: Delete 3 photos? This can\'t be undone.',
+    '  - button "Cancel" [ref=e4]',
+    '  - button "OK" [ref=e5]',
+    '- link "Help" [ref=e6]',
+])
+
+
+class AroundTests(unittest.TestCase):
+    """The words around an OK or Continue button, and the page's own forms."""
+
+    def test_a_dialog_holds_the_button(self):
+        near = screen_text.snapshot_around(DIALOG_PAGE, "e5")
+        self.assertIn("Delete 3 photos?", near)
+        self.assertNotIn("Share", near)
+        self.assertNotIn("Help", near)
+        # Without a dialog or form, the lines next to it.
+        lines = "\n".join([f'- text: line {i}' for i in range(40)] + ['- button "OK" [ref=e9]'])
+        near = screen_text.snapshot_around(lines, "e9")
+        self.assertIn("line 39", near)
+        self.assertNotIn("line 10\n", near + "\n")
+        self.assertIsNone(screen_text.snapshot_around(lines, "e77"))
+
+    def test_roles_and_the_address_are_remembered(self):
+        found = screen_text.snapshot_refs(json.dumps({"snapshot": DIALOG_PAGE, "url": "https://x.example/p"}))
+        self.assertEqual(found["roles"]["e5"], "button")
+        self.assertEqual(found["url"], "https://x.example/p")
+        memory = screen_text.Memory()
+        memory.post_tool_call(tool_name="browser_navigate", args={}, task_id="t",
+                              result=json.dumps({"snapshot": SNAPSHOT, "url": "https://shop.example/checkout"}))
+        memory.post_tool_call(tool_name="browser_snapshot", args={}, task_id="t", result=page(DIALOG_PAGE))
+        self.assertEqual(memory.page("t")["url"], "https://shop.example/checkout")
+
+    def test_near_a_click_on_this_mac(self):
+        summary = "\n".join([
+            "Captured Finder (4 elements):",
+            "  #1 AXSheet 'Move to Bin?' @ (300, 200, 400, 160)",
+            "  #2 AXStaticText 'The items will be deleted' @ (320, 240, 300, 20)",
+            "  #3 AXButton 'OK' @ (600, 320, 60, 24)",
+            "  #4 AXStaticText 'Far away' @ (1500, 1200, 80, 20)",
+        ])
+        memory = screen_text.Memory()
+        memory.post_tool_call(tool_name="computer_use", args={"action": "capture"}, result=multimodal(summary),
+                              session_id="c")
+        near = memory.near("c", {"element": 3})
+        self.assertIn("Move to Bin?", near)
+        self.assertIn("The items will be deleted", near)
+        self.assertNotIn("Far away", near)
+        self.assertIs(memory.near("c", {"element": 99}), UNREADABLE)
+        self.assertIs(memory.near("other", {"element": 3}), UNREADABLE)
+
+    def test_near_a_click_on_a_cua_computer(self):
+        words = [{"text": "Pay £24.00?", "x": 400, "y": 300, "w": 120, "h": 20},
+                 {"text": "Continue", "x": 420, "y": 360, "w": 80, "h": 20},
+                 {"text": "Delete", "x": 1500, "y": 1000, "w": 60, "h": 20}]
+        screen = screen_text.HermesScreen(capture=lambda sandbox: b"png", read=lambda image: words)
+        near = screen.around("mcp__cua__computer_click", {"sandbox": "local:dev", "x": 460, "y": 370})
+        self.assertIn("Pay £24.00?", near)
+        self.assertNotIn("Delete", near)
+        rule = ask_first.AskFirst(unattended=lambda: False, bypassed=lambda *_: False, screen=screen)
+        answer = rule.hook(tool_name="mcp__cua__computer_click", args={"sandbox": "local:dev", "x": 460, "y": 370})
+        self.assertRegex(answer["rule_key"], r"^nollie-ask-first:buy:")
+        self.assertTrue(answer["message"].endswith("You're about to press “Continue”."))
+        broken = screen_text.HermesScreen(capture=lambda sandbox: None, read=lambda image: words)
+        self.assertIs(broken.around("mcp__cua__computer_click", {"sandbox": "local:dev", "x": 1, "y": 2}), UNREADABLE)
+
+    def test_an_ok_in_a_page_dialog_asks(self):
+        memory = screen_text.Memory()
+        memory.post_tool_call(tool_name="browser_snapshot", args={}, result=page(DIALOG_PAGE), task_id="t")
+        asked = []
+        screen = screen_text.HermesScreen(memory, page=lambda task, label: asked.append((task, label)) or
+                                          {"url": "https://photos.example/", "forms": []})
+        rule = ask_first.AskFirst(unattended=lambda: False, bypassed=lambda *_: False, screen=screen)
+        answer = rule.hook(tool_name="browser_click", args={"ref": "@e5"}, task_id="t", session_id="c")
+        self.assertRegex(answer["rule_key"], r"^nollie-ask-first:delete:")
+        self.assertIn("Delete 3 photos?", answer["message"])
+        self.assertEqual(asked, [("t", "OK")])
+        # A link is not a form's button: the page isn't asked.
+        self.assertIsNone(rule.hook(tool_name="browser_click", args={"ref": "@e6"}, task_id="t", session_id="c"))
+        self.assertEqual(len(asked), 1)
+
+    def test_the_page_names_the_form(self):
+        memory = screen_text.Memory()
+        memory.post_tool_call(tool_name="browser_navigate", args={}, task_id="t", result=json.dumps({
+            "snapshot": '- button "View details" [ref=e8]', "url": "https://shop.example/basket"}))
+        screen = screen_text.HermesScreen(memory, page=lambda task, label: {
+            "url": "https://shop.example/basket",
+            "forms": [{"action": "https://shop.example/checkout/complete", "method": "post"}]})
+        found = ask_first.classify("browser_click", {"ref": "e8"}, screen=screen.bind("t", "c"))
+        self.assertEqual(found.kind, "buy")
+        unreadable = screen_text.HermesScreen(memory, page=lambda task, label: None)
+        self.assertIsNone(ask_first.classify("browser_click", {"ref": "e8"}, screen=unreadable.bind("t", "c")))
+
+    def test_reading_the_forms_from_the_page(self):
+        calls = []
+
+        def console(expression=None, task_id=None):
+            calls.append((expression, task_id))
+            return json.dumps({"success": True, "result": json.dumps({
+                "url": "https://shop.example/basket", "matched": 1,
+                "forms": [{"inform": True, "action": "https://shop.example/pay", "method": "post"}]})})
+        tools = SimpleNamespace(browser_tool=SimpleNamespace(browser_console=console))
+        with patch.dict("sys.modules", {"tools": tools, "tools.browser_tool": tools.browser_tool}):
+            found = screen_text.read_page_forms("t", 'Pay "now"')
+            self.assertEqual(found["forms"][0]["action"], "https://shop.example/pay")
+            self.assertIn(json.dumps('Pay "now"'), calls[0][0])
+            self.assertEqual(calls[0][1], "t")
+            self.assertIsNone(screen_text.read_page_forms("t", ""))
+        broken = SimpleNamespace(browser_tool=SimpleNamespace(browser_console=lambda **_: "not json"))
+        with patch.dict("sys.modules", {"tools": broken, "tools.browser_tool": broken.browser_tool}):
+            self.assertIsNone(screen_text.read_page_forms("t", "OK"))
+
+
 if __name__ == "__main__":
     unittest.main()
