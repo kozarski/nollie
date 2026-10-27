@@ -59,3 +59,32 @@ DEFINE SCHEMA
         GRANT CREATE TO "_icloud",
         GRANT READ, WRITE TO "_creator"
     );
+
+    RECORD TYPE NollieAwayNoteV1 (
+        "___createTime" TIMESTAMP,
+        "___createdBy" REFERENCE,
+        "___etag" STRING,
+        "___modTime" TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID" REFERENCE QUERYABLE,
+        v INT64,
+        fromTag STRING QUERYABLE,
+        toTag STRING QUERYABLE,
+        expiresAt TIMESTAMP QUERYABLE SORTABLE,
+        alert INT64 QUERYABLE,
+        box ENCRYPTED BYTES,
+        GRANT CREATE TO "_icloud",
+        GRANT READ, WRITE TO "_creator"
+    );
+
+    RECORD TYPE NollieAwayPresenceV1 (
+        "___createTime" TIMESTAMP,
+        "___createdBy" REFERENCE,
+        "___etag" STRING,
+        "___modTime" TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID" REFERENCE QUERYABLE,
+        seenAt TIMESTAMP,
+        GRANT CREATE TO "_icloud",
+        GRANT READ, WRITE TO "_creator"
+    );

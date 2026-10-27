@@ -10,6 +10,13 @@ private extension ChatSession {
 
     /// Sends the choice for a waiting card, unless the person is away from home with no link.
     func answerApproval(_ card: PendingCard, with choice: String) {
+        #if os(iOS)
+        // A card that came through iCloud is answered the same way.
+        if AwayPhone.isAwayCard(card) {
+            Task { await AwayPhone.shared.answer(card, choice: choice, in: self) }
+            return
+        }
+        #endif
         guard !AppModel.shared.awayBlocks() else { return }
         Task { await respond(card: card, result: ["choice": .string(choice)]) }
     }

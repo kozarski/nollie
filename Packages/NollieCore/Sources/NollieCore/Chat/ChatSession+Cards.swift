@@ -344,10 +344,11 @@ extension ChatSession {
     /// clear nothing and reply through the queue while the request stayed open.
     ///
     /// A yes to an approval first passes the app's owner check (`approvalOwnerCheck`). False means
-    /// nothing was sent: the check said no, or the card went while it was asking.
+    /// nothing was sent: the check said no, or the card went while it was asking. `checkedOnPhone`
+    /// is for an answer that came through iCloud: the phone asked for Face ID before sending it.
     @discardableResult
-    public func respond(card given: PendingCard, result: JSONValue) async -> Bool {
-        if let approval = given.approval, given.method == "approval", let choice = result.text("choice"), choice != "deny",
+    public func respond(card given: PendingCard, result: JSONValue, checkedOnPhone: Bool = false) async -> Bool {
+        if !checkedOnPhone, let approval = given.approval, given.method == "approval", let choice = result.text("choice"), choice != "deny",
            let check = runtime.approvalOwnerCheck {
             let names = [given.id, approval.requestId].filter { !$0.isEmpty }
             let wasUp = approvalCard(named: names) != nil

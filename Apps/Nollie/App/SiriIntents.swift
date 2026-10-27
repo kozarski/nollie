@@ -124,9 +124,15 @@ enum MacStop {
         if app.runtime == nil { await app.activateSavedConnection() }
         guard let runtime = app.runtime, runtime.connection.linkedMac != nil else { return MacStopWords.notLinked }
 
+        // Away: Stop goes through iCloud straight away, with no wait for the door first.
+        let away = AwayPhone.shared
+        if runtime.linkReach == .away, away.carries(app) {
+            return await away.stop() ? MacStopWords.sentThroughICloud : MacStopWords.notSent
+        }
         do {
             _ = try await runtime.api.raw("POST", "/nollie/stop", body: nil, authenticated: true, timeout: 8)
         } catch {
+            if await away.stop() { return MacStopWords.sentThroughICloud }
             return MacStopWords.unreachable
         }
         // The Mac stops what it runs. Replies started on this phone stop once the answer is out,

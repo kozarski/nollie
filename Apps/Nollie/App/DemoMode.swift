@@ -54,6 +54,18 @@ enum DemoMode {
     /// `-nollie-demo-alerts`: iCloud alerts count as on, for the away line's picture.
     static let alertsOn = isOn && ProcessInfo.processInfo.arguments.contains("-nollie-demo-alerts")
 
+    /// `-nollie-demo-icloud ready|off|link|signin|later`: away through iCloud, for the away page's pictures.
+    static let iCloud: AwayICloudState? = {
+        switch word(after: "-nollie-demo-icloud") {
+        case "ready": .ready
+        case "off": .off
+        case "link": .needsLink
+        case "signin": .needsICloud
+        case "later": .notAvailableYet
+        default: nil
+        }
+    }()
+
     /// Called first at launch, ahead of any Keychain read.
     static func prepare() {
         if isOn { Keychain.memoryOnly = true }
@@ -78,6 +90,7 @@ enum DemoMode {
     static let tailscale: String? = nil
     static let exitRelay: String? = nil
     static let alertsOn = false
+    static let iCloud: AwayICloudState? = nil
     static let permissions: String? = nil
 }
 #endif

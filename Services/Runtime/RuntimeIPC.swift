@@ -81,6 +81,8 @@ struct NollieLinkIPCDevice: Codable, Equatable, Sendable, Identifiable {
     var name: String
     var linkedAt: Date
     var lastActive: Date?
+    /// The phone's away public key (base64url), once it swapped one: away through iCloud. Public.
+    var awayKey: String?
 }
 
 struct NollieLinkIPCStop: Codable, Equatable, Sendable {
@@ -167,6 +169,8 @@ struct NollieExitRelayRecord: Codable, Equatable, Sendable {
 struct NollieLinkIPCAwayRequest: Codable, Equatable, Sendable {
     var on: Bool?
     var host: String?
+    /// The Mac app's away public key (base64url), for the door to hand linked phones.
+    var sealKey: String?
 
     static func decode(_ data: Data) -> Self? {
         guard data.count <= 1024 else { return nil }

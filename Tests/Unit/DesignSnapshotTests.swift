@@ -92,6 +92,11 @@ import Testing
                named: "away-mac-needs-setup", width: 760)
         attach(AwayFromHomePage(hero: .anywhere, facts: AwayFacts(on: true, tailscale: "ready")),
                named: "away-mac-ready", width: 760)
+        // Away through iCloud: it leads, and Tailscale waits under Advanced.
+        attach(AwayFromHomePage(hero: .iCloud, facts: AwayFacts(on: false, tailscale: "missing"), iCloud: .ready),
+               named: "away-mac-icloud", width: 760)
+        attach(AwayFromHomePage(hero: .home, facts: AwayFacts(on: false, tailscale: "missing"), iCloud: .needsLink),
+               named: "away-mac-icloud-needs-link", width: 760)
     }
     #endif
 

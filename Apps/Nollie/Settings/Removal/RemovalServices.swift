@@ -114,6 +114,8 @@ struct LiveRemovalServices: RemovalServices {
     }
 
     func deleteCloudData() async -> String? {
+        // Away through iCloud's mailbox too; its records expire within a day anyway.
+        try? await CloudKitAwayCloud().deleteEverything()
         do { try await CloudKitAlertStore().deleteEverything(); return nil } catch {
             return "Couldn't reach iCloud, so Nollie's alerts there stay. They expire by themselves within a week."
         }

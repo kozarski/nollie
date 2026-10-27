@@ -13,6 +13,8 @@ final class LinkDoorDevices: @unchecked Sendable {
         let credentialHash: Data
         let linkedAt: Date
         var lastActive: Date?
+        /// The phone's away public key (X25519), swapped over this link for iCloud's sealed mailbox.
+        var awayKey: Data?
     }
 
     /// Everything kept on disk: the port chosen once, the Bonjour tag and the device hashes.
@@ -26,6 +28,8 @@ final class LinkDoorDevices: @unchecked Sendable {
         var away: Bool?
         /// A Tailscale name or address the person typed in, for when Nollie can't find it.
         var awayHost: String?
+        /// The Mac app's away public key, given over XPC. Its private half stays in the app's Keychain.
+        var awayMacKey: Data?
     }
 
     struct Offer: Equatable, Sendable {
@@ -80,6 +84,36 @@ final class LinkDoorDevices: @unchecked Sendable {
             guard next != state else { return }
             try store.save(next)
             state = next
+        }
+    }
+
+    // MARK: Away through iCloud
+
+    var awayMacKey: Data? { locked { state.awayMacKey } }
+
+    /// The Mac app's away public key. A new one means the phones' keys were swapped with the old
+    /// one, so theirs are forgotten and each swaps again at home.
+    func setAwayMacKey(_ key: Data) throws {
+        try locked {
+            guard key.count == 32, state.awayMacKey != key else { return }
+            var next = state
+            next.awayMacKey = key
+            for index in next.devices.indices { next.devices[index].awayKey = nil }
+            try store.save(next)
+            state = next
+        }
+    }
+
+    /// Keeps a linked phone's away public key. False when the device is gone.
+    func setAwayKey(_ key: Data, for id: UUID) throws -> Bool {
+        try locked {
+            guard key.count == 32, let index = state.devices.firstIndex(where: { $0.id == id }) else { return false }
+            guard state.devices[index].awayKey != key else { return true }
+            var next = state
+            next.devices[index].awayKey = key
+            try store.save(next)
+            state = next
+            return true
         }
     }
 

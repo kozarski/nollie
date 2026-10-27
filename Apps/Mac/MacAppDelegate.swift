@@ -70,6 +70,10 @@ extension MacAppDelegate {
 
     func application(_ application: NSApplication,
                      didReceiveRemoteNotification userInfo: [String: Any]) {
+        if CloudKitAwayCloud.isAwayPush(userInfo) {
+            AwayMacBridge.shared.lookNow()
+            return
+        }
         MacNotificationDesk.noteRemote(userInfo)
     }
 

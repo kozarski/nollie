@@ -81,9 +81,13 @@ actor RuntimeLink {
 
     /// Away from home as the Mac app shows it: the switch, what Nollie found of Tailscale, and a
     /// name typed in by the person. `on` and `host` change it when given ("" clears the name).
-    func away(on: Bool?, host: String?) async -> NollieLinkIPCResponse {
+    func away(on: Bool?, host: String?, sealKey: String? = nil) async -> NollieLinkIPCResponse {
         if let host, !host.isEmpty, !NollieTailnet.isTailnetHost(host) || !NollieTailnet.validLinkHost(host) {
             return response(error: .invalidRequest)
+        }
+        if let sealKey {
+            guard let key = LinkDoorBase64URL.decode(sealKey), key.count == 32 else { return response(error: .invalidRequest) }
+            do { try door.devices.setAwayMacKey(key) } catch { return response(error: .persistenceUnavailable) }
         }
         if on != nil || host != nil {
             do {
@@ -141,7 +145,8 @@ actor RuntimeLink {
         if case .claimed(_, let name) = door.devices.offerState() { result.claimedBy = name }
         result.stop = door.lastStop.map { NollieLinkIPCStop(generation: $0.generation, device: $0.device, at: $0.at) }
         result.devices = door.devices.devices.map {
-            NollieLinkIPCDevice(id: $0.id, name: $0.name, linkedAt: $0.linkedAt, lastActive: $0.lastActive)
+            NollieLinkIPCDevice(id: $0.id, name: $0.name, linkedAt: $0.linkedAt, lastActive: $0.lastActive,
+                                awayKey: $0.awayKey.map(LinkDoorBase64URL.encode))
         }
         return result
     }

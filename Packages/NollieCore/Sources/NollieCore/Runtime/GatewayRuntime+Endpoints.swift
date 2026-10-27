@@ -86,7 +86,13 @@ extension GatewayRuntime {
         guard !linkRefreshing else { return linkInfo }
         linkRefreshing = true
         defer { linkRefreshing = false }
-        return await linkRequest("GET", NollieLinkClient.hostsPath)
+        let reply = await linkRequest("GET", NollieLinkClient.hostsPath)
+        // Away through iCloud: swap keys once per run while the Mac is in reach, so a phone linked
+        // before 1.2, or a Mac with a new key, is ready before the person leaves home.
+        if reply != nil, !awayKeysSwapped {
+            awayKeysSwapped = await swapAwayKeys()
+        }
+        return reply
     }
 
     /// Turns away from home on or off at the Mac. The door takes this only from a linked phone,

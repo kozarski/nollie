@@ -39,10 +39,19 @@ final class LinkStopWatcher {
     }
 
     private func act(_ stop: NollieLinkIPCStop) async {
+        await perform(device: stop.device, key: "\(stop.generation)")
+    }
+
+    /// Ends the task using this Mac, stops every reply and pauses schedules, then says so on the
+    /// Mac. The same for a Stop through the door and one through iCloud. Returns schedules paused.
+    @discardableResult
+    func perform(device: String, key: String) async -> Int {
         ComputerCenter.shared.end(.phone)
-        guard let runtime = AppModel.shared.runtime else { tell(stop, paused: 0); return }
+        guard let runtime = AppModel.shared.runtime else { tell(device: device, key: key, paused: 0); return 0 }
         for chat in runtime.chats where chat.isRunning { await chat.stop() }
-        tell(stop, paused: await pauseSchedules(runtime))
+        let paused = await pauseSchedules(runtime)
+        tell(device: device, key: key, paused: paused)
+        return paused
     }
 
     /// Pauses every schedule that would start more work, and counts only the pauses Hermes
@@ -61,11 +70,11 @@ final class LinkStopWatcher {
         return paused
     }
 
-    private func tell(_ stop: NollieLinkIPCStop, paused: Int) {
+    private func tell(device: String, key: String, paused: Int) {
         let content = UNMutableNotificationContent()
-        content.title = "Stopped from \(stop.device)"
+        content.title = "Stopped from \(device)"
         content.body = Self.summary(paused: paused)
-        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "nollie.link.stop.\(stop.generation)", content: content, trigger: nil))
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "nollie.link.stop.\(key)", content: content, trigger: nil))
     }
 
     nonisolated static func summary(paused: Int) -> String {
