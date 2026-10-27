@@ -1930,6 +1930,7 @@ async def computer_preview_control(method, payload):
         COMPUTER_PREVIEW["state"] = state
         if payload.get("reset_log"):
             COMPUTER_PREVIEW["requests"] = []
+            COMPUTER_PREVIEW["writes"] = 0
             COMPUTER_PREVIEW["control_writes"] = 0
             # `live_open` is the sockets open right now, so it is never reset.
             COMPUTER_PREVIEW.update(live_connections=0, live_frames=0, live_keyframes=0, last_report=None)
@@ -1939,8 +1940,15 @@ async def computer_preview_control(method, payload):
             active = bool(payload["active"])
             COMPUTER_PREVIEW["active"] = active
             for session in list(LIVE.values()):
-                if session.stored == COMPUTER_SESSION and session.members:
+                if session.stored != COMPUTER_SESSION:
+                    continue
+                if session.members:
                     await computer_demo_event(next(iter(session.members)), session, active)
+                elif not active:
+                    # No one is attached to hear it end, but the turn ends all the same: the next
+                    # resume must not find the helper still using the computer.
+                    session.running = False
+                    session.inflight = None
     return ok(dict(COMPUTER_PREVIEW))
 
 
@@ -2251,7 +2259,9 @@ def seeded_messages(row: dict) -> tuple[str, list[dict]]:
 CONFIG = dict(
     model=MODEL,
     approvals=dict(mode="smart", timeout=300, cron_mode="deny"),
-    agent=dict(reasoning_effort="medium", max_iterations=40),
+    # Nollie's setup switches Hermes's own computer_use off in every bot it sets up (This Mac starts
+    # off), so the app finds it off and never has to write it.
+    agent=dict(reasoning_effort="medium", max_iterations=40, disabled_toolsets=["computer_use"]),
     display=dict(streaming=True, show_reasoning=True, timestamps=False),
     logging=dict(level="INFO"),
     terminal=dict(backend="local"),
@@ -2554,6 +2564,47 @@ def _media_route(route: str, query: dict) -> tuple[int, object]:
         return ok(dict(data_url=picture))
     return ok(dict(name=path.rsplit("/", 1)[-1], path=path, size=1234,
                  mime_type="image/png", data_url=picture))
+
+
+# Files written with POST /api/files/upload are kept and read back with GET /api/fs/read-text, as
+# Hermes keeps them on disk (hermes_cli/web_routers/files.py): an upload over an existing file
+# without "overwrite" is refused with 409, and reading a file that isn't there answers 404. Each demo
+# bot starts with the desktop lease Nollie's setup gives it: a person's, so This Mac starts off.
+MANAGED_FILES: dict[str, bytes] = {}
+DEMO_BOT_HOMES = ("/home/hermes/.hermes", "/home/hermes/.hermes-work")
+
+
+def seed_managed_files() -> None:
+    MANAGED_FILES.clear()
+    for home in DEMO_BOT_HOMES:
+        lease = dict(holder="human", epoch=1, since=time.time() - 86400, viewer_id="nollie-app",
+                     reason="System control is off in the Nollie app")
+        MANAGED_FILES[home + "/bot-desktop/lease.json"] = json.dumps(lease, sort_keys=True).encode()
+
+
+seed_managed_files()
+
+
+def managed_files_rest(method: str, base: str, query: dict, body) -> tuple[int, object] | None:
+    if base == "/api/fs/read-text" and method == "GET":
+        path = unquote(query.get("path", ""))
+        data = MANAGED_FILES.get(path)
+        if data is None:
+            return refuse(404, "File not found")
+        return ok(dict(binary=False, byteSize=len(data), language="json" if path.endswith(".json") else "text",
+                       mimeType="application/json" if path.endswith(".json") else "text/plain",
+                       path=path, text=data.decode("utf-8", errors="replace"), truncated=False))
+    if base != "/api/files/upload" or method != "POST" or not isinstance(body, dict) or not body.get("path"):
+        return None
+    path, data_url = str(body["path"]), str(body.get("data_url", ""))
+    if path in MANAGED_FILES and not body.get("overwrite"):
+        return refuse(409, "File already exists")
+    _, _, encoded = data_url.partition(";base64,")
+    try:
+        MANAGED_FILES[path] = base64.b64decode(encoded) if encoded else data_url.partition(",")[2].encode()
+    except ValueError:
+        return refuse(400, "Invalid data URL")
+    return ok(dict(ok=True, path=path))
 
 
 def _status_route(query: dict) -> tuple[int, object]:
@@ -3609,6 +3660,7 @@ def process_request(connection, request):
         ("quiet", lambda: week_rest(method, base, query, body)),
         ("quiet", lambda: night_shift_rest(method, base, query, body)),
         ("normal", lambda: computer_control_rest(method, base, query)),
+        ("normal", lambda: managed_files_rest(method, base, query, body)),
         ("quiet", lambda: own_computer_rest(method, base, query, body)),
         ("quiet", lambda: ask_first_rest(method, base, query, body)),
         ("quiet", lambda: apple_data_rest(method, base, query, body)),
