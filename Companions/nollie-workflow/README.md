@@ -193,11 +193,15 @@ add-on 404, and a malformed name or `days` outside 1 to 35 gets 422. Responses c
 
 ## Ask first
 
-Every bot that is not private gets Ask first: a `pre_tool_call` hook (`ask_first.py`) that holds any
-call that sends, pays or buys, posts or deletes until the person says yes. It reads the call by fixed
-rules: the tool's name and arguments, shell commands and scripts it can read, code, web requests, and
-for a click on a computer the label under the click (`screen_text.py`: the bot's own Cua computer is
-read with the Mac's text recognition, this Mac and the browser from the bot's latest capture or page).
+Every bot gets Ask first, Private ones too (nothing else of the add-on loads there, and nothing is
+recorded): a `pre_tool_call` hook (`ask_first.py`) that holds any call that sends, pays or buys, posts
+or deletes until the person says yes. It reads the call by fixed rules: the tool's name and arguments,
+what another server's tool said about itself when Hermes registered it, shell commands and the scripts,
+package scripts and Makefiles they run, code, web requests, whether a file being written was already
+there, and for a click on a computer the label under the click and, for OK or Continue, the window,
+dialog or page form around it (`screen_text.py`: the bot's own Cua computer is read with the Mac's text
+recognition, this Mac and the browser from the bot's latest capture or page). A call it can't read asks
+as `unsure`; the bot's Ask first switch (`nollie-workflow/ask-first.json`) turns only those off.
 In a chat the call waits for Hermes's approval card with the whole action in plain words, and only
 Allow once or Deny; each call gets a fresh key. In a schedule, Board work or any run nobody can answer,
 the call is held and not done, and Night shift lists it as held. With approvals switched off it is
@@ -220,7 +224,7 @@ threat model and what is not done yet are in [Saved sign-ins](../../Docs/saved-s
 
 Pictures pause while a sign-in is typed. From the yes until 10 seconds after the Mac reports back
 (`SETTLE`), a `pre_tool_call` hook (`PicturePause` in `sign_ins.py`) refuses every screenshot,
-recording and action on a computer, in every bot that is not private, and says when to try again.
+recording and action on a computer, in every bot, and says when to try again.
 Ask first doesn't look at a screen then either, and the computer preview pauses too. The tool
 answers only once the pause is over. A request file that can't be read, or a linked sign-ins folder,
 counts as typing.

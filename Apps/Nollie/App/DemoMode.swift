@@ -47,6 +47,9 @@ enum DemoMode {
     /// `-nollie-demo-exit-relay on|idle|off|failed`: the exit relay as the Mac's helper reports it.
     static let exitRelay: String? = word(after: "-nollie-demo-exit-relay")
 
+    /// `-nollie-demo-keys keychain|files`: where the Mac's helper says the API keys are.
+    static let keys: String? = word(after: "-nollie-demo-keys")
+
     /// `-nollie-demo-permissions fresh|mixed|allowed`: the permission rows against made-up answers,
     /// so a picture never shows a system prompt or the machine's real answers.
     static let permissions: String? = word(after: "-nollie-demo-permissions")
@@ -89,6 +92,7 @@ enum DemoMode {
     static let reach: NollieLinkReach? = nil
     static let tailscale: String? = nil
     static let exitRelay: String? = nil
+    static let keys: String? = nil
     static let alertsOn = false
     static let iCloud: AwayICloudState? = nil
     static let permissions: String? = nil

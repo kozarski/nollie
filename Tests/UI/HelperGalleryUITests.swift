@@ -51,18 +51,18 @@ final class HelperGalleryUITests: XCTestCase {
 
     func testOneTapAddsAHelperAndUndoTakesItBack() async throws {
         let base = try await launch()
-        let add = app.buttons["gallery.add.planner"].firstMatch
+        let add = app.buttons["gallery.add.home-admin"].firstMatch
         XCTAssertTrue(add.waitForExistence(timeout: 15))
         add.tap()
 
-        let undo = app.buttons["gallery.undo.planner"].firstMatch
+        let undo = app.buttons["gallery.undo.home-admin"].firstMatch
         XCTAssertTrue(undo.waitForExistence(timeout: 15))
         let members = try await Self.members(base)
-        XCTAssertEqual(members, ["planner"])
+        XCTAssertEqual(members, ["home-admin"])
         XCTAssertTrue(app.buttons["gallery.done"].firstMatch.exists)
 
         undo.tap()
-        XCTAssertTrue(app.buttons["gallery.add.planner"].firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["gallery.add.home-admin"].firstMatch.waitForExistence(timeout: 15))
         let after = try await Self.members(base)
         XCTAssertEqual(after, [])
     }

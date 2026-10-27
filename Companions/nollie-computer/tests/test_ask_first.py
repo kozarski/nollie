@@ -42,23 +42,25 @@ class AskFirstTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def test_turn_off_and_on_preserve_other_settings_and_other_bots(self):
+    def test_turn_off_and_on_keep_the_add_on_and_other_settings(self):
         original_default = (self.root / "config.yaml").read_bytes()
+        original_bot = (self.bot / "config.yaml").read_bytes()
         self.assertEqual(self.service.status("work"), {"profile": "work", "enabled": True})
         self.assertEqual(self.service.change("work", False), {"profile": "work", "enabled": False})
-        stored = json.loads((self.bot / "config.yaml").read_text())
-        self.assertEqual(stored["plugins"]["enabled"], ["other"])
-        self.assertEqual(stored["plugins"]["disabled"], ["paused", "nollie-workflow"])
-        self.assertEqual(stored["plugins"]["entries"], self.document["plugins"]["entries"])
-        self.assertEqual(stored["model"], "fixture")
-        self.assertEqual(stored["terminal"], self.document["terminal"])
+        # The add-on stays on, so sending, buying, posting and deleting still ask; only the switch file changes.
+        self.assertEqual((self.bot / "config.yaml").read_bytes(), original_bot)
         self.assertEqual((self.root / "config.yaml").read_bytes(), original_default)
+        switch = self.bot / "nollie-workflow" / core.SWITCH
+        self.assertEqual(json.loads(switch.read_text()), {"version": 1, "enabled": False})
+        self.assertEqual(switch.stat().st_mode & 0o777, 0o600)
         marker = self.bot / "nollie-workflow" / core.MARKER
         self.assertEqual(marker.read_text(), "1\n")
         self.assertEqual(marker.stat().st_mode & 0o777, 0o600)
         self.assertTrue(self.service.change("work", True)["enabled"])
+        self.assertEqual(json.loads(switch.read_text()), {"version": 1, "enabled": True})
         self.assertEqual(json.loads((self.bot / "config.yaml").read_text()), self.document)
-        self.refresh.assert_called_with("work", self.bot, True)
+        # The running rule reads the switch before each call: nothing to reload.
+        self.refresh.assert_not_called()
 
     def test_removed_enabled_and_disabled_alias_both_show_off(self):
         for plugins in ({"enabled": ["other"]},
@@ -67,6 +69,32 @@ class AskFirstTests(unittest.TestCase):
             self.assertFalse(self.service.status("work")["enabled"])
         self.assertTrue(self.service.change("work", True)["enabled"])
         self.assertEqual(json.loads((self.bot / "config.yaml").read_text())["plugins"]["disabled"], [])
+        self.refresh.assert_called_once_with("work", self.bot, True)
+
+    def test_turning_off_an_add_on_an_older_nollie_switched_off_turns_it_back_on(self):
+        (self.bot / "config.yaml").write_text(json.dumps({"plugins": {"enabled": ["other"],
+                                                                      "disabled": ["nollie-workflow"]}}))
+        self.assertEqual(self.service.change("work", False), {"profile": "work", "enabled": False})
+        plugins = json.loads((self.bot / "config.yaml").read_text())["plugins"]
+        self.assertEqual((plugins["enabled"], plugins["disabled"]), (["other", "nollie-workflow"], []))
+        self.refresh.assert_called_once_with("work", self.bot, True)
+
+    def test_a_damaged_or_linked_switch_is_left_alone(self):
+        state = self.bot / "nollie-workflow"
+        state.mkdir()
+        switch = state / core.SWITCH
+        for text in ("{", '{"version": 1, "enabled": "no"}', "[]"):
+            switch.write_text(text)
+            with self.assertRaises(core.Refused):
+                self.service.status("work")
+            with self.assertRaises(core.Refused):
+                self.service.change("work", False)
+            self.assertEqual(switch.read_text(), text)
+        switch.unlink()
+        switch.symlink_to(self.root / "config.yaml")
+        with self.assertRaises(core.Refused):
+            self.service.change("work", False)
+        self.assertTrue(switch.is_symlink())
 
     def test_main_bot_can_turn_ask_first_back_on_while_workflow_is_disabled(self):
         config = self.root / "config.yaml"
@@ -153,11 +181,12 @@ class AskFirstTests(unittest.TestCase):
         self.homes.assert_not_called()
 
     def test_failed_activation_reports_saved_state_without_undoing_the_choice(self):
+        (self.bot / "config.yaml").write_text(json.dumps({"plugins": {"disabled": ["nollie-workflow"]}}))
         self.refresh.side_effect = RuntimeError("fixture")
         with self.assertRaises(core.Refused) as error:
-            self.service.change("work", False)
+            self.service.change("work", True)
         self.assertEqual(error.exception.status, 503)
-        self.assertFalse(self.service.status("work")["enabled"])
+        self.assertTrue(self.service.status("work")["enabled"])
         self.assertTrue((self.bot / "nollie-workflow" / core.MARKER).exists())
 
     def test_a_second_choice_waits_until_the_first_has_refreshed(self):
@@ -169,7 +198,7 @@ class AskFirstTests(unittest.TestCase):
                 second_waiting.set()
             original_lock(descriptor, operation)
         def refresh(profile, home, enabled):
-            if not enabled:
+            if threading.current_thread().name != "second-choice":
                 refreshing.set()
                 if not release.wait(2):
                     raise RuntimeError("fixture timed out")
@@ -182,6 +211,7 @@ class AskFirstTests(unittest.TestCase):
                 if enabled:
                     second_done.set()
         self.service.refresh = refresh
+        (self.bot / "config.yaml").write_text(json.dumps({"plugins": {"disabled": ["nollie-workflow"]}}))
         first = threading.Thread(target=change, args=("first", False))
         second = threading.Thread(target=change, args=("second", True), name="second-choice")
         with patch.object(core.fcntl, "flock", observed_lock):

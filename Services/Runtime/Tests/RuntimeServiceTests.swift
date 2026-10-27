@@ -24,7 +24,7 @@ struct RuntimeServiceTests {
     @Test func wireDocumentHasNoCredentialAndRoundTrips() throws {
         let id = UUID()
         let response = NollieRuntimeIPCResponse(snapshot: .init(phase: .ready, installationID: id,
-            endpoint: URL(string: "http://127.0.0.1:23456"), enabledInstallationID: id))
+            endpoint: URL(string: "http://127.0.0.1:23456"), enabledInstallationID: id, keysLeftInFiles: 0))
         let data = response.encoded()
         #expect(try JSONDecoder().decode(NollieRuntimeIPCResponse.self, from: data) == response)
         let text = String(decoding: data, as: UTF8.self)

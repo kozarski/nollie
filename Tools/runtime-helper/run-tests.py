@@ -15,12 +15,14 @@ sources = ["Apps/Nollie/Connect/ConfigurationBackup.swift", "Apps/Nollie/Connect
            "Apps/Nollie/Connect/NativeDependencyInstaller.swift", "Apps/Nollie/Connect/NativeSetupKit.swift", "Services/Runtime/RuntimeContract.swift",
            "Services/Runtime/RuntimeSupervisor.swift", "Services/Runtime/NativeRuntimeBackend.swift",
            "Services/Runtime/RuntimeIPC.swift", "Services/Runtime/RuntimeService.swift",
-           "Services/Runtime/LinkDoorHTTP.swift", "Services/Runtime/LinkDoorPolicy.swift", "Services/Runtime/LinkDoorDevices.swift", "Services/Runtime/LinkDoorFamily.swift", "Services/Runtime/LinkDoorFamilyDoor.swift", "Services/Runtime/LinkDoorFamilyHermes.swift",
+           "Services/Runtime/LinkDoorHTTP.swift", "Services/Runtime/LinkDoorPolicy.swift", "Services/Runtime/LinkDoorDevices.swift",
            "Services/Runtime/LinkDoorIdentity.swift", "Services/Runtime/LinkDoor.swift", "Services/Runtime/LinkDoorWebSocket.swift", "Services/Runtime/LinkDoorLive.swift",
+           "Services/Runtime/LinkDoorFamily.swift", "Services/Runtime/LinkDoorFamilyHermes.swift", "Services/Runtime/LinkDoorFamilyDoor.swift",
            "Services/Runtime/LiveRelayIPC.swift", "Services/Runtime/LiveRelay.swift", "Services/Runtime/RuntimeLink.swift",
            "Services/Runtime/CuaInstaller.swift", "Services/Runtime/AppPresence.swift",
            "Services/Runtime/ExitRelayPolicy.swift", "Services/Runtime/ExitRelayWire.swift", "Services/Runtime/ExitRelay.swift",
-           "Services/Runtime/RuntimeExitRelay.swift", "Services/Runtime/PapertrailDoorBook.swift", "Services/Runtime/PapertrailDoor.swift",
+           "Services/Runtime/RuntimeExitRelay.swift", "Services/Runtime/RuntimeKeyStore.swift", "Services/Runtime/RuntimeKeyMigration.swift",
+           "Services/Runtime/PapertrailDoorBook.swift", "Services/Runtime/PapertrailDoor.swift",
            "Services/NetworkFilter/NetworkFilterPolicy.swift", "Services/NetworkFilter/NetworkFilterXPC.swift",
            "Services/Runtime/RuntimeNetworkFilter.swift",
            "Packages/NollieCore/Sources/NollieCore/Storage/NolliePaths.swift",
@@ -38,7 +40,8 @@ for mode, defines in [("direct", ["-D", "NOLLIE_DIRECT"]), ("store", [])]:
                "-Xlinker", "-rpath", "-Xlinker", str(FRAMEWORKS), "-load-plugin-library", str(MACROS),
                *sources, str(fixture), "Services/Runtime/Tests/RuntimeServiceTests.swift",
                "Services/Runtime/Tests/CuaInstallerTests.swift", "Services/Runtime/Tests/LiveRelayHelperTests.swift",
-               "Services/Runtime/Tests/RuntimeExitRelayTests.swift", "Services/Runtime/Tests/RuntimeNetworkFilterTests.swift", str(main), "-o", str(binary)]
+               "Services/Runtime/Tests/RuntimeExitRelayTests.swift", "Services/Runtime/Tests/RuntimeNetworkFilterTests.swift",
+               "Services/Runtime/Tests/RuntimeKeysTests.swift", str(main), "-o", str(binary)]
     with (OUTPUT / (mode + "-compile.log")).open("w") as log:
         subprocess.run(command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)
     with (OUTPUT / (mode + "-tests.log")).open("w") as log:

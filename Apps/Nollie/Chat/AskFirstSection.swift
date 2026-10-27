@@ -1,7 +1,8 @@
 import SwiftUI
 import NollieCore
 
-/// The bot's own Ask first choice, read again whenever its settings are opened.
+/// The bot's own Ask first choice, read again whenever its settings are opened. Off, only the steps
+/// Nollie can't read stop asking: sending, buying, posting and deleting always wait for a yes.
 struct AskFirstSection: View {
     let profileName: String
     let label: String
@@ -53,13 +54,19 @@ struct AskFirstSection: View {
             }
             Button("Cancel", role: .cancel) { setting.cancelTurnOff() }
         } message: {
-            Text("It will send, buy, post and delete without asking.")
+            Text("Sending, buying, posting and deleting still wait for your yes. Steps Nollie can't read won't ask.")
         }
         .task(id: scope) {
             work?.cancel()
             setting.reset()
             guard let runtime, !model.lock.isLocked else { return }
             await setting.load(bot: profileName, runtime: runtime)
+            #if DEBUG
+            // The demo copy's `-nollie-demo-ask-first-off`: the turn-off question, for its picture.
+            if DemoMode.isOn, ProcessInfo.processInfo.arguments.contains("-nollie-demo-ask-first-off") {
+                await setting.requestChange(false, bot: profileName, runtime: runtime)
+            }
+            #endif
         }
         .onDisappear {
             work?.cancel()

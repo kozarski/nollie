@@ -103,7 +103,8 @@ def capture_elements(result):
 
 
 def snapshot_refs(result):
-    """Accessible names from a browser snapshot result: {"e12": "Buy now"} and the page's words."""
+    """Accessible names and roles from a browser snapshot result: {"e12": "Buy now"}, the page's words and,
+    after a navigation, its address."""
     try:
         document = json.loads(result) if isinstance(result, str) else result
     except ValueError:
@@ -111,11 +112,79 @@ def snapshot_refs(result):
     snapshot = document.get("snapshot") if isinstance(document, dict) else None
     if not isinstance(snapshot, str) or not snapshot:
         return None
-    refs = {}
+    refs, roles = {}, {}
     for match in _REF.finditer(snapshot):
         name = match.group(2) or match.group(4) or ""
         refs[match.group(3)] = name.replace('\\"', '"')
-    return {"refs": refs, "text": snapshot}
+        roles[match.group(3)] = match.group(1).lower()
+    url = document.get("url") if isinstance(document.get("url"), str) else None
+    return {"refs": refs, "roles": roles, "text": snapshot, "url": url}
+
+
+# Around a button: the dialog, sheet or form it sits in, or the lines next to it.
+ENCLOSING_ROLES = ("dialog", "alertdialog", "form", "region", "group", "sheet")
+NEAR_LINES = 12
+NEAR_X, NEAR_Y = 450, 300
+NEAR_ELEMENTS = 320
+BUTTON_ROLES = {"button", "menuitem", "menuitemradio", "menuitemcheckbox", "option", "switch"}
+
+
+def snapshot_around(text, ref):
+    """The snapshot lines around a ref: its enclosing dialog or form when there is one."""
+    lines = str(text or "").split("\n")
+    index = next((i for i, line in enumerate(lines) if re.search(rf"\bref={re.escape(ref)}\b", line)), None)
+    if index is None:
+        return None
+    depth = len(lines[index]) - len(lines[index].lstrip())
+    for start in range(index - 1, -1, -1):
+        line = lines[start]
+        indent = len(line) - len(line.lstrip())
+        if indent < depth:
+            depth = indent
+            role = re.match(r"^\s*-\s+([\w-]+)", line)
+            if role and role.group(1).lower() in ENCLOSING_ROLES:
+                end = start + 1
+                while end < len(lines) and (len(lines[end]) - len(lines[end].lstrip()) > indent or not lines[end].strip()):
+                    end += 1
+                return "\n".join(lines[start:end])
+    return "\n".join(lines[max(0, index - NEAR_LINES):index + NEAR_LINES + 1])
+
+
+_FORMS_SCRIPT = """(() => {
+  const want = %s;
+  const norm = s => String(s || '').replace(/\\s+/g, ' ').trim().toLowerCase();
+  const found = [];
+  for (const el of document.querySelectorAll('button, input[type=submit], input[type=button], input[type=image], [role=button]')) {
+    const name = norm(el.getAttribute('aria-label') || el.innerText || el.value || el.title || el.alt);
+    if (name !== norm(want)) continue;
+    const form = el.form || el.closest('form');
+    if (!form) { found.push({inform: false}); continue; }
+    found.push({inform: true, action: form.action || '', method: form.getAttribute('method') || 'get',
+                formaction: el.hasAttribute('formaction') ? el.formAction : '',
+                formmethod: el.getAttribute('formmethod') || ''});
+    if (found.length > 12) break;
+  }
+  return JSON.stringify({url: location.href, matched: found.length, forms: found.filter(f => f.inform)});
+})()"""
+
+
+def read_page_forms(task_id, label):
+    """The forms a button with this name belongs to on the bot's own browser page, read by a short script in
+    the page (it only reads): their action and method, and the page's address. None if it can't be read."""
+    if not isinstance(label, str) or not label.strip() or len(label) > 200:
+        return None
+    try:
+        from tools.browser_tool import browser_console
+        answer = json.loads(browser_console(expression=_FORMS_SCRIPT % json.dumps(label), task_id=task_id))
+        result = answer.get("result") if isinstance(answer, dict) and answer.get("success") else None
+        document = json.loads(result) if isinstance(result, str) else result
+    except Exception:
+        return None
+    if not isinstance(document, dict) or not isinstance(document.get("forms"), list):
+        return None
+    return {"url": document.get("url") if isinstance(document.get("url"), str) else None,
+            "forms": [f for f in document["forms"][:12] if isinstance(f, dict)],
+            "matched": document.get("matched")}
 
 
 class Memory:
@@ -151,6 +220,8 @@ class Memory:
             elif tool_name in ("browser_snapshot", "browser_navigate"):
                 found = snapshot_refs(result)
                 if found is not None:
+                    if found["url"] is None and tool_name == "browser_snapshot":
+                        found["url"] = (self.page(task_id) or {}).get("url")
                     self._put(self.pages, task_id or "default", found)
                 elif tool_name == "browser_navigate":
                     with self.lock:
@@ -187,6 +258,30 @@ class Memory:
                     and e["bounds"][1] <= y < e["bounds"][1] + e["bounds"][3]]
             return min(hits, key=lambda e: e["bounds"][2] * e["bounds"][3]) if hits else None
         return None
+
+    def near(self, session_id, args):
+        """Labels close to the clicked element, and every window, sheet and dialog title, from the latest
+        capture. UNREADABLE without a capture or a known element."""
+        with self.lock:
+            capture = self.captures.get(session_id or "")
+        if not capture:
+            return UNREADABLE
+        element = self.element(session_id, args)
+        if element is None:
+            return UNREADABLE
+        bounds = element.get("bounds")
+        if not (isinstance(bounds, list) and len(bounds) == 4):
+            return " ".join(str(e.get("label") or "") for e in capture["elements"].values())
+        cx, cy = bounds[0] + bounds[2] / 2, bounds[1] + bounds[3] / 2
+        found = []
+        for item in capture["elements"].values():
+            box, role = item.get("bounds"), str(item.get("role") or "").lower()
+            titled = any(word in role for word in ("window", "sheet", "dialog", "alert", "title", "heading"))
+            close = isinstance(box, list) and len(box) == 4 and abs(box[0] + box[2] / 2 - cx) <= NEAR_ELEMENTS \
+                and abs(box[1] + box[3] / 2 - cy) <= NEAR_ELEMENTS
+            if (titled or close) and item.get("label"):
+                found.append(str(item["label"]))
+        return "\n".join(found)
 
     def capture_text(self, session_id):
         with self.lock:
@@ -343,13 +438,15 @@ def owned_space(main_home, profile):
 
 
 class HermesScreen:
-    """``label_at`` and ``text`` for Ask first, bound to one call's chat and task."""
+    """``label_at``, ``text``, ``around`` and ``page`` for Ask first, bound to one call's chat and task."""
 
-    def __init__(self, memory=None, *, capture=capture_space, read=read_text, default_space=lambda: None):
+    def __init__(self, memory=None, *, capture=capture_space, read=read_text, default_space=lambda: None,
+                 page=None):
         self.memory = memory or Memory()
         self.capture = capture
         self.read = read
         self.default_space = default_space
+        self.forms = page
 
     def bind(self, task_id=None, session_id=None):
         return _Bound(self, task_id, session_id)
@@ -360,6 +457,12 @@ class HermesScreen:
 
     def text(self, tool, args):
         return self.bind().text(tool, args)
+
+    def around(self, tool, args):
+        return self.bind().around(tool, args)
+
+    def page(self, tool, args):
+        return self.bind().page(tool, args)
 
 
 class _Bound:
@@ -414,3 +517,43 @@ class _Bound:
             words = self._space_words(args)
             return UNREADABLE if words is UNREADABLE else " ".join(w["text"] for w in words)
         return UNREADABLE
+
+    def around(self, tool, args):
+        """The words near a click: the window or sheet around it, its dialog or form on a page, or the text
+        recognised close by on a Cua computer. UNREADABLE when none of that can be read."""
+        if tool == "computer_use":
+            return self.screen.memory.near(self.session_id, args)
+        if tool == "browser_click":
+            page = self.screen.memory.page(self.task_id)
+            ref = str(args.get("ref") or "").lstrip("@")
+            near = snapshot_around(page["text"], ref) if page and ref in page["refs"] else None
+            return UNREADABLE if near is None else near
+        if tool.startswith("mcp__cua__"):
+            x, y = args.get("x"), args.get("y")
+            if not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in (x, y)):
+                return UNREADABLE
+            words = self._space_words(args)
+            if words is UNREADABLE:
+                return UNREADABLE
+            close = [w for w in words if abs(w["x"] + w["w"] / 2 - x) <= NEAR_X and abs(w["y"] + w["h"] / 2 - y) <= NEAR_Y]
+            close.sort(key=lambda w: (round(w["y"] / 8), w["x"]))
+            return " ".join(w["text"] for w in close)
+        return UNREADABLE
+
+    def page(self, tool, args):
+        """The page a browser click lands on: its address, and the forms the pressed button belongs to (read
+        from the page itself, only for a button). None for anything that isn't Hermes's own browser."""
+        if tool != "browser_click":
+            return None
+        page = self.screen.memory.page(self.task_id)
+        if not page:
+            return UNREADABLE
+        ref = str(args.get("ref") or "").lstrip("@")
+        found = {"url": page.get("url"), "forms": []}
+        if page.get("roles", {}).get(ref) in BUTTON_ROLES and self.screen.forms is not None:
+            read = self.screen.forms(self.task_id, page["refs"].get(ref))
+            if read is None:
+                return UNREADABLE if not found["url"] else found
+            found = {"url": read.get("url") or found["url"], "forms": read.get("forms") or []}
+        return found
+

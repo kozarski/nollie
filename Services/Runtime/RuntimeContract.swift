@@ -10,6 +10,9 @@ enum NollieRuntimeContract {
     static let serviceLabel = "com.coreykozarski.nollie.runtime"
     static let owner = "com.coreykozarski.nollie"
     static let protocolVersion = 1
+    /// Each child's owner pipe and key pipe.
+    static let ownerDescriptor: Int32 = 3
+    static let keysDescriptor: Int32 = 4
 
     enum Phase: String, Codable, Sendable { case stopped, validating, starting, ready, restarting, failed }
     struct Snapshot: Codable, Equatable, Sendable {
@@ -18,10 +21,14 @@ enum NollieRuntimeContract {
         var endpoint: URL?
         var restartCount = 0
         var failure: Failure?
+        /// Keys still in a setup file after the last start moved the rest into the Keychain.
+        /// Zero means none are on disk; nil until a start has checked.
+        var keysLeftInFiles: Int?
     }
     enum Failure: String, Error, Codable, Sendable {
         case unavailable, consentRequired, invalidInstallation, preparationChanged, alreadyRunning
         case launchFailed, startupTimedOut, identityMismatch, childExited, restartLimit, cancelled
+        case keysUnavailable
     }
     enum Role: String, Codable, Sendable { case api, gateway }
     struct Child: Hashable, Sendable {
@@ -68,6 +75,8 @@ enum NollieRuntimeContract {
         let entrypoint: URL
         /// Papertrail's door, when it is listening. Without it Hermes starts without a proxy.
         var door: Door?
+        /// Set by preparation: keys that could not be moved out of the setup's files.
+        var keysLeftInFiles: Int?
         var source: URL { installation.appendingPathComponent("hermes") }
         var home: URL { installation.appendingPathComponent("home") }
 
@@ -83,6 +92,8 @@ enum NollieRuntimeContract {
             result["PATH"] = installation.appendingPathComponent("environment/bin").path + ":/usr/bin:/bin:/usr/sbin:/sbin"
             result["PYTHONUNBUFFERED"] = "1"
             result["NOLLIE_OWNER_FD"] = "3"
+            // API keys arrive on this pipe, read once at start. They are never in this environment.
+            result["NOLLIE_KEYS_FD"] = String(NollieRuntimeContract.keysDescriptor)
             // The computer add-on calls Cua's tool by full path, inside whichever copy is in use.
             if let cua = NollieCuaPlaces.cli(home: FileManager.default.homeDirectoryForCurrentUser, own: NolliePaths.current.cua) {
                 result["NOLLIE_CUA_CLI"] = cua.path
