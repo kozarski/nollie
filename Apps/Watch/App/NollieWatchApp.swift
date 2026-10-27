@@ -26,7 +26,8 @@ struct NollieWatchApp: App {
     }
 }
 
-/// The pages: each waiting approval, then the crew, then the last Night shift note when there is one.
+/// The pages: each waiting approval, then the crew, then the last Night shift note and the weekly note when there
+/// are ones.
 struct WatchHome: View {
     @Environment(WatchModel.self) private var model
 
@@ -46,6 +47,11 @@ struct WatchHome: View {
                     NightPage(note: night)
                         .tag(WatchModel.nightPage)
                         .containerBackground((night.needsLook ? Color.orange : Color.indigo).opacity(0.24).gradient, for: .tabView)
+                }
+                if let week = model.snapshot?.week {
+                    WeekPage(note: week)
+                        .tag(WatchModel.weekPage)
+                        .containerBackground(Color.teal.opacity(week.hasNews ? 0.3 : 0.2).gradient, for: .tabView)
                 }
             }
             .tabViewStyle(.verticalPage)

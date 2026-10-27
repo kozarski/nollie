@@ -22,6 +22,7 @@ _adapter = __import__(_name + ".hermes_adapter", fromlist=["BoardSource"])
 _private = __import__(_name + ".private_bots", fromlist=["read"])
 _looks = __import__(_name + ".bot_looks", fromlist=["read"])
 _papertrail = __import__(_name + ".papertrail", fromlist=["read"])
+_weekly = __import__(_name + ".weekly", fromlist=["read"])
 _posts = __import__(_name + ".posts", fromlist=["PostStore"])
 _night = __import__(_name + ".night_service", fromlist=["turn_on"])
 _shift = __import__(_name + ".night_shift", fromlist=["without_private"])
@@ -194,6 +195,75 @@ def papertrail(bot: str = "default", days: str = "7"):
     except OSError:
         raise HTTPException(503, "Papertrail cannot be read.", headers=NO_STORE) from None
     return JSONResponse(result, headers=NO_STORE)
+
+
+def _public_bot(target, bot):
+    """The Private list, after refusing a malformed or private bot name with the weekly note's words."""
+    if not _private.PROFILE_NAME.match(bot):
+        raise HTTPException(422, "Send a bot's Hermes profile name.", headers=NO_STORE)
+    try:
+        private = _private.read(target)[0] | _private.carried_over_names()
+    except (OSError, ValueError):
+        raise HTTPException(503, "The Private list cannot be read.", headers=NO_STORE) from None
+    if _core.private_identity(bot, private):
+        raise HTTPException(403, "The weekly note leaves private bots out.", headers=NO_STORE)
+    return private
+
+
+@router.get("/week")
+def week(bot: str = "default"):
+    """The weekly note's records for one bot: what it did and what left this Mac over the last 7 days, as counts
+    and names. Private bots are refused before their home is looked up."""
+    target = home()
+    private = _public_bot(target, bot)
+    source = bot_home(bot, target)
+    redactor = _shift.hermes_redactor()
+
+    def name(text):
+        cleaned = _shift.scrub(text, redactor, 240).strip()
+        return "" if _core.private_identity(cleaned, private) else cleaned
+
+    try:
+        jobs, jobs_kept = _adapter.ProfileJobs(target).jobs(bot), True
+    except Exception:
+        jobs, jobs_kept = [], False
+    try:
+        outcomes = _shift.OutcomeLog(target / "nollie-workflow").read()
+    except Exception:
+        outcomes = []
+    folder = source / "nollie-workflow" / "papertrail"
+    try:
+        result = _weekly.read(source, bot, jobs=jobs, outcomes=outcomes, config=_papertrail._config(source / "config.yaml"),
+                              name=name)
+    except OSError:
+        raise HTTPException(503, "The week cannot be read.", headers=NO_STORE) from None
+    result.update(papertrail=folder.is_dir() and not folder.is_symlink() and not folder.parent.is_symlink(),
+                  schedules_kept=jobs_kept)
+    return JSONResponse(result, headers=NO_STORE)
+
+
+class WeekSwitch(BaseModel):
+    bot: str
+    kind: str
+    name: str | None = None
+    on: bool
+
+
+@router.put("/week/switch")
+def week_switch(body: WeekSwitch):
+    """One tap from the weekly note: a bot's connected app, or its web tools, on or off. Nothing is removed."""
+    target = home()
+    _public_bot(target, body.bot)
+    if body.kind not in ("app", "web") or (body.kind == "app" and not _weekly.APP_NAME.match(body.name or "")):
+        raise HTTPException(422, "Send an app's name, or web.", headers=NO_STORE)
+    source = bot_home(body.bot, target)
+    try:
+        result = _weekly.set_switch(_weekly.ConfigFile(source), body.kind, body.name, body.on)
+    except _weekly.NoSuchSwitch:
+        raise HTTPException(404, "This bot has no such app.", headers=NO_STORE) from None
+    except Exception:
+        raise HTTPException(503, "The bot's settings can't be changed now.", headers=NO_STORE) from None
+    return JSONResponse({"bot": body.bot, **result}, headers=NO_STORE)
 
 
 class AwayNote(BaseModel):

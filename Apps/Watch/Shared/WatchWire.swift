@@ -28,6 +28,9 @@ enum WatchWire {
         /// The newest Night shift card of the last day and a half, worded on the phone. Nil when there is none,
         /// and from a phone that does not send one yet.
         var night: NightNote? = nil
+        /// The weekly note, worded on the phone from the records alone. Nil when the note is off, for a member of
+        /// someone's household, and from a phone that does not send one yet.
+        var week: WeekNote? = nil
 
         static func empty(at made: Date = Date(), connected: Bool = false) -> Snapshot {
             Snapshot(made: made, approvals: [], helpers: [], canStop: false, connected: connected)
@@ -86,6 +89,20 @@ enum WatchWire {
             var title: String
             var detail: String
         }
+    }
+
+    /// The weekly note in a few lines for the wrist: the week, its one line, and each helper's counts.
+    struct WeekNote: Codable, Equatable, Sendable {
+        /// "19 to 25 Oct".
+        var range: String
+        /// "3 helpers busy. 2 new things."
+        var headline: String
+        /// Each helper: its name, and "7 runs · asked twice · online 31 times · 1 new".
+        var helpers: [NightNote.Line]
+        /// Helpers past the ones listed.
+        var more: Int
+        /// Something is new this week, so the page wears the note's tint more strongly.
+        var hasNews: Bool
     }
 
     enum Answers: String, Codable, Equatable, Sendable {
@@ -242,6 +259,8 @@ enum WatchWords {
     static let flagged = "The safety check flagged this one."
     static let lastSeen = "Last seen"
     static let nightShift = "Night shift"
+    static let yourWeek = "Your week"
+    static let fullNote = "The whole note, with its taps, is in Nollie on your iPhone."
 
     /// "2 more", under the runs a busy night's note leaves out.
     static func more(_ n: Int) -> String { "\(n) more" }

@@ -111,6 +111,10 @@ enum LinkDoorPolicy {
         Rule(["GET", "POST", "PATCH", "DELETE"], "/api/plugins/kanban/**"), Rule([], "/api/plugins/kanban/events", socket: true),
         Rule(["GET"], "/api/plugins/nollie-workflow/private-bots"), Rule(["GET"], "/api/plugins/nollie-workflow/attention"),
         Rule(["GET"], "/api/plugins/nollie-workflow/papertrail"),
+        // The weekly note: one bot's week as counts and names, and one tap to turn a connected app or the web tools
+        // off or on again. The add-on refuses private bots and never removes anything; the door allows nothing but
+        // `?bot=` on the read (see `allowsQuery`).
+        Rule(["GET"], "/api/plugins/nollie-workflow/week"), Rule(["PUT"], "/api/plugins/nollie-workflow/week/switch"),
         // Each bot's character and colour, so a look picked on the phone is the Mac's too. The add-on
         // refuses a private bot's.
         Rule(["GET"], "/api/plugins/nollie-workflow/bot-looks"), Rule(["PUT"], "/api/plugins/nollie-workflow/bot-looks/*"),
@@ -190,7 +194,7 @@ enum LinkDoorPolicy {
     /// Paths whose query is held to one `bot` and nothing else: a helper's memory. So a phone can't say
     /// `on_this_mac`, which only Nollie on the Mac that runs Hermes sends for a private bot.
     static let botOnlyPaths: Set<String> = ["/api/plugins/nollie-workflow/memory", "/api/plugins/nollie-workflow/memory/notes",
-                                           "/api/plugins/nollie-workflow/memory/switch"]
+                                           "/api/plugins/nollie-workflow/memory/switch", "/api/plugins/nollie-workflow/week"]
 
     /// Every other path passes its query on as before; these take exactly one profile name.
     static func allowsQuery(path: String, query: String?) -> Bool {

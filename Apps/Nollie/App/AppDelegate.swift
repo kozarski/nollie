@@ -111,6 +111,7 @@ private enum AlertArrivals {
         }
         // The outcome of Stop from an alert has no screen of its own, so it shows even in the app.
         if info["nollie"] as? String == "stopResult" { return [.banner, .list] }
+        if WeeklyNoteReminder.isWeekly(info) { return [.banner, .list] }
 
         // The push setup test looks for these: that any push arrived, and that one carrying a nonce
         // was also decrypted.
@@ -133,6 +134,8 @@ private enum AlertArrivals {
 
         if button == ComputerStartedWords.stopAction {
             await stopFromAlert(center: center)
+        } else if WeeklyNoteReminder.isWeekly(info) {
+            model?.weeklyRequest = UUID()
         } else if let eventID = seen.eventID {
             model?.openCloudAlert(eventID: eventID)
         } else {

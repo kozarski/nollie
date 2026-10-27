@@ -5,7 +5,7 @@ import UserNotifications
 /// The rows in a few groups, with air between them instead of lines.
 private let settingsGroups: [[SettingsCategory]] = [
     [.bots, .appearance, .speech],
-    [.notifications, .privacy, .signIns, .cards, .siri],
+    [.notifications, .weekly, .privacy, .signIns, .cards, .siri],
     [.connection, .away, .keepAwake],
     [.about, .advanced],
 ]
@@ -65,7 +65,8 @@ struct SettingsView: View {
     }
 
     @ViewBuilder private var categoryRows: some View {
-        let visible = SettingsCategory.visible(developerMode: developerMode, away: showsAway, matching: search)
+        let visible = SettingsCategory.visible(developerMode: developerMode, away: showsAway,
+                                               weekly: !model.family.isMember(model), matching: search)
         ForEach(settingsGroups.indices, id: \.self) { index in
             let members = settingsGroups[index].filter(visible.contains)
             if !members.isEmpty {
@@ -130,6 +131,7 @@ private struct SettingsDestination: View {
         case .appearance: AppearanceView().untitledPage()
         case .speech: VoiceSettingsView().untitledPage()
         case .notifications: NotificationsView().untitledPage()
+        case .weekly: WeeklyNoteSettingsView()
         case .privacy: PrivacyView().untitledPage()
         case .signIns: signIns
         case .cards: cards

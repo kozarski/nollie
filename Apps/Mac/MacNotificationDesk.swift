@@ -24,6 +24,7 @@ enum MacNotificationDesk {
         transport.recordCallback(.foreground, result: payload.result)
         let context = ForegroundNotificationPolicy.context(MacAppDelegate.model)
 
+        if WeeklyNoteReminder.isWeekly(userInfo) { return [.banner, .list] }
         guard let eventID = payload.eventID else {
             let kind = (userInfo["hermes"] as? [String: Any])?["kind"] as? String
             return ForegroundNotificationPolicy.options(route: PendingRoute(notification: userInfo),
@@ -46,6 +47,11 @@ enum MacNotificationDesk {
 
         if let eventID = payload.eventID {
             MacAppDelegate.model?.openCloudAlert(eventID: eventID)
+            return
+        }
+        if WeeklyNoteReminder.isWeekly(userInfo) {
+            MacWindow.openMain?()
+            MacAppDelegate.model?.weeklyRequest = UUID()
             return
         }
         let button = response.actionIdentifier == UNNotificationDefaultActionIdentifier ? nil : response.actionIdentifier

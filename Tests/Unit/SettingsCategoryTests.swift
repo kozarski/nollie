@@ -5,14 +5,14 @@ struct SettingsCategoryTests {
     @Test func normalSettingsHasOneHomeForEachGroup() {
         #if os(macOS)
         #expect(SettingsCategory.visible(developerMode: false) == [
-            .bots, .appearance, .speech, .notifications, .privacy, .signIns, .cards, .siri, .connection, .keepAwake, .about
+            .bots, .appearance, .speech, .notifications, .weekly, .privacy, .signIns, .cards, .siri, .connection, .keepAwake, .about
         ])
         #expect(SettingsCategory.visible(developerMode: false, matching: "password") == [.signIns])
         #expect(SettingsCategory.visible(developerMode: false, matching: "sleep") == [.keepAwake])
         #else
         // Saved sign-ins are the Mac's alone: the iPhone never holds a password.
         #expect(SettingsCategory.visible(developerMode: false) == [
-            .bots, .appearance, .speech, .notifications, .privacy, .cards, .siri, .connection, .about
+            .bots, .appearance, .speech, .notifications, .weekly, .privacy, .cards, .siri, .connection, .about
         ])
         #expect(SettingsCategory.visible(developerMode: false, matching: "password").isEmpty)
         // Keep awake is the Mac's own sleep.
@@ -22,6 +22,12 @@ struct SettingsCategoryTests {
         #expect(SettingsCategory.visible(developerMode: false, matching: "checkout") == [.cards])
         #expect(SettingsCategory.visible(developerMode: false, matching: "avatar") == [.bots])
         #expect(SettingsCategory.visible(developerMode: false, matching: "glass") == [.appearance])
+    }
+
+    @Test func theWeeklyNoteIsTheOwnersOnly() {
+        #expect(SettingsCategory.visible(developerMode: false, matching: "weekly") == [.weekly])
+        #expect(SettingsCategory.visible(developerMode: false, weekly: false, matching: "weekly").isEmpty)
+        #expect(!SettingsCategory.visible(developerMode: false, weekly: false).contains(.weekly))
     }
 
     @Test func groupedControlsRemainDiscoverable() {

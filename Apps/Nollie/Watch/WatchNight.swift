@@ -20,5 +20,18 @@ enum WatchNight {
                                    counts: NightShiftWords.counts(card.counts), runs: Array(shown), more: max(0, more),
                                    needsLook: needsLook)
     }
+
+    /// Helpers the wrist's weekly note lists before "2 more".
+    static let shownHelpers = 4
+
+    /// The weekly note made small: the same counts as the phone's note, nothing more. Nil when the note isn't
+    /// shown on this phone (off, or a member's).
+    static func week(_ note: WeeklyNote?, shown: Bool) -> WatchWire.WeekNote? {
+        guard shown, let note else { return nil }
+        let lines = note.short.prefix(shownHelpers).map { WatchWire.NightNote.Line(title: $0.name, detail: $0.detail) }
+        return WatchWire.WeekNote(range: WeeklyNoteDates.range(note.since, note.until), headline: note.headline,
+                                  helpers: Array(lines), more: max(0, note.helpers.count - lines.count),
+                                  hasNews: !note.news.isEmpty)
+    }
 }
 #endif

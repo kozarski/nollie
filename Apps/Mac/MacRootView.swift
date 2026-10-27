@@ -49,6 +49,7 @@ struct MacRootView: View {
             .task { MacWindow.openMain = { openWindow(id: MacWindow.main) } }
             .companionOffer(touring: touring)
             .notificationNavigation(model)
+            .weeklyNoteHost()
             #if NOLLIE_DIRECT
             .modifier(LeftoverOffer())
             #endif

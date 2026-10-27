@@ -563,6 +563,116 @@ def papertrail_rest(method: str, base: str, query: dict, payload) -> tuple[int, 
     return ok(papertrail_view(bot, int(days)))
 
 
+# The weekly note's records, as nollie-workflow serves them (GET /api/plugins/nollie-workflow/week?bot=): what each
+# bot did and what left the Mac over the last 7 days, as counts and names. Seeded for "default" (a busy week with a
+# new connected app, more questions than usual and a filter that is off) and "work" (a new, paused schedule). Each
+# schedule reads its paused state from the schedules themselves, so Pause in the note shows up here.
+# PUT /api/plugins/nollie-workflow/week/switch turns a seeded app or the web tools off and on again.
+# POST /api/_mock/week {"state": "busy"|"quiet"} empties every bot's week; "reset" restores the switches.
+WEEK = dict(state="busy")
+WEEK_SWITCHES: dict = {}
+WEEK_SEED = dict(
+    default=dict(
+        replies=dict(stayed=40, left=11, online=10),
+        places=[dict(kind="model", provider="anthropic", label="Anthropic", count=31, first_day=20),
+                dict(kind="search", service="exa", count=6, first_day=18),
+                dict(kind="pages", count=9, first_day=18),
+                dict(kind="mcp", host="mcp.notes.example.com", count=4, first_day=2),
+                dict(kind="terminal", host="code.example.com", count=3, first_day=15),
+                dict(kind="model", provider="custom", host="http://192.168.1.40:8080", count=2, first_day=12),
+                dict(kind="pictures", count=1, first_day=16)],
+        answers=dict(once=3, session=1, always=0, deny=1), asks=dict(send=3, delete=2), earlier_answers=[1, 2, 1],
+        schedules=[dict(id="morning-brief", created_day=40, runs=dict(done=5, failed=0, unfinished=0))],
+        board=dict(done=3, stopped=0, failed=0),
+        apps=[dict(name="notes", on=True, host="mcp.notes.example.com")]),
+    work=dict(
+        replies=dict(stayed=9, left=3, online=3),
+        places=[dict(kind="model", provider="nous", label="Nous Portal", count=5, first_day=19),
+                dict(kind="search", service="exa", count=2, first_day=19),
+                dict(kind="code", host="files.example.org", count=2, first_day=1)],
+        answers=dict(once=1, session=0, always=0, deny=0), asks=dict(send=1), earlier_answers=[1, 0, 2],
+        schedules=[dict(id="dep-audit", created_day=2, runs=dict(done=0, failed=0, unfinished=0))],
+        board=dict(done=0, stopped=0, failed=0), apps=[]),
+)
+
+
+def week_view(bot: str, now: float | None = None) -> dict:
+    """The week route's answer for a seeded bot, with every time worked out from `now` (the Mac's local days)."""
+    now = time.time() if now is None else now
+    today = datetime.date.fromtimestamp(now)
+
+    def midnight(day: int) -> int:
+        return int(datetime.datetime.combine(today - datetime.timedelta(days=day), datetime.time()).timestamp())
+
+    seed = WEEK_SEED[bot]
+    quiet = WEEK["state"] == "quiet"
+    places = [] if quiet else [
+        dict({k: v for k, v in place.items() if k != "first_day"}, first_at=midnight(place["first_day"]) + 10 * 3600)
+        for place in seed["places"]]
+    schedules = []
+    for seeded in seed["schedules"]:
+        job = _cron_job(seeded["id"])
+        if job is None:
+            continue
+        runs = dict(done=0, failed=0, unfinished=0) if quiet else seeded["runs"]
+        schedules.append(dict(id=seeded["id"], name=job.get("name") or None,
+                              created_at=midnight(seeded["created_day"]) + 9 * 3600,
+                              paused=job.get("enabled") is False or job.get("state") == "paused", finished=False,
+                              runs=runs))
+    apps = [dict(app, on=WEEK_SWITCHES.get((bot, "app", app["name"]), app["on"])) for app in seed["apps"]]
+    return dict(bot=bot, days=7, now=int(now), since=midnight(6), recording_since=midnight(30), papertrail=True,
+                replies=dict(stayed=0, left=0, online=0) if quiet else seed["replies"], places=places,
+                places_more=0, answers=dict(once=0, session=0, always=0, deny=0) if quiet else seed["answers"],
+                asks={} if quiet else seed["asks"], earlier_answers=seed["earlier_answers"], schedules=schedules,
+                runs_kept=True, schedules_kept=True,
+                board=dict(done=0, stopped=0, failed=0) if quiet else seed["board"], apps=apps,
+                web=dict(on=WEEK_SWITCHES.get((bot, "web", None), True), service="exa"), filter="off")
+
+
+def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    if base == "/api/_mock/week" and method == "POST":
+        state = payload.get("state", "busy") if isinstance(payload, dict) else None
+        if state == "reset":
+            WEEK_SWITCHES.clear()
+            WEEK["state"] = "busy"
+        elif state in ("busy", "quiet"):
+            WEEK["state"] = state
+        else:
+            return refuse(422, "Send a state: busy, quiet or reset.")
+        return ok(dict(state=WEEK["state"]))
+    if base not in ("/api/plugins/nollie-workflow/week", "/api/plugins/nollie-workflow/week/switch"):
+        return None
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+    switching = base.endswith("/switch")
+    if method != ("PUT" if switching else "GET"):
+        return refuse(405, "Method Not Allowed")
+    fields = payload if isinstance(payload, dict) else {}
+    bot = fields.get("bot") if switching else unquote(query.get("bot", "default"))
+    if not isinstance(bot, str) or not PRIVATE_PROFILE_NAME.match(bot):
+        return refuse(422, "Send a bot's Hermes profile name.")
+    if private_identity(bot) or set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names():
+        return refuse(403, "The weekly note leaves private bots out.")
+    if bot not in PROFILES and bot not in CREATED_PROFILES:
+        return refuse(404, "No such bot.")
+    seed = WEEK_SEED.get(bot)
+    if not switching:
+        if seed is None:
+            return ok(dict(bot=bot, days=7, now=int(time.time()), since=0, recording_since=None, papertrail=False,
+                           replies=dict(stayed=0, left=0, online=0), places=[], places_more=0,
+                           answers=dict(once=0, session=0, always=0, deny=0), asks={}, earlier_answers=[], schedules=[],
+                           runs_kept=True, schedules_kept=True, board=dict(done=0, stopped=0, failed=0), apps=[],
+                           web=dict(on=True, service=None), filter="off"))
+        return ok(week_view(bot))
+    kind, name, on = fields.get("kind"), fields.get("name"), fields.get("on")
+    if kind not in ("app", "web") or not isinstance(on, bool) or (kind == "app" and not isinstance(name, str)):
+        return refuse(422, "Send an app's name, or web.")
+    if kind == "app" and not any(app["name"] == name for app in (seed or {}).get("apps", [])):
+        return refuse(404, "This bot has no such app.")
+    WEEK_SWITCHES[(bot, kind, name if kind == "app" else None)] = on
+    return ok(dict(bot=bot, kind=kind, name=name if kind == "app" else None, on=on))
+
+
 # Ask first starts on for every demo bot. POST /api/_mock/ask-first resets the choices.
 ASK_FIRST: dict[str, bool] = {}
 
@@ -3402,6 +3512,7 @@ def process_request(connection, request):
         ("quiet", lambda: sign_ins_rest(method, base, query, body)),
         ("normal", lambda: crew_rest(method, base, body)),
         ("quiet", lambda: papertrail_rest(method, base, query, body)),
+        ("quiet", lambda: week_rest(method, base, query, body)),
         ("quiet", lambda: night_shift_rest(method, base, query, body)),
         ("normal", lambda: computer_control_rest(method, base, query)),
         ("quiet", lambda: own_computer_rest(method, base, query, body)),
