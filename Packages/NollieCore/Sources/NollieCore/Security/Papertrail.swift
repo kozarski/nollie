@@ -97,6 +97,33 @@ public struct Papertrail: Decodable, Equatable, Sendable {
         }
     }
 
+    /// One time a bot used apps on this Mac: which apps and how many steps. Pictures of the screen stayed on the Mac.
+    public struct MacSession: Decodable, Equatable, Sendable {
+        public var at: Double
+        public var apps: [String]?
+        public var actions: Int?
+        public var looks: Int?
+        /// Always 0: the add-on keeps the line to say so.
+        public var screenshotsLeft: Int?
+
+        public init(at: Double, apps: [String]?, actions: Int?, looks: Int? = nil, screenshotsLeft: Int? = 0) {
+            self.at = at; self.apps = apps; self.actions = actions; self.looks = looks; self.screenshotsLeft = screenshotsLeft
+        }
+
+        /// "Notes", "Notes and TextEdit".
+        public var appsText: String {
+            let names = (apps ?? []).filter { !$0.isEmpty }
+            return names.isEmpty ? "An app" : Papertrail.list(names)
+        }
+
+        /// "6 actions", "1 action, 2 looks".
+        public var stepsText: String {
+            var parts = [Papertrail.count(actions ?? 0, "action", "actions")]
+            if let looks, looks > 0 { parts.append(Papertrail.count(looks, "look", "looks")) }
+            return parts.joined(separator: ", ")
+        }
+    }
+
     public var bot: String?
     public var days: Int?
     public var now: Double?
@@ -109,6 +136,8 @@ public struct Papertrail: Decodable, Equatable, Sendable {
     public var left: Counts?
     public var entries: [Entry]?
     public var more: Int?
+    /// Newest first. Not counted in what left: no picture of the screen went anywhere.
+    public var macSessions: [MacSession]?
 
     public init(todayStartsAt: Double?, tomorrowStartsAt: Double? = nil, stayed: Int = 0, left: Int = 0, entries: [Entry]) {
         self.todayStartsAt = todayStartsAt

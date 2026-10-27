@@ -1,6 +1,7 @@
 #if os(macOS)
 import AppKit
 import SwiftUI
+import NollieCore
 import Testing
 @testable import Nollie
 
@@ -77,6 +78,13 @@ import Testing
             .defaultAppStorage(defaults)
             try attach(page, named: "computer-apps-\(name)")
         }
+    }
+
+    @Test func thePapertrailLinesForThisMac() throws {
+        let sessions = [Papertrail.MacSession(at: 1_760_969_000, apps: ["Notes", "TextEdit"], actions: 6, looks: 2),
+                        Papertrail.MacSession(at: 1_760_500_000, apps: ["Reminders"], actions: 1)]
+        try attach(PapertrailMacUse(sessions: sessions, todayStartsAt: 1_760_914_800)
+            .padding(24).frame(width: 460).background(Ink.canvas), named: "papertrail-mac-use")
     }
 
     @Test func theBetaSwitch() throws {

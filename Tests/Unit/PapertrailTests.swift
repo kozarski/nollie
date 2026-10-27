@@ -59,6 +59,19 @@ import Testing
         #expect(trail.onlineCount == 1)
     }
 
+    @Test func timesThisMacWasUsedReadAsAppsAndSteps() throws {
+        let json = #"{"left": {"window": 0}, "entries": [], "mac_sessions": [{"at": 5, "apps": ["Notes", "TextEdit"], "actions": 6, "looks": 2, "screenshots_left": 0}, {"at": 4, "apps": ["Notes"], "actions": 1, "looks": 0, "screenshots_left": 0}]}"#
+        let trail = try JSONCoding.decoder.decode(Papertrail.self, from: Data(json.utf8))
+        let sessions = try #require(trail.macSessions)
+        #expect(sessions.map(\.appsText) == ["Notes and TextEdit", "Notes"])
+        #expect(sessions.map(\.stepsText) == ["6 actions, 2 looks", "1 action"])
+        #expect(sessions.allSatisfy { $0.screenshotsLeft == 0 })
+        // Not counted as leaving: no picture went anywhere.
+        #expect(trail.onlineCount == 0)
+        // An older add-on sends none.
+        #expect(try JSONCoding.decoder.decode(Papertrail.self, from: Data(Self.sample.utf8)).macSessions == nil)
+    }
+
     @Test func anEmptyAnswerIsNotPapertrail() throws {
         // An older gateway or the mock answers unknown routes with 200 and nothing in it.
         let empty = try JSONCoding.decoder.decode(Papertrail.self, from: Data("{}".utf8))
