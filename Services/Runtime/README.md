@@ -4,7 +4,7 @@ This is the Direct edition's runtime lifecycle implementation. It does not regis
 
 The signed helper must supply a fixed installations directory and its bundled `runtime_entry.py` to `NativeRuntimeBackend`, then own one `NollieRuntimeSupervisor`. The backend validates the installation UUID, private ownership, all four preparation receipts and the entrypoint digest before each start or restart. A file lock prevents two helpers owning one installation. It never adopts a saved PID.
 
-The two child roles are explicit: `--profile default serve --host 127.0.0.1 --port 0 --isolated` and `--profile default gateway run --external-supervisor`. Environment values are constructed from the owned installation; inherited credentials and existing Hermes settings are not passed. Only the API child receives the fresh session token. The private owner pipe is not inherited by later agent subprocesses. Closing it or losing the helper ends these two children.
+The two child roles are explicit: `--profile default serve --host 127.0.0.1 --port 0 --isolated` and `--profile default gateway run --external-supervisor`. Environment values are constructed from the owned installation; inherited credentials and existing Hermes settings are not passed. Only the API child receives the fresh session token. API keys arrive on their own pipe (see API keys below). The private owner pipe is not inherited by later agent subprocesses. Closing it or losing the helper ends these two children.
 
 Readiness requires the API's exact sentinel plus authenticated identity with the launched PID and the owned gateway's current running record. Ready means these two processes started, not that a model, Cua, phone access or workflow companions are configured. Process output is drained without being persisted. Restarts revalidate the receipts and stop after three failures within ten minutes. A deliberate stop never restarts.
 
@@ -19,6 +19,48 @@ The helper mints a 32-byte random token per installation in its private Data Pro
 The private `RuntimeService/enabled.json` receipt contains only a version and installation UUID. It is written atomically with mode 0600, under a private owned directory. Symlinks, hardlinks and shared files are rejected. The enabled installation resumes after helper restart using the existing credential. Explicit stop clears consent before stopping children; failure to clear it is reported. Ordinary process termination preserves consent, while closing owner pipes stops the children. Unregister the exact service after stopping it; removing an installation's data is a separate choice.
 
 Startup has a 60-second response deadline. Failed or timed-out starts revoke consent; owned-child cleanup keeps new starts blocked until it finishes. A live but stale gateway heartbeat does not count as ready: it must be from this child launch, no more than 120 seconds old and no more than 5 seconds in the future.
+
+## API keys
+
+Provider keys and tokens for the owned assistant live in this helper's Data Protection Keychain
+(`RuntimeKeyStore.swift`): one generic password per key, service `com.coreykozarski.nollie.runtime.keys`,
+account `<installation>/<bot>/<NAME>`, this device only, readable after the first unlock, never synced, never
+prompting. Remove Nollie deletes them with the helper's other items.
+
+**Every start moves keys out of files** (`RuntimeKeyMigration.swift`), restarts included, under the supervisor
+lock and Hermes's own `.env.lock`. In `home/.env` and each `home/profiles/<id>/.env`, a line whose name ends in
+`_KEY`, `_TOKEN`, `_SECRET` or `_PASSWORD` is a key, except process-wide settings (`TERMINAL_*`,
+`HERMES_KANBAN_*`, `HERMES_TELEGRAM_*`, `NOLLIE_*`) and the session token. Each key is written to the Keychain
+and read back; only then is the file rewritten without those lines (a new owner-only copy, renamed over the
+original if it hasn't changed since it was read), with one comment line saying where the keys went. Every
+other line stays byte for byte, and the file is never left empty (Hermes treats an empty `.env` as no bot).
+Stopping at any point loses nothing: the next start finds the key in the file again and repeats. An empty value
+is Hermes clearing a key, so the Keychain forgets it too. Left in the file and counted: a symlinked or hard-linked
+file, a file that isn't UTF-8 or has a quoted value running past its line, a value with an escape python-dotenv
+and Hermes read differently, a name another value refers to with `${NAME}`, and any key whose Keychain write
+failed. `op://` references are not keys and stay. Hermes's `.env.bak-*` copies lose the keys the Keychain holds.
+A bot Hermes deleted (its folder gone, or `profiles/.deleted/<id>`), and a setup whose folder is gone, have their
+keys forgotten. The status document says how many keys are still in files (`keysLeftInFiles`), never which.
+
+**Hermes reads them from its environment.** After the migration, the Keychain's keys for this installation go to
+each child as `{"version": 1, "profiles": {bot: {NAME: value}}}` on descriptor 4 (`NOLLIE_KEYS_FD`), written after
+the spawn and closed. They are never in argv, the launch environment (which `ps eww` shows any app running as
+you), a file or a log. `runtime_entry.py` reads them before anything else, drops the variable, and registers a
+Hermes secret source (Hermes's contract for Bitwarden and 1Password) that is always on: the launch bot's keys go
+into the process environment as Hermes applies its sources at start, and each other bot's into that bot's own
+secret scope, never the shared environment. Whatever a bot's `.env` says about a name wins, in every process: a
+key Hermes writes there later is the newer one until the next start moves it, and an empty one stays cleared. A
+bot made as a copy records the names it takes along (`.nollie-keys-from`, names only, messaging tokens left behind
+as Hermes's own copy does); the copy uses them at once and the next start copies them in the Keychain. The
+entry point refuses to start without a valid key pipe. The source hooks `env_loader._load_secrets_config` and
+`get_secret_source_values`, guarded by five exact source hashes.
+
+**What stays on disk.** `auth.json` in each bot's folder: sign-ins Hermes makes itself (ChatGPT plan, Nous, xAI,
+MiniMax, its own Claude sign-in) and any key added with `hermes auth add`. Hermes rewrites these as tokens refresh
+and has no environment or path for them besides `HERMES_HOME`. The local model's loopback key
+(`runtimes/llamacpp/.api_key`). `.op.env`, if someone set up 1Password for Hermes. Keys Hermes writes to a `.env`
+stay there until the next start. `python3 Tools/runtime-helper/run-keys-smoke.py --python <env>/bin/python --source
+<pinned-hermes-source>` runs Hermes's own resolution with this source, offline.
 
 ## When Nollie.app is gone
 
@@ -124,7 +166,7 @@ The endpoint is registered before normal authenticated API assembly and addition
 
 ## Packaging and proof
 
-The helper app target includes these Swift files (the exit relay's four among them) plus `ConfigurationBackup.swift`, `ScopedHermesImport.swift`, `NativeDependencyInstaller.swift` and `NativeSetupKit.swift`, and bundles `runtime_entry.py` unchanged. Updating that resource requires changing the embedded digest and tests. Its private Keychain group is `$(AppIdentifierPrefix)com.coreykozarski.nollie.runtime`.
+The helper app target includes these Swift files (the exit relay's four and the two key files among them) plus `ConfigurationBackup.swift`, `ScopedHermesImport.swift`, `NativeDependencyInstaller.swift` and `NativeSetupKit.swift`, and bundles `runtime_entry.py` unchanged. Updating that resource requires changing the embedded digest and tests. Its private Keychain group is `$(AppIdentifierPrefix)com.coreykozarski.nollie.runtime`.
 
 Embed `Nollie Runtime.app` under `Contents/Helpers` and the LaunchAgent plist under `Contents/Library/LaunchAgents` in Direct builds only. Register through `SMAppService.agent(plistName:)` after explicit setup consent, respect approval state, and complete the ordinary ConnectionTester handshake. Store archives must contain neither embedded service nor registration plist.
 

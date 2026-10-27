@@ -16,6 +16,9 @@ struct SystemControlFailure: Error {}
 /// and refuses the action before any approval card (tools/bot_desktop/lease.py,
 /// tools/computer_use/tool.py). Changing the epoch also discards a result returned after control
 /// changed. It cannot undo input already sent to an app.
+/// Hermes reads no lease file as the bot's, so a bot that has none is given a person's the first time
+/// its switch is read: off until the person turns it on. A private bot is left alone here; Nollie's own
+/// setup writes its lease.
 @MainActor
 @Observable
 final class SystemControl {
@@ -121,14 +124,19 @@ final class SystemControl {
         // An answer that comes back after the connection moved or a write began is dropped.
         guard rt.connection.gateway == gateway, writeGeneration[key] == generation else { return }
         spaces[key] = cfg.spaces
-        guard let lease = try? await readLease(rt, home) else { return }
+        guard var lease = try? await readLease(rt, home) else { return }
         guard !busy.contains(key), writeGeneration[key] == generation, rt.connection.gateway == gateway else { return }
+        if lease.missing, !Self.isPrivate(profile, connection: rt.connection.id) {
+            // Never written over: one that appeared since the read is the bot's or the person's own.
+            guard (try? await writeLease(rt.api, home, holder: "human", epoch: 1, overwrite: false)) != nil else { return }
+            guard !busy.contains(key), writeGeneration[key] == generation, rt.connection.gateway == gateway else { return }
+            lease = Lease(holder: "human", epoch: 1, confirmedHuman: true)
+        }
         states[key] = lease.explicitAgent
         source[key] = gateway
         // Older versions switched Hermes's own computer_use on: it goes off again, once, never for a
         // private bot (whose settings Nollie doesn't touch). This only ever takes a tool away.
-        if !cfg.disabled.contains("computer_use"), !keptOff.contains(key),
-           !PrivateBots.isPrivate(profile, connection: rt.connection.id), profile.lowercased() != "private" {
+        if !cfg.disabled.contains("computer_use"), !keptOff.contains(key), !Self.isPrivate(profile, connection: rt.connection.id) {
             keptOff.insert(key)
             let body: [String: JSONValue] = ["agent": .object(["disabled_toolsets": .array((cfg.disabled + ["computer_use"]).map { .string($0) })])]
             let _: JSONValue? = try? await rt.api.send("PUT", "/api/config", profile: profile, json: ["config": .object(body)])
@@ -137,6 +145,11 @@ final class SystemControl {
 
     /// Bots whose computer_use was switched off this run, so it is asked for once at most.
     private var keptOff: Set<Key> = []
+
+    /// A bot Nollie never reads: on the Private list for this gateway, or one of the always-private names.
+    static func isPrivate(_ profile: String, connection: UUID) -> Bool {
+        PrivateBots.isPrivate(profile, connection: connection) || AskFirstModel.isPrivateBot(profile) { _ in false }
+    }
 
     /// Whether Hermes's own computer_use could act on this Mac for a bot now, by Hermes's own
     /// rule: the tools aren't switched off and the lease isn't a person's (no lease file is the
@@ -278,6 +291,8 @@ final class SystemControl {
         var confirmedHuman = false
         /// The file exists and names the agent. A missing file is Hermes's default, not the switch.
         var explicitAgent = false
+        /// There is no lease file: Hermes would let the bot act.
+        var missing = false
     }
 
     private func home(_ rt: GatewayRuntime, _ profile: String) -> String? {
@@ -307,7 +322,7 @@ final class SystemControl {
                          confirmedHuman: holder == "human" && obj["epoch"] is NSNumber,
                          explicitAgent: holder == "agent")
         } catch HermesAPIError.http(let status, _) where status == 404 {
-            return Lease(holder: "agent", epoch: 0)
+            return Lease(holder: "agent", epoch: 0, missing: true)
         }
     }
 
@@ -315,14 +330,14 @@ final class SystemControl {
         try await writeLease(rt.api, home, holder: holder, epoch: epoch)
     }
 
-    private func writeLease(_ api: HermesAPI, _ home: String, holder: String, epoch: Int) async throws {
+    private func writeLease(_ api: HermesAPI, _ home: String, holder: String, epoch: Int, overwrite: Bool = true) async throws {
         var lease: [String: Any] = ["holder": holder, "since": Date().timeIntervalSince1970, "epoch": epoch]
         lease["viewer_id"] = holder == "human" ? "nollie-app" : NSNull()
         lease["reason"] = holder == "human" ? "System control is off in the Nollie app" : ""
         let data = try JSONSerialization.data(withJSONObject: lease, options: [.sortedKeys])
         let body: JSONValue = ["path": .string(Self.leasePath(home)),
                                "data_url": .string("data:application/json;base64," + data.base64EncodedString()),
-                               "overwrite": true]
+                               "overwrite": .bool(overwrite)]
         let result: ManagedUploadResult = try await api.send("POST", "/api/files/upload", json: body)
         guard result.ok != false, result.path == Self.leasePath(home) else { throw StopFailure.unconfirmed }
     }

@@ -15,9 +15,9 @@ summary, so what runs is exactly what you read. You can allow it once, allow it 
 rules before it runs, not the helper's own judgement. Anything that sends a message or email, pays or buys,
 posts publicly or deletes files or accounts waits for your yes, on a card that says the whole action in plain
 words. A click on a button such as Send or Pay adds "You're about to press “Send”", read from the screen itself.
-Scheduled work never gets these: they are held, and Night shift lists them in the morning when it is on. The rules can't read
-everything a page means, such as an icon with no words, and today they run in your main helper and in helpers
-Nollie's add-on was copied into, not yet in every new helper; [Ask first](ask-first.md) lists what they miss.
+Scheduled work never gets these: they are held, and Night shift lists them in the morning when it is on. When the rules
+can't tell what something does, they ask too. They can't read everything a page's code means, and they run in every
+helper Nollie sets up, Private ones included; [Ask first](ask-first.md) lists what they miss.
 
 **Saved sign-ins keep pictures away from your password.** Nollie types a saved sign-in into a helper's computer
 after your yes. The helper is never told the password, and while it is typed every new screenshot, recording and

@@ -2127,7 +2127,7 @@ def _once_schedule(stamp: str):
 
 
 def _cron_create(profile: str, payload):
-    if profile not in PROFILES:
+    if profile not in PROFILES and profile not in CREATED_PROFILES:
         return refuse(400, "Choose a bot for the task.")
     fields = payload if isinstance(payload, dict) else {}
     texts = {key: fields.get(key) for key in ("prompt", "schedule")}

@@ -9,13 +9,13 @@ import Testing
 @Suite(.serialized) struct SystemControlScopeTests {
     private let screen = ApprovalRequest(requestId: "r", sessionId: "s", patternKey: "cua:click:background")
 
-    private func runtime(_ host: String) throws -> GatewayRuntime {
+    private func runtime(_ host: String, profile: String = "default") throws -> GatewayRuntime {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [ScopeStub.self]
         let connection = GatewayConnection(name: host, gateway: try GatewayURL.normalize("https://" + host), authMode: .sessionToken)
         let rt = GatewayRuntime(connection: connection, store: ConnectionStore(),
                                 backend: GatewayBackend(urlSession: URLSession(configuration: configuration)))
-        rt.profiles = [ProfileInfo(name: "default", path: "/fixture/" + host + "/default")]
+        rt.profiles = [ProfileInfo(name: profile, path: "/fixture/" + host + "/" + profile)]
         return rt
     }
 
@@ -110,6 +110,8 @@ import Testing
     /// whichever way the switch goes, and an older version's "on" is taken back once. Never for a
     /// private bot, whose settings Nollie doesn't touch.
     @Test func hermesOwnComputerUseStaysOff() async throws {
+        // A Private list that reads, as on a signed device: an unreadable one counts every bot as private.
+        PrivateBots.useForTesting(PrivateBots(names: ["private", "moss"], settled: true))
         let fixture = ScopeFixture(leases: ["a.invalid": "human"])
         ScopeStub.use(fixture)
         defer { ScopeStub.reset() }
@@ -123,18 +125,64 @@ import Testing
         // The pretend gateway still reports nothing switched off: already asked this run, so left alone.
         #expect(fixture.disabledWritten("a.invalid") == [["computer_use"]])
         #expect(control.isOn("default", a), "the switch is the lease alone")
-        // A bot an older version left with it on: taken back once on the next read. Where the
-        // Private list can't be read (an unsigned simulator has no Keychain), every bot counts as
-        // private and nothing is written.
-        let readable = !PrivateBots.isPrivate("career", connection: a.connection.id)
+        // A bot an older version left with it on: taken back once on the next read.
         a.profiles.append(ProfileInfo(name: "career", path: "/fixture/a.invalid/career"))
         await control.refresh("career", a)
         await control.refresh("career", a)
-        let written = readable ? 2 : 1
-        #expect(fixture.disabledWritten("a.invalid") == Array(repeating: ["computer_use"], count: written))
-        a.profiles.append(ProfileInfo(name: "private", path: "/fixture/a.invalid/private"))
-        await control.refresh("private", a)
-        #expect(fixture.disabledWritten("a.invalid").count == written)
+        #expect(fixture.disabledWritten("a.invalid") == [["computer_use"], ["computer_use"]])
+        // Never a private bot's settings.
+        a.profiles.append(ProfileInfo(name: "moss", path: "/fixture/a.invalid/moss"))
+        await control.refresh("moss", a)
+        #expect(fixture.disabledWritten("a.invalid").count == 2)
+    }
+
+    /// Hermes reads no lease as the bot's. The first read gives the bot a person's, so This Mac is off
+    /// until the person turns it on, and the switch shows exactly that.
+    @Test func aBotWithoutALeaseStartsOff() async throws {
+        // A Private list that reads, as on a signed device: an unreadable one counts every bot as private.
+        PrivateBots.useForTesting(PrivateBots(names: ["private", "moss"], settled: true))
+        let fixture = ScopeFixture(leases: ["lease-none.invalid": ScopeFixture.missing])
+        ScopeStub.use(fixture)
+        defer { ScopeStub.reset() }
+        let rt = try runtime("lease-none.invalid")
+        let control = SystemControl()
+        await control.refresh("default", rt)
+        #expect(control.state("default", rt) == false)
+        #expect(fixture.uploads("lease-none.invalid") == [UploadedLease(holder: "human", epoch: 1, overwrite: false)])
+        #expect(answer(control, rt) == nil)
+        // Read again, the person's lease is simply read: nothing more is written.
+        await control.refresh("default", rt)
+        #expect(fixture.uploads("lease-none.invalid").count == 1)
+        // Turning it on hands the lease to the bot, past the epoch the person's lease began.
+        #expect(await control.set(true, profile: "default", rt: rt))
+        #expect(fixture.uploads("lease-none.invalid").last == UploadedLease(holder: "agent", epoch: 2, overwrite: true))
+    }
+
+    @Test func aLeaseThatAppearedMeanwhileIsNeverWrittenOver() async throws {
+        // A Private list that reads, as on a signed device: an unreadable one counts every bot as private.
+        PrivateBots.useForTesting(PrivateBots(names: ["private", "moss"], settled: true))
+        let fixture = ScopeFixture(leases: ["lease-race.invalid": ScopeFixture.missing])
+        fixture.leaseAppearsOnUpload("lease-race.invalid")
+        ScopeStub.use(fixture)
+        defer { ScopeStub.reset() }
+        let rt = try runtime("lease-race.invalid")
+        let control = SystemControl()
+        await control.refresh("default", rt)
+        #expect(control.state("default", rt) == nil)
+        #expect(fixture.uploads("lease-race.invalid") == [UploadedLease(holder: "human", epoch: 1, overwrite: false)])
+    }
+
+    @Test func aPrivateBotWithoutALeaseIsLeftAlone() async throws {
+        // A Private list that reads, as on a signed device: an unreadable one counts every bot as private.
+        PrivateBots.useForTesting(PrivateBots(names: ["private", "moss"], settled: true))
+        let fixture = ScopeFixture(leases: ["lease-private.invalid": ScopeFixture.missing])
+        ScopeStub.use(fixture)
+        defer { ScopeStub.reset() }
+        let rt = try runtime("lease-private.invalid", profile: "moss")
+        let control = SystemControl()
+        await control.refresh("moss", rt)
+        #expect(fixture.uploads("lease-private.invalid").isEmpty)
+        #expect(control.state("moss", rt) == false)
     }
 
     @Test func aFailedWriteRestoresWhatWasKnownForThatGatewayOnly() async throws {
@@ -155,11 +203,22 @@ import Testing
 
 // MARK: A pretend gateway
 
+private struct UploadedLease: Equatable {
+    var holder: String
+    var epoch: Int
+    var overwrite: Bool
+}
+
 /// What each pretend gateway holds, by host, and what has been asked of it.
 private final class ScopeFixture: @unchecked Sendable {
+    /// A host whose bot has no lease file yet.
+    static let missing = "(none)"
     private let lock = NSLock()
     private var leases: [String: String]
+    private var epochs: [String: Int] = [:]
     private var reads: [String: Int] = [:]
+    private var uploaded: [String: [UploadedLease]] = [:]
+    private var appears: Set<String> = []
     private var uploadsFail: Set<String> = []
     private var holdFirst: Set<String> = []
     private var disabled: [String: [[String]]] = [:]
@@ -170,6 +229,9 @@ private final class ScopeFixture: @unchecked Sendable {
     func setLease(_ host: String, _ holder: String) { lock.withLock { leases[host] = holder } }
     func leaseReads(_ host: String) -> Int { lock.withLock { reads[host] ?? 0 } }
     func failUploads(_ host: String) { lock.withLock { _ = uploadsFail.insert(host) } }
+    func uploads(_ host: String) -> [UploadedLease] { lock.withLock { uploaded[host] ?? [] } }
+    /// Someone else writes a lease between the read and the upload.
+    func leaseAppearsOnUpload(_ host: String) { lock.withLock { _ = appears.insert(host) } }
     func holdFirstLeaseRead(_ host: String) { lock.withLock { _ = holdFirst.insert(host) } }
     /// Each switched-off tool list a config write sent.
     func disabledWritten(_ host: String) -> [[String]] { lock.withLock { disabled[host] ?? [] } }
@@ -187,7 +249,8 @@ private final class ScopeFixture: @unchecked Sendable {
             switch (method, path) {
             case ("GET", "/api/fs/read-text"):
                 reads[host, default: 0] += 1
-                let text = String(data: try! JSONSerialization.data(withJSONObject: ["holder": leases[host] ?? "agent", "epoch": 3]), encoding: .utf8)!
+                if leases[host] == Self.missing { return .reply(ScopeStub.Reply(404, [:])) }
+                let text = String(data: try! JSONSerialization.data(withJSONObject: ["holder": leases[host] ?? "agent", "epoch": epochs[host] ?? 3]), encoding: .utf8)!
                 let reply = ScopeStub.Reply(200, ["text": text])
                 if holdFirst.remove(host) != nil {
                     heldRead.continuation.yield(())
@@ -204,11 +267,18 @@ private final class ScopeFixture: @unchecked Sendable {
             case ("POST", "/api/files/upload"):
                 if uploadsFail.contains(host) { return .reply(ScopeStub.Reply(503, [:])) }
                 let body = (try? JSONSerialization.jsonObject(with: ScopeStub.body(request))) as? [String: Any]
+                let overwrite = body?["overwrite"] as? Bool ?? false
                 if let encoded = (body?["data_url"] as? String)?.split(separator: ",", maxSplits: 1).last,
                    let data = Data(base64Encoded: String(encoded)),
                    let written = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
                    let holder = written["holder"] as? String {
+                    uploaded[host, default: []].append(UploadedLease(holder: holder, epoch: (written["epoch"] as? Int) ?? -1,
+                                                                     overwrite: overwrite))
+                    if !overwrite, appears.contains(host) || leases[host] != Self.missing {
+                        return .reply(ScopeStub.Reply(409, ["detail": "File already exists"]))
+                    }
                     leases[host] = holder
+                    epochs[host] = written["epoch"] as? Int
                 }
                 return .reply(ScopeStub.Reply(200, ["ok": true, "path": body?["path"] as? String ?? ""]))
             default:
