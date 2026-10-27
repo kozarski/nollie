@@ -28,7 +28,7 @@ class ProfileWorkflowTests(unittest.TestCase):
         def finish(path, **kwargs):
             self.events.append("layout")
 
-        def create(name, clone_from=None, clone_all=False, clone_config=False, **kwargs):
+        def create(name, clone_from=None, clone_all=False, clone_config=False, *rest, **kwargs):
             self.events.append("create")
             canon = name.lower()
             destination = self.home / "profiles" / canon
@@ -60,17 +60,33 @@ class ProfileWorkflowTests(unittest.TestCase):
         policy = SimpleNamespace(excluded=lambda name, private: name in private)
         self.addons = SimpleNamespace(WORKFLOW="nollie-workflow", ensure_profile_workflow=ensure,
                                       workflow_privacy=lambda *_: (policy, self.private))
-        entry._scope_profile_workflow(self.profiles, self.addons, self.home)
+        self.cloned = []
+
+        def clone_keys(path, source, keep_channels):
+            self.assertTrue(Path(path).name.startswith(".") and "staging" in Path(path).name)
+            self.events.append("keys")
+            self.cloned.append((source, keep_channels))
+
+        entry._scope_profile_workflow(self.profiles, self.addons, self.home, clone_keys)
 
     def test_new_and_cloned_bots_get_rules_before_publication(self):
-        for name, options in (("fresh", {}), ("clone", {"clone_from": "default"})):
+        for name, options, events in (("fresh", {}, ["create", "layout", "ask-first", "published"]),
+                                      ("clone", {"clone_from": "default"}, ["create", "layout", "ask-first", "keys", "published"])):
             with self.subTest(name=name):
                 self.events.clear()
                 path = self.profiles.create_profile(name, **options)
                 config = json.loads((path / "config.yaml").read_text())
                 self.assertEqual(config["plugins"]["enabled"], ["existing-addon", "nollie-workflow"])
                 self.assertEqual(config["model"], "fixture-model")
-                self.assertEqual(self.events, ["create", "layout", "ask-first", "published"])
+                self.assertEqual(self.events, events)
+
+    def test_copies_note_their_source_for_keys_before_publication(self):
+        self.profiles.create_profile("first", "Scout")
+        self.profiles.create_profile("second", clone_config=True)
+        self.profiles.create_profile("third", clone_from="scout", clone_channels=True)
+        self.profiles.create_profile("fourth", None, False, True, False, False, None, True)
+        self.profiles.create_profile("fresh")
+        self.assertEqual(self.cloned, [("scout", False), ("default", False), ("scout", True), ("default", True)])
 
     def test_safety_failure_aborts_before_publication(self):
         self.fail = True

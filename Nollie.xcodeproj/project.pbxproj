@@ -72,6 +72,9 @@
 		1C0C79082145CBC879F72805 /* ExitRelayWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889B81D60373AF624F558E3A /* ExitRelayWire.swift */; };
 		0E3D2AE48501B25482C67A0C /* ExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 367508B5D4564F9258B282A8 /* ExitRelay.swift */; };
 		751B408A45B39444B72C7014 /* RuntimeExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */; };
+		556A61C51845BCA463BF70A5 /* RuntimeKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1830008CAB7E6D1922B9B5C8 /* RuntimeKeyStore.swift */; };
+		D9518A36BD4136D43709B8EC /* RuntimeKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1830008CAB7E6D1922B9B5C8 /* RuntimeKeyStore.swift */; };
+		ED23D15B3F797DE45A8DE39E /* RuntimeKeyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C65CF454D91D73C6E6992F3 /* RuntimeKeyMigration.swift */; };
 		E7FCDD3328BD0DC4C31111E8 /* ExitRelayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */; };
 		455138A18822DFB757E68A14 /* ExitRelayWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889B81D60373AF624F558E3A /* ExitRelayWire.swift */; };
 		8C6A0EB43E1B44A69D8A6058 /* ExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 367508B5D4564F9258B282A8 /* ExitRelay.swift */; };
@@ -292,6 +295,8 @@
 		889B81D60373AF624F558E3A /* ExitRelayWire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelayWire.swift; path = Services/Runtime/ExitRelayWire.swift; sourceTree = SOURCE_ROOT; };
 		367508B5D4564F9258B282A8 /* ExitRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelay.swift; path = Services/Runtime/ExitRelay.swift; sourceTree = SOURCE_ROOT; };
 		A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeExitRelay.swift; path = Services/Runtime/RuntimeExitRelay.swift; sourceTree = SOURCE_ROOT; };
+		1830008CAB7E6D1922B9B5C8 /* RuntimeKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeKeyStore.swift; path = Services/Runtime/RuntimeKeyStore.swift; sourceTree = SOURCE_ROOT; };
+		1C65CF454D91D73C6E6992F3 /* RuntimeKeyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeKeyMigration.swift; path = Services/Runtime/RuntimeKeyMigration.swift; sourceTree = SOURCE_ROOT; };
 		5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorHTTP.swift; path = Services/Runtime/LinkDoorHTTP.swift; sourceTree = SOURCE_ROOT; };
 		867CC73A89D0B17F327DBE47 /* LinkDoorFamily.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorFamily.swift; path = Services/Runtime/LinkDoorFamily.swift; sourceTree = SOURCE_ROOT; };
 		337BF9AB134426A181E3F18C /* LinkDoorFamilyHermes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorFamilyHermes.swift; path = Services/Runtime/LinkDoorFamilyHermes.swift; sourceTree = SOURCE_ROOT; };
@@ -784,6 +789,8 @@
 				889B81D60373AF624F558E3A /* ExitRelayWire.swift */,
 				367508B5D4564F9258B282A8 /* ExitRelay.swift */,
 				A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */,
+				1830008CAB7E6D1922B9B5C8 /* RuntimeKeyStore.swift */,
+				1C65CF454D91D73C6E6992F3 /* RuntimeKeyMigration.swift */,
 				D9FF74456F3EAE4C78244A85 /* RuntimeHelperMain.swift */,
 				FA022678FE0E4901BF5A9327 /* RuntimeService.swift */,
 				F2EA7B9E76774ED44587C3F4 /* RuntimeContract.swift */,
@@ -1592,6 +1599,7 @@
 				E7FCDD3328BD0DC4C31111E8 /* ExitRelayPolicy.swift in Sources */,
 				455138A18822DFB757E68A14 /* ExitRelayWire.swift in Sources */,
 				8C6A0EB43E1B44A69D8A6058 /* ExitRelay.swift in Sources */,
+				D9518A36BD4136D43709B8EC /* RuntimeKeyStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1622,6 +1630,8 @@
 				1C0C79082145CBC879F72805 /* ExitRelayWire.swift in Sources */,
 				0E3D2AE48501B25482C67A0C /* ExitRelay.swift in Sources */,
 				751B408A45B39444B72C7014 /* RuntimeExitRelay.swift in Sources */,
+				556A61C51845BCA463BF70A5 /* RuntimeKeyStore.swift in Sources */,
+				ED23D15B3F797DE45A8DE39E /* RuntimeKeyMigration.swift in Sources */,
 				1B5B06379A9478E456AD3B93 /* RuntimeContract.swift in Sources */,
 				747ECF64D9FCC821920892B4 /* RuntimeSupervisor.swift in Sources */,
 				EF99443C8E3E6C6260E8E4F7 /* NativeRuntimeBackend.swift in Sources */,

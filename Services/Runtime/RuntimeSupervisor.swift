@@ -75,6 +75,7 @@ actor NollieRuntimeSupervisor {
     private func launchPair(installationID: UUID, token: String, epoch: UUID) async throws -> Contract.Plan {
         let plan = try await backend.prepare(installationID: installationID)
         try check(epoch)
+        current.keysLeftInFiles = plan.keysLeftInFiles
         current.phase = current.restartCount == 0 ? .starting : .restarting
         for role in [Contract.Role.api, .gateway] {
             try check(epoch)

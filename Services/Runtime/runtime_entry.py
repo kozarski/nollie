@@ -40,6 +40,19 @@ PROFILE_SOURCE_HASHES = {
     "hermes_cli/profiles.py": "f65320d57dfe6bd670c139b5b2c394eb6150cf67b9536b8a82e95f0ea0180f14",
 }
 
+KEY_SOURCE_HASHES = {
+    "hermes_cli/env_loader.py": "da921984d4cd690bbb9813c6431ecc88b18b46307800d155c86e25c8e45ccee1",
+    "agent/secret_sources/registry.py": "d3cde03a36e77b8ce342549acc4d684d28071baa619c5e6b7b00c1f97650e08f",
+    "agent/secret_sources/base.py": "49b39c137a57691030966101313becfb455b6ea5f89d160808ff3bee601b3cee",
+    "agent/secret_scope.py": "e641d7e811d988cb25140005b61d44a82829f0957dd52b8a79c3c9915da80cf2",
+    "hermes_cli/profile_channels.py": "dca712fdcb9176e3d20e49b254d0d97b2340c289c84b7f883239b8f659a4f0eb",
+}
+
+KEY_SOURCE = "nollie_keychain"
+CLONE_NOTE = ".nollie-keys-from"
+_ENV_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,127}")
+_PROFILE_NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,63}")
+
 
 def _validate_catalog_source(source, hashes=None):
     root = Path(source).resolve(strict=True)
@@ -239,7 +252,184 @@ def _install_local_reply_probe(source):
     local_models.router.add_api_route("/api/nollie/local-model/reply-check", reply_check, methods=["POST"])
 
 
-def _scope_profile_workflow(profiles, addons, home):
+def _read_keys(descriptor):
+    """The API keys the native helper took from the Keychain for this start, read once from a
+    private pipe: ``{bot: {NAME: value}}``. They never pass through argv, files or logs."""
+    if descriptor < 3 or not stat.S_ISFIFO(os.fstat(descriptor).st_mode):
+        raise SystemExit(78)
+    os.set_inheritable(descriptor, False)
+    chunks, size = [], 0
+    try:
+        while chunk := os.read(descriptor, 65536):
+            size += len(chunk)
+            if size > 1 << 22:
+                raise SystemExit(78)
+            chunks.append(chunk)
+    finally:
+        os.close(descriptor)
+    try:
+        body = json.loads(b"".join(chunks))
+    except ValueError:
+        raise SystemExit(78) from None
+    profiles = body.get("profiles") if isinstance(body, dict) and body.get("version") == 1 else None
+    if not isinstance(profiles, dict):
+        raise SystemExit(78)
+    keys = {}
+    for profile, values in profiles.items():
+        if not (profile == "default" or _PROFILE_NAME.fullmatch(profile)) or not isinstance(values, dict):
+            raise SystemExit(78)
+        for name, value in values.items():
+            if (not _ENV_NAME.fullmatch(name) or not isinstance(value, str) or not value
+                    or "\0" in value or len(value) > 65536):
+                raise SystemExit(78)
+        keys[profile] = dict(values)
+    return keys
+
+
+def _clone_note(folder):
+    """The bot this one was copied from and the key names it took along, or None."""
+    try:
+        descriptor = os.open(folder / CLONE_NOTE, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK)
+    except OSError:
+        return None
+    try:
+        info = os.fstat(descriptor)
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_size > 16384:
+            return None
+        note = json.loads(os.read(descriptor, 16385))
+    except (OSError, ValueError):
+        return None
+    finally:
+        os.close(descriptor)
+    if not isinstance(note, dict) or note.get("version") != 1:
+        return None
+    source, names = note.get("from"), note.get("names")
+    if not isinstance(source, str) or not (source == "default" or _PROFILE_NAME.fullmatch(source)):
+        return None
+    if not isinstance(names, list) or not all(isinstance(n, str) and _ENV_NAME.fullmatch(n) for n in names):
+        return None
+    return source, names
+
+
+def _profile_keys(keys, home, folder):
+    """One bot's keys: ``default`` is the home itself, any other bot is ``profiles/<id>``. A bot
+    copied from another since this start also gets the keys its copy took along."""
+    try:
+        target, launch = Path(folder).resolve(), Path(home).resolve()
+    except (OSError, RuntimeError):
+        return {}
+    if target == launch:
+        profile = "default"
+    elif target.parent == launch / "profiles" and target.name != "default" and _PROFILE_NAME.fullmatch(target.name):
+        profile = target.name
+    else:
+        return {}
+    found = dict(keys.get(profile, {}))
+    note = _clone_note(target) if profile != "default" else None
+    if note:
+        source, names = note
+        for name in names:
+            if name not in found and name in keys.get(source, {}):
+                found[name] = keys[source][name]
+    return found
+
+
+def _scope_keychain_source(base, registry, env_loader, home, keys, read_env):
+    """Hand the Keychain's keys to Hermes through its own secret-source contract.
+
+    Each bot's keys stay its own: Hermes resolves the launch bot into this process's environment
+    and every other bot into that bot's own secret scope, never into the shared environment.
+    Whatever a bot's ``.env`` says about a name wins, in every process, as it did before keys
+    moved: a key Hermes writes there is a newer value (the next start moves it into the
+    Keychain), and an empty one means Hermes cleared it.
+    """
+    def written(folder):
+        try:
+            return read_env(Path(folder) / ".env")
+        except Exception:
+            return {}
+
+    def own(folder):
+        on_disk = written(folder)
+        return {name: value for name, value in _profile_keys(keys, home, folder).items() if name not in on_disk}
+
+    class KeychainSource(base.SecretSource):
+        name = KEY_SOURCE
+        label = "your Mac's Keychain"
+        shape = "bulk"
+
+        def is_enabled(self, cfg):
+            return True
+
+        def fetch(self, cfg, home_path):
+            return base.FetchResult(secrets=own(home_path))
+
+    if not registry.register_source(KeychainSource(), replace=True, builtin=True):
+        raise SystemExit(78)
+    original = env_loader._load_secrets_config
+
+    @functools.wraps(original)
+    def load_secrets_config(home_path):
+        # A copy, so Hermes's cached config.yaml never gains this section or writes it back.
+        loaded = original(home_path)
+        sections = dict(loaded) if isinstance(loaded, dict) else {}
+        sections[KEY_SOURCE] = {"enabled": True}
+        return sections
+
+    original_values = env_loader.get_secret_source_values
+
+    @functools.wraps(original_values)
+    def source_values(hermes_home):
+        # The values snapshot is taken once per bot and process; a later .env edit still wins.
+        found = original_values(hermes_home)
+        ours = _profile_keys(keys, home, hermes_home)
+        on_disk = written(hermes_home) if ours else {}
+        return {name: value for name, value in found.items() if not (name in ours and name in on_disk)}
+
+    env_loader._load_secrets_config = load_secrets_config
+    env_loader.get_secret_source_values = source_values
+
+
+def _install_keychain_source(source, keys):
+    _validate_catalog_source(source, KEY_SOURCE_HASHES)
+    from agent import secret_scope
+    from agent.secret_sources import base, registry
+    from hermes_cli import env_loader
+    root = Path(source).resolve(strict=True)
+    for module, relative in ((base, "agent/secret_sources/base.py"), (registry, "agent/secret_sources/registry.py"),
+                             (env_loader, "hermes_cli/env_loader.py"), (secret_scope, "agent/secret_scope.py")):
+        if Path(module.__file__).resolve(strict=True) != root / relative:
+            raise SystemExit(78)
+    try:
+        home = Path(os.environ["HERMES_HOME"]).absolute()
+    except KeyError:
+        raise SystemExit(78) from None
+    _scope_keychain_source(base, registry, env_loader, home, keys, secret_scope.load_env_file)
+
+
+def _note_cloned_keys(keys, home):
+    """A copied bot used to get its source's ``.env``, keys included. Keys now live in the
+    Keychain, so the copy records which names it takes along (never values) for this start's
+    secret source and for the helper to copy at the next start. Messaging bot tokens stay
+    behind, as Hermes's own copy leaves them."""
+    def note(folder, source, keep_channels):
+        names = sorted(keys.get(source, {}))
+        if names and not keep_channels:
+            try:
+                from hermes_cli.profile_channels import ChannelKeyIndex
+                index = ChannelKeyIndex(home if source == "default" else home / "profiles" / source)
+                names = [name for name in names if index.platform_for(name) is None]
+            except Exception:
+                names = []
+        if not names:
+            return
+        descriptor = os.open(Path(folder) / CLONE_NOTE, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            json.dump({"version": 1, "from": source, "names": names}, handle)
+    return note
+
+
+def _scope_profile_workflow(profiles, addons, home, clone_keys=None):
     """Finish Ask first inside Hermes's hidden staging folder, before a bot can be served."""
     original_create = profiles.create_profile
     original_finish = profiles._finish_profile_layout
@@ -257,9 +447,12 @@ def _scope_profile_workflow(profiles, addons, home):
         clone_from = args[0] if args else kwargs.get("clone_from")
         clone_all = args[1] if len(args) > 1 else kwargs.get("clone_all", False)
         clone_config = args[2] if len(args) > 2 else kwargs.get("clone_config", False)
+        clone_channels = args[6] if len(args) > 6 else kwargs.get("clone_channels", False)
+        source = None
         if clone_from is not None or clone_all or clone_config:
-            require_public(profiles._canon_valid(clone_from or profiles.get_active_profile_name() or "default"))
-        token = creating.set(canon)
+            source = profiles._canon_valid(clone_from or profiles.get_active_profile_name() or "default")
+            require_public(source)
+        token = creating.set((canon, source, bool(clone_channels)))
         try:
             return original_create(name, *args, **kwargs)
         finally:
@@ -267,20 +460,22 @@ def _scope_profile_workflow(profiles, addons, home):
 
     @functools.wraps(original_finish)
     def finish(profile_dir, *args, **kwargs):
-        name = creating.get()
+        name, source, clone_channels = creating.get() or (None, None, False)
         expected = home / "profiles" / f".{name}.staging-{os.getpid()}"
         if name is None or Path(profile_dir) != expected:
             raise ValueError("The new bot's setup could not be checked.")
         require_public(name)
         result = original_finish(profile_dir, *args, **kwargs)
         addons.ensure_profile_workflow(home, name, profile_dir)
+        if source is not None and clone_keys is not None:
+            clone_keys(profile_dir, source, clone_channels)
         return result
 
     profiles.create_profile = create
     profiles._finish_profile_layout = finish
 
 
-def _prepare_profile_workflow(source):
+def _prepare_profile_workflow(source, keys):
     _validate_catalog_source(source, PROFILE_SOURCE_HASHES)
     helper = Path(__file__).with_name("managed_addons.py")
     if helper.is_symlink() or not helper.is_file():
@@ -296,10 +491,11 @@ def _prepare_profile_workflow(source):
     from hermes_cli import profiles
     if Path(profiles.__file__).resolve(strict=True) != Path(source).resolve(strict=True) / "hermes_cli/profiles.py":
         raise SystemExit(78)
-    _scope_profile_workflow(profiles, addons, home)
+    _scope_profile_workflow(profiles, addons, home, _note_cloned_keys(keys, home))
 
 
-def main(prepare_api=_install_model_inventory_compatibility, prepare_profiles=_prepare_profile_workflow):
+def main(prepare_api=_install_model_inventory_compatibility, prepare_profiles=_prepare_profile_workflow,
+         prepare_keys=_install_keychain_source):
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--source", required=True)
     parser.add_argument("--role", choices=("api", "gateway"), required=True)
@@ -308,6 +504,10 @@ def main(prepare_api=_install_model_inventory_compatibility, prepare_profiles=_p
     if descriptor < 3 or not stat.S_ISFIFO(os.fstat(descriptor).st_mode):
         raise SystemExit(78)
     os.set_inheritable(descriptor, False)
+    try:
+        keys = _read_keys(int(os.environ.pop("NOLLIE_KEYS_FD")))
+    except (KeyError, ValueError, OSError):
+        raise SystemExit(78) from None
 
     def owner_watch():
         try:
@@ -323,7 +523,8 @@ def main(prepare_api=_install_model_inventory_compatibility, prepare_profiles=_p
 
     threading.Thread(target=owner_watch, daemon=True, name="nollie-owner").start()
     sys.path.insert(0, args.source)
-    prepare_profiles(args.source)
+    prepare_keys(args.source, keys)
+    prepare_profiles(args.source, keys)
     if args.role == "api":
         prepare_api(args.source)
         command = ["serve", "--host", "127.0.0.1", "--port", "0", "--isolated"]
