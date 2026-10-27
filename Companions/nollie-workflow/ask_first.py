@@ -6,17 +6,22 @@ a miss could send money or mail. In a chat a person is in, the call waits for an
 says the whole action in plain words. In a schedule, a Board task or any run nobody can answer, it
 is held, never done, and Night shift reports it in the morning.
 
-When the rules can't tell what something does (a program chosen at run time, a script they can't
-read, a click on a spot with no readable label), they ask. What they still can't see is listed in
-Docs/ask-first.md: chiefly what a page means by a button with no words, or a Return with no risky
-word on screen.
+When the rules can't tell what something does (a program they don't know or chosen at run time, a
+script they can't read, another server's tool whose name doesn't say it only looks, an OK or Continue
+whose window they can't read, a click on a spot with no readable label), they ask. Those "unsure" asks
+are the only ones a bot's Ask first switch can turn off; whatever the rules name as sending, buying,
+posting or deleting (replacing a file that was already there counts as deleting it) always asks. What
+they still can't see is listed in Docs/ask-first.md.
 """
 from __future__ import annotations
 
+import contextvars
 import json
 import os
 import re
 import shlex
+import tempfile
+import threading
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -334,7 +339,8 @@ def _segments(command):
             current.append(c)
             i += 1
             continue
-        if c in ";|&\n":
+        if c in ";|&\n" and not (c in "|&" and i > 0 and text[i - 1] in "<>") and \
+                not (c == "&" and text.startswith(">", i + 1)):
             found.append("".join(current))
             current = []
             i += 2 if text[i:i + 2] in ("&&", "||") else 1
@@ -426,6 +432,11 @@ TRASH_PATH = re.compile(r"(?i)(\.trash\b|/dev/null|deleted\s*items|\bbin/?$)")
 CURL_VALUE = set("XdFTHouAebcwKxmrYyzEDPQUC")
 
 
+# Shell grammar, not programs: the command after "if", "then" or "do" is the one that runs.
+LEADING_KEYWORDS = frozenset(("if", "then", "else", "elif", "do", "while", "until", "!", "{", "(", "time"))
+SKIPPED_KEYWORDS = frozenset(("for", "case", "fi", "done", "esac", "}", ")", "function", "select", "in", ";;"))
+
+
 def _plain_program(word):
     name = word.rsplit("/", 1)[-1]
     name = re.sub(r"@[\w.^~-]+$", "", name)
@@ -445,11 +456,20 @@ def _split(segment):
         parts = shlex.split(segment, posix=True)
     except ValueError:
         parts = segment.split()
+    if segment.lstrip().startswith("(("):
+        return []  # Arithmetic, not a program.
     for _ in range(8):
-        while parts and re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", parts[0]):
+        if parts and parts[0].startswith("(") and parts[0] != "(":
+            parts[0] = parts[0].lstrip("(")  # A subshell: (cd folder && ...).
+        if parts and parts[0].endswith(")") and "(" not in parts[0]:
+            parts[0] = parts[0].rstrip(")")  # ... && ls), its last command.
+        if parts and parts[0] == "function":
+            parts = parts[2:]  # function name { body: the body runs.
+        while parts and (re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", parts[0]) or parts[0] in LEADING_KEYWORDS
+                         or re.match(r"^[\w.:-]+\(\)$", parts[0]) or parts[0] in ("()", "")):
             parts.pop(0)
-        if not parts:
-            return parts
+        if not parts or parts[0] in SKIPPED_KEYWORDS:
+            return []
         program = _plain_program(parts[0])
         if len(parts) > 1 and (program, parts[1]) in RUNNERS:
             parts = parts[2:]
@@ -458,6 +478,8 @@ def _split(segment):
             continue
         if program not in WRAPPERS:
             return parts
+        if program == "command" and len(parts) > 1 and parts[1] in ("-v", "-V"):
+            return ["command"]  # Only says where a program is.
         parts.pop(0)
         takes = WRAPPERS[program]
         while parts and parts[0].startswith("-"):
@@ -676,6 +698,275 @@ def _token_found(program, tokens):
     return None
 
 
+# Programs whose every use here is a fixed job on this computer. Their risky uses (rm, a mail server, SQL DROP)
+# are caught above; anything not here and not read above asks.
+KNOWN_PROGRAMS = frozenset((
+    "ffmpeg", "ffprobe", "ffplay", "sips", "convert", "magick", "identify", "mogrify", "montage", "pandoc",
+    "pdftotext", "pdfinfo", "pdftoppm", "pdfimages", "pdfunite", "pdfseparate", "qpdf", "exiftool", "tesseract",
+    "textutil", "afconvert", "afinfo", "screencapture", "bc", "expr", "cal", "ncal", "units", "numfmt", "iconv",
+    "sed", "xmllint", "yt-dlp", "youtube-dl", "gallery-dl", "csvlook", "csvcut", "csvstat", "in2csv", "xsv",
+    "qsv", "mlr", "glow", "black", "ruff", "isort", "flake8", "pylint", "mypy", "pyright", "pytest", "eslint",
+    "prettier", "tsc", "jest", "vitest", "mocha", "shellcheck", "swiftlint", "swiftformat", "rustfmt", "gofmt",
+    "clang-format", "rustc", "gcc", "g++", "clang", "clang++", "cc", "c++", "swiftc", "kotlinc", "javac", "ping",
+    "dig", "nslookup", "host", "traceroute", "whois", "ifconfig", "scutil", "system_profiler", "sysctl", "vm_stat",
+    "iostat", "ioreg", "pmset", "lsblk", "mount", "log", "nano", "vim", "vi", "emacs", "code", "subl", "clear",
+    "reset", "stty", "tput", "printenv", "locale", "kill", "killall", "pkill", "local", "declare", "typeset",
+    "readonly", "let", "shift", "return", "exit", "trap", "break", "continue", "getopts", "umask", "ulimit",
+    "hash", "jobs", "fg", "bg", "disown", ":", "mv", "rsync", "scp", "sftp", "dd", "crontab", "diskutil",
+    "tmutil", "defaults", "openssl", "sqlite3", "psql", "mysql", "mariadb", "redis-cli", "mongosh", "mongo",
+    "duckdb", "sqlcmd", "clickhouse-client", "cqlsh", "vite", "next", "webpack", "rollup", "esbuild", "parcel",
+    "tsup", "tailwindcss", "postcss", "sass", "babel", "swc", "astro", "nuxt", "react-scripts", "storybook",
+    "venv", "json.tool", "http.server", "unittest", "pydoc", "timeit", "cProfile", "doctest", "py_compile",
+    "compileall", "zipfile", "tarfile", "gzip", "base64", "uuid", "calendar", "platform", "sysconfig", "site",
+    "ensurepip", "xattr", "mdutil", "lipo", "otool", "nm", "codesign", "spctl", "plutil", "pkgutil", "sw_vers",
+    "caffeinate", "pbcopy", "shasum", "md5sum", "sha1sum", "sha512sum", "cksum", "unxz", "xz", "bzip2",
+    "bunzip2", "7z", "7za", "unrar", "ditto", "install", "rename", "column", "fold", "fmt", "nl", "paste", "join",
+    "comm", "split", "csplit", "rev", "tac", "shuf", "yes", "envsubst", "gettext", "sleep", "say", "osacompile",
+    "[[", "]]", "shopt", "setopt", "unsetopt", "dirs", "times", "caller", "compgen", "complete", "readarray",
+    "mapfile", "unalias", "noglob", "emulate", "autoload", "zmodload", "print", "whence", "rehash", "groups",
+    "who", "w", "last", "users", "nproc", "getconf", "afplay", "qlmanage", "mdimport", "textutil", "iconutil",
+    "soffice", "libreoffice", "marker", "marker_single", "pdftk", "mutool", "img2pdf", "ocrmypdf", "optipng",
+    "pngquant", "jpegoptim", "cwebp", "dwebp", "heif-convert", "lame", "flac", "sox", "whisper", "whisper-cpp"))
+# Words that say a command only looks, as a program's first words: "brew list", "docker ps", "kubectl get".
+LOOKING_SUBCOMMANDS = {"list", "ls", "get", "show", "describe", "view", "info", "status", "logs", "log", "inspect",
+                       "version", "help", "search", "cat", "diff", "check", "outdated", "doctor", "whoami", "ps",
+                       "images", "top", "tree", "deps", "home", "prefix", "which", "where", "query", "read",
+                       "history", "stats", "plan", "explain", "find", "print", "env", "freeze", "leaves", "fetch",
+                       "config-get", "current", "uses", "why", "lint", "test", "build", "check-config", "validate",
+                       "format", "fmt", "vet", "clippy", "doc", "docs", "bench", "metadata", "audit",
+                       "today", "tomorrow", "yesterday", "week", "month", "all", "overdue", "upcoming", "recent",
+                       "latest", "now", "next", "items", "count", "summary", "usage", "health", "ping"}
+HELP_FLAGS = {"-h", "--help", "--version", "-v", "-V", "-version", "--usage"}
+# Runners of package scripts: what the script says is read from package.json.
+SCRIPT_RUNNERS = {"npm": {"run", "run-script", "rum", "urn", "start", "stop", "restart", "test", "t", "tst"},
+                  "pnpm": {"run", "start", "test", "t"}, "yarn": {"run", "start", "test"},
+                  "bun": {"run", "start", "test"}}
+INSTALLERS = {"npm": {"install", "i", "ci", "add", "update", "up", "rebuild", "link", "exec", "x", "init", "create"},
+              "pnpm": {"install", "i", "add", "update", "up", "rebuild", "link", "exec", "dlx", "create", "init"},
+              "yarn": {"install", "add", "upgrade", "up", "dlx", "exec", "create", "init", "link"},
+              "bun": {"install", "i", "add", "update", "x", "create", "init", "link"},
+              "brew": {"install", "reinstall", "upgrade", "tap", "bundle", "link", "services"},
+              "pip": {"install", "download", "wheel"}, "pip3": {"install", "download", "wheel"},
+              "gem": {"install", "update"}, "cargo": {"install"}, "go": {"install", "get"},
+              "uv": {"pip", "add", "sync", "tool"}, "poetry": {"install", "add", "update"},
+              "pipenv": {"install", "update"}, "mas": {"install", "upgrade", "purchase"}}
+# Build tools and the words that only build, test or check here. Anything else they run asks.
+BUILDERS = {"cargo": {"build", "test", "check", "fmt", "clippy", "doc", "bench", "tree", "metadata", "new", "init",
+                      "clean", "update", "fetch", "search", "add", "remove"},
+            "go": {"build", "test", "vet", "fmt", "list", "doc", "version", "env", "mod", "work", "generate"},
+            "swift": {"build", "test", "package", "--version", "format"},
+            "dotnet": {"build", "test", "format", "--info", "--version", "list", "restore", "new"},
+            "xcodebuild": set(), "gradle": {"build", "test", "check", "assemble", "compileJava", "tasks", "help"},
+            "gradlew": {"build", "test", "check", "assemble", "compileJava", "tasks", "help"},
+            "mvn": {"compile", "test", "package", "verify", "validate", "clean", "install"},
+            "mvnw": {"compile", "test", "package", "verify", "validate", "clean", "install"},
+            "deno": {"check", "fmt", "lint", "test", "info", "doc", "bench", "compile"}}
+RUN_ELSEWHERE = {"cargo": {"run"}, "go": {"run"}, "swift": {"run"}, "dotnet": {"run"}, "deno": {"task"},
+                 "gradle": set(), "gradlew": set(), "mvn": set(), "mvnw": set()}
+OTHER_RUNNERS = frozenset(("rake", "task", "invoke", "nox", "tox", "mage", "ninja", "bazel", "bazelisk", "buck",
+                           "buck2", "ant", "sbt", "mix", "lein", "scons", "meson", "cmake", "turbo", "nx", "lerna",
+                           "concurrently", "foreman", "overmind", "honcho", "pm2", "nodemon", "watchexec",
+                           "entr", "fswatch", "parallel", "docker-compose", "tilt", "skaffold"))
+SYSTEM_FOLDERS = ("/bin/", "/sbin/", "/usr/bin/", "/usr/sbin/", "/usr/libexec/", "/usr/local/bin/",
+                  "/opt/homebrew/bin/", "/opt/homebrew/sbin/", "/opt/local/bin/", "/System/", "/Library/Apple/",
+                  "/Library/Developer/CommandLineTools/", "/Applications/Xcode")
+
+
+def _unknown_program(program, plain, rest):
+    """A program the rules don't know: it passes when its own words say it only looks, and asks otherwise."""
+    if set(rest) & HELP_FLAGS:
+        return None
+    if not rest:
+        return Found(UNSURE, f"Nollie doesn't know what {program} does, so it asks")
+    if not plain:
+        flag = re.sub(r"^-+", "", rest[0]).lower()
+        if flag.startswith(("list", "get", "show", "print", "info", "status", "version")):
+            return None  # networksetup -listallhardwareports, softwareupdate --list
+    # Subcommands as written, and their parts: "files:get", "calendar-list", "notes.search".
+    first = [w for p in plain[:3] for w in [p.lower()] + re.split(r"[:._-]+", p.lower()) if w]
+    looks = any(w in LOOKING_SUBCOMMANDS for w in first)
+    changes = any(w in CHANGE_VERBS or w in INSTALLER_WORDS for w in first if w not in LOOKING_SUBCOMMANDS)
+    if looks and not changes:
+        return None
+    return Found(UNSURE, f"Nollie doesn't know what {program} {' '.join(plain[:2])}".rstrip() + " does, so it asks")
+
+
+INSTALLER_WORDS = {"install", "add", "upgrade", "update", "run", "exec", "start", "up", "apply", "deploy",
+                   "push", "sync", "login", "auth"}
+
+
+def _json_text(text):
+    try:
+        document = json.loads(text)
+    except (TypeError, ValueError):
+        return None
+    return document if isinstance(document, dict) else None
+
+
+def _folder_flag(rest, names):
+    for index, part in enumerate(rest):
+        for name in names:
+            if part == name and index + 1 < len(rest):
+                return rest[index + 1]
+            if part.startswith(name + "="):
+                return part.split("=", 1)[1]
+    return None
+
+
+def _join(cwd, folder):
+    if not folder:
+        return cwd
+    folder = os.path.expanduser(folder)
+    return folder if os.path.isabs(folder) or not cwd else os.path.join(cwd, folder)
+
+
+def _package_script(program, rest, plain, depth, cwd, read_file):
+    """npm run, yarn and friends: the script's own command from package.json, read with the same rules."""
+    lowered = [p.lower() for p in plain]
+    if program in SCRIPT_RUNNERS and lowered and lowered[0] in SCRIPT_RUNNERS[program]:
+        name = plain[1] if lowered[0] in ("run", "run-script", "rum", "urn") and len(plain) > 1 else \
+            {"t": "test", "tst": "test"}.get(lowered[0], lowered[0])
+        if lowered[0] in ("run", "run-script", "rum", "urn") and len(plain) < 2:
+            return None  # npm run alone lists the scripts.
+    elif program in ("yarn", "pnpm") and plain and not (set(lowered[:1]) & INSTALLERS.get(program, set())) and \
+            lowered[0] not in LOOKING_SUBCOMMANDS | {"why", "info", "config", "cache", "workspaces", "dlx"}:
+        name = plain[0]  # yarn build: a script by name.
+    else:
+        return False
+    if read_file is None:
+        return Found(UNSURE, f"Nollie can't read what the {name} script does")
+    if depth >= 3:
+        return Found(UNSURE, "it runs scripts inside scripts")
+    folder = _join(cwd, _folder_flag(rest, ("--prefix", "-C", "--dir", "--cwd")))
+    document = _json_text(read_file("package.json", folder))
+    scripts = document.get("scripts") if document else None
+    if not isinstance(scripts, dict) or not isinstance(scripts.get(name), str):
+        return Found(UNSURE, f"Nollie can't read what the {name} script does")
+    unsure = None
+    for step in (f"pre{name}", name, f"post{name}"):
+        command = scripts.get(step)
+        if isinstance(command, str) and command.strip():
+            found = shell_found(command, depth + 1, folder, read_file)
+            if found and found.kind != UNSURE:
+                return Found(found.kind, f"its {step} script: {found.why}")
+            unsure = unsure or found
+    return unsure
+
+
+_MAKE_VARIABLE = re.compile(r"\$[({]([A-Za-z_][A-Za-z0-9_.-]*)[)}]")
+
+
+def _make_rules(text):
+    """(variables, {target: (prerequisites, recipe lines)}, default target) from a plain Makefile."""
+    text = re.sub(r"\\\n[ \t]*", " ", text)
+    variables, rules, default, current = {}, {}, None, None
+    for line in text.split("\n"):
+        if line.startswith("\t"):
+            if current:
+                for target in current:
+                    rules[target][1].append(line[1:])
+            continue
+        stripped = line.split("#", 1)[0].rstrip()
+        if not stripped.strip():
+            continue
+        assignment = re.match(r"^\s*(?:export\s+|override\s+)?([A-Za-z_][A-Za-z0-9_.-]*)\s*(?:::=|:=|\?=|\+=|!=|=)\s*(.*)$",
+                              stripped)
+        if assignment and not re.match(r"^[^=]*[^:]:[^=]", stripped.split("=", 1)[0] + "="):
+            variables.setdefault(assignment.group(1), assignment.group(2).strip())
+            current = None
+            continue
+        rule = re.match(r"^([^:=]+?)\s*::?\s*([^=]*)$", stripped)
+        if rule:
+            targets = rule.group(1).split()
+            current = targets
+            for target in targets:
+                rules.setdefault(target, ([], []))[0].extend(rule.group(2).split(";")[0].split())
+                if default is None and not target.startswith(".") and "%" not in target:
+                    default = target
+            if ";" in rule.group(2):
+                for target in targets:
+                    rules[target][1].append(rule.group(2).split(";", 1)[1])
+            continue
+        current = None
+    return variables, rules, default
+
+
+def _make_found(program, rest, depth, cwd, read_file):
+    """make: the recipes for the targets asked for, read with the same rules. A Makefile it can't read asks."""
+    if read_file is None:
+        return Found(UNSURE, "Nollie can't read the Makefile to see what it runs")
+    if depth >= 3:
+        return Found(UNSURE, "it runs scripts inside scripts")
+    folder = _join(cwd, _folder_flag(rest, ("-C", "--directory")))
+    named = _folder_flag(rest, ("-f", "--file", "--makefile"))
+    text = None
+    for name in ([named] if named else ["GNUmakefile", "makefile", "Makefile"]):
+        text = read_file(name, folder)
+        if text is not None:
+            break
+    if text is None:
+        return Found(UNSURE, "Nollie can't read the Makefile to see what it runs")
+    variables, rules, default = _make_rules(text)
+    takes = {"-C", "--directory", "-f", "--file", "--makefile", "-j", "--jobs", "-l", "-o", "-W", "-I"}
+    goals, skip = [], False
+    for part in rest:
+        if skip:
+            skip = False
+            continue
+        if part in takes:
+            skip = True
+            continue
+        if part.startswith("-"):
+            continue
+        if "=" in part:
+            key, value = part.split("=", 1)
+            variables[key] = value
+            continue
+        goals.append(part)
+    goals = goals or ([default] if default else [])
+    if not goals:
+        return None
+    seen, queue, lines = set(), list(goals), []
+    while queue and len(seen) < 64:
+        target = queue.pop(0)
+        if target in seen:
+            continue
+        seen.add(target)
+        if target not in rules:
+            if any("%" in name for name in rules) or not os.path.exists(_join(folder, target) or target):
+                return Found(UNSURE, f"Nollie can't read what make {target} runs")
+            continue
+        prerequisites, recipe = rules[target]
+        queue.extend(prerequisites)
+        lines.extend((target, line) for line in recipe)
+    unsure = None
+    for target, line in lines:
+        command = re.sub(r"^[@+\-\s]+", "", line)
+        for _ in range(4):
+            command = _MAKE_VARIABLE.sub(lambda m: variables.get(m.group(1), m.group(0)) if m.group(1) != "MAKE"
+                                         else "make", command)
+        command = command.replace("$@", target).replace("$<", "x").replace("$^", "x").replace("$*", "x")
+        command = command.replace("$$", "$")
+        found = shell_found(command, depth + 1, folder, read_file)
+        if found and found.kind != UNSURE:
+            return Found(found.kind, f"make {target}: {found.why}")
+        unsure = unsure or found
+    return unsure
+
+
+def _builder_found(program, plain, rest):
+    lowered = [p.lower() for p in plain]
+    if program == "xcodebuild":
+        return None if not set(lowered) & {"archive", "-exportarchive", "exportarchive"} or \
+            not any(p.startswith("-exportOptionsPlist") for p in rest) else \
+            Found(UNSURE, "xcodebuild exports an app, which can upload it")
+    if lowered and lowered[0] in RUN_ELSEWHERE.get(program, set()):
+        return Found(UNSURE, f"{program} {lowered[0]} runs a program Nollie can't read")
+    if not lowered or lowered[0] in BUILDERS[program] or set(rest) & HELP_FLAGS:
+        return None
+    return Found(UNSURE, f"Nollie doesn't know what {program} {plain[0]} runs, so it asks")
+
+
 def _program_found(parts, depth, cwd, read_file, piped, bodies):
     program = _plain_program(parts[0])
     rest = list(parts[1:])
@@ -714,6 +1005,8 @@ def _program_found(parts, depth, cwd, read_file, piped, bodies):
             return _script_found(plain[1], "js", cwd, read_file, depth)
         if plain and re.search(r"\.(m?[jt]sx?)$", plain[0]):
             return _script_found(plain[0], "js", cwd, read_file, depth)
+    if program == "swift" and lowered[:1] and lowered[0] in BUILDERS["swift"] | RUN_ELSEWHERE["swift"]:
+        return _builder_found(program, plain, rest)
     if program in INTERPRETERS:
         language = INTERPRETERS[program]
         letters = INLINE_LETTERS.get(language, "")
@@ -822,17 +1115,106 @@ def _program_found(parts, depth, cwd, read_file, piped, bodies):
                 for w in lowered + [r.lower() for r in rest]):
         return Found("delete", f"{program} deletes a setting, item or account")
     script = parts[0]
-    if script.startswith(("./", "../", "~/")) or re.search(r"\.(py|sh|bash|zsh|m?js|ts|rb|pl|php|command)$", script):
+    if script.startswith(("./", "../", "~/")) or re.search(r"\.(py|sh|bash|zsh|m?js|ts|rb|pl|php|command)$", script) \
+            or (script.startswith("/") and not script.startswith(SYSTEM_FOLDERS)):
         language = {"py": "py", "js": "js", "mjs": "js", "ts": "js", "rb": "rb", "pl": "pl", "php": "php"}.get(
             script.rsplit(".", 1)[-1], "sh")
         return _script_found(script, language, cwd, read_file, depth)
+    if program in ("ssh", "mosh", "autossh"):
+        remote = _remote_command(rest)
+        return shell_found(remote, depth + 1, None, None) if remote and depth < 3 else None
+    if program in SCRIPT_RUNNERS or program in ("yarn", "pnpm"):
+        found = _package_script(program, rest, plain, depth, cwd, read_file)
+        if found is not False:
+            return found
+    if program in ("make", "gmake", "just"):
+        return _make_found(program, rest, depth, cwd, read_file) if program != "just" else \
+            _just_found(rest, depth, cwd, read_file)
+    if program in INSTALLERS and lowered[:1] and lowered[0] in INSTALLERS[program]:
+        return Found(UNSURE, f"{program} {lowered[0]} fetches and runs other people's code")
+    if program in BUILDERS:
+        return _builder_found(program, plain, rest)
+    if program in OTHER_RUNNERS:
+        return None if set(rest) & HELP_FLAGS else Found(UNSURE, f"Nollie can't read what {program} runs")
+    stream = next((p for p in rest if STREAM_URL.match(p)), None) if program not in READ_ONLY_PROGRAMS else None
+    if stream:
+        return Found("post", f"{program} sends a live stream to {_host(stream) or 'another computer'}")
     if program not in READ_ONLY_PROGRAMS:
         found = _token_found(program, plain[:4] + [r for r in rest if r.startswith("-") and len(r) > 2])
         if found:
             return found
         if SQL_DELETE.search(" ".join(rest)):
             return Found("delete", f"{program} deletes data")
+        if program not in KNOWN_PROGRAMS and program not in HANDLED_PROGRAMS:
+            return _unknown_program(program, plain, rest)
     return None
+
+
+# Programs with rules of their own above: what they do otherwise is local, or caught by those rules.
+HANDLED_PROGRAMS = frozenset(("find", "fd", "fdfind", "git", "gh", "glab", "jj", "hg", "svn", "osascript", "open",
+                              "shortcuts", "stripe", "cd", "pushd", "popd", "source", ".", "eval", "exec",
+                              "command", "builtin", "nc", "ncat", "netcat", "telnet", "socat"))
+# Addresses a program can send a live stream or files to: ffmpeg -f flv rtmp://... broadcasts.
+STREAM_URL = re.compile(r"(?i)^(rtmps?|rtsp|srt|udp|tcp|ftp|ftps|sftp|icecast)://")
+SSH_VALUE_FLAGS = {"-b", "-c", "-D", "-E", "-e", "-F", "-I", "-i", "-J", "-L", "-l", "-m", "-O", "-o", "-p", "-Q",
+                   "-R", "-S", "-W", "-w", "-B"}
+
+
+def _remote_command(rest):
+    """The command ssh runs on the other computer, after its options and the host."""
+    index, host = 0, None
+    while index < len(rest):
+        part = rest[index]
+        if part in SSH_VALUE_FLAGS:
+            index += 2
+            continue
+        if part.startswith("-"):
+            index += 1
+            continue
+        host = index
+        break
+    return " ".join(rest[host + 1:]) if host is not None else ""
+
+
+def _just_found(rest, depth, cwd, read_file):
+    """just: the recipe's lines from the justfile, read with the same rules."""
+    if read_file is None or depth >= 3:
+        return Found(UNSURE, "Nollie can't read the justfile to see what it runs")
+    folder = _join(cwd, _folder_flag(rest, ("-d", "--working-directory")))
+    named = _folder_flag(rest, ("-f", "--justfile"))
+    text = None
+    for name in ([named] if named else ["justfile", "Justfile", ".justfile"]):
+        text = read_file(name, folder)
+        if text is not None:
+            break
+    if text is None:
+        return Found(UNSURE, "Nollie can't read the justfile to see what it runs")
+    if set(rest) & ({"-l", "--list", "--summary", "--show", "-s", "--dump"} | HELP_FLAGS):
+        return None
+    recipes, default, current = {}, None, None
+    for line in text.split("\n"):
+        if line[:1] in (" ", "\t") and current:
+            recipes[current].append(line.strip())
+            continue
+        match = re.match(r"^@?([A-Za-z_][A-Za-z0-9_-]*)[^:=]*:(?!=)\s*(.*)$", line)
+        if match:
+            current = match.group(1)
+            recipes[current] = []
+            for dependency in match.group(2).split():
+                recipes[current].append(f"just {dependency}")
+            default = default or current
+        elif line.strip() and not line.startswith("#"):
+            current = None
+    goal = next((p for p in rest if not p.startswith("-")), default)
+    if goal not in recipes:
+        return Found(UNSURE, f"Nollie can't read what just {goal or ''} runs".replace("  ", " "))
+    lines = [line.lstrip("@-") for line in recipes[goal] if line and not line.startswith("#")]
+    body = "\n".join(lines)
+    if lines and lines[0].startswith("#!"):
+        return code_found(body, "py" if "python" in lines[0] else "js" if "node" in lines[0] else "sh")
+    if "{{" in body:
+        return Found(UNSURE, f"just {goal} builds its commands when it runs")
+    return shell_found(body, depth + 1, folder, read_file)
 
 
 def _stdin(bodies, language, piped):
@@ -859,9 +1241,23 @@ def _script_found(path, language, cwd, read_file, depth):
     text = read_file(path, cwd)
     if text is None:
         return Found(UNSURE, f"Nollie can't read {path} to see what it does")
+    if "\x00" in text[:8192]:
+        return Found(UNSURE, f"{path} is a compiled program, which Nollie can't read")
+    shebang = re.match(r"^#!\s*(\S+)(?:\s+(\S+))?", text)
+    if shebang and language == "sh":
+        named = _plain_program(shebang.group(2) if shebang.group(1).endswith("/env") and shebang.group(2)
+                               else shebang.group(1))
+        if named in INTERPRETERS:
+            language = INTERPRETERS[named]
+        elif named not in SHELLS:
+            return Found(UNSURE, f"Nollie can't read what {path} runs with {named}")
     if language == "sh":
         return shell_found(text, depth + 1, cwd, read_file)
     return code_found(text, language) or (shell_found(text, depth + 1, cwd, read_file) if language == "sh" else None)
+
+
+# The files checker for this call's shell rules: set by ``classify`` and left out on other computers.
+FILES = contextvars.ContextVar("nollie_ask_first_files", default=None)
 
 
 def shell_found(command, depth=0, cwd=None, read_file=None):
@@ -869,6 +1265,7 @@ def shell_found(command, depth=0, cwd=None, read_file=None):
     text, bodies = _bodies(str(command or ""))
     segments = _segments(text)
     unsure = None
+    files = FILES.get() if read_file is not None else None
     for index, segment in enumerate(segments):
         parts = _split(segment)
         if not parts:
@@ -879,7 +1276,10 @@ def shell_found(command, depth=0, cwd=None, read_file=None):
         found = _program_found(parts, depth, cwd, read_file, piped, own)
         if found and found.kind != UNSURE:
             return found
-        unsure = unsure or found
+        written = overwrites_found(parts, cwd, files)
+        if written and written.kind != UNSURE:
+            return written
+        unsure = unsure or found or written
     for owner, body in bodies:
         found = code_found(body)
         if found and found.kind != UNSURE:
@@ -952,7 +1352,18 @@ CLICK_TARGET = re.compile(r"\.(click|tap)\s*\(\s*['\"`]([^'\"`]{1,160})")
 SHELL_IN_CODE = re.compile(r"\b(subprocess\.\w+|os\.system|os\.popen|os\.exec\w*|execSync|execFileSync|"
                            r"spawnSync|spawn|execFile|Popen|check_output|check_call|system|exec|`)\s*\(?\s*"
                            r"(\[[^\]]{0,600}\]|[rfb]?(['\"`]).{0,600}?\3)(\s*,\s*\[[^\]]{0,600}\])?", re.S)
+# Calls that surely start another program, unlike a regular expression's .exec().
+RUNS_PROGRAM = re.compile(r"^(subprocess\.\w+|os\.system|os\.popen|os\.exec\w*|execSync|execFileSync|spawnSync|"
+                          r"spawn|execFile|Popen|check_output|check_call|system)$")
+RUNS_CHOSEN = re.compile(r"\b(subprocess\.(run|call|Popen|check_output|check_call|getoutput|getstatusoutput)|"
+                         r"os\.(system|popen|exec[lv]p?e?|spawn[lv]p?e?)|child_process\.(exec|execSync|spawn|spawnSync)|"
+                         r"execSync|spawnSync|execFileSync)\s*\(\s*(?![\s'\"`\[]|[rfbu]['\"]|\[\s*['\"])")
 _STRINGS = re.compile(r"'([^'\\]*(?:\\.[^'\\]*)*)'|\"([^\"\\]*(?:\\.[^\"\\]*)*)\"|`([^`]*)`")
+
+
+def _method_call(text, match):
+    """``something.exec(...)`` or ``something.system(...)`` is a method of that something, not a program."""
+    return match.group(1) in ("exec", "system", "spawn") and text[max(0, match.start() - 1):match.start()] == "."
 
 
 def _llm_call(text, match):
@@ -974,13 +1385,21 @@ def code_found(code, language="py"):
             if kind == "send" and ".messages" in match.group(0) and _llm_call(text, match):
                 continue
             return Found(kind, why)
+    unsure = None
     for match in SHELL_IN_CODE.finditer(text):
         pieces = [a or b or c for a, b, c in _STRINGS.findall(match.group(2) + (match.group(4) or ""))]
+        if match.group(2).startswith("[") and re.match(r"\[\s*sys\.executable\b", match.group(2)):
+            pieces.insert(0, "python3")  # The same Python the code runs in.
         command = " ".join(shlex.quote(p) if " " in p and len(pieces) > 1 else p for p in pieces) \
             if match.group(2).startswith("[") or match.group(4) else (pieces[0] if pieces else "")
         found = shell_found(command) if command else None
         if found and found.kind != UNSURE:
             return found
+        if found and RUNS_PROGRAM.match(match.group(1)) and not _method_call(text, match):
+            unsure = unsure or Found(UNSURE, f"the code runs a program: {found.why}")
+    chosen = RUNS_CHOSEN.search(text)
+    if chosen:
+        unsure = unsure or Found(UNSURE, "the code runs a program chosen when it runs")
     target = CLICK_TARGET.search(text)
     if target:
         kind = button_kind(re.sub(r"^(text|button|role)=", "", target.group(2)))
@@ -988,7 +1407,7 @@ def code_found(code, language="py"):
             return Found(kind, f"the code presses \u201c{target.group(2)[:60]}\u201d")
     if CLICKS_IN_CODE.search(text):
         return Found(UNSURE, "the code clicks or presses keys, and Nollie can't read what on")
-    return None
+    return unsure
 
 
 # Arguments to plain words -----------------------------------------------------------------------
@@ -1142,6 +1561,125 @@ def _inner_calls(tool, args):
                     if inner_name:
                         found.append((inner_name, inner_args))
     return found or None
+
+
+# Other servers' tools ---------------------------------------------------------------------------
+
+# An MCP or connector tool passes only when its own name plainly reads: one of these verbs, and no verb that
+# changes something ahead of it. Everything else asks, whatever the model says it is for.
+LOOK_VERBS = {"get", "list", "read", "search", "fetch", "find", "query", "view", "show", "describe", "count",
+              "lookup", "retrieve", "browse", "inspect", "preview", "peek", "summarize", "summarise", "explain",
+              "download", "validate", "estimate", "calculate", "diff", "compare", "analyze", "analyse",
+              "translate", "render", "parse", "transcribe", "ping", "whoami", "screenshot", "snapshot",
+              "navigate", "goto", "scroll", "hover", "wait", "zoom", "resize", "highlight", "emulate", "watch",
+              "poll", "lint", "test", "simulate", "info", "status", "stats", "history", "schema", "resolve"}
+CHANGE_VERBS = {"create", "add", "make", "put", "write", "place", "compose", "submit", "execute", "run", "perform",
+                "trigger", "confirm", "approve", "complete", "finalize", "start", "close", "cancel", "schedule",
+                "queue", "accept", "update", "upsert", "initiate", "authorize", "dispatch", "deliver", "transmit",
+                "copy", "merge", "invoke", "fire", "set", "edit", "modify", "change", "save", "move", "rename",
+                "sync", "import", "archive", "unarchive", "mark", "label", "star", "unstar", "pin", "unpin", "flag",
+                "enable", "disable", "toggle", "assign", "unassign", "apply", "install", "exec", "call", "stop",
+                "kill", "restart", "launch", "lock", "unlock", "reject", "decline", "clone", "fork", "insert",
+                "append", "patch", "replace", "reset", "clear", "empty", "configure", "register", "login",
+                "logout", "signin", "signup", "join", "leave", "follow", "unfollow", "like", "unlike", "unblock",
+                "mute", "unmute", "connect", "disconnect", "unlink", "attach", "detach", "grant", "revoke", "book",
+                "process", "upload", "click", "press", "fill", "drag", "drop", "type", "do", "export",
+                "reopen", "open", "new", "handle", "respond", "answer", "vote", "rate", "review", "claim",
+                "redeem", "activate", "convert", "format", "generate"} | {
+    verb for kind, verbs in STRONG.items() for verb in verbs}
+# Pages and tabs in a browser: opening, closing and choosing one only looks.
+PAGE_WORDS = {"new", "open", "close", "select", "switch", "list", "get", "page", "pages", "tab", "tabs", "window",
+              "windows", "browser", "frame", "focus"}
+FILLER = {"api", "v1", "v2", "v3", "tool", "mcp", "the", "a", "an", "by", "for", "of", "to", "from", "in", "on",
+          "with", "all", "my"}
+JOINS = {"and", "or", "then", "plus"}
+OVERWRITES = {"replace", "overwrite", "upsert"}
+DRAFTS = {"draft", "drafts"}
+# Servers with their own rules: Nollie Computer asks on the Mac, and Cua's computers are read above.
+OWN_SERVERS = ("mcp__nollie_mac__", "mcp__cua__")
+
+
+def _plainly_reads(tokens):
+    """True when a tool's name only looks: a reading verb, and no changing verb before it."""
+    tokens = [t for t in tokens if t not in FILLER]
+    if not tokens:
+        return False
+    if set(tokens) <= PAGE_WORDS and set(tokens) & {"page", "pages", "tab", "tabs", "window", "windows", "frame"}:
+        return True
+    looked, reads = False, any(_lookup(t, LOOK_VERBS) for t in tokens)
+    for token in tokens:
+        if reads and token in AMBIGUOUS:
+            continue  # A noun as often as a verb: "post" in "search posts", "order" in "get order".
+        if token in JOINS:
+            looked = False  # What follows "and" is a verb of its own.
+            continue
+        if _lookup(token, LOOK_VERBS):
+            looked = True
+            continue
+        if token in OVERWRITES or (not looked and token in CHANGE_VERBS):
+            return False
+    return reads
+
+
+def _first_sentence(text):
+    text = re.sub(r"\s+", " ", str(text or "")).strip()
+    return re.split(r"(?<=[.!?])\s|\n", text, maxsplit=1)[0][:240]
+
+
+def _description_kind(sentence):
+    """The kind the first sentence of a description names: a plain action verb anywhere, a verb that is a noun
+    as often only as its first word ("Post a message"), or a making verb leading a noun ("Create an order")."""
+    tokens = words(sentence)
+    if not tokens:
+        return None
+    found = set()
+    for kind in PRIORITY:
+        if any(stems(t) & (STRONG[kind] - AMBIGUOUS) for t in tokens) or stems(tokens[0]) & STRONG[kind]:
+            found.add(kind)
+        if tokens[0] in MAKERS and any(_lookup(t, NOUNS[kind]) for t in tokens[1:6]):
+            found.add(kind)
+    if set(tokens) & ENDERS and any(_lookup(t, ENDED) for t in tokens):
+        found.add("delete")
+    return _stronger(*found)
+
+
+def _schema_found(tokens, info):
+    """What a tool says it does when it was registered: its own description and the fields it takes."""
+    kind = _description_kind(_first_sentence(info.get("description")))
+    if kind:
+        return Found(kind, "its own description says so")
+    properties = (info.get("parameters") or {}).get("properties") if isinstance(info.get("parameters"), dict) else None
+    if isinstance(properties, dict) and not set(tokens) & DRAFTS:
+        keys = {re.sub(r"[^a-z]", "", str(k).lower()) for k in properties}
+        if keys & RECIPIENT_KEYS and keys & CONTENT_KEYS:
+            return Found("send", "it takes someone to send to and something to say")
+    return None
+
+
+def _http_reads(tokens, args):
+    """A plain web request tool asked for a page: GET or HEAD, and nothing sent with it."""
+    web = {"http", "https", "curl", "url", "web", "api"}
+    if not set(tokens) & web or not (set(tokens) & {"request", "fetch", "get", "call"} or set(tokens) <= web):
+        return False
+    method = str(args.get("method") or args.get("http_method") or args.get("httpMethod") or "GET").upper()
+    sent = any(args.get(k) not in (None, "", {}, []) for k in ("body", "data", "json", "form", "payload", "content"))
+    return method in ("GET", "HEAD", "OPTIONS") and not sent
+
+
+def other_server_found(tool, tokens, args, info):
+    """An MCP or connector tool the name rules found nothing in: asks unless it plainly only reads."""
+    if info:
+        found = _schema_found(tokens, info)
+        if found:
+            return found
+    if _plainly_reads(tokens) or set(tokens) & DRAFTS or _http_reads(tokens, args):
+        return None
+    return Found(UNSURE, "Nollie can't tell from its name that it only looks things up")
+
+
+def other_server(tool):
+    return str(tool).startswith(("mcp__", "connectors__")) and tool != "connectors__execute" and \
+        not str(tool).startswith(OWN_SERVERS)
 
 
 # Screens ----------------------------------------------------------------------------------------
@@ -1313,7 +1851,7 @@ def computer_action(short, tool, args, where, screen):
         kind = button_kind(label)
         if kind:
             return Action(kind, f"Press \u201c{_button(label)}\u201d on {where}.", _button(label))
-        return None
+        return _unsaid_press(label, tool, args, where, screen)
     if short in KEYS or short in TYPES:
         text = args.get("text") if short in TYPES else None
         if short in TYPES:
@@ -1365,6 +1903,99 @@ def computer_action(short, tool, args, where, screen):
     return None
 
 
+# Buttons that say only "go ahead". What they do is in the window, sheet or page around them.
+NEUTRAL_WORDS = {"ok", "okay", "continue", "done", "confirm", "yes", "next", "proceed", "accept", "agree",
+                 "allow", "got", "it", "finish", "go", "sure", "i", "im", "m", "apply", "save", "approve",
+                 "complete", "anyway", "and", "all", "step", "alright", "understood", "start", "begin", "enter",
+                 "return", "yep", "fine", "ready", "let", "s", "lets", "y"}
+DELETE_PATH = re.compile(r"(?i)/(delete|remove|destroy|cancel|close|deactivate|unsubscribe|trash|erase)\w*(?:/|$)")
+
+
+def neutral_button(label):
+    """True for a label like OK, Continue, Done, Yes or "Confirm and continue", which names no action."""
+    tokens = re.findall(r"[^\W\d_]+", str(label or "").lower().replace("\u2019", "").replace("'", ""))
+    return bool(tokens) and len(tokens) <= 5 and set(tokens) <= NEUTRAL_WORDS
+
+
+def context_kind(text):
+    """The kind the words around a button name, by the same words a button would use. ("kind", "the line")."""
+    for line in re.split(r"[\n\r]+|(?<=[.?!])\s+", str(text or "")):
+        tokens = set(re.findall(r"[^\W\d_]+", line.lower()))
+        if tokens & {"cookie", "cookies"}:
+            tokens -= {"share", "sharing", "shared"}  # A cookie notice's "we share data with partners".
+        if tokens & ENDERS and tokens & ENDED:
+            return "delete", line
+        for kind in PRIORITY:
+            if tokens & BUTTON_WORDS[kind] or (kind == "buy" and tokens & {"order", "total", "card", "checkout"}):
+                return kind, line
+    return None, None
+
+
+def page_kind(page):
+    """Where the page's own form sends a press: (kind, address), read from its action and method, never its words."""
+    if not isinstance(page, dict):
+        return None, None
+    found = []
+    for form in page.get("forms") or []:
+        if not isinstance(form, dict):
+            continue
+        method = str(form.get("formmethod") or form.get("method") or "get").upper()
+        url = str(form.get("formaction") or form.get("action") or page.get("url") or "")
+        host = _host(url)
+        try:
+            path = urlsplit(url).path or "/"
+        except ValueError:
+            path = "/"
+        if method in ("GET", "HEAD", "DIALOG"):
+            continue  # A form that only fetches a page.
+        if method == "DELETE" or DELETE_PATH.search(path):
+            found.append(("delete", url))
+        elif any(host == h or host.endswith("." + h) for h in PAY_HOSTS) or PAY_PATH.search(path):
+            found.append(("buy", url))
+        elif POST_PATH.search(path):
+            found.append(("post", url))
+        elif SEND_PATH.search(path):
+            found.append(("send", url))
+    kind = _stronger(*(k for k, _ in found))
+    return (kind, next(u for k, u in found if k == kind)) if kind else (None, None)
+
+
+def _page_of(screen, tool, args):
+    reader = getattr(screen, "page", None)
+    if reader is None:
+        return None
+    try:
+        return reader(tool, args)
+    except Exception:
+        return UNREADABLE
+
+
+def _unsaid_press(label, tool, args, where, screen):
+    """A labelled button that names no action. Its page's own form decides when Nollie can read it; a button
+    that only says OK or Continue is judged by the window around it, and asks when that can't be read."""
+    button = _button(label)
+    headline = f"Press \u201c{button}\u201d on {where}."
+    page = _page_of(screen, tool, args)
+    kind, address = page_kind(page)
+    if kind:
+        return Action(kind, _summary(headline, [f"The page sends it to {_value(address, 160)}."]), button)
+    if not neutral_button(label):
+        return None
+    if isinstance(page, dict) and PAY_PATH.search(urlsplit(str(page.get("url") or "")).path or ""):
+        return Action("buy", _summary(headline, ["The page is a checkout."]), button)
+    reader = getattr(screen, "around", None) or screen.text
+    try:
+        around = reader(tool, args)
+    except Exception:
+        around = UNREADABLE
+    if around is UNREADABLE or around is None:
+        return Action(UNSURE, _summary(headline, ["Nollie couldn't read what it's for, so it asks first."]), button)
+    kind, line = context_kind(around)
+    if kind:
+        return Action(kind, _summary(headline, [f"Next to it: \u201c{_value(_one_line(line), 120)}\u201d"]), button)
+    return None
+
+
 class NoScreen:
     """Used where no screen can be read: every click and Return there asks first."""
 
@@ -1373,6 +2004,206 @@ class NoScreen:
 
     def text(self, tool, args):
         return UNREADABLE
+
+
+# Files ------------------------------------------------------------------------------------------
+
+def _temp_folders():
+    found = set()
+    for folder in (tempfile.gettempdir(), "/tmp", "/private/tmp", os.environ.get("TMPDIR")):
+        if folder:
+            try:
+                found.add(os.path.realpath(folder))
+            except (OSError, ValueError):
+                pass
+    return found
+
+
+def _inside(path, folders):
+    return any(path == folder or path.startswith(folder.rstrip("/") + "/") for folder in folders if folder)
+
+
+class Files:
+    """Whether writing to a path would replace a file that was already there before this turn.
+
+    Files the bot made itself in this turn, and anything in its own scratch folder or the computer's
+    temporary folders, can be written again freely. Every other file that exists counts, and a path that
+    can't be checked is reported as None so the rule asks. ``new_turn`` is Hermes's ``pre_llm_call``.
+    """
+
+    def __init__(self, scratch=(), resolve=None, temporary=True):
+        self.scratch = scratch
+        self.resolve = resolve
+        self.temporary = temporary
+        self.lock = threading.Lock()
+        self.made = {}
+
+    def bind(self, task_id=None, session_id=None):
+        return _BoundFiles(self, task_id, session_id)
+
+    def new_turn(self, session_id=None, **_):
+        with self.lock:
+            self.made.pop(session_id or "", None)
+        return None
+
+    def replaces(self, path, cwd=None):
+        return self.bind().replaces(path, cwd)
+
+    def folder(self, path, cwd=None):
+        return self.bind().folder(path, cwd)
+
+    def _scratch(self):
+        temporary = _temp_folders() if self.temporary else set()
+        try:
+            folders = self.scratch() if callable(self.scratch) else self.scratch
+            return {os.path.realpath(str(f)) for f in folders or () if f} | temporary
+        except Exception:
+            return temporary
+
+
+class _BoundFiles:
+    def __init__(self, files, task_id, session_id):
+        self.files, self.task_id, self.session = files, task_id, session_id or ""
+        self.pending = []
+
+    def _target(self, path, cwd):
+        if self.files.resolve is not None:
+            found = self.files.resolve(path, cwd, self.task_id)
+            return None if found is None else os.path.realpath(str(found))
+        candidate = Path(os.path.expanduser(path))
+        if not candidate.is_absolute():
+            candidate = Path(os.path.expanduser(cwd) if cwd else os.getcwd()) / candidate
+        return os.path.realpath(str(candidate))
+
+    def replaces(self, path, cwd=None):
+        """True: a file that was there before is replaced or removed. False: a new file, one made this turn, or
+        scratch. None: it can't be checked."""
+        if not isinstance(path, str) or not path.strip() or "\x00" in path:
+            return None
+        try:
+            target = self._target(path.strip(), cwd)
+            if target is None:
+                return None
+            if _inside(target, self.files._scratch()):
+                return False
+            if not os.path.lexists(target):
+                self.pending.append(target)
+                return False
+            if os.path.isdir(target):
+                return False
+        except (OSError, ValueError, RuntimeError):
+            return None
+        with self.files.lock:
+            return target not in self.files.made.get(self.session, set())
+
+    def folder(self, path, cwd=None):
+        try:
+            target = self._target(path, cwd) if isinstance(path, str) and path.strip() else None
+            return bool(target) and os.path.isdir(target)
+        except (OSError, ValueError, RuntimeError):
+            return False
+
+    def commit(self):
+        """The call went ahead: the files it makes are the bot's own for the rest of the turn."""
+        if not self.pending:
+            return
+        with self.files.lock:
+            made = self.files.made.setdefault(self.session, set())
+            made.update(self.pending)
+            while len(self.files.made) > 256:
+                self.files.made.pop(next(iter(self.files.made)))
+        self.pending = []
+
+
+FILE_WRITERS = frozenset(("write_file",))
+OTHER_FILE_WRITERS = frozenset(("write_file", "create_file", "save_file", "overwrite_file", "put_file",
+                                "write_text_file"))
+PATH_KEYS = ("path", "file_path", "filepath", "filename", "file", "target", "destination")
+
+
+def _replaced(path):
+    return Action("delete", _summary(f"Replace {_value(path, 300)}, which was already there.",
+                                     ["What it held before will be gone."]))
+
+
+def _unchecked(path):
+    return Action(UNSURE, _summary(f"Write to {_value(path, 300)}.",
+                                   ["Nollie couldn't check whether a file is there already, so it asks first."]))
+
+
+def file_write_found(path, files, cwd=None):
+    """write_file and friends: asks before a file that was there already is replaced."""
+    if not isinstance(path, str) or not path.strip():
+        return None
+    replaced = files.replaces(path, cwd)
+    if replaced:
+        return _replaced(path)
+    if replaced is None:
+        return _unchecked(path)
+    return None
+
+
+_PATCH_TARGET = re.compile(r"^\*\*\* (Add File|Move to|Move File):\s*(.+?)\s*$", re.M)
+
+
+def patch_found(args, files):
+    """A patch that adds a file where one is already, or moves a file onto one, replaces it."""
+    text = "\n".join(str(v) for v in args.values() if isinstance(v, str))
+    for match in _PATCH_TARGET.finditer(text):
+        target = match.group(2)
+        if match.group(1) == "Move File" and "->" in target:
+            target = target.split("->", 1)[1].strip()
+        replaced = files.replaces(target, args.get("workdir"))
+        if replaced:
+            return _replaced(target)
+        if replaced is None:
+            return _unchecked(target)
+    return None
+
+
+_REDIRECT = re.compile(r"^(\d*|&)?>\|?(?!>|&)(.*)$")
+
+
+def overwrites_found(parts, cwd, files):
+    """A shell command that writes over a file: ``>``, ``tee`` without -a, and cp, mv or install onto one."""
+    if files is None or not parts:
+        return None
+    targets = []
+    index = 1
+    while index < len(parts):
+        part = parts[index]
+        match = _REDIRECT.match(part) if not part.startswith(">>") else None
+        if match and not part.startswith(("<", "2>&", ">&")):
+            target = match.group(2) or (parts[index + 1] if index + 1 < len(parts) else "")
+            if target and not target.startswith("&") and target not in ("/dev/null", "/dev/stdout", "/dev/stderr",
+                                                                         "/dev/tty"):
+                targets.append(target)
+            index += 1 if match.group(2) else 2
+            continue
+        index += 1
+    program = _plain_program(parts[0])
+    plain = [p for p in parts[1:] if not p.startswith("-") and not _REDIRECT.match(p) and p != ">"]
+    flags = {p for p in parts[1:] if p.startswith("-")}
+    if program == "tee" and not flags & {"-a", "--append"}:
+        targets.extend(p for p in plain if p not in ("/dev/null",))
+    if program in ("cp", "mv", "install", "ditto") and len(plain) >= 2 and not flags & {
+            "-n", "--no-clobber", "--update=none"} and not any(re.match(r"^-[a-zA-Z]*n", f) for f in flags):
+        destination, sources = plain[-1], plain[:-1]
+        if "-t" in flags or "--target-directory" in flags:
+            destination, sources = plain[0], plain[1:]
+        if files.folder(destination, cwd):
+            targets.extend(os.path.join(destination, os.path.basename(s.rstrip("/"))) for s in sources)
+        else:
+            targets.append(destination)
+    for target in targets:
+        if SUB in target or target.startswith("$"):
+            return Found(UNSURE, "it writes to a file chosen when it runs")
+        replaced = files.replaces(target, cwd)
+        if replaced:
+            return Found("delete", f"it writes over {target}, which was already there")
+        if replaced is None:
+            return Found(UNSURE, f"Nollie couldn't check whether {target} is there already")
+    return None
 
 
 # The rules --------------------------------------------------------------------------------------
@@ -1394,9 +2225,30 @@ def _last(tool):
     return parts[-1].lower().replace("-", "_") if len(parts) >= 3 else str(tool).lower()
 
 
-def classify(tool, args, *, screen=None, read_file=_read_script):
+def classify(tool, args, *, screen=None, read_file=_read_script, describe=None, files=None):
     """The action this call takes that needs the person's yes, or None. Pure apart from ``screen``
-    (which reads a computer's screen) and ``read_file`` (which reads a script about to run)."""
+    (which reads a computer's screen), ``read_file`` (which reads a script about to run), ``describe``
+    (what another server's tool said it does when it was registered) and ``files`` (whether a file
+    being written was there already)."""
+    files = files if files is not None else Files()
+    token = FILES.set(files)
+    try:
+        return _classify(tool, args, screen, read_file, describe, files)
+    finally:
+        FILES.reset(token)
+
+
+def _described(describe, tool):
+    if describe is None:
+        return None
+    try:
+        info = describe(tool)
+    except Exception:
+        return None
+    return info if isinstance(info, dict) else None
+
+
+def _classify(tool, args, screen, read_file, describe, files):
     tool = str(tool or "")
     args = args if isinstance(args, dict) else ({} if args is None else {"value": args})
     calls = _inner_calls(tool, args)
@@ -1406,7 +2258,7 @@ def classify(tool, args, *, screen=None, read_file=_read_script):
         # Hermes runs this hook again for each connector call in the batch: asking here would ask twice.
         return None
     if calls:
-        found = [a for a in (classify(t, a, screen=screen, read_file=read_file) for t, a in calls) if a]
+        found = [a for a in (_classify(t, a, screen, read_file, describe, files) for t, a in calls) if a]
         if not found:
             if tool in ("tool_call", "connectors__execute"):
                 return None
@@ -1452,9 +2304,13 @@ def classify(tool, args, *, screen=None, read_file=_read_script):
         if re.search(r"\*\*\* Delete File:", text) or str(args.get("mode", "")).lower() == "delete" or \
                 re.search(r"\*\*\* Move File:[^\n]*->\s*[^\n]*(\.Trash|/dev/null)", text):
             return Action("delete", _summary("Delete a file with a patch:", detail_lines(args)))
-        return None
-    if tool in ("write_file",):
-        return None
+        return patch_found(args, files)
+    if tool in FILE_WRITERS:
+        return file_write_found(args.get("path"), files, args.get("workdir"))
+    if other_server(tool) and _last(tool) in OTHER_FILE_WRITERS:
+        path = next((args[k] for k in PATH_KEYS if isinstance(args.get(k), str)), None)
+        if path and files.replaces(path) is True:
+            return _replaced(path)
     if tool.startswith("mcp__nollie_mac__"):
         return None  # Nollie Computer asks on the Mac itself, with the label it reads there.
 
@@ -1512,7 +2368,8 @@ def classify(tool, args, *, screen=None, read_file=_read_script):
     if set(tokens) & {"webhook", "hook"} and (set(tokens) & MAKERS or url):
         kind = _stronger(kind, "send")
     if set(tokens) & {"workflow", "zap", "automation", "flow", "scenario", "recipe", "agent", "task"} and \
-            set(tokens) & {"run", "execute", "trigger", "start", "invoke", "fire", "perform", "do"}:
+            set(tokens) & {"run", "execute", "trigger", "start", "invoke", "fire", "perform", "do"} and \
+            not _plainly_reads(tokens):
         task = " ".join(str(v) for k, v in args.items() if isinstance(v, str))
         kind = _stronger(kind, kind_of(words(task), lead=False) or UNSURE)
     found = _args_found(tokens, args)
@@ -1529,11 +2386,16 @@ def classify(tool, args, *, screen=None, read_file=_read_script):
             found = code_found(args[key])
             if found:
                 kind = _stronger(kind, found.kind)
+    why = None
+    if not kind and other_server(tool):
+        found = other_server_found(tool, tokens, args, _described(describe, tool))
+        if found:
+            kind, why = found.kind, f"Why Nollie asks: {found.why}."
     if not kind:
         return None
     where_words = f" with {server}" if server else ""
     first = f"{LEADS[kind]}{where_words}: {' '.join(tokens) or name}"
-    return Action(kind, _summary(first, detail_lines(args)))
+    return Action(kind, _summary(first, ([why] if why else []) + detail_lines(args)))
 
 
 # The hook ---------------------------------------------------------------------------------------
@@ -1544,25 +2406,47 @@ def rule_key(action, new_id=None):
 
 
 class AskFirst:
-    """The ``pre_tool_call`` hook. Hermes pieces are injected so tests can stand in for them."""
+    """The ``pre_tool_call`` hook. Hermes pieces are injected so tests can stand in for them.
 
-    def __init__(self, *, unattended, bypassed, screen=None, read_file=_read_script, new_id=None, redactor=None):
+    ``unsure`` is the bot's Ask first switch: off, the calls Nollie can't read (kind ``unsure``) run without a
+    card. Whatever it says, a call the rules name as sending, buying, posting or deleting always asks.
+    """
+
+    def __init__(self, *, unattended, bypassed, screen=None, read_file=_read_script, new_id=None, redactor=None,
+                 describe=None, files=None, unsure=None):
         self.unattended = unattended
         self.bypassed = bypassed
         self.screen = screen
         self.read_file = read_file
         self.new_id = new_id or (lambda: uuid.uuid4().hex)
         self.redactor = redactor
+        self.describe = describe
+        self.files = files if files is not None else Files()
+        self.unsure = unsure or (lambda: True)
+
+    def _asks_when_unsure(self):
+        try:
+            return self.unsure() is not False
+        except Exception:
+            return True
 
     def action(self, tool_name, args, task_id=None, session_id=None):
-        screen = self.screen
+        """(the action, whether the rules could read the call)."""
+        screen, files = self.screen, self.files
         if screen is not None and hasattr(screen, "bind"):
             screen = screen.bind(task_id, session_id)
+        if hasattr(files, "bind"):
+            files = files.bind(task_id, session_id)
         try:
-            return classify(tool_name, args, screen=screen, read_file=self.read_file)
+            found = classify(tool_name, args, screen=screen, read_file=self.read_file, describe=self.describe,
+                             files=files)
         except Exception:
-            # Fails closed: a call the rules choke on asks rather than slipping through.
-            return Action(UNSURE, _summary(f"Use {tool_name}.", ["Nollie couldn't read this action, so it asks."]))
+            # Fails closed: a call the rules choke on asks rather than slipping through, switch or no switch.
+            return Action(UNSURE, _summary(f"Use {tool_name}.", ["Nollie couldn't read this action, so it asks."])), \
+                False
+        if found is None and hasattr(files, "commit"):
+            files.commit()
+        return found, True
 
     def _safe(self, text):
         if self.redactor is None:
@@ -1574,8 +2458,10 @@ class AskFirst:
             return "[hidden]"
 
     def hook(self, tool_name=None, args=None, task_id=None, session_id=None, **_):
-        found = self.action(tool_name, args, task_id, session_id)
+        found, read = self.action(tool_name, args, task_id, session_id)
         if found is None:
+            return None
+        if read and found.kind == UNSURE and not self._asks_when_unsure():
             return None
         summary = plain_lines(self._safe(found.summary))
         try:
@@ -1620,3 +2506,65 @@ def hermes_bypassed(session_id=None):
     if approval.is_approval_bypass_active():
         return True
     return bool(session_id) and bool(approval.is_approval_bypass_active_for_session(str(session_id)))
+
+
+SWITCH_FILE = "ask-first.json"
+
+
+class Switch:
+    """The bot's Ask first switch, ``<bot home>/nollie-workflow/ask-first.json``, read again when it changes.
+
+    Only ``{"version": 1, "enabled": false}`` turns it off. A missing, linked or damaged file leaves it on."""
+
+    def __init__(self, home):
+        self.path = Path(home) / "nollie-workflow" / SWITCH_FILE
+        self._seen = None
+
+    def __call__(self):
+        try:
+            info = os.lstat(self.path)
+        except FileNotFoundError:
+            return True
+        except OSError:
+            return True
+        signature = (info.st_mtime_ns, info.st_size, info.st_ino, info.st_mode)
+        if self._seen is None or self._seen[0] != signature:
+            on = True
+            try:
+                if not os.path.islink(self.path) and info.st_size <= 4096:
+                    document = json.loads(self.path.read_text())
+                    on = not (isinstance(document, dict) and document.get("version") == 1
+                              and document.get("enabled") is False)
+            except (OSError, ValueError, UnicodeDecodeError):
+                on = True
+            self._seen = (signature, on)
+        return self._seen[1]
+
+
+def hermes_describe(tool):
+    """What another server's tool said about itself when Hermes registered it: description, fields, server."""
+    if not str(tool).startswith(("mcp__", "connectors__")):
+        return None
+    from tools.registry import registry
+    entry = registry.get_entry(str(tool))
+    if entry is None:
+        return None
+    schema = entry.schema if isinstance(entry.schema, dict) else {}
+    return {"description": schema.get("description") or entry.description or "",
+            "parameters": schema.get("parameters") if isinstance(schema.get("parameters"), dict) else {},
+            "server": str(entry.toolset or "").removeprefix("mcp-")}
+
+
+def hermes_files(bot_home):
+    """The files checker for a bot: Hermes resolves a path the way its file tools will, and the bot's own
+    scratch folder (``<home>/cache/scratch``) is its own."""
+    def resolve(path, cwd, task_id):
+        from tools.file_tools_paths import _resolve_path_for_task, _terminal_env_type_for_task
+        if _terminal_env_type_for_task(task_id or "default") != "local":
+            return None  # Files in a container or on another computer can't be checked from here.
+        if cwd:
+            candidate = Path(os.path.expanduser(path))
+            return candidate if candidate.is_absolute() else Path(os.path.expanduser(cwd)) / candidate
+        return _resolve_path_for_task(path, task_id or "default")
+    return Files(scratch=lambda: [Path(bot_home) / "cache" / "scratch"], resolve=resolve)
+
