@@ -73,11 +73,12 @@ struct PapertrailToday: Equatable {
     var tint: Color { left == 0 ? .green : online > 0 ? .blue : .teal }
     var symbol: String { left == 0 ? "lock.laptopcomputer" : online > 0 ? "globe" : "network" }
 
-    /// The line under the bot's name.
+    /// The line under the bot's name. Said as what Papertrail saw: it can't see a program that ignores
+    /// Nollie's door while the network filter is off.
     var headline: String {
-        if left == 0 { return "Nothing left your Mac today" }
+        if left == 0 { return "Nothing seen leaving today" }
         if online > 0 { return Self.wentOnline(online) }
-        return "Stayed on your network today"
+        return "Nothing seen going online today"
     }
 
     static func wentOnline(_ n: Int) -> String { n == 1 ? "Went online once today" : "Went online \(n) times today" }
@@ -129,11 +130,11 @@ struct PapertrailView: View {
         VStack(spacing: 32) {
             Group {
                 if today.left == 0 {
-                    hero(today.symbol, "Stayed on your Mac", line: empty ? "Nothing left all week." : "Nothing left today.", tint: today.tint)
+                    hero(today.symbol, "All quiet", line: empty ? "Nothing seen leaving all week." : "Nothing seen leaving today.", tint: today.tint)
                 } else if today.online > 0 {
                     hero(today.symbol, PapertrailToday.wentOnline(today.online), line: routeLine(today), tint: today.tint)
                 } else {
-                    hero(today.symbol, "Stayed on your network", line: "Nothing went online today.", tint: today.tint)
+                    hero(today.symbol, "Your network only", line: "Nothing seen going online today.", tint: today.tint)
                 }
             }
             .modifier(EmptyWeekIdentifier(empty: empty))
@@ -355,7 +356,7 @@ private struct PapertrailDetails: View {
     /// The top of the page: how many times something left this week.
     private static func title(_ count: Int) -> String {
         switch count {
-        case 0: "Nothing left this week"
+        case 0: "Nothing seen leaving this week"
         case 1: "Left once this week"
         default: "Left \(count) times this week"
         }
@@ -381,6 +382,12 @@ private struct PapertrailDetails: View {
             if !amount.isEmpty { Text(amount).font(.body).foregroundStyle(Ink.text2) }
             if !place.isEmpty {
                 Text(place).font(.callout.monospaced()).foregroundStyle(Ink.text2).textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            // Every place it connected to, each once.
+            let hosts = entry.outsideHosts.joined(separator: "\n")
+            if !hosts.isEmpty {
+                Text(hosts).font(.callout.monospaced()).foregroundStyle(Ink.text2).textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

@@ -1,7 +1,8 @@
-"""Papertrail for the main bot and the bots chosen for it, the Night shift recorder, saved sign-ins, saved cards and
+"""Papertrail for every bot that is not private, the Night shift recorder, saved sign-ins, saved cards and
 the Mac's Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
-keeps a typed password out of screenshots, load in every bot, private ones too. The rule that keeps this Mac's screen on this Mac (no Hermes computer_use)
-loads in every bot that is not private. Nothing else loads for a private bot, and nothing is recorded from it.
+keeps a typed password out of screenshots, load in every bot, private ones too. The rule that keeps this Mac's screen on this Mac (no Hermes computer_use,
+no screen capture from a bot's terminal or code) loads in every bot that is not private. Nothing else loads for a private bot,
+and nothing is recorded from it, except that the words of chats stay out of Hermes's logs for every bot in the process.
 """
 
 
@@ -10,6 +11,8 @@ def register(ctx):
     from hermes_cli.profiles import get_profile_dir
     profile = str(getattr(ctx, "profile_name", "") or "")
     home = Path(get_profile_dir("default")).resolve()
+    # Before anything logs a word: Hermes's logs leave the words of chats out, for every bot in the process.
+    _install_log_privacy()
     # First, so a call is held or refused before anything else looks at it.
     _register_mac_screen(ctx, profile, home)
     _register_ask_first(ctx, profile, home)
@@ -19,6 +22,7 @@ def register(ctx):
             return
     except Exception:
         return
+    _register_log_privacy(ctx)
     _register_papertrail(ctx, profile, home)
     if profile == "default":
         from .service import start
@@ -50,12 +54,30 @@ def _register_mac_screen(ctx, profile, default_home):
         logging.getLogger("nollie-workflow").warning("The Mac screen rule did not start: %s", type(exc).__name__)
 
 
+def _install_log_privacy():
+    import logging
+    try:
+        from .log_privacy import install
+        install()
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("Log privacy did not start: %s", type(exc).__name__)
+
+
+def _register_log_privacy(ctx):
+    import logging
+    try:
+        from .log_privacy import register
+        register(ctx)
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("Log privacy did not start: %s", type(exc).__name__)
+
+
 def _register_papertrail(ctx, profile, default_home):
     import logging
     try:
         from pathlib import Path
-        if profile != "default" and (Path(__file__).parent / "recorder-only").exists():
-            return  # The installer copied the add-on here for the Night shift recorder only.
+        # Every bot that is not private keeps a Papertrail. A "recorder-only" marker left by an older
+        # installer no longer turns it off: Nollie Runtime's door records there anyway.
         from hermes_constants import get_hermes_home
         from .private_bots import Watch
         bot_home = Path(get_hermes_home()).resolve()

@@ -174,7 +174,7 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.assertIn("nollie-workflow", self.config()["plugins"]["enabled"])
         self.assertEqual(json.loads((scout / "config.yaml").read_text())["plugins"],
                          {"enabled": ["custom", "nollie-workflow"], "disabled": ["nollie-reader"]})
-        self.assertTrue((scout / "plugins/nollie-workflow/recorder-only").is_file())
+        self.assertFalse((scout / "plugins/nollie-workflow/recorder-only").exists(), "every helper keeps a Papertrail")
         # A Private bot gets Ask first and the lease, and nothing else of it changes.
         self.assert_only_safety_added(hidden, before)
         self.assertEqual(self.snapshot(moss), untouched)
@@ -292,7 +292,7 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.assertEqual(addons.ensure_profile_workflow(self.home, "juniper", staged), ["juniper"])
         self.assertEqual(json.loads((staged / "config.yaml").read_text())["plugins"]["enabled"],
                          ["nollie-workflow"])
-        self.assertTrue((staged / "plugins/nollie-workflow/recorder-only").is_file())
+        self.assertFalse((staged / "plugins/nollie-workflow/recorder-only").exists())
         self.assertEqual((staged / "nollie-workflow/ask-first-initialized").read_text(), "1\n")
         self.assertFalse((self.home / "profiles/juniper").exists())
 
@@ -446,7 +446,8 @@ class ManagedAddOnsTests(unittest.TestCase):
         before, main = self.snapshot(personal), self.snapshot(self.home)
         self.assertEqual(addons.ensure_workflow(self.home, "first"), ["default", "personal"])
         self.assert_only_safety_added(personal, before)
-        self.assertTrue((personal / "plugins/nollie-workflow/recorder-only").is_file())
+        # No marker needed: the add-on loads only Ask first in a Private bot and never records there.
+        self.assertFalse((personal / "plugins/nollie-workflow/recorder-only").exists())
         self.assertEqual(json.loads((self.home / "config.yaml").read_text())["plugins"]["enabled"], ["nollie-workflow"])
         self.assertEqual(json.loads((self.home / "bot-desktop/lease.json").read_text())["holder"], "human")
         # Creating a bot under a Private name is still refused before it is covered.
@@ -472,12 +473,13 @@ class ManagedAddOnsTests(unittest.TestCase):
             addons.ensure_workflow(self.home)
         self.assertEqual(self.snapshot(self.home), before)
 
-    def test_profile_copy_updates_keep_papertrail_choice_and_old_copy(self):
+    def test_profile_copy_updates_drop_an_old_marker_and_keep_the_old_copy(self):
         self.seed_workflow()
         scout = self.bot("scout")
         addons.ensure_workflow(self.home, "first")
         target = scout / "plugins/nollie-workflow"
-        (target / "recorder-only").unlink()
+        # An older Nollie left this marker to keep Papertrail off; the next update takes it away.
+        (target / "recorder-only").write_text(addons.RECORDER_NOTE)
         original = (target / "plugin.yaml").read_bytes()
         (self.home / "plugins/nollie-workflow/plugin.yaml").write_bytes(original + b"\n# newer\n")
         addons.ensure_workflow(self.home, "second")

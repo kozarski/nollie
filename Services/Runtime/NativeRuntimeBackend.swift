@@ -6,8 +6,8 @@ import Foundation
 /// command, saved-PID adoption or process-name scan enters this implementation.
 actor NativeRuntimeBackend: NollieRuntimeBackend {
     typealias Contract = NollieRuntimeContract
-    static let entrypointDigest = "b706a91085480569c074fceab42a50df9410e54b8ea9a6ab5ff19db24ed088d6"
-    static let addonsDigest = "6b64789b4f296fb41b3d34d10be9391da40b2e55413dd21250421c992ade276c"
+    static let entrypointDigest = "6a10009c138c42fa02854c5ad9ddb5bff754e249083df939257fd43491a81ec0"
+    static let addonsDigest = "0668f4ae495a44229c24e35693d579769fd5df3d1351eb0c2d349587935c8b9a"
     private let installations: URL
     private let entrypoint: URL
     private let keys: any RuntimeKeyStoring
@@ -18,6 +18,12 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
     private var activePlan: Contract.Plan?
     private var children: [UUID: ChildProcess] = [:]
     private let session: URLSession
+    /// Papertrail's door: open while Hermes runs, so every connection it makes is noted.
+    private var door: PapertrailDoor?
+    /// Papertrail's network filter link, while Hermes runs and the switch is on.
+    private var filter: RuntimeNetworkFilter?
+    /// Rereads the filter's switch while Hermes runs, so turning it on or off needs no restart.
+    private var switchWatch: Task<Void, Never>?
 
     private struct ChildProcess {
         let handle: Contract.Child
@@ -80,6 +86,13 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
             flock(lock, LOCK_UN); close(lock); lease = -1
             throw Contract.Failure.keysUnavailable
         }
+        // No door, no start: nothing Hermes sends may go out unnoted.
+        guard let door = await openDoor(home: plan.home) else {
+            flock(lock, LOCK_UN); close(lock); lease = -1
+            keyHandoff = Data()
+            throw Contract.Failure.launchFailed
+        }
+        plan.door = door
         activePlan = plan
         return plan
     }
@@ -271,9 +284,55 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         preparation = UUID()
         for child in children.values.map(\.handle) { await stop(child) }
         guard children.isEmpty else { return }
+        switchWatch?.cancel()
+        switchWatch = nil
+        filter?.stop()
+        filter = nil
+        door?.stop()
+        door = nil
         if lease >= 0 { flock(lease, LOCK_UN); close(lease); lease = -1 }
         activePlan = nil
         keyHandoff = Data()
+    }
+
+    /// A fresh door with a fresh secret for each run.
+    private func openDoor(home: URL) async -> Contract.Door? {
+        filter?.stop()
+        filter = nil
+        door?.stop()
+        let book = PapertrailDoorBook(home: home)
+        let state = RuntimeNetworkFilter.readSwitch(directory: NolliePaths.current.runtimeService)
+        var configuration = PapertrailDoor.Configuration()
+        configuration.refuseUnplaced = state.refuse
+        let made = PapertrailDoor(configuration: configuration, book: book)
+        guard let port = try? await made.start() else { made.stop(); door = nil; return nil }
+        door = made
+        apply(state, book: book)
+        switchWatch?.cancel()
+        switchWatch = Task { [weak self] in
+            var seen = state
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                let now = RuntimeNetworkFilter.readSwitch(directory: NolliePaths.current.runtimeService)
+                if now != seen, !Task.isCancelled { seen = now; await self?.apply(now, book: book) }
+            }
+        }
+        return Contract.Door(port: port, secret: made.secret)
+    }
+
+    /// The filter's switch as it is now: the door refuses unplaced programs when Refuse is on, and the
+    /// filter link runs while On is.
+    private func apply(_ state: NetworkFilterPolicy.Switch, book: PapertrailDoorBook) {
+        door?.setRefuseUnplaced(state.refuse)
+        if filter?.state != state {
+            filter?.stop()
+            filter = nil
+            if state.on {
+                let link = RuntimeNetworkFilter(book: book, switch: state)
+                link.start()
+                filter = link
+            }
+        }
     }
 }
 

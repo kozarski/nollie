@@ -427,9 +427,10 @@ PAPERTRAIL_STATES = ("busy", "empty", "off")
 
 def _papertrail_seed(entry_id, day, when, took, route="online", provider=None, name=None, model=None,
                      host=None, calls=1, helpers=(), services=(), tokens=(0, 0, 0, 0), searches=0,
-                     pages=0, images=0, why=None) -> dict:
+                     pages=0, images=0, why=None, connections=()) -> dict:
     """One seeded entry: `when` is minutes ago for today (day 0), else an (hour, minute) on that day.
-    `why` is what the add-on kept about why it went (see _papertrail_why); None for one kept before 1.1."""
+    `why` is what the add-on kept about why it went (see _papertrail_why); None for one kept before 1.1.
+    `connections` are (host, kind, count) the door saw in it, as nollie-workflow serves them."""
     seed = dict(id=entry_id, day=day, when=when, took=took, route=route, provider=provider,
             provider_name=name, host=host, model=model, calls=calls, helpers=list(helpers),
             services=list(services), input_tokens=tokens[0], output_tokens=tokens[1],
@@ -437,6 +438,10 @@ def _papertrail_seed(entry_id, day, when, took, route="online", provider=None, n
             pages=pages, images=images)
     if why is not None:
         seed["why"] = why
+    if connections:
+        seed["connections"] = [dict(host=host, port=443, kind=kind, count=count,
+                                    route="network" if host.startswith("192.168.") else "online")
+                               for host, kind, count in connections]
     return seed
 
 
@@ -454,10 +459,14 @@ PAPERTRAIL_SEED = dict(
     default=dict(recording_days=12, stayed={0: 12, 1: 9, 2: 7, 3: 5, 5: 4, 6: 3, 9: 6, 11: 2}, entries=[
         _papertrail_seed("t-d1", 0, 12, 95, **_PT_DIRECT, calls=6, helpers=["title_generation"],
                          services=["exa"], tokens=(18000, 900, 52000, 0), searches=2, pages=3,
-                         why=_papertrail_why(messages=24, approvals=[(40, "once", "send")])),
+                         why=_papertrail_why(messages=24, approvals=[(40, "once", "send")]),
+                         connections=[("api.example.com", "hermes", 6), ("search.example.net", "hermes", 2),
+                                      ("news.example.org", "reader", 3)]),
         _papertrail_seed("t-d2", 0, 70, 40, **_PT_RELAY, calls=3, tokens=(6400, 1200, 0, 0),
                          why=_papertrail_why("schedule", "Morning brief", messages=6, backup=True)),
-        _papertrail_seed("t-d3", 0, 150, 6, services=["exa"], searches=1, why=_papertrail_why()),
+        _papertrail_seed("t-d3", 0, 150, 6, services=["exa"], searches=1, why=_papertrail_why(),
+                         connections=[("search.example.net", "hermes", 1)]),
+        _papertrail_seed("w-door1", 0, 190, 4, calls=0, connections=[("code.example.com", "terminal", 2)]),
         _papertrail_seed("t-d4", 0, 230, 55, route="network", provider="custom", model="assistant-open-32b",
                          host="http://192.168.1.40:8080", calls=2, tokens=(3100, 420, 0, 0),
                          why=_papertrail_why(messages=8)),

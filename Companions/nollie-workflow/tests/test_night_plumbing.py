@@ -113,34 +113,27 @@ class RecorderInstallTests(unittest.TestCase):
             package._register_papertrail(ctx, profile, self.hermes)
         return hooks
 
-    def test_the_recorder_alone_leaves_papertrail_off(self):
+    def test_every_recorder_copy_keeps_a_papertrail(self):
         _, said = self.run_installer("--recorder", "--papertrail-bots", "career")
-        self.assertIn("Recorder only, Papertrail off: nowhere.", said)
-        self.assertIn("Recorder and Papertrail: career.", said)
+        self.assertIn("Recorder and Papertrail: career, nowhere.", said)
         self.run_installer("--apply", "--recorder")
         for profile in ("career", "nowhere"):
-            marker = self.hermes / "profiles" / profile / "plugins/nollie-workflow/recorder-only"
-            self.assertTrue(marker.is_file(), profile)
-            self.assertEqual(marker.stat().st_mode & 0o777, 0o600)
-        self.assertFalse((self.hermes / "plugins/nollie-workflow/recorder-only").exists())
-        self.assertEqual(self.papertrail_hooks("career", 1), [])
-        # Named for Papertrail too: the copy replaces the folder and the marker goes.
-        _, said = self.run_installer("--apply", "--recorder", "--papertrail-bots", "career")
-        self.assertFalse((self.hermes / "profiles/career/plugins/nollie-workflow/recorder-only").exists())
-        self.assertTrue((self.hermes / "profiles/nowhere/plugins/nollie-workflow/recorder-only").exists())
-        self.assertEqual(self.papertrail_hooks("career", 2), list(load("papertrail").HOOKS))
-        # An upgrade with --recorder alone keeps Papertrail where it was on.
-        _, said = self.run_installer("--apply", "--recorder")
-        self.assertIn("Recorder and Papertrail: career.", said)
-        self.assertFalse((self.hermes / "profiles/career/plugins/nollie-workflow/recorder-only").exists())
-        self.assertTrue((self.hermes / "profiles/nowhere/plugins/nollie-workflow/recorder-only").exists())
+            self.assertFalse((self.hermes / "profiles" / profile / "plugins/nollie-workflow/recorder-only").exists())
+        self.assertEqual(self.papertrail_hooks("career", 1), list(load("papertrail").HOOKS))
+        # A marker an older installer left no longer turns Papertrail off.
+        marker = self.hermes / "profiles/nowhere/plugins/nollie-workflow/recorder-only"
+        marker.write_text("Papertrail is off in this bot.\n")
+        self.assertEqual(self.papertrail_hooks("nowhere", 2), list(load("papertrail").HOOKS))
+        # An upgrade replaces the copy, and the old marker goes with it.
+        self.run_installer("--apply", "--recorder")
+        self.assertFalse(marker.exists())
 
     def test_upgrade_backs_up_a_previous_recorder(self):
         self.run_installer("--apply", "--recorder")
         self.run_installer("--apply", "--recorder")
         self.assertTrue(list((self.hermes / "profiles/career/plugin-backups").glob("nollie-workflow-*")))
 
-    def test_recorder_only_copies_still_hold_sending(self):
+    def test_recorder_copies_still_hold_sending(self):
         self.run_installer("--apply", "--recorder")
         for profile in ("career", "nowhere"):
             (self.hermes / "profiles" / profile / "config.yaml").write_text(
@@ -157,7 +150,6 @@ class RecorderInstallTests(unittest.TestCase):
                 package._register_ask_first(ctx, profile, self.hermes)
                 decisions = [fn(tool_name="send_message", args={"message": "Hello"})
                              for hook, fn in hooks if hook == "pre_tool_call"]
-            self.assertTrue((copy / "recorder-only").is_file())
             self.assertEqual(len(decisions), 2)
             self.assertIsNone(decisions[0])
             self.assertEqual(decisions[1]["action"], "block")
@@ -228,7 +220,7 @@ class RegisterTests(unittest.TestCase):
         with patch.object(load("recorder"), "register", side_effect=RuntimeError("broken")), \
                 self.assertLogs("nollie-workflow", "WARNING") as logged:
             hooks, _, _ = self.register("career")
-        self.assertEqual(hooks, MAC_SCREEN_HOOKS + ASK_FIRST_HOOKS + list(load("papertrail").HOOKS))
+        self.assertEqual(hooks, MAC_SCREEN_HOOKS + ASK_FIRST_HOOKS + ["pre_llm_call", "post_llm_call"] + list(load("papertrail").HOOKS))
         self.assertIn("The Night shift recorder did not start: RuntimeError", logged.output[0])
 
     def test_private_profiles_get_ask_first_and_nothing_else(self):

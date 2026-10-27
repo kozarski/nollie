@@ -481,9 +481,9 @@ def _ensure_workflow(home, source, stamp, policy, private, profiles=None, python
         initialized = workflow_initialized(profile_home) and not profile_home.name.startswith(f".{profile}.staging-")
         copied = "current"
         if profile != "default":
-            target = profile_home / "plugins" / WORKFLOW
-            recorder_only = not target.is_dir() or (target / RECORDER_ONLY).exists()
-            copied = install_addon(source.parent, profile_home, item, stamp, recorder_only)
+            # Every helper keeps a Papertrail (private ones still never record: the add-on loads only Ask
+            # first there), so an older copy's recorder-only marker goes with the update.
+            copied = install_addon(source.parent, profile_home, item, stamp)
         if not initialized:
             added = enable(profile_home, [WORKFLOW], stamp, required=(WORKFLOW,),
                            create=profile != "default")
