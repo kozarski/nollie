@@ -224,6 +224,22 @@ struct PapertrailDoorTests {
         #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent("profiles/moss/nollie-workflow").path))
     }
 
+    @Test func withTheFilterRefusingTheDoorRefusesWhatItCannotPlace() async throws {
+        var configuration = PapertrailDoor.Configuration()
+        configuration.refuseUnplaced = true
+        let door = PapertrailDoor(configuration: configuration, book: nil)
+        let port = Int(try await door.start())
+        defer { door.stop() }
+        let upstream = try await DoorEcho.start()
+        defer { upstream.stop() }
+        let unplaced = "CONNECT 127.0.0.1:\(upstream.port) HTTP/1.1\r\nProxy-Authorization: \(basic("unplaced.program", door.secret))\r\n\r\n"
+        #expect(try await DoorClient.exchange(port, Data(unplaced.utf8)).hasPrefix("HTTP/1.1 403 "))
+        let placed = "CONNECT 127.0.0.1:\(upstream.port) HTTP/1.1\r\nProxy-Authorization: \(basic("scout.code", door.secret))\r\n\r\nhi"
+        #expect(try await DoorClient.exchange(port, Data(placed.utf8), until: "HTTP/1.1 200 Connection established\r\n\r\nhi").hasSuffix("hi"))
+        #expect(upstream.connections == 1)
+        #expect(door.counts.refusedUnplaced == 1)
+    }
+
     @Test func malformedRequestsAreAnsweredAndClosed() async throws {
         let door = PapertrailDoor(book: nil)
         let port = Int(try await door.start())

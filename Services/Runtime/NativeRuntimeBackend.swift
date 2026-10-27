@@ -17,6 +17,8 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
     private let session: URLSession
     /// Papertrail's door: open while Hermes runs, so every connection it makes is noted.
     private var door: PapertrailDoor?
+    /// Papertrail's network filter link, while Hermes runs and the switch is on.
+    private var filter: RuntimeNetworkFilter?
 
     private struct ChildProcess {
         let handle: Contract.Child
@@ -236,6 +238,8 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         preparation = UUID()
         for child in children.values.map(\.handle) { await stop(child) }
         guard children.isEmpty else { return }
+        filter?.stop()
+        filter = nil
         door?.stop()
         door = nil
         if lease >= 0 { flock(lease, LOCK_UN); close(lease); lease = -1 }
@@ -244,10 +248,21 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
 
     /// A fresh door with a fresh secret for each run.
     private func openDoor(home: URL) async -> Contract.Door? {
+        filter?.stop()
+        filter = nil
         door?.stop()
-        let made = PapertrailDoor(book: PapertrailDoorBook(home: home))
+        let book = PapertrailDoorBook(home: home)
+        let state = RuntimeNetworkFilter.readSwitch(directory: NolliePaths.current.runtimeService)
+        var configuration = PapertrailDoor.Configuration()
+        configuration.refuseUnplaced = state.refuse
+        let made = PapertrailDoor(configuration: configuration, book: book)
         guard let port = try? await made.start() else { made.stop(); door = nil; return nil }
         door = made
+        if state.on {
+            let link = RuntimeNetworkFilter(book: book, switch: state)
+            link.start()
+            filter = link
+        }
         return Contract.Door(port: port, secret: made.secret)
     }
 }

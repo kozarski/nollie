@@ -9,7 +9,8 @@ import Foundation
 /// nothing written. Connections that stay on this Mac (loopback) are not lines at all.
 final class PapertrailDoorBook: @unchecked Sendable {
     /// What a connection's label may say it came from. Anything else is a program.
-    static let kinds: Set<String> = ["hermes", "terminal", "code", "mcp", "model", "reader", "program"]
+    /// `direct` is a connection the network filter saw going around the door.
+    static let kinds: Set<String> = ["hermes", "terminal", "code", "mcp", "model", "reader", "program", "direct"]
     static let keepDays = 35
     /// Bots that were private before the list existed. They always count, as in the add-on.
     static let carriedOverPrivate: Set<String> = ["private", "moss"]

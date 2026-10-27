@@ -87,6 +87,8 @@ import Testing
                 == "Nollie connected to a.example by itself, outside a reply.")
         #expect(Papertrail.connectionLine(kind: "anything", host: "a.example", bot: "Nollie")
                 == "A program Nollie started connected to a.example.")
+        #expect(Papertrail.connectionLine(kind: "direct", host: "a.example", bot: "Nollie")
+                == "A program Nollie started reached a.example directly.")
     }
 
     @Test func notesForTheIPhoneThroughICloudAreNamedAndNotCountedAsOnline() throws {

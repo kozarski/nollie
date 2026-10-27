@@ -21,6 +21,8 @@ sources = ["Apps/Nollie/Connect/ConfigurationBackup.swift", "Apps/Nollie/Connect
            "Services/Runtime/CuaInstaller.swift", "Services/Runtime/AppPresence.swift",
            "Services/Runtime/ExitRelayPolicy.swift", "Services/Runtime/ExitRelayWire.swift", "Services/Runtime/ExitRelay.swift",
            "Services/Runtime/RuntimeExitRelay.swift", "Services/Runtime/PapertrailDoorBook.swift", "Services/Runtime/PapertrailDoor.swift",
+           "Services/NetworkFilter/NetworkFilterPolicy.swift", "Services/NetworkFilter/NetworkFilterXPC.swift",
+           "Services/Runtime/RuntimeNetworkFilter.swift",
            "Packages/NollieCore/Sources/NollieCore/Storage/NolliePaths.swift",
            "Packages/NollieCore/Sources/NollieCore/Link/NollieLinkAway.swift",
            "Packages/NollieCore/Sources/NollieCore/Logging/NollieLog.swift", "Packages/NollieCore/Sources/NollieCore/Logging/LogFileWriter.swift",
@@ -36,7 +38,7 @@ for mode, defines in [("direct", ["-D", "NOLLIE_DIRECT"]), ("store", [])]:
                "-Xlinker", "-rpath", "-Xlinker", str(FRAMEWORKS), "-load-plugin-library", str(MACROS),
                *sources, str(fixture), "Services/Runtime/Tests/RuntimeServiceTests.swift",
                "Services/Runtime/Tests/CuaInstallerTests.swift", "Services/Runtime/Tests/LiveRelayHelperTests.swift",
-               "Services/Runtime/Tests/RuntimeExitRelayTests.swift", str(main), "-o", str(binary)]
+               "Services/Runtime/Tests/RuntimeExitRelayTests.swift", "Services/Runtime/Tests/RuntimeNetworkFilterTests.swift", str(main), "-o", str(binary)]
     with (OUTPUT / (mode + "-compile.log")).open("w") as log:
         subprocess.run(command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)
     with (OUTPUT / (mode + "-tests.log")).open("w") as log:
@@ -50,6 +52,14 @@ with (OUTPUT / "entry-tests.log").open("w") as log:
     subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", str(ROOT / "Tools/runtime-helper"), "-p", "test_*.py"],
                    stdout=log, stderr=subprocess.STDOUT, check=True)
 results["entrypoint"] = "passed"
+# Papertrail's network filter has no target until the developer portal has its capability: it is typechecked here.
+with (OUTPUT / "network-filter-typecheck.log").open("w") as log:
+    subprocess.run(["xcrun", "swiftc", "-swift-version", "6", "-D", "NOLLIE_DIRECT", "-D", "NOLLIE_NETWORK_FILTER",
+                    "-parse-as-library", "-typecheck", "Services/NetworkFilter/PapertrailFilterProvider.swift",
+                    "Services/NetworkFilter/NetworkFilterPolicy.swift", "Services/NetworkFilter/NetworkFilterXPC.swift",
+                    "Services/Runtime/PapertrailDoorBook.swift", "Services/Runtime/ExitRelayWire.swift",
+                    "Services/Runtime/LinkDoorHTTP.swift"], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)
+results["network_filter"] = "typechecked (no target yet)"
 results["helper_entrypoints"] = "Direct and Store typechecks passed"
 results["scope"] = "Swift lifecycle fixtures and temporary Python stub modules only. No Hermes service launched or registered."
 (OUTPUT / "validation.json").write_text(json.dumps(results, indent=2) + "\n")

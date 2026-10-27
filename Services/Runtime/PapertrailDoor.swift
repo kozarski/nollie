@@ -20,12 +20,16 @@ final class PapertrailDoor: @unchecked Sendable {
         /// No bytes either way for this long and the connection is closed. Long, for streamed replies.
         var idleTimeout: TimeInterval = 900
         var maximumConnections = 512
+        /// With the network filter refusing what goes around the door, the door refuses what it can't
+        /// place with a bot too, so nothing leaves without a line.
+        var refuseUnplaced = false
     }
 
     struct Counts: Equatable, Sendable {
         var open = 0
         var passed = 0
         var refusedSecret = 0
+        var refusedUnplaced = 0
         var malformed = 0
         var upstreamFailures = 0
     }
@@ -172,6 +176,7 @@ final class PapertrailDoor: @unchecked Sendable {
     fileprivate func finished(_ session: PapertrailDoorSession) { sessions[ObjectIdentifier(session)] = nil }
     fileprivate func countMalformed() { tally.malformed += 1 }
     fileprivate func countRefusedSecret() { tally.refusedSecret += 1 }
+    fileprivate func countRefusedUnplaced() { tally.refusedUnplaced += 1 }
     fileprivate func countUpstream(_ ok: Bool) { if ok { tally.passed += 1 } else { tally.upstreamFailures += 1 } }
 
     /// The label behind a request, when its secret is this run's. Constant time over the secret.
@@ -235,6 +240,7 @@ enum PapertrailDoorRequest {
         case 407:
             headers.append(.init(name: "Proxy-Authenticate", value: "Basic realm=\"Nollie\""))
             message = "Nollie's door needs the address Nollie gave this program.\n"
+        case 403: message = "Nollie's door only lets out what Papertrail can name.\n"
         case 502: message = "Nollie's door couldn't reach that address.\n"
         case 503: message = "Nollie's door is busy. Try again in a moment.\n"
         default: message = "Nollie's door couldn't read that request.\n"
@@ -317,6 +323,11 @@ private final class PapertrailDoorSession: @unchecked Sendable {
             guard let label = door.admit(try PapertrailDoorRequest.authorization(buffer)) else {
                 door.countRefusedSecret()
                 answer(PapertrailDoorRequest.refusal(407))
+                return
+            }
+            if label.bot.isEmpty, door.configuration.refuseUnplaced {
+                door.countRefusedUnplaced()
+                answer(PapertrailDoorRequest.refusal(403))
                 return
             }
             let early = Data(buffer.dropFirst(request.headLength))

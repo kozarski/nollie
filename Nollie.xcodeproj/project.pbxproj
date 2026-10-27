@@ -71,6 +71,11 @@
 		EF0FA75B48F0A7748A52D617 /* ExitRelayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */; };
 		1C0C79082145CBC879F72805 /* ExitRelayWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889B81D60373AF624F558E3A /* ExitRelayWire.swift */; };
 		0E3D2AE48501B25482C67A0C /* ExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 367508B5D4564F9258B282A8 /* ExitRelay.swift */; };
+		F9C1AA0A1274E09ADC085686 /* RuntimeNetworkFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0857C17B71AF463A4EF4D15 /* RuntimeNetworkFilter.swift */; };
+		BA99A151372097F5A41824CE /* NetworkFilterXPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3291D73462EDBC84D5DDD4A /* NetworkFilterXPC.swift */; };
+		6DC8EE5EA93956EC2A7F5951 /* NetworkFilterXPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3291D73462EDBC84D5DDD4A /* NetworkFilterXPC.swift */; };
+		049EB21672AB98144020E7CA /* NetworkFilterPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1D1DD57C8A0EBBC7DCA8EC /* NetworkFilterPolicy.swift */; };
+		7F6BAC844125688BE844B8DB /* NetworkFilterPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1D1DD57C8A0EBBC7DCA8EC /* NetworkFilterPolicy.swift */; };
 		981AC75FCFF1902219772089 /* PapertrailDoorBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FAECB8064EAB7104765649 /* PapertrailDoorBook.swift */; };
 		351209E1358CC4ADE94437B7 /* PapertrailDoorBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FAECB8064EAB7104765649 /* PapertrailDoorBook.swift */; };
 		F920A210BC8E0E5577C650B6 /* PapertrailDoor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7D823A480D1B44D403000F /* PapertrailDoor.swift */; };
@@ -295,6 +300,9 @@
 		51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelayPolicy.swift; path = Services/Runtime/ExitRelayPolicy.swift; sourceTree = SOURCE_ROOT; };
 		889B81D60373AF624F558E3A /* ExitRelayWire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelayWire.swift; path = Services/Runtime/ExitRelayWire.swift; sourceTree = SOURCE_ROOT; };
 		367508B5D4564F9258B282A8 /* ExitRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelay.swift; path = Services/Runtime/ExitRelay.swift; sourceTree = SOURCE_ROOT; };
+		B0857C17B71AF463A4EF4D15 /* RuntimeNetworkFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeNetworkFilter.swift; path = Services/Runtime/RuntimeNetworkFilter.swift; sourceTree = SOURCE_ROOT; };
+		D3291D73462EDBC84D5DDD4A /* NetworkFilterXPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NetworkFilterXPC.swift; path = Services/NetworkFilter/NetworkFilterXPC.swift; sourceTree = SOURCE_ROOT; };
+		AC1D1DD57C8A0EBBC7DCA8EC /* NetworkFilterPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NetworkFilterPolicy.swift; path = Services/NetworkFilter/NetworkFilterPolicy.swift; sourceTree = SOURCE_ROOT; };
 		A0FAECB8064EAB7104765649 /* PapertrailDoorBook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PapertrailDoorBook.swift; path = Services/Runtime/PapertrailDoorBook.swift; sourceTree = SOURCE_ROOT; };
 		CA7D823A480D1B44D403000F /* PapertrailDoor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PapertrailDoor.swift; path = Services/Runtime/PapertrailDoor.swift; sourceTree = SOURCE_ROOT; };
 		A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeExitRelay.swift; path = Services/Runtime/RuntimeExitRelay.swift; sourceTree = SOURCE_ROOT; };
@@ -789,6 +797,9 @@
 				51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */,
 				889B81D60373AF624F558E3A /* ExitRelayWire.swift */,
 				367508B5D4564F9258B282A8 /* ExitRelay.swift */,
+				B0857C17B71AF463A4EF4D15 /* RuntimeNetworkFilter.swift */,
+				D3291D73462EDBC84D5DDD4A /* NetworkFilterXPC.swift */,
+				AC1D1DD57C8A0EBBC7DCA8EC /* NetworkFilterPolicy.swift */,
 				A0FAECB8064EAB7104765649 /* PapertrailDoorBook.swift */,
 				CA7D823A480D1B44D403000F /* PapertrailDoor.swift */,
 				A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */,
@@ -1600,6 +1611,8 @@
 				E7FCDD3328BD0DC4C31111E8 /* ExitRelayPolicy.swift in Sources */,
 				455138A18822DFB757E68A14 /* ExitRelayWire.swift in Sources */,
 				8C6A0EB43E1B44A69D8A6058 /* ExitRelay.swift in Sources */,
+				BA99A151372097F5A41824CE /* NetworkFilterXPC.swift in Sources */,
+				049EB21672AB98144020E7CA /* NetworkFilterPolicy.swift in Sources */,
 				981AC75FCFF1902219772089 /* PapertrailDoorBook.swift in Sources */,
 				F920A210BC8E0E5577C650B6 /* PapertrailDoor.swift in Sources */,
 			);
@@ -1631,6 +1644,9 @@
 				EF0FA75B48F0A7748A52D617 /* ExitRelayPolicy.swift in Sources */,
 				1C0C79082145CBC879F72805 /* ExitRelayWire.swift in Sources */,
 				0E3D2AE48501B25482C67A0C /* ExitRelay.swift in Sources */,
+				F9C1AA0A1274E09ADC085686 /* RuntimeNetworkFilter.swift in Sources */,
+				6DC8EE5EA93956EC2A7F5951 /* NetworkFilterXPC.swift in Sources */,
+				7F6BAC844125688BE844B8DB /* NetworkFilterPolicy.swift in Sources */,
 				351209E1358CC4ADE94437B7 /* PapertrailDoorBook.swift in Sources */,
 				CB20CDED8AAB096F0E2DFDD7 /* PapertrailDoor.swift in Sources */,
 				751B408A45B39444B72C7014 /* RuntimeExitRelay.swift in Sources */,

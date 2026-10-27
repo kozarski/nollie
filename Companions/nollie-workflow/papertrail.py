@@ -48,7 +48,8 @@ ROUTES = frozenset({"mac", "network", "online", "icloud"})
 # An "approval" line is a person's answer, kept for the turn's Why. Older readers skip it by its source.
 SOURCES = frozenset({"model", "helper", "tool", "approval", "away", "door"})
 # What kind of program made a connection through the door.
-DOOR_KINDS = frozenset({"hermes", "terminal", "code", "mcp", "model", "reader", "program"})
+# "direct": a connection the network filter saw going around the door.
+DOOR_KINDS = frozenset({"hermes", "terminal", "code", "mcp", "model", "reader", "program", "direct"})
 # A connection this close to a reply's own calls belongs to that reply; otherwise it stands alone,
 # with the others of its bot in the same hour.
 DOOR_SLACK = 5

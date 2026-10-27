@@ -48,7 +48,8 @@ public struct Papertrail: Decodable, Equatable, Sendable {
         public struct Connection: Decodable, Equatable, Sendable {
             public var host: String
             public var port: Int?
-            /// `hermes` (Hermes itself), `terminal`, `code`, `mcp` (a connected app), `model`, `reader` or `program`.
+            /// `hermes` (Hermes itself), `terminal`, `code`, `mcp` (a connected app), `model`, `reader`, `program`,
+            /// or `direct` (the network filter saw it go around the door).
             public var kind: String?
             public var route: String?
             public var count: Int?
@@ -355,6 +356,7 @@ public extension Papertrail {
         case "model": "\(bot)'s model connected to \(host)."
         case "reader": "\(bot) read a page at \(host)."
         case "hermes": "\(bot) connected to \(host) by itself, outside a reply."
+        case "direct": "A program \(bot) started reached \(host) directly."
         default: "A program \(bot) started connected to \(host)."
         }
     }
