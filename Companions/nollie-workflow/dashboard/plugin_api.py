@@ -223,6 +223,36 @@ def papertrail_icloud(body: AwayNote):
     return JSONResponse({"recorded": recorder.flush()}, headers=NO_STORE)
 
 
+class MacSession(BaseModel):
+    bot: str
+    apps: list
+    actions: int
+    looks: int = 0
+
+
+@router.post("/papertrail/mac-session")
+def papertrail_mac_session(body: MacSession):
+    """A bot used apps on this Mac through Nollie Computer: one Papertrail line with the apps and the counts, and
+    that no picture of the screen left. The Link door never lets a phone reach this route."""
+    target = home()
+    if not _private.PROFILE_NAME.match(body.bot):
+        raise HTTPException(422, "Send a bot's Hermes profile name.", headers=NO_STORE)
+    try:
+        private = _private.read(target)[0] | _private.carried_over_names()
+    except (OSError, ValueError):
+        raise HTTPException(503, "The Private list cannot be read.", headers=NO_STORE) from None
+    if _core.private_identity(body.bot, private):
+        raise HTTPException(403, "Papertrail is not kept for private bots.", headers=NO_STORE)
+    source = bot_home(body.bot, target)
+    folder = source / "nollie-workflow" / "papertrail"
+    if folder.parent.is_symlink() or folder.is_symlink() or not folder.is_dir():
+        return JSONResponse({"recorded": False}, headers=NO_STORE)
+    recorder = _papertrail.Recorder(source)
+    if not recorder.mac_session(body.apps, body.actions, body.looks):
+        raise HTTPException(422, "Send the apps' names and how many actions.", headers=NO_STORE)
+    return JSONResponse({"recorded": recorder.flush()}, headers=NO_STORE)
+
+
 POST_ID = re.compile(r"[A-Za-z0-9_-]{1,200}")
 POST_DAYS = 14
 

@@ -45,6 +45,12 @@ ROUTES = frozenset({"mac", "network", "online", "icloud"})
 SOURCES = frozenset({"model", "helper", "tool", "approval", "away"})
 # What the Mac app may say it sent through iCloud: kinds of note only, never their words.
 AWAY_KINDS = frozenset({"reply", "card", "helpers", "stopped"})
+# A bot used apps on this Mac through Nollie Computer: the apps' names and the counts, never the screen. The model
+# that looked runs on the Mac, so no picture of the screen left (Hermes's own computer_use is refused).
+MAC_SESSION = "mac_session"
+MAX_MAC_APPS = 8
+MAX_MAC_SESSIONS = 50
+APP_NAME = re.compile(r"[^\w .&+'-]")
 ORIGINS = frozenset({"chat", "schedule", "board", "helper"})
 CHOICES = frozenset({"once", "session", "always", "deny"})
 ASK_KINDS = frozenset({"send", "buy", "post", "delete", "unsure"})
@@ -328,6 +334,20 @@ class Recorder:
         self._safely(lambda: self._line(route="icloud", source="away", tool=kind, session=_id(session), origin="chat"))
         return True
 
+    # Using this Mac. Not a Hermes hook: the Mac app reports it through the add-on when a task ends.
+
+    def mac_session(self, apps, actions, looks=0, session=""):
+        """One time a bot used apps on this Mac: their names, how many actions and looks. False when unreadable."""
+        if not isinstance(apps, list) or not apps or isinstance(actions, bool) or not isinstance(actions, int):
+            return False
+        names = [APP_NAME.sub("", str(app))[:60].strip() for app in apps[:MAX_MAC_APPS] if isinstance(app, str)]
+        names = [name for name in names if name]
+        if not names:
+            return False
+        self._safely(lambda: self._line(route="mac", source="tool", tool=MAC_SESSION, session=_id(session),
+                                        apps=names, actions=_count(actions), looks=_count(looks), screenshots_left=0))
+        return True
+
     # Lines.
 
     def _line(self, **fields):
@@ -595,6 +615,10 @@ def _calls(path, since):
             card = line.get("card")
             call.update(paid=_count(line.get("paid")),
                         card=card if isinstance(card, str) and re.fullmatch(r"[0-9]{4}", card) else "")
+            if call["tool"] == MAC_SESSION:
+                apps = line.get("apps")
+                call.update(apps=[app[:60] for app in apps[:MAX_MAC_APPS] if isinstance(app, str)] if isinstance(apps, list) else [],
+                            actions=_count(line.get("actions")), looks=_count(line.get("looks")))
             yield call
 
 
@@ -728,6 +752,11 @@ def read(home, bot, days, *, now=None, provider_name=None, titles=None):
             names[provider] = (provider_name or _hermes_provider_name)(provider)
         return names[provider]
 
+    # Each time the bot used this Mac, newest first: it all stayed here, so it is listed apart from what left.
+    mac_sessions = sorted(({"at": int(call["at"]), "apps": call["apps"], "actions": call["actions"],
+                            "looks": call["looks"], "screenshots_left": 0}
+                           for call in calls if call["source"] == "tool" and call["tool"] == MAC_SESSION
+                           and call["route"] == "mac"), key=lambda session: session["at"], reverse=True)
     stayed = {"today": 0, "window": 0}
     entries = []
     for key, group in groups.items():
@@ -753,4 +782,5 @@ def read(home, bot, days, *, now=None, provider_name=None, titles=None):
         "left": {"today": left_today, "window": len(entries)},
         "entries": entries[:MAX_ENTRIES],
         "more": max(0, len(entries) - MAX_ENTRIES),
+        "mac_sessions": mac_sessions[:MAX_MAC_SESSIONS],
     }

@@ -366,6 +366,21 @@ class ReaderTests(unittest.TestCase):
         self.model(NOW - 40, "t-9", i=10)
         self.assertEqual({e["route"] for e in self.read()["entries"]}, {"icloud", "online"})
 
+    def test_a_mac_session_keeps_the_apps_and_counts_only(self):
+        self.clock.now = NOW - 100
+        self.assertTrue(self.recorder.mac_session(["Notes", "Mail<script>", 7, "x" * 90], 3, looks=4, session="s-1"))
+        self.assertFalse(self.recorder.mac_session([], 1))
+        self.assertFalse(self.recorder.mac_session(["Notes"], True))
+        self.clock.now = NOW
+        self.recorder.flush()
+        line = json.loads(next(self.home.glob("nollie-workflow/papertrail/*.jsonl")).read_text().splitlines()[0])
+        self.assertEqual((line["route"], line["source"], line["tool"], line["apps"], line["actions"], line["looks"],
+                          line["screenshots_left"]), ("mac", "tool", "mac_session", ["Notes", "Mailscript", "x" * 60], 3, 4, 0))
+        answer = self.read()
+        self.assertEqual(answer["mac_sessions"], [{"at": int(NOW - 100), "apps": ["Notes", "Mailscript", "x" * 60],
+                                                   "actions": 3, "looks": 4, "screenshots_left": 0}])
+        self.assertEqual((answer["entries"], answer["stayed"]["today"]), ([], 1))
+
     def test_calls_without_a_turn_group_by_session_route_and_ten_minutes(self):
         start = TODAY + 3 * 3600
         self.helper(start + 10, "curator", provider="anthropic", base_url="https://api.anthropic.com")
@@ -637,7 +652,7 @@ class PapertrailRouteTests(unittest.TestCase):
         self.assertEqual((body["bot"], body["days"], body["left"]["window"]), ("career", 3, 1))
         self.assertEqual(body["entries"][0]["provider"], "anthropic")
         self.assertEqual(set(body), {"bot", "days", "now", "today_starts_at", "tomorrow_starts_at", "since", "recording_since",
-                                     "stayed", "left", "entries", "more"})
+                                     "stayed", "left", "entries", "more", "mac_sessions"})
         default = self.get()
         self.assertEqual((default.status_code, default.json()["bot"], default.json()["days"]), (200, "default", 7))
 
@@ -664,6 +679,21 @@ class PapertrailRouteTests(unittest.TestCase):
         response = self.client.post(path, json={"bot": "mason", "kind": "card"})
         self.assertEqual(response.json(), {"recorded": False})
         self.assertFalse((self.bots["mason"] / "nollie-workflow" / "papertrail").exists())
+
+    def test_the_mac_app_records_each_time_a_bot_used_this_mac(self):
+        path = self.PATH + "/mac-session"
+        response = self.client.post(path, json={"bot": "career", "apps": ["Notes", "Safari"], "actions": 4, "looks": 5})
+        self.assertEqual((response.status_code, response.json()), (200, {"recorded": True}))
+        body = self.get(bot="career").json()
+        self.assertEqual([(s["apps"], s["actions"], s["looks"], s["screenshots_left"]) for s in body["mac_sessions"]],
+                         [(["Notes", "Safari"], 4, 5, 0)])
+        self.assertNotIn("mac", {e["route"] for e in body["entries"]}, "it stayed on the Mac, so nothing is listed as left")
+        for bad in ({"bot": "career", "apps": [], "actions": 1}, {"bot": "../x", "apps": ["Notes"], "actions": 1},
+                    {"bot": "career", "apps": ["Notes"], "actions": "many"}):
+            self.assertEqual(self.client.post(path, json=bad).status_code, 422, bad)
+        self.assertEqual(self.client.post(path, json={"bot": "moss", "apps": ["Notes"], "actions": 1}).status_code, 403)
+        response = self.client.post(path, json={"bot": "mason", "apps": ["Notes"], "actions": 1})
+        self.assertEqual(response.json(), {"recorded": False})
 
     def test_unknown_bots_and_bots_without_papertrail_get_404(self):
         response = self.get(bot="scout")
@@ -704,7 +734,7 @@ class RegisterTests(unittest.TestCase):
                    "hermes_constants": SimpleNamespace(get_hermes_home=lambda: bot_home)}
         # The Night shift recorder and Ask first register beside Papertrail; test_night_plumbing covers them.
         with patch.dict("sys.modules", modules), patch.object(package, "_register_night_shift"), \
-                patch.object(package, "_register_ask_first"), \
+                patch.object(package, "_register_ask_first"), patch.object(package, "_register_mac_screen"), \
                 patch.object(service, "start") as start, patch.object(followup_tools, "register") as followups:
             package.register(ctx)
         return ctx.hooks, start.called, followups.called, (bot_home / "nollie-workflow" / "papertrail").is_dir()
