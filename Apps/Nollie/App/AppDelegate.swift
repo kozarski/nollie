@@ -134,10 +134,11 @@ private enum AlertArrivals {
 
         if button == ComputerStartedWords.stopAction {
             await stopFromAlert(center: center)
+        } else if let eventID = seen.eventID {
+            // The Mac's weekly note too: it opens over the main chat.
+            model?.openCloudAlert(eventID: eventID)
         } else if WeeklyNoteReminder.isWeekly(info) {
             model?.weeklyRequest = UUID()
-        } else if let eventID = seen.eventID {
-            model?.openCloudAlert(eventID: eventID)
         } else {
             let typed = (response as? UNTextInputNotificationResponse)?.userText
             let action = button == UNNotificationDefaultActionIdentifier ? nil : button

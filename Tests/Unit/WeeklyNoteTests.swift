@@ -224,14 +224,18 @@ import Testing
                                                    body: ["bot": "career", "kind": "web", "on": true])), "Turn on web", "On"),
             (.macOff(bot: "career"), .mac(bot: "career", on: false), "Turn off", "Off"),
             (.macOn(bot: "career"), .mac(bot: "career", on: true), "Turn on", "On"),
-            (.mute(bot: "career"), .mute(bot: "career", muted: true), "Mute", "Muted here"),
-            (.unmute(bot: "career"), .mute(bot: "career", muted: false), "Unmute", "Unmuted"),
+            (.removeApp(bot: "career", app: "notes"), .gateway(.init(method: "POST", path: "/api/plugins/nollie-workflow/week/remove-app",
+                                                                     profile: nil, body: ["bot": "career", "name": "notes"])), "Remove", "Removed"),
+            (.mute(bot: "career"), .gateway(.init(method: "PUT", path: "/api/plugins/nollie-workflow/mutes/career", profile: nil,
+                                                  body: ["muted": true])), "Mute", "Muted"),
+            (.unmute(bot: "career"), .gateway(.init(method: "PUT", path: "/api/plugins/nollie-workflow/mutes/career", profile: nil,
+                                                    body: ["muted": false])), "Unmute", "Unmuted"),
         ]
         for (action, effect, label, done) in cases {
             #expect(action.effect == effect, "\(action)")
             #expect((action.label, action.done) == (label, done))
             #expect(action.bot == "career")
-            if case .remove = action {
+            if action.label == "Remove" {
                 #expect(action.undo == nil)
                 #expect(action.asksFirst, "anything that deletes asks first")
             } else {
@@ -253,7 +257,8 @@ import Testing
         let apps = [WeekRecord.App(name: "notes", host: "mcp.notes.example.com"), WeekRecord.App(name: "files", on: true, host: nil)]
         let on = note([WeeklyHelperInput(profile: "career", name: "Scout", record: record(places: places, apps: apps), macOn: true)])
         let left = on.helpers[0].left
-        #expect(left[0].actions == [.appOff(bot: "career", app: "notes")], "an app matched by its own host")
+        #expect(left[0].actions == [.appOff(bot: "career", app: "notes"), .removeApp(bot: "career", app: "notes")],
+                "an app matched by its own host, with Turn off and Remove")
         #expect(left[1].actions.isEmpty, "no app is guessed for a host it doesn't have")
         #expect(left[2].actions == [.webOff(bot: "career")])
         #expect(left[3].actions.isEmpty, "the web tools are offered once")
@@ -263,7 +268,7 @@ import Testing
         let off = note([WeeklyHelperInput(profile: "career", name: "Scout",
                                           record: record(places: places, apps: [.init(name: "notes", on: false, host: "mcp.notes.example.com")],
                                                          web: .init(on: false)), macOn: nil)])
-        #expect(off.helpers[0].left.flatMap(\.actions).isEmpty)
+        #expect(off.helpers[0].left.flatMap(\.actions) == [.removeApp(bot: "career", app: "notes")], "an app that's off can still go")
         #expect(!off.helpers[0].did.contains { $0.kind == .mac })
     }
 
@@ -273,7 +278,7 @@ import Testing
         #expect(note([WeeklyHelperInput(profile: "career", name: "Scout", record: busy, muted: true)]).helpers[0].mute == .unmute(bot: "career"))
     }
 
-    @Test func muteIsKeptPerGatewayAndNeverOfferedForTheMainBot() {
+    @Test func muteIsKeptPerGatewayAsTheGatewaySaid() {
         let defaults = UserDefaults(suiteName: "weekly-mute-\(UUID().uuidString)")!
         let home = UUID(), other = UUID()
         HelperMute.set(true, profile: "Career", connection: home, defaults: defaults)
@@ -281,8 +286,74 @@ import Testing
         #expect(!HelperMute.isMuted("career", connection: other, defaults: defaults))
         HelperMute.set(false, profile: "career", connection: home, defaults: defaults)
         #expect(!HelperMute.isMuted("career", connection: home, defaults: defaults))
-        #expect(!HelperMute.offered(for: "default"))
-        #expect(HelperMute.offered(for: "career"))
+        // The gateway's answer replaces this gateway's copy only.
+        HelperMute.set(true, profile: "work", connection: other, defaults: defaults)
+        HelperMute.take(["default", "Career"], connection: home, defaults: defaults)
+        #expect(HelperMute.isMuted("default", connection: home, defaults: defaults), "Nollie herself can be muted")
+        #expect(HelperMute.isMuted("career", connection: home, defaults: defaults))
+        #expect(HelperMute.isMuted("work", connection: other, defaults: defaults))
+        HelperMute.take([], connection: home, defaults: defaults)
+        #expect(!HelperMute.isMuted("default", connection: home, defaults: defaults))
+        #expect(HelperMutes.bannersReply("Scout", muted: []) && !HelperMutes.bannersReply("Scout", muted: ["scout"]))
+    }
+
+    // MARK: The notification
+
+    @Test func theNotificationSaysTheCountsInFixedSentences() {
+        func helper(_ bot: String, _ name: String, runs: Int = 0, tasks: Int = 0, asked: Int = 0, places: [WeekRecord.Place] = [],
+                    new: Bool = false) -> WeeklyHelperInput {
+            let schedules = runs > 0 || new ? [WeekRecord.Schedule(id: "s\(bot)", name: "Prices", createdAt: new ? Self.since + Self.day : 1,
+                                                                   runs: .init(done: runs))] : []
+            return WeeklyHelperInput(profile: bot, name: name, record: record(bot, places: places, answers: .init(once: asked),
+                                                                              schedules: schedules, board: .init(done: tasks)))
+        }
+        let online = WeekRecord.Place(kind: "search", count: 3, firstAt: 1, service: "exa")
+        let home = WeekRecord.Place(kind: "model", count: 3, firstAt: 1, host: "http://192.168.1.4:8080")
+        let busy = note([helper("career", "Scout", runs: 6, tasks: 2, places: [online, home]),
+                         helper("planner", "Planner", asked: 4, new: true)])
+        #expect(busy.notificationLine == "Planner and Scout did 12 things. 1 place online, 1 new.", "the helper with news first, as in the note")
+        #expect(note([helper("career", "Scout", tasks: 1)]).notificationLine == "Scout did 1 thing. Nothing went online.")
+        #expect(note([helper("career", "Scout", places: [online])]).notificationLine == "Scout kept busy. 1 place online.")
+        #expect(note([helper("career", "Scout")]).notificationLine == "A quiet week. Nothing recorded.")
+        #expect(note([helper("career", "Scout", tasks: 1), WeeklyHelperInput(profile: "work", name: "Mason", record: nil)])
+            .notificationLine == nil, "a week that couldn't be read gives the fixed line, never a short count")
+        #expect(note([helper("private", "Moss", tasks: 4), helper("career", "Scout", tasks: 1)]).notificationLine
+            == "Scout did 1 thing. Nothing went online.", "private bots are never counted")
+        #expect(WeeklyNote.names(["A", "B", "C", "D"]) == "A, B and 2 more")
+        #expect(WeeklyNoteSending.line(helpers: nil, records: [:], isPrivate: { _ in false }) == WeeklyNote.notificationFallback)
+    }
+
+    @Test func theMacSendsOnceOnTheDayAndOtherDevicesKnowIt() {
+        let sunday = WeeklyNoteSettings(on: true, weekday: 1)
+        let baseline = Self.now.addingTimeInterval(-30 * Self.day)
+        #expect(WeeklyNoteSending.due(sunday, now: Self.now.addingTimeInterval(30), sentFor: nil, since: baseline) == Self.now)
+        #expect(WeeklyNoteSending.due(sunday, now: Self.now.addingTimeInterval(30), sentFor: Self.now, since: baseline) == nil)
+        #expect(WeeklyNoteSending.due(sunday, now: Self.now.addingTimeInterval(13 * 3600), sentFor: nil, since: baseline) == nil)
+        #expect(WeeklyNoteSending.due(sunday, now: Self.now.addingTimeInterval(30), sentFor: nil, since: Self.now.addingTimeInterval(10)) == nil,
+                "not for a week before iCloud alerts were on")
+        #expect(WeeklyNoteSending.due(WeeklyNoteSettings(on: false), now: Self.now.addingTimeInterval(30), sentFor: nil, since: baseline) == nil)
+        let live = WeeklyNoteSettings(liveAt: Self.now.timeIntervalSince1970)
+        #expect(live.macSendsLive(now: Self.now.addingTimeInterval(35 * 3600)))
+        #expect(!live.macSendsLive(now: Self.now.addingTimeInterval(37 * 3600)), "a Mac that went quiet: devices say the fixed line")
+        #expect(!WeeklyNoteSettings().macSendsLive(now: Self.now))
+    }
+
+    @Test func removingAnAppIsKeptAsAChangeAndIsNotWork() {
+        var made = record(answers: .init(once: 1))
+        made.changes = [.init(at: Self.since + Self.day, name: "notes"), .init(at: Self.since - Self.day, name: "old")]
+        let built = note([WeeklyHelperInput(profile: "career", name: "Scout", record: made)])
+        let changes = built.helpers[0].did.filter { $0.kind == .change }
+        #expect(changes.map(\.text) == ["You removed \u{201C}notes\u{201D}"], "this week's only")
+        #expect(built.notificationLine == "Scout did 1 thing. Nothing went online.")
+        var only = record()
+        only.changes = [.init(at: Self.since + Self.day, name: "notes")]
+        #expect(note([WeeklyHelperInput(profile: "career", name: "Scout", record: only)]).quiet == ["Scout"], "a change alone isn't a busy week")
+    }
+
+    @Test func papertrailSaysWhyTheWeeklyNoteWentToICloud() throws {
+        let entry = try JSONCoding.decoder.decode(Papertrail.Entry.self, from: Data(#"{"id":"w-1","at":1793034000,"route":"icloud","calls":1,"icloud_notes":0,"weekly_notes":1}"#.utf8))
+        #expect(entry.why(bot: "Nollie").reason == Papertrail.weeklyReason)
+        #expect(entry.amountText == "1 weekly note")
     }
 
     // MARK: Words around it

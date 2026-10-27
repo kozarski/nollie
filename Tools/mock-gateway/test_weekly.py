@@ -13,7 +13,7 @@ spec.loader.exec_module(mock)
 ROUTE = "/api/plugins/nollie-workflow/week"
 # The keys nollie-workflow's week route answers with (Companions/nollie-workflow/weekly.py and the route).
 KEYS = {"bot", "days", "now", "since", "recording_since", "papertrail", "replies", "places", "places_more", "answers",
-        "asks", "earlier_answers", "schedules", "runs_kept", "schedules_kept", "board", "apps", "web", "filter"}
+        "asks", "earlier_answers", "schedules", "runs_kept", "schedules_kept", "board", "apps", "web", "filter", "changes"}
 
 
 class WeeklyFixtureTests(unittest.TestCase):
@@ -25,8 +25,7 @@ class WeeklyFixtureTests(unittest.TestCase):
 
     def tearDown(self):
         mock.PRIVATE_BOTS["profiles"] = None
-        mock.WEEK_SWITCHES.clear()
-        mock.WEEK["state"] = "busy"
+        self.request("/api/_mock/week", "POST", {"state": "reset"})
         mock.CRON_JOBS[:] = self.jobs
         mock.CREATED_PROFILES.clear()
 
@@ -93,6 +92,42 @@ class WeeklyFixtureTests(unittest.TestCase):
         text = mock.process_request(None, request).body.decode()
         self.assertNotIn("Anthropic", text)
         self.assertNotIn("anthropic", text)
+
+
+    def test_remove_takes_the_app_out_and_keeps_it_as_a_change(self):
+        path = ROUTE + "/remove-app"
+        status, answer, _ = self.request(path, "POST", {"bot": "default", "name": "notes"})
+        self.assertEqual((status, answer), (200, {"bot": "default", "name": "notes", "removed": True}))
+        week = self.request(ROUTE + "?bot=default")[1]
+        self.assertEqual(week["apps"], [])
+        self.assertEqual([(c["kind"], c["name"]) for c in week["changes"]], [("app_removed", "notes")])
+        self.assertEqual(self.request(path, "POST", {"bot": "default", "name": "notes"})[0], 404, "gone for good")
+        self.assertEqual(self.request(path, "POST", {"bot": "default", "name": "../x"})[0], 422)
+        self.assertEqual(self.request(path, "POST", {"bot": "moss", "name": "notes"})[0], 403)
+        self.assertEqual(self.request(path, "GET")[0], 405)
+        self.request("/api/_mock/week", "POST", {"state": "reset"})
+        self.assertEqual(self.request(ROUTE + "?bot=default")[1]["changes"], [])
+
+    def test_mutes_are_kept_for_every_device_and_never_for_a_private_bot(self):
+        mutes = "/api/plugins/nollie-workflow/mutes"
+        self.assertEqual(self.request(mutes)[1], {"muted": [], "saved": False})
+        self.assertEqual(self.request(mutes + "/default", "PUT", {"muted": True})[1], {"muted": ["default"], "saved": True})
+        self.request(mutes + "/work", "PUT", {"muted": True})
+        self.request(mutes + "/default", "PUT", {"muted": False})
+        self.assertEqual(self.request(mutes)[1]["muted"], ["work"])
+        self.assertEqual(self.request(mutes + "/moss", "PUT", {"muted": True})[0], 403)
+        self.assertEqual(self.request(mutes + "/work", "PUT", {"muted": "yes"})[0], 422)
+        self.assertEqual(self.request(mutes + "/nobody", "PUT", {"muted": True})[0], 404)
+
+    def test_the_notes_switch_and_day_and_the_mac_saying_it_sends_it(self):
+        note = "/api/plugins/nollie-workflow/weekly-note"
+        self.assertEqual(self.request(note)[1], {"on": True, "weekday": 1, "live_at": None, "saved": False})
+        self.assertEqual(self.request(note, "PUT", {"on": False, "weekday": 6})[1]["weekday"], 6)
+        self.assertEqual(self.request(note, "PUT", {"on": True, "weekday": 8})[0], 422)
+        self.assertEqual(self.request(note, "PUT", {"on": 1, "weekday": 2})[0], 422)
+        status, live, _ = self.request(note + "/live", "POST")
+        self.assertEqual(status, 200)
+        self.assertEqual(self.request(note)[1], {"on": False, "weekday": 6, "live_at": live["live_at"], "saved": True})
 
 
 if __name__ == "__main__":

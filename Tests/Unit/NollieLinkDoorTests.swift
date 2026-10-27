@@ -204,6 +204,9 @@ struct NollieLinkDoorTests {
             ("GET", "/api/plugins/nollie-workflow/private-bots", false),
             ("GET", "/api/plugins/nollie-workflow/papertrail", false),
             ("GET", "/api/plugins/nollie-workflow/week", false), ("PUT", "/api/plugins/nollie-workflow/week/switch", false),
+            ("POST", "/api/plugins/nollie-workflow/week/remove-app", false),
+            ("GET", "/api/plugins/nollie-workflow/mutes", false), ("PUT", "/api/plugins/nollie-workflow/mutes/career", false),
+            ("GET", "/api/plugins/nollie-workflow/weekly-note", false), ("PUT", "/api/plugins/nollie-workflow/weekly-note", false),
             ("GET", "/api/plugins/nollie-workflow/bot-looks", false), ("PUT", "/api/plugins/nollie-workflow/bot-looks/planner", false),
             ("GET", "/api/plugins/nollie-computer/preview", false), ("POST", "/nollie/link/claim", false),
             ("GET", "/api/plugins/nollie-workflow/posts", false), ("GET", "/api/plugins/nollie-workflow/sleep", false),
@@ -267,6 +270,10 @@ struct NollieLinkDoorTests {
             // The weekly note: read it, and switch an app or the web tools. Nothing else under it.
             ("POST", "/api/plugins/nollie-workflow/week", false), ("DELETE", "/api/plugins/nollie-workflow/week/switch", false),
             ("GET", "/api/plugins/nollie-workflow/week/switch", false), ("PUT", "/api/plugins/nollie-workflow/week/apps", false),
+            ("DELETE", "/api/plugins/nollie-workflow/week/remove-app", false), ("GET", "/api/plugins/nollie-workflow/week/remove-app", false),
+            ("POST", "/api/plugins/nollie-workflow/weekly-note/live", false), ("DELETE", "/api/plugins/nollie-workflow/mutes", false),
+            ("PUT", "/api/plugins/nollie-workflow/mutes", false), ("PUT", "/api/plugins/nollie-workflow/mutes/a/b", false),
+            ("DELETE", "/api/mcp/servers/notes", false),
             // The main chat's cards: read, Turn on and Keep off only.
             ("POST", "/api/plugins/nollie-workflow/posts", false), ("DELETE", "/api/plugins/nollie-workflow/posts", false),
             ("PUT", "/api/plugins/nollie-workflow/sleep", false), ("GET", "/api/plugins/nollie-workflow/sleep/1", false),
@@ -1105,6 +1112,10 @@ extension NollieLinkDoorTests {
         #expect(LinkDoorPolicy.allowsQuery(path: path + "/switch", query: nil))
         // A member's phone never reaches it: the family door lets members through to chats only.
         #expect(LinkDoorFamily.memberRoute(method: "GET", path: path, query: "bot=career", websocket: false) == .refused)
+        for (method, owned) in [("GET", "/api/plugins/nollie-workflow/mutes"), ("PUT", "/api/plugins/nollie-workflow/mutes/career"),
+                                ("PUT", "/api/plugins/nollie-workflow/weekly-note"), ("POST", path + "/remove-app")] {
+            #expect(LinkDoorFamily.memberRoute(method: method, path: owned, query: nil, websocket: false) == .refused)
+        }
     }
 
     @Test(.timeLimit(.minutes(1))) func aLinkedPhoneSwapsAwayKeysAndOnlyPublicKeysPass() async throws {

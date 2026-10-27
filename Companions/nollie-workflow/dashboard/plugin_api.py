@@ -7,7 +7,7 @@ import time
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictBool, StrictInt
 
 _name = "nollie_workflow_dashboard"
 _root = Path(__file__).resolve().parent.parent
@@ -23,6 +23,7 @@ _private = __import__(_name + ".private_bots", fromlist=["read"])
 _looks = __import__(_name + ".bot_looks", fromlist=["read"])
 _papertrail = __import__(_name + ".papertrail", fromlist=["read"])
 _weekly = __import__(_name + ".weekly", fromlist=["read"])
+_weekly_settings = __import__(_name + ".weekly_settings", fromlist=["read"])
 _posts = __import__(_name + ".posts", fromlist=["PostStore"])
 _night = __import__(_name + ".night_service", fromlist=["turn_on"])
 _shift = __import__(_name + ".night_shift", fromlist=["without_private"])
@@ -266,6 +267,100 @@ def week_switch(body: WeekSwitch):
     return JSONResponse({"bot": body.bot, **result}, headers=NO_STORE)
 
 
+class WeekRemoval(BaseModel):
+    bot: str
+    name: str
+
+
+@router.post("/week/remove-app")
+def week_remove_app(body: WeekRemoval):
+    """Remove from the weekly note: one connected app taken out of a bot's config through Hermes's own config code,
+    read again to be sure it is gone, and kept in the bot's Papertrail as a change the person made. It asks first on
+    every device; this route can't be undone."""
+    target = home()
+    _public_bot(target, body.bot)
+    if not _weekly.APP_NAME.match(body.name or ""):
+        raise HTTPException(422, "Send an app's name.", headers=NO_STORE)
+    source = bot_home(body.bot, target)
+    recorder = _papertrail.Recorder(source) if (source / "nollie-workflow" / "papertrail").is_dir() else None
+    try:
+        removed = _weekly.remove_app(_weekly.HermesApps(body.bot), source / "config.yaml", recorder, body.name)
+    except _weekly.FromPlugin:
+        raise HTTPException(409, "This app comes with a plugin, so it stays.", headers=NO_STORE) from None
+    except Exception:
+        raise HTTPException(503, "The app couldn't be removed now.", headers=NO_STORE) from None
+    if not removed:
+        raise HTTPException(404, "This bot has no such app.", headers=NO_STORE)
+    return JSONResponse({"bot": body.bot, "name": body.name, "removed": True}, headers=NO_STORE)
+
+
+def _weekly_settings_read(target):
+    try:
+        settings, saved = _weekly_settings.read(target)
+        private = _private.names(target)
+    except (OSError, ValueError):
+        raise HTTPException(503, "The weekly settings cannot be read.", headers=NO_STORE) from None
+    return _weekly_settings.visible(settings, private), saved
+
+
+@router.get("/mutes")
+def mutes():
+    """The helpers muted on every device. Private bots are left out."""
+    settings, saved = _weekly_settings_read(home())
+    return JSONResponse({"muted": settings["muted"], "saved": saved}, headers=NO_STORE)
+
+
+class Mute(BaseModel):
+    muted: StrictBool
+
+
+@router.put("/mutes/{profile}")
+def save_mute(profile: str, body: Mute):
+    """Mutes or unmutes one helper for every device. A private bot's is never kept."""
+    target = home()
+    _public_bot(target, profile.strip().lower())
+    try:
+        _weekly_settings.mute(target, profile, body.muted)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc), headers=NO_STORE) from None
+    settings, _ = _weekly_settings_read(target)
+    return JSONResponse({"muted": settings["muted"], "saved": True}, headers=NO_STORE)
+
+
+@router.get("/weekly-note")
+def weekly_note():
+    """The note's switch and day for every device, and when the Mac last said it sends the note itself."""
+    settings, saved = _weekly_settings_read(home())
+    return JSONResponse(dict(settings["note"], live_at=settings["live_at"], saved=saved), headers=NO_STORE)
+
+
+class WeeklyNoteSettings(BaseModel):
+    on: StrictBool
+    weekday: StrictInt
+
+
+@router.put("/weekly-note")
+def save_weekly_note(body: WeeklyNoteSettings):
+    target = home()
+    try:
+        _weekly_settings.set_note(target, body.on, body.weekday)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc), headers=NO_STORE) from None
+    settings, _ = _weekly_settings_read(target)
+    return JSONResponse(dict(settings["note"], live_at=settings["live_at"], saved=True), headers=NO_STORE)
+
+
+@router.post("/weekly-note/live")
+def weekly_note_live():
+    """The Mac's alert helper builds and sends the note itself. The Link door never lets a phone reach this route."""
+    target = home()
+    try:
+        settings = _weekly_settings.mark_live(target)
+    except ValueError:
+        raise HTTPException(503, "The weekly settings cannot be written.", headers=NO_STORE) from None
+    return JSONResponse({"live_at": settings["live_at"]}, headers=NO_STORE)
+
+
 class AwayNote(BaseModel):
     bot: str
     kind: str
@@ -276,7 +371,7 @@ def papertrail_icloud(body: AwayNote):
     """Nollie on the Mac sealed a note for the person's linked iPhone and put it in their own iCloud: one
     wordless Papertrail line. The Link door never lets a phone reach this route."""
     target = home()
-    if not _private.PROFILE_NAME.match(body.bot) or body.kind not in _papertrail.AWAY_KINDS:
+    if not _private.PROFILE_NAME.match(body.bot) or body.kind not in _papertrail.AWAY_KINDS | _papertrail.ALERT_KINDS:
         raise HTTPException(422, "Send a bot's Hermes profile name and a kind of note.", headers=NO_STORE)
     try:
         private = _private.read(target)[0] | _private.carried_over_names()

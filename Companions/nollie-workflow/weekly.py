@@ -69,7 +69,7 @@ def _place_key(call):
         return ("door", call["kind"], call["host"] or "")
     if source in ("model", "helper"):
         return ("model", call["provider"] or "", call["host"] or "")
-    if source == "away":
+    if source in ("away", "alert"):
         return ("icloud", "", "")
     return None
 
@@ -304,6 +304,8 @@ def read(home, bot, *, now=None, jobs=(), outcomes=(), config=None, ledger=None,
     ran = runs(ledger if ledger is not None else Path(home) / "cron" / "executions.db", found["since"])
     config = config if isinstance(config, dict) else {}
     found.update({
+        # Changes the person made to this bot from Nollie this week (a connected app removed), from Papertrail.
+        "changes": [change for change in week.get("changes", []) if change["at"] >= found["since"]],
         "bot": bot,
         "days": WEEK_DAYS,
         "now": int(now),
@@ -378,3 +380,47 @@ def set_switch(config_file, kind, name, on):
         shown = next((app for app in apps(after) if app["name"] == name), None)
         return {"kind": "app", "name": name, "on": bool(shown and shown["on"])}
     return {"kind": "web", "name": None, "on": web(after)["on"]}
+
+
+# Removing a connected app ------------------------------------------------------------------------------------------
+
+class FromPlugin(Exception):
+    """The app comes with a Hermes plugin, which Hermes itself refuses to change."""
+
+
+class HermesApps:
+    """One bot's connected apps, removed through Hermes's own code for ``DELETE /api/mcp/servers/{name}``: its config
+    write scope for that profile, its plugin check and its ``_remove_mcp_server``."""
+
+    def __init__(self, profile):
+        self.profile = profile
+
+    def remove(self, name):
+        """True when the app was there and is gone from the config. Raises FromPlugin for a plugin's app."""
+        from hermes_cli.mcp_config import _get_mcp_servers, _remove_mcp_server
+        from hermes_cli.web_routers._common import config_write_scope
+        with config_write_scope(self.profile):
+            servers = _get_mcp_servers()
+            try:
+                from tui_gateway.mcp_rpc_helpers import server_configs_with_sources
+                _, plugins = server_configs_with_sources(servers)
+            except ImportError:
+                plugins = {}
+            if plugins.get(name):
+                raise FromPlugin(name)
+            return _remove_mcp_server(name)
+
+
+def remove_app(hermes, config_path, recorder, name):
+    """Removes one connected app, reads the bot's config again to be sure it is gone, and records it in the bot's
+    Papertrail as a change the person made. Returns True when removed; False when it wasn't there."""
+    if not APP_NAME.match(name or ""):
+        raise NoSuchSwitch(name)
+    if not hermes.remove(name):
+        return False
+    if any(app["name"] == name for app in apps(_papertrail._config(config_path))):
+        raise RuntimeError("the app is still in the config")
+    if recorder is not None:
+        recorder.change("app_removed", name)
+        recorder.flush()
+    return True

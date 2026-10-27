@@ -294,6 +294,11 @@ final class CloudAlertTransport {
 
     /// Resolve only the referenced immutable event. A later reply cannot change a notification's destination.
     func openedTarget(eventID: String) async -> CloudAlertTarget? {
+        await openedEvent(eventID: eventID)?.target
+    }
+
+    /// The opened alert, with a valid target, marked as opened for the device that sent it.
+    func openedEvent(eventID: String) async -> CloudAlertEvent? {
         guard isEnabled, !isDemo, CloudAlertEvent.isValidID(eventID) else { return nil }
         let ticket = epoch
         do {
@@ -307,7 +312,7 @@ final class CloudAlertTransport {
                 try await store.acknowledge(event, opened: true, at: now())
             }
             guard current(ticket), isEnabled, let target = event.target, target.isValid else { return nil }
-            return target
+            return event
         } catch { if current(ticket) { fail(error) }; return nil }
     }
 

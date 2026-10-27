@@ -48,19 +48,36 @@ the card, the setting nor the notification on a member's device.
 | Pause (a schedule) | `POST /api/cron/jobs/{id}/pause` in the bot's scope | Resume |
 | Remove (a new schedule) | `DELETE /api/cron/jobs/{id}`, after "Remove this schedule?" | none, it says so |
 | Turn off (a connected app the place's host matches exactly) | `PUT .../week/switch {kind: app}`: `mcp_servers.<name>.enabled: false` | Turn on |
+| Remove (the same app) | After "Remove “notes” from Scout?" and "This can't be undone.": `POST .../week/remove-app`, which takes the server out of the bot's config with Hermes's own config code (as `DELETE /api/mcp/servers/{name}` does), reads the config again to be sure it is gone, and keeps "You removed “notes”" in the bot's Papertrail as a change (`source: change`, stays on the Mac). One a plugin brings is refused (409) | none, it says so |
 | Turn off web (beside web search or pages) | `PUT .../week/switch {kind: web}`: `web` joins `agent.disabled_toolsets` | Turn on |
 | Turn off (Can use your Mac) | The bot's This Mac switch (`SystemControl`) | Turn on |
-| Mute (beside a helper's name) | This device raises no banner for its replies; questions and "started using your Mac" still come | Unmute |
+| Mute (beside every helper's name, Nollie's too) | `PUT .../mutes/<bot> {muted: true}`: kept in `<main home>/nollie-weekly.json` for every device. Each device reads it with its bots and raises no banner for that helper's finished replies (one that arrives by push goes quietly to the list, since iOS lets an extension quieten a notification but not drop it); the Mac's iCloud alerts helper leaves them out too. Questions, approvals, failures and "started using your Mac" still come | Unmute, everywhere |
 
 Nothing is offered that isn't real: no app is guessed for a host it doesn't have, and the web tools are offered once.
-App and web changes reach the bot from its next chat. Mute isn't offered for the main bot, whose iCloud alerts come
-from the Mac.
+App and web changes reach the bot from its next chat. Hermes's portal connectors are accounts, not entries in a bot's
+config, so Remove is offered for connected apps (MCP servers) only. The Link door lets the owner's devices through for
+`GET mutes`, `PUT mutes/*`, `GET/PUT weekly-note` and `POST week/remove-app`; a household member is refused.
 
 ## Where it shows
 
 - A glass capsule under the header of Nollie's own main chat, from the chosen evening until put away with its cross.
-- A notification at 18:00 on the chosen day (Settings › Your week: one switch, one day; Sunday by default). Its words
-  never change, so they never say anything the records don't.
+- A notification at 18:00 on the chosen day (Settings › Your week: one switch, one day; Sunday by default; the switch
+  and day are kept on the gateway, `GET/PUT .../weekly-note`, so every device agrees). "Your week" with the live
+  counts, in fixed sentence shapes filled from the same records as the note: "Scout and Planner did 12 things. 4 places
+  online, 1 new.", "Scout kept busy. Nothing went online.", "A quiet week. Nothing recorded." Things are schedule
+  runs, Board tasks and questions; places are those reached online (not the person's iCloud or their own network);
+  new is the note's New this week. Private bots are never read or counted.
+- Where it is built: on the Mac, by the iCloud alerts helper (`NollieAlertHelper`, `CloudAlertHelperObserver`), at
+  the moment it goes out. It reads `/api/profiles` and each public bot's week then, so the counts are as fresh as the
+  records, and sends it once per week as an iCloud alert (`weeklyNote`, routed to the main chat, with the note opening
+  over it). If any helper's week can't be read, or the bots can't be listed, it says the fixed line "What your
+  helpers did, and what left your Mac." It goes out up to 12 hours late for a Mac that was asleep, never for a week
+  before iCloud alerts were on. Its going to iCloud is kept in Nollie's Papertrail ("1 weekly note", `source: alert`).
+- Every 6 hours the helper says so (`POST .../weekly-note/live`). A device whose iCloud alerts are on and whose
+  gateway heard from the Mac in the last 36 hours schedules nothing of its own; any other device schedules a local
+  notification with the fixed line, which can't know the counts ahead of time. Scheduling the counts on the phone
+  ahead of time, or counting in a background refresh, was turned down: iOS runs those late or not at all, so the
+  counts could be stale or never sent.
 - Settings › Your week, and the note in a sheet on iPhone, iPad and Mac.
 - The Watch: a page with the week, its one line and each helper's counts.
 

@@ -41,6 +41,8 @@ public struct Papertrail: Decodable, Equatable, Sendable {
         public var payments: [Payment]?
         /// Notes sealed for the person's own iPhone and put in their iCloud while they were away.
         public var icloudNotes: Int?
+        /// The weekly note, sent through the person's own iCloud alerts with the week's counts.
+        public var weeklyNotes: Int?
         /// Every connection the door saw in it, most used first.
         public var connections: [Connection]?
 
@@ -269,6 +271,7 @@ public extension Papertrail.Entry {
             parts.append("paid \(payment.site)\(card)")
         }
         if let n = icloudNotes, n > 0 { parts.append(Papertrail.count(n, "note to your iPhone", "notes to your iPhone")) }
+        if let n = weeklyNotes, n > 0 { parts.append(Papertrail.count(n, "weekly note", "weekly notes")) }
         if parts.isEmpty, let n = calls, n > 0 { parts.append(Papertrail.count(n, "request", "requests")) }
         if connectionCount > 0 { parts.append(Papertrail.count(connectionCount, "connection", "connections")) }
         let read = AppleDataArea.allCases.filter { localReads?.contains($0.rawValue) ?? false }.map { $0.title.lowercased() }
@@ -292,11 +295,20 @@ public struct PapertrailWhy: Equatable, Sendable {
     public static let notKept = "Nollie didn't keep the reason for this one."
 }
 
+public extension Papertrail {
+    /// Why the weekly note went to iCloud.
+    static let weeklyReason = "Your weekly note, on the day you chose. Its counts went to your devices through your own iCloud, with your iCloud alerts."
+}
+
 public extension Papertrail.Entry {
     /// Why it went, in plain words. `bot` is the name the person knows the bot by; `time` writes a time of day in
     /// their own format. Says only what the add-on kept: an entry from before 1.1 says so instead.
     func why(bot: String, time: (Date) -> String = { $0.formatted(.dateTime.hour().minute()) }) -> PapertrailWhy {
         let sent = sentText
+        // The weekly note alone: its counts went to the person's devices through their own iCloud alerts.
+        if route == "icloud", (weeklyNotes ?? 0) > 0, (icloudNotes ?? 0) == 0 {
+            return PapertrailWhy(reason: Papertrail.weeklyReason, sent: sent, kept: true)
+        }
         guard let why, let origin = why.origin, Papertrail.origins.contains(origin) else {
             // Connections alone: the door kept who made them, so that is the reason.
             if !outsideHosts.isEmpty, let went = wentLine(bot: bot, backup: false) {
