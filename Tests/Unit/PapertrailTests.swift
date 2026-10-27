@@ -48,6 +48,49 @@ import Testing
         #expect(sparse.stayedCount == 0)
     }
 
+    @Test func connectionsTheDoorSawNameEveryPlace() throws {
+        let json = #"{"entries": [{"id": "t-1", "at": 1760969000, "route": "online", "provider": "anthropic", "calls": 2,"#
+            + #" "input_tokens": 900, "output_tokens": 100, "why": {"origin": "chat", "messages": 3}, "connections": ["#
+            + #"{"host": "api.anthropic.com", "port": 443, "kind": "model", "route": "online", "count": 2},"#
+            + #"{"host": "pypi.org", "port": 443, "kind": "terminal", "route": "online", "count": 1}]},"#
+            + #" {"id": "w-1", "at": 1760960000, "route": "online", "calls": 0, "connections": ["#
+            + #"{"host": "code.example.com", "port": 443, "kind": "terminal", "route": "online", "count": 2}]},"#
+            + #" {"id": "w-2", "at": 1760950000, "route": "network", "calls": 0, "connections": ["#
+            + #"{"host": "192.168.1.20", "port": 8080, "kind": "mcp", "route": "network", "count": 1}]}]}"#
+        let trail = try JSONCoding.decoder.decode(Papertrail.self, from: Data(json.utf8))
+        let entries = try #require(trail.entries)
+        let reply = entries[0], alone = entries[1], home = entries[2]
+        #expect(reply.routeLabel == "Anthropic")
+        #expect(reply.outsideHosts == ["api.anthropic.com", "pypi.org"])
+        #expect(reply.amountText == "1k tokens · 3 connections")
+        let why = reply.why(bot: "Scout")
+        #expect(why.kept)
+        #expect(why.sent == "What went: 3 messages (about 1k tokens). Connected to api.anthropic.com and pypi.org.")
+
+        // Connections alone name the place, and who made them is the reason.
+        #expect(alone.routeLabel == "code.example.com")
+        #expect(alone.amountText == "2 connections")
+        let aloneWhy = alone.why(bot: "Scout")
+        #expect(aloneWhy.kept)
+        #expect(aloneWhy.reason == "Scout ran a command that connected to code.example.com.")
+        #expect(aloneWhy.sent == nil, "the reason already names the one place")
+        #expect(home.routeLabel == "Your network")
+        #expect(home.why(bot: "Scout").reason == "Scout used a connected app that reached 192.168.1.20.")
+    }
+
+    @Test func manyPlacesAreNamedUpToSix() {
+        var entry = Papertrail.Entry(id: "w", at: 1, route: "online")
+        entry.connections = (1...8).map { .init(host: "h\($0).example", count: 1) }
+        let sent = entry.why(bot: "Scout").sent ?? ""
+        #expect(sent == "Connected to h1.example, h2.example, h3.example, h4.example, h5.example and 3 more.")
+        #expect(Papertrail.connectionLine(kind: "hermes", host: "a.example", bot: "Nollie")
+                == "Nollie connected to a.example by itself, outside a reply.")
+        #expect(Papertrail.connectionLine(kind: "anything", host: "a.example", bot: "Nollie")
+                == "A program Nollie started connected to a.example.")
+        #expect(Papertrail.connectionLine(kind: "direct", host: "a.example", bot: "Nollie")
+                == "A program Nollie started reached a.example directly.")
+    }
+
     @Test func notesForTheIPhoneThroughICloudAreNamedAndNotCountedAsOnline() throws {
         let json = #"{"left": {"today": 2, "window": 2}, "entries": [{"id": "w-1", "at": 1760969000, "route": "icloud", "calls": 2,"#
             + #" "icloud_notes": 2, "why": {"origin": "chat"}}, {"id": "t-1", "at": 1760968000, "route": "online", "provider": "anthropic"}]}"#
@@ -172,13 +215,13 @@ import Testing
         #expect(!today.allOneRoute, "Claude plan and Exa")
         #expect(PapertrailToday.wentOnline(1) == "Went online once today")
         // Read before the Mac's midnight, shown after it: today starts empty, not with yesterday's count.
-        #expect(PapertrailToday(trail, now: Date(timeIntervalSince1970: 1_761_001_300)).headline == "Nothing left your Mac today")
+        #expect(PapertrailToday(trail, now: Date(timeIntervalSince1970: 1_761_001_300)).headline == "Nothing seen leaving today")
         let midnight = 1_760_914_800.0
-        #expect(PapertrailToday(Papertrail(todayStartsAt: midnight, entries: []), now: now).headline == "Nothing left your Mac today")
+        #expect(PapertrailToday(Papertrail(todayStartsAt: midnight, entries: []), now: now).headline == "Nothing seen leaving today")
         let network = Papertrail(todayStartsAt: midnight, entries: [.init(id: "n", at: midnight + 10, route: "network")])
         let networkToday = PapertrailToday(network, now: now)
         #expect(networkToday.left == 1 && networkToday.online == 0)
-        #expect(networkToday.headline == "Stayed on your network today")
+        #expect(networkToday.headline == "Nothing seen going online today")
     }
 
     @Test func privateBotsHaveNoPapertrailTab() {

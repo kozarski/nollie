@@ -113,5 +113,80 @@ class RuntimeEntryTests(unittest.TestCase):
                 self.assertEqual(child.stdout.read(), "")
 
 
+SECRET = "ab" * 32
+DOOR = f"http://unplaced.program:{SECRET}@127.0.0.1:41234"
+
+# Labels the door, inside a fresh interpreter, then reports what a request and each kind of child would carry.
+LABEL_SCRIPT = r"""
+import json, os, runpy, subprocess, sys, types, urllib.request
+entry = runpy.run_path(sys.argv[1])
+bot = {"name": "career"}
+labelled = entry["_label_door"](bot=lambda: bot["name"])
+said = {"labelled": labelled, "request": urllib.request.getproxies().get("https")}
+child = [sys.executable, "-I", "-c", "import json,os;print(json.dumps({k: os.environ.get(k) for k in "
+         "('HTTPS_PROXY','http_proxy','ALL_PROXY','NO_PROXY','NODE_USE_ENV_PROXY','KEEP')}))"]
+
+def spawn(module, env):
+    code = compile("def run(child, env):\n    import subprocess\n    return subprocess.run(child, env=env, capture_output=True, text=True).stdout", module, "exec")
+    namespace = {"__name__": module}
+    exec(code, namespace)
+    return json.loads(namespace["run"](child, env))
+
+said["terminal"] = spawn("tools.terminal_tool", None)
+said["mcp"] = spawn("tools.mcp_tool_transport", {"PATH": "/usr/bin:/bin", "KEEP": "yes"})
+bot["name"] = "moss"
+said["code"] = spawn("tools.code_execution_tool", None)
+said["own"] = spawn("somewhere.else", {"PATH": "/usr/bin:/bin", "HTTPS_PROXY": "http://their.proxy:3128"})
+print(json.dumps(said))
+"""
+
+
+class DoorLabelTests(unittest.TestCase):
+    def run_labels(self, extra=None):
+        environment = {"PATH": "/usr/bin:/bin", "HERMES_HOME": "/tmp/nollie-fixture-home",
+                       **{name: DOOR for name in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy",
+                                                  "https_proxy", "all_proxy")},
+                       "NO_PROXY": "localhost,127.0.0.1,::1", **(extra or {})}
+        out = subprocess.run([sys.executable, "-I", "-B", "-c", LABEL_SCRIPT, str(ENTRY)], env=environment,
+                             capture_output=True, text=True, timeout=20)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        return json.loads(out.stdout)
+
+    def test_requests_and_children_carry_the_bot_and_kind(self):
+        said = self.run_labels()
+        self.assertTrue(said["labelled"])
+        door = lambda label: f"http://{label}:{SECRET}@127.0.0.1:41234"
+        self.assertEqual(said["request"], door("career.hermes"))
+        self.assertEqual(said["terminal"]["HTTPS_PROXY"], door("career.terminal"))
+        self.assertEqual(said["terminal"]["http_proxy"], door("career.terminal"))
+        # Hermes gives a server only a few variables; the door's are put back, the rest stays as given.
+        self.assertEqual(said["mcp"]["ALL_PROXY"], door("career.mcp"))
+        self.assertEqual(said["mcp"]["NO_PROXY"], "localhost,127.0.0.1,::1")
+        self.assertEqual(said["mcp"]["NODE_USE_ENV_PROXY"], "1")
+        self.assertEqual(said["mcp"]["KEEP"], "yes")
+        # A private bot's label is still its own: the door then writes nothing for it.
+        self.assertEqual(said["code"]["HTTPS_PROXY"], door("moss.code"))
+        # A proxy a program chose for itself is left alone.
+        self.assertEqual(said["own"]["HTTPS_PROXY"], "http://their.proxy:3128")
+        self.assertEqual(said["own"]["ALL_PROXY"], door("moss.program"))
+
+    def test_nothing_is_labelled_without_the_door(self):
+        said = self.run_labels({"HTTPS_PROXY": "http://elsewhere:8080"})
+        self.assertFalse(said["labelled"])
+        self.assertEqual(said["terminal"]["HTTPS_PROXY"], "http://elsewhere:8080")
+
+    def test_homes_name_their_bots(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("nollie_runtime_entry_labels", ENTRY)
+        entry = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(entry)
+        home = Path("/tmp/setup/home")
+        self.assertEqual(entry._bot_of(home, home), "default")
+        self.assertEqual(entry._bot_of(home / "profiles" / "scout", home), "scout")
+        self.assertEqual(entry._bot_of(home / "profiles" / ".scout.staging-1", home), "unplaced")
+        self.assertEqual(entry._bot_of(Path("/elsewhere/profiles/scout"), home), "unplaced")
+        self.assertEqual(entry._bot_of(home / "profiles" / "unplaced", home), "unplaced")
+
+
 if __name__ == "__main__":
     unittest.main()

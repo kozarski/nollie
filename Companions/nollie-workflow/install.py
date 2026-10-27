@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 """Install a stopped companion with dated backups; activation is separate.
 
---papertrail-bots also copies the add-on into those bots so Papertrail records there; --recorder
-copies it into every followed bot for the Night shift recorder. A bot that gets the recorder but is
-not named in --papertrail-bots gets a ``recorder-only`` marker in its copy, so Papertrail stays off
-there. Only the default bot runs Board follow-through. Private bots are refused.
+--papertrail-bots also copies the add-on into those bots; --recorder copies it into every followed bot.
+Every copy keeps a Papertrail and runs the Night shift recorder, as the main bot does. Only the default
+bot runs Board follow-through. Private bots are refused.
 """
 import argparse
 from datetime import datetime
 import hashlib
 import importlib.util
-import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -18,7 +16,8 @@ import sys
 import tempfile
 
 NAME = "nollie-workflow"
-RECORDER_ONLY = "recorder-only"  # In a bot's copy: the recorder loads there, Papertrail does not.
+# An older installer's marker that kept Papertrail off in a bot's copy. Never copied any more.
+RECORDER_ONLY = "recorder-only"
 IGNORED = shutil.ignore_patterns("tests", "__pycache__", "*.pyc", RECORDER_ONLY)
 
 
@@ -64,8 +63,8 @@ def papertrail_bots(value, source, home):
     return bots
 
 
-def copy_into(source, profile_home, stamp, *, recorder_only=False):
-    """Copy the add-on into a bot. ``recorder_only`` marks the copy so Papertrail stays off there."""
+def copy_into(source, profile_home, stamp):
+    """Copy the add-on into a bot, replacing an older copy (kept in plugin-backups)."""
     target = profile_home / "plugins" / NAME
     if target.is_symlink() or (profile_home / "plugins").is_symlink():
         raise SystemExit(f"Refusing a linked plugin folder in {profile_home}.")
@@ -75,11 +74,6 @@ def copy_into(source, profile_home, stamp, *, recorder_only=False):
     with tempfile.TemporaryDirectory(prefix=f"{NAME}-stage-", dir=target.parent) as temporary:
         staged = Path(temporary) / NAME
         shutil.copytree(source, staged, ignore=IGNORED)
-        if recorder_only:
-            marker = os.open(staged / RECORDER_ONLY, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-            with os.fdopen(marker, "w") as handle:
-                handle.write("Papertrail is off in this bot. A copy made with --papertrail-bots turns it on.\n")
-            (staged / RECORDER_ONLY).chmod(0o600)
         if target.exists():
             old = profile_home / "plugin-backups" / f"{NAME}-{stamp}"
             old.parent.mkdir(parents=True, exist_ok=True)
@@ -123,17 +117,14 @@ def stage(source, target, backups):
 def install_recorders(source, home, stamp, skip=()):
     """Copy the add-on into each followed profile and enable it there; returns their names.
 
-    ``skip`` holds the bots that just got a Papertrail copy. Every other one gets a recorder-only copy,
-    unless it already has Papertrail: an upgrade never turns Papertrail off.
+    ``skip`` holds the bots that just got their copy from --papertrail-bots. Every copy keeps a Papertrail.
     """
     profiles = followed_profiles(source, home)
     hermes = shutil.which("hermes")
     for profile in profiles:
         if profile not in skip:
-            installed = home / "profiles" / profile / "plugins" / NAME
-            keeps = installed.is_dir() and not (installed / RECORDER_ONLY).exists()
-            target = copy_into(source, home / "profiles" / profile, stamp, recorder_only=not keeps)
-            print(f"Recorder installed for {profile}, Papertrail {'kept on' if keeps else 'off'}: {target}")
+            target = copy_into(source, home / "profiles" / profile, stamp)
+            print(f"Recorder and Papertrail installed for {profile}: {target}")
         if not hermes:
             print("Hermes is not on PATH, so the recorder was not enabled there.")
             continue
@@ -174,13 +165,7 @@ def main():
         except ValueError:
             raise SystemExit("The Private list is damaged. Repair it before installing the recorder.")
         print("Recorder for: " + (", ".join(names) if names else "no other profile") + ". Never a private one.")
-        chosen = {name for name, _ in bots}
-        has = {name for name in names if (home / "profiles" / name / "plugins" / NAME).is_dir()
-               and not (home / "profiles" / name / "plugins" / NAME / RECORDER_ONLY).exists()}
-        only = [name for name in names if name not in chosen and name not in has]
-        both = [name for name in names if name in chosen or name in has]
-        print("Recorder only, Papertrail off: " + (", ".join(only) if only else "none") + ".")
-        print("Recorder and Papertrail: " + (", ".join(both) if both else "none") + ".")
+        print("Recorder and Papertrail: " + (", ".join(names) if names else "none") + ".")
     if not args.apply:
         print("Plan only. --apply writes files; --enable asks Hermes to load the stopped companion; "
               "--recorder also installs and enables the recorder in each followed profile.")

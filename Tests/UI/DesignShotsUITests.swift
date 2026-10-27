@@ -121,6 +121,34 @@ final class DesignShotsUITests: DemoCase {
         shot("design-new-bot")
     }
 
+    /// Papertrail's connections: Why? on a reply and on a connection the door saw alone, and a quiet day.
+    func testPapertrailConnectionsInBothLooks() throws {
+        try inBothLooks { look in
+            mockPapertrail("busy")
+            try startDemo(["-nollie-demo-bot-page", "settings", "-nollie-demo-bot-tab", "papertrail"], look: look, waitForBots: false)
+            let first = find("papertrail.why.0")
+            XCTAssertTrue(first.waitForExistence(timeout: 30), "no Papertrail rows")
+            for _ in 0..<3 where !find("papertrail.why.3").isHittable { app.swipeUp(velocity: .slow) }
+            first.tap()
+            find("papertrail.why.3").tap()
+            pause(1)
+            for _ in 0..<2 where !find("papertrail.why.3.text").isHittable { app.swipeUp(velocity: .slow) }
+            pause(1)
+            shot("design-papertrail-connections-\(look)")
+            mockPapertrail("empty")
+            try startDemo(["-nollie-demo-bot-page", "settings", "-nollie-demo-bot-tab", "papertrail"], look: look, waitForBots: false)
+            XCTAssertTrue(find("papertrail.empty").waitForExistence(timeout: 30), "no quiet week")
+            pause(1)
+            shot("design-papertrail-quiet-\(look)")
+            mockPapertrail("busy")
+        }
+    }
+
+    private func mockPapertrail(_ state: String) {
+        _ = try? requireMock()
+        mock("/api/_mock/papertrail", ["state": state])
+    }
+
     func testPapertrailInBothLooks() throws {
         try inBothLooks { look in
             try startDemo(look: look)

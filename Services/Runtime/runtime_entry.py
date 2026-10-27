@@ -15,8 +15,10 @@ import runpy
 import signal
 import socket
 import stat
+import subprocess
 import sys
 import threading
+import urllib.request
 
 
 # This compatibility scope is only valid for the source archived by the native installer.
@@ -494,6 +496,116 @@ def _prepare_profile_workflow(source, keys):
     _scope_profile_workflow(profiles, addons, home, _note_cloned_keys(keys, home))
 
 
+# Papertrail's door. Nollie Runtime starts Hermes with every proxy variable pointing at its door on
+# loopback, labelled "unplaced.program". Here the label says which bot and which kind of program, so
+# each connection lands in that bot's own Papertrail. A program that can't be placed keeps the
+# "unplaced" label: the door passes it on and writes nothing, rather than guess at a private bot.
+DOOR_URL = re.compile(r"\Ahttp://unplaced\.program:([0-9a-f]{64})@127\.0\.0\.1:([0-9]{1,5})\Z")
+PROXY_NAMES = ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy")
+DIRECT = "localhost,127.0.0.1,::1"
+BOT_NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,63}\Z")
+# The innermost Hermes module on the stack names the kind of program a child process is.
+CHILD_KINDS = (
+    ("tools.code_execution_tool", "code"),
+    ("tools.terminal_tool", "terminal"), ("tools.environments", "terminal"), ("tools.process_registry", "terminal"),
+    ("tools.mcp_tool", "mcp"), ("mcp.", "mcp"),
+    ("nollie_reader", "reader"), ("nollie-reader", "reader"),
+    ("agent.transports", "model"), ("agent.codex", "model"), ("claude", "model"),
+)
+
+
+def _door(environ):
+    """(secret, port) of the door Hermes was started with, or None."""
+    found = DOOR_URL.match(environ.get("HTTPS_PROXY", ""))
+    if found is None or any(environ.get(name) != found.group(0) for name in PROXY_NAMES):
+        return None
+    port = int(found.group(2))
+    return (found.group(1), port) if 0 < port < 65536 else None
+
+
+def _bot_of(home, default_home):
+    """The bot a Hermes home belongs to: "default", a profile's name, or "unplaced"."""
+    try:
+        home = Path(home).absolute()
+    except (TypeError, ValueError):
+        return "unplaced"
+    if home == default_home:
+        return "default"
+    if home.parent == default_home / "profiles" and BOT_NAME.match(home.name) and home.name != "unplaced":
+        return home.name
+    return "unplaced"
+
+
+def _child_kind(frame):
+    for _ in range(80):
+        if frame is None:
+            break
+        module = str(frame.f_globals.get("__name__") or "")
+        for prefix, kind in CHILD_KINDS:
+            if module.startswith(prefix) or (prefix in ("nollie_reader", "nollie-reader", "claude") and prefix in module):
+                return kind
+        frame = frame.f_back
+    return "program"
+
+
+def _label_door(environ=os.environ, bot=None):
+    """Label this process's own requests and every child it starts. Returns False without a door."""
+    door = _door(environ)
+    if door is None:
+        return False
+    secret, port = door
+    unplaced = f"http://unplaced.program:{secret}@127.0.0.1:{port}"
+    default_home = Path(environ.get("HERMES_HOME") or ".").absolute()
+
+    def current_bot():
+        if bot is not None:
+            return bot()
+        try:
+            from hermes_constants import get_hermes_home
+            return _bot_of(get_hermes_home(), default_home)
+        except Exception:
+            return "unplaced"
+
+    def url(kind):
+        return f"http://{current_bot()}.{kind}:{secret}@127.0.0.1:{port}"
+
+    original_proxies = urllib.request.getproxies_environment
+
+    @functools.wraps(original_proxies)
+    def proxies_environment():
+        # Read at each request (requests, urllib, aiohttp) or client (httpx): the bot whose work it is now.
+        found = original_proxies()
+        if not any(value == unplaced for value in found.values()):
+            return found
+        label = url("hermes")
+        return {scheme: label if value == unplaced else value for scheme, value in found.items()}
+
+    urllib.request.getproxies_environment = proxies_environment
+
+    original_child = subprocess.Popen._execute_child
+
+    @functools.wraps(original_child)
+    def execute_child(self, args, executable, preexec_fn, close_fds, pass_fds, cwd, env, *rest):
+        try:
+            source = os.environ if env is None else env
+            if all(isinstance(key, str) for key in source):
+                env = dict(source)
+                label = url(_child_kind(sys._getframe(1)))
+                for name in PROXY_NAMES:
+                    # A proxy the program chose itself is left alone; one Hermes left out is put back.
+                    if env.get(name) in (None, "", unplaced):
+                        env[name] = label
+                env.setdefault("NO_PROXY", DIRECT)
+                env.setdefault("no_proxy", DIRECT)
+                env.setdefault("NODE_USE_ENV_PROXY", "1")
+        except Exception:
+            pass
+        return original_child(self, args, executable, preexec_fn, close_fds, pass_fds, cwd, env, *rest)
+
+    subprocess.Popen._execute_child = execute_child
+    return True
+
+
 def main(prepare_api=_install_model_inventory_compatibility, prepare_profiles=_prepare_profile_workflow,
          prepare_keys=_install_keychain_source):
     parser = argparse.ArgumentParser(add_help=False)
@@ -522,6 +634,8 @@ def main(prepare_api=_install_model_inventory_compatibility, prepare_profiles=_p
         os.kill(os.getpid(), signal.SIGTERM)
 
     threading.Thread(target=owner_watch, daemon=True, name="nollie-owner").start()
+    # Before Hermes or any HTTP library is imported, so every client reads the labelled door.
+    _label_door()
     sys.path.insert(0, args.source)
     prepare_keys(args.source, keys)
     prepare_profiles(args.source, keys)

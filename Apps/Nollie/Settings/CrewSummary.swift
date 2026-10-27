@@ -61,16 +61,16 @@ enum CrewSummaryWords {
         guard let left = summary.leftToday else { return "Not kept yet" }
         if left == 0 { return "Nothing today" }
         let online = summary.onlineToday ?? 0
-        if online == 0 { return "Stayed on your network" }
+        if online == 0 { return "Your network only" }
         return online == 1 ? "Went online once" : "Went online \(online) times"
     }
 
     /// The page's answer.
     static func leftHero(_ summary: CrewSummaryModel) -> String {
         guard let left = summary.leftToday else { return "Not kept yet" }
-        if left == 0 { return "Nothing left your Mac today" }
+        if left == 0 { return "Nothing seen leaving today" }
         let online = summary.onlineToday ?? 0
-        return online == 0 ? "Stayed on your network today" : PapertrailToday.wentOnline(online)
+        return online == 0 ? "Nothing seen going online today" : PapertrailToday.wentOnline(online)
     }
 
     /// One bot's row.
@@ -181,6 +181,10 @@ struct LeftYourMacPage: View {
                     }
                 }
             }
+            #if os(macOS) && NOLLIE_DIRECT
+            // Papertrail's network filter: on, nothing leaves around Nollie's door.
+            PapertrailFilterToggle()
+            #endif
         }
         .untitledPage()
     }
