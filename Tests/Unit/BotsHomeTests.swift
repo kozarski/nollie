@@ -114,7 +114,8 @@ import Testing
         PrivateBots.useForTesting(PrivateBots(names: ["private", "moss"], settled: true))
         #expect(ProfileInfo(name: "career").shownName == "Career")
         #expect(ProfileInfo(name: "default", displayName: "Nollie").shownName == "Nollie")
-        #expect(ProfileInfo(name: "moss", provider: "ollama").isPrivateBot(on: UUID()), "a local model keeps its words on the Mac")
+        #expect(ProfileInfo(name: "moss", provider: "ollama").isPrivateBot(on: UUID()))
+        #expect(!ProfileInfo(name: "bills", provider: "ollama").isPrivateBot(on: UUID()), "a local model alone is not Private")
         #expect(!ProfileInfo(name: "career", provider: "openrouter").isPrivateBot(on: UUID()))
     }
 
