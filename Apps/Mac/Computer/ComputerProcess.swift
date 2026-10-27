@@ -191,7 +191,10 @@ struct ComputerPeer: Equatable, Sendable {
     static let addOnDigest = "ad74465311de22e3d9914229ed51864961ab06cdb4bcf9a2d3a00a798270d112"
 
     /// The peer of a connected Unix socket, or nil when it isn't the add-on run by Hermes.
-    static func of(socket fd: Int32, hermesHome: String = NSHomeDirectory() + "/.hermes",
+    /// The Hermes the person installed by hand, read here and by the screen model; never written.
+    static let handInstalledHome = NSHomeDirectory() + "/.hermes"
+
+    static func of(socket fd: Int32, hermesHome: String = handInstalledHome,
                    managed: [Managed] = ComputerPeer.managedSetups()) -> ComputerPeer? {
         var pid: pid_t = 0
         var size = socklen_t(MemoryLayout<pid_t>.size)

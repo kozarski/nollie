@@ -1,5 +1,6 @@
 #if os(macOS)
 import Foundation
+import NollieCore
 
 /// The model on this Mac that sees the screen for a bot. A bot's own model (often an online one)
 /// never gets a screenshot or the screen's words: it says what it wants done in one app, this
@@ -59,8 +60,8 @@ enum ComputerScreenModels {
 
     /// The Hermes homes whose engine may be running: the main setup's and Nollie's own setups'.
     static func homes(fileManager: FileManager = .default) -> [URL] {
-        var homes = [fileManager.homeDirectoryForCurrentUser.appendingPathComponent(".hermes")]
-        let setups = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/Nollie/Setups")
+        var homes = [URL(fileURLWithPath: ComputerPeer.handInstalledHome, isDirectory: true)]
+        let setups = NolliePaths.current.setups
         for setup in (try? fileManager.contentsOfDirectory(at: setups, includingPropertiesForKeys: nil)) ?? [] {
             homes.append(setup.appendingPathComponent("home"))
         }
