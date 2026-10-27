@@ -1,0 +1,749 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ is using its computer" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ nutzt seinen Computer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ utilise son ordinateur"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ está usando su ordenador"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@が自分のコンピュータを使用中"
+          }
+        }
+      }
+    },
+    "%@ is using your Mac" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ nutzt deinen Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ utilise votre Mac"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ está usando tu Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@がMacを使用中"
+          }
+        }
+      }
+    },
+    "%@ started using your Mac." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ nutzt jetzt deinen Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ a commencé à utiliser votre Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ ha empezado a usar tu Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@がMacの使用を開始しました。"
+          }
+        }
+      }
+    },
+    "%@ stopped" : {
+      "comment" : "Safety: the Mac took the Stop",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ gestoppt"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ arrêté"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ se ha detenido"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@を停止しました"
+          }
+        }
+      }
+    },
+    "Ask Nollie" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie fragen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Demande à Nollie"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pregunta a Nollie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieに聞いて"
+          }
+        }
+      }
+    },
+    "Can't reach your Mac right now. Try at home, or with Tailscale on both." : {
+      "comment" : "Safety: Stop didn't reach the Mac",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Mac ist gerade nicht erreichbar. Versuch es zu Hause oder mit Tailscale auf beiden."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de joindre votre Mac pour le moment. Réessayez à la maison, ou avec Tailscale sur les deux."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ahora mismo no se puede conectar con tu Mac. Prueba en casa, o con Tailscale en ambos."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "現在Macに接続できません。自宅で、または両方でTailscaleをオンにして、お試しください。"
+          }
+        }
+      }
+    },
+    "Chat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Discussion"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chat"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "チャット"
+          }
+        }
+      }
+    },
+    "Done. Your Mac is ending the task, the replies and the schedules." : {
+      "comment" : "Safety: Stop reached the Mac",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Erledigt. Dein Mac beendet die Aufgabe, die Antworten und die Zeitpläne."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "C'est fait. Votre Mac met fin à la tâche, aux réponses et aux planifications."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hecho. Tu Mac está terminando la tarea, las respuestas y las programaciones."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "完了しました。Macがタスク、返信、スケジュールを終わらせています。"
+          }
+        }
+      }
+    },
+    "Ends every task, stops replies and pauses schedules." : {
+      "comment" : "Safety: what the Stop control does",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Beendet jede Aufgabe, stoppt Antworten und pausiert Zeitpläne."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Met fin à chaque tâche, arrête les réponses et suspend les planifications."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Termina todas las tareas, detiene las respuestas y pausa las programaciones."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "すべてのタスクを終了し、返信を止め、スケジュールを一時停止します。"
+          }
+        }
+      }
+    },
+    "Ends the helper's task, stops replies and pauses schedules." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Beendet die Aufgabe des Helfers, stoppt Antworten und pausiert Zeitpläne."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Met fin à la tâche de l'assistant, arrête les réponses et suspend les planifications."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Termina la tarea del ayudante, detiene las respuestas y pausa las programaciones."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ヘルパーのタスクを終了し、返信を止め、スケジュールを一時停止します。"
+          }
+        }
+      }
+    },
+    "Last seen" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zuletzt gesehen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vu pour la dernière fois"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Visto por última vez"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "最終確認"
+          }
+        }
+      }
+    },
+    "Last seen %@" : {
+      "comment" : "Then how long ago, kept current by the system",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zuletzt gesehen %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vu %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Visto por última vez %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "最終確認：%@"
+          }
+        }
+      }
+    },
+    "Link Nollie to your Mac first, then Stop will work." : {
+      "comment" : "Safety: Stop can't go anywhere yet",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Verknüpfe Nollie zuerst mit deinem Mac, dann funktioniert „Stoppen“."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Liez d'abord Nollie à votre Mac, puis Arrêter fonctionnera."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enlaza primero Nollie con tu Mac; después Detener funcionará."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "先にNollieをMacとリンクしてください。そうすると「停止」が使えるようになります。"
+          }
+        }
+      }
+    },
+    "Main chat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hauptchat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Discussion principale"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chat principal"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "メインチャット"
+          }
+        }
+      }
+    },
+    "Opens your main chat, ready to type." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Öffnet deinen Hauptchat, bereit zum Tippen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ouvre votre discussion principale, prête pour la saisie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre tu chat principal, listo para escribir."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "メインチャットを開き、すぐに入力できます。"
+          }
+        }
+      }
+    },
+    "Sent to your Mac through iCloud. It stops as soon as it hears." : {
+      "comment" : "Safety: Stop on its way through iCloud",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Über iCloud an deinen Mac gesendet. Er stoppt, sobald er es erfährt."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Envoyé à votre Mac via iCloud. Il s'arrête dès qu'il le reçoit."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enviado a tu Mac a través de iCloud. Se detiene en cuanto lo recibe."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud経由でMacに送信しました。Macが受け取りしだい停止します。"
+          }
+        }
+      }
+    },
+    "Show Stop on the Lock Screen while a helper is working" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "„Stoppen“ auf dem Sperrbildschirm zeigen, während ein Helfer arbeitet"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Afficher Arrêter sur l'écran verrouillé quand un assistant travaille"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mostrar Detener en la pantalla bloqueada mientras trabaja un ayudante"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ヘルパーの作業中、ロック画面に「停止」を表示"
+          }
+        }
+      }
+    },
+    "Stop" : {
+      "comment" : "Safety: notification button; stops the bot using the Mac\nSafety: stops the helper's work on the Mac",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stoppen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêter"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "停止"
+          }
+        }
+      }
+    },
+    "Stop Nollie" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie stoppen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrête Nollie"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detén Nollie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieを停止して"
+          }
+        }
+      }
+    },
+    "Stop all helpers" : {
+      "comment" : "Safety: the Stop control",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle Helfer stoppen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêter tous les assistants"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener a todos los ayudantes"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "すべてのヘルパーを停止"
+          }
+        }
+      }
+    },
+    "Stop didn't reach your Mac" : {
+      "comment" : "Safety: the work may still be going",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "„Stoppen“ hat deinen Mac nicht erreicht"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'arrêt n'a pas atteint votre Mac"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener no llegó a tu Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「停止」がMacに届きませんでした"
+          }
+        }
+      }
+    },
+    "Stop ends the job on your Mac, stops replies and pauses schedules. Your iPhone asks to be unlocked first." : {
+      "comment" : "Safety: what Stop does",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "„Stoppen“ beendet den Job auf deinem Mac, stoppt Antworten und pausiert Zeitpläne. Dein iPhone bittet zuerst ums Entsperren."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêter met fin à la tâche sur votre Mac, arrête les réponses et suspend les planifications. Votre iPhone demande d'abord à être déverrouillé."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener termina el trabajo en tu Mac, detiene las respuestas y pausa las programaciones. Tu iPhone pide que lo desbloquees primero."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「停止」はMacでの作業を終了し、返信を止め、スケジュールを一時停止します。iPhoneは先にロック解除を求めます。"
+          }
+        }
+      }
+    },
+    "Stopping %@" : {
+      "comment" : "Safety: Stop was pressed for this helper",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ wird gestoppt"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêt de %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Deteniendo a %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@を停止中"
+          }
+        }
+      }
+    },
+    "Telling your Mac" : {
+      "comment" : "Safety: a Stop on its way to the Mac",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Mac wird informiert"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Transmission à votre Mac"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avisando a tu Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macに伝えています"
+          }
+        }
+      }
+    },
+    "That didn't get through, so nothing was stopped." : {
+      "comment" : "Safety: Stop didn't reach the Mac",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Das ist nicht durchgekommen, daher wurde nichts gestoppt."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cela n'a pas abouti, donc rien n'a été arrêté."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No llegó, así que no se detuvo nada."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "届かなかったため、何も停止されていません。"
+          }
+        }
+      }
+    },
+    "The job has ended" : {
+      "comment" : "Safety: the Mac took the Stop",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Job ist beendet"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La tâche est terminée"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El trabajo ha terminado"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "作業は終了しました"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

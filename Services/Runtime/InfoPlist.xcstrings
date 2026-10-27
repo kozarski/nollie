@@ -1,0 +1,42 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Info.plist NSLocalNetworkUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Connect to your assistant on this Mac, and let your linked iPhone find it on your network."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mit deinem Assistenten auf diesem Mac verbinden und deinem verknüpften iPhone erlauben, ihn in deinem Netzwerk zu finden."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se connecter à votre assistant sur ce Mac, et permettre à votre iPhone lié de le trouver sur votre réseau."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Conéctate a tu asistente en este Mac y deja que tu iPhone enlazado lo encuentre en tu red."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMac上のアシスタントに接続し、リンクしたiPhoneがネットワーク上でそれを見つけられるようにします。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,0 +1,790 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Allow Nollie notifications in Settings to see alerts on this device." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Erlaube Mitteilungen von Nollie in den Einstellungen, um Hinweise auf diesem Gerät zu sehen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Autorisez les notifications de Nollie dans Réglages pour voir les alertes sur cet appareil."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Permite las notificaciones de Nollie en Ajustes para ver alertas en este dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このデバイスで通知を見るには、設定でNollieの通知を許可してください。"
+          }
+        }
+      }
+    },
+    "App Lock keeps details hidden" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die App-Sperre hält Details verborgen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le verrouillage de l'app masque les détails"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El bloqueo de la app mantiene ocultos los detalles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "アプリロックにより詳細は非表示です"
+          }
+        }
+      }
+    },
+    "Checking iCloud alerts…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud-Hinweise werden geprüft …"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vérification des alertes iCloud…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Comprobando alertas de iCloud…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud通知を確認中…"
+          }
+        }
+      }
+    },
+    "Checking saved reply details" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gesicherte Antwortdetails werden geprüft"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vérification des détails de réponse enregistrés"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Comprobando los detalles de la respuesta guardada"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "保存済みの返信の詳細を確認中"
+          }
+        }
+      }
+    },
+    "Hide notification details is on" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "„Mitteilungsdetails ausblenden“ ist an"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Masquer les détails des notifications est activé"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ocultar detalles de notificaciones está activado"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「通知の詳細を隠す」がオンです"
+          }
+        }
+      }
+    },
+    "Notification privacy changed during delivery" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Mitteilungsdatenschutz hat sich während der Zustellung geändert"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La confidentialité des notifications a changé pendant la remise"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La privacidad de las notificaciones cambió durante la entrega"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "配信中に通知のプライバシーが変更されました"
+          }
+        }
+      }
+    },
+    "Notification privacy settings were unavailable" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die Datenschutzeinstellungen für Mitteilungen waren nicht verfügbar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les réglages de confidentialité des notifications étaient indisponibles"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Los ajustes de privacidad de las notificaciones no estaban disponibles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "通知のプライバシー設定を利用できませんでした"
+          }
+        }
+      }
+    },
+    "Opened on another device." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Auf einem anderen Gerät geöffnet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ouverte sur un autre appareil."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abierta en otro dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "別のデバイスで開かれました。"
+          }
+        }
+      }
+    },
+    "Received by Nollie on another device. Check that device for the alert." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Von Nollie auf einem anderen Gerät empfangen. Sieh auf diesem Gerät nach dem Hinweis."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Reçue par Nollie sur un autre appareil. Vérifiez l'alerte sur cet appareil."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Recibida por Nollie en otro dispositivo. Mira ese dispositivo para ver la alerta."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "別のデバイスのNollieが受け取りました。そのデバイスで通知を確認してください。"
+          }
+        }
+      }
+    },
+    "Reply details supplied to the system" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Antwortdetails an das System übergeben"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Détails de réponse transmis au système"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detalles de la respuesta proporcionados al sistema"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "返信の詳細をシステムに渡しました"
+          }
+        }
+      }
+    },
+    "Reply details verified" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Antwortdetails geprüft"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Détails de réponse vérifiés"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detalles de la respuesta verificados"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "返信の詳細を確認しました"
+          }
+        }
+      }
+    },
+    "Saved to iCloud. Delivery to another device is not confirmed yet." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "In iCloud gesichert. Die Zustellung an ein anderes Gerät ist noch nicht bestätigt."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enregistrée dans iCloud. La remise sur un autre appareil n'est pas encore confirmée."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada en iCloud. Aún no se ha confirmado la entrega a otro dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloudに保存されました。別のデバイスへの配信はまだ確認されていません。"
+          }
+        }
+      }
+    },
+    "Sign in to iCloud in System Settings to use alerts." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Melde dich in den Systemeinstellungen bei iCloud an, um Hinweise zu verwenden."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Connectez-vous à iCloud dans Réglages Système pour utiliser les alertes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Inicia sesión en iCloud en Ajustes del Sistema para usar las alertas."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "通知を使うには、システム設定でiCloudにサインインしてください。"
+          }
+        }
+      }
+    },
+    "The iCloud account check did not match" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die Prüfung des iCloud-Accounts stimmte nicht überein"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La vérification du compte iCloud ne correspondait pas"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La comprobación de la cuenta de iCloud no coincidió"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloudアカウントの確認が一致しませんでした"
+          }
+        }
+      }
+    },
+    "The saved alert was invalid or expired" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der gesicherte Hinweis war ungültig oder abgelaufen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'alerte enregistrée n'était pas valide ou avait expiré"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La alerta guardada no era válida o había caducado"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "保存済みの通知が無効か、期限切れでした"
+          }
+        }
+      }
+    },
+    "The saved alert was unavailable" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der gesicherte Hinweis war nicht verfügbar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'alerte enregistrée était indisponible"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La alerta guardada no estaba disponible"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "保存済みの通知を利用できませんでした"
+          }
+        }
+      }
+    },
+    "The saved iCloud account check was unavailable" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die gesicherte Prüfung des iCloud-Accounts war nicht verfügbar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La vérification enregistrée du compte iCloud était indisponible"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La comprobación guardada de la cuenta de iCloud no estaba disponible"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "保存済みのiCloudアカウントの確認を利用できませんでした"
+          }
+        }
+      }
+    },
+    "The system ended the preview lookup" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Das System hat die Suche nach der Vorschau beendet"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le système a interrompu la recherche d'aperçu"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El sistema terminó la búsqueda de la vista previa"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "システムがプレビューの読み込みを終了しました"
+          }
+        }
+      }
+    },
+    "There’s an update waiting for you in Nollie." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "In Nollie wartet ein Update auf dich."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Une mise à jour vous attend dans Nollie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tienes una novedad esperándote en Nollie."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieに新しいお知らせがあります。"
+          }
+        }
+      }
+    },
+    "This alert has no saved reply details" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieser Hinweis hat keine gesicherten Antwortdetails"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cette alerte n'a pas de détails de réponse enregistrés"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esta alerta no tiene detalles de respuesta guardados"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "この通知には保存済みの返信の詳細がありません"
+          }
+        }
+      }
+    },
+    "This test is no longer in iCloud." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieser Test ist nicht mehr in iCloud."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce test n'est plus dans iCloud."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esta prueba ya no está en iCloud."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このテストはもうiCloudにありません。"
+          }
+        }
+      }
+    },
+    "Waiting for Apple to register this device for alerts…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Warte, bis Apple dieses Gerät für Hinweise registriert …"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En attente qu'Apple enregistre cet appareil pour les alertes…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esperando a que Apple registre este dispositivo para las alertas…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Appleがこのデバイスを通知用に登録するのを待っています…"
+          }
+        }
+      }
+    },
+    "Your iCloud account changed. Turn alerts on again for this account." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein iCloud-Account hat sich geändert. Schalte Hinweise für diesen Account wieder ein."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre compte iCloud a changé. Réactivez les alertes pour ce compte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu cuenta de iCloud ha cambiado. Vuelve a activar las alertas para esta cuenta."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloudアカウントが変更されました。このアカウントで通知をもう一度オンにしてください。"
+          }
+        }
+      }
+    },
+    "iCloud alerts are off." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud-Hinweise sind aus."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les alertes iCloud sont désactivées."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las alertas de iCloud están desactivadas."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud通知はオフです。"
+          }
+        }
+      }
+    },
+    "iCloud alerts are on." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud-Hinweise sind an."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les alertes iCloud sont activées."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las alertas de iCloud están activadas."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud通知はオンです。"
+          }
+        }
+      }
+    },
+    "iCloud alerts need attention." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud-Hinweise brauchen deine Aufmerksamkeit."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les alertes iCloud demandent votre attention."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las alertas de iCloud necesitan atención."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud通知の確認が必要です。"
+          }
+        }
+      }
+    },
+    "iCloud alerts were off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud-Hinweise waren aus"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les alertes iCloud étaient désactivées"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las alertas de iCloud estaban desactivadas"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud通知はオフでした"
+          }
+        }
+      }
+    },
+    "iCloud could not provide the saved reply" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud konnte die gesicherte Antwort nicht liefern"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud n'a pas pu fournir la réponse enregistrée"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloud no ha podido proporcionar la respuesta guardada"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iCloudから保存済みの返信を取得できませんでした"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
