@@ -359,6 +359,90 @@
         }
       }
     },
+    "%@ did %lld things." : {
+      "extractionState" : "manual",
+      "comment" : "The weekly note's notification: the helpers' names, then how many things they did",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%@ did 1 thing."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%@ did %lld things."
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%@ hat 1 Sache erledigt."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%@ hat %lld Sachen erledigt."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%@ a fait 1 chose."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%@ a fait %lld choses."
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%@ hizo 1 cosa."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%@ hizo %lld cosas."
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@が%2$lld件の作業をしました。"
+          }
+        }
+      }
+    },
     "%@ ending %@" : {
       "extractionState" : "manual",
       "comment" : "Safety: a payment card and its last four digits: Visa ending 4242",
@@ -648,6 +732,36 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%1$@が応答しないため、%3$@までNollieは%2$@を使います。"
+          }
+        }
+      }
+    },
+    "%@ kept busy." : {
+      "extractionState" : "manual",
+      "comment" : "The weekly note's notification: the helpers' names",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ war beschäftigt."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ a été occupé."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ estuvo ocupado."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@は作業していました。"
           }
         }
       }
@@ -1684,6 +1798,35 @@
         }
       }
     },
+    "%@ weekly notes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ Wochennotizen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ notes de la semaine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ notas semanales"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "今週のまとめ%@件"
+          }
+        }
+      }
+    },
     "%@ · %lld times" : {
       "extractionState" : "manual",
       "comment" : "What went somewhere, and how many times",
@@ -1913,6 +2056,96 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@のモデルはネットワーク上の別のコンピュータで動いているため、そこへ送信されました。"
+          }
+        }
+      }
+    },
+    "%@, %@ and %@" : {
+      "extractionState" : "manual",
+      "comment" : "Three names in a list",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, %@ und %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, %@ et %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, %@ y %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@、%@、%@"
+          }
+        }
+      }
+    },
+    "%@, %@ and %lld more" : {
+      "extractionState" : "manual",
+      "comment" : "Two names, then how many more helpers",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, %@ und %lld weitere"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, %@ et %lld autres"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, %@ y %lld más"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@、%2$@ほか%3$lld人"
+          }
+        }
+      }
+    },
+    "%@, %lld new." : {
+      "extractionState" : "manual",
+      "comment" : "The weekly note's notification: places online, then how many were new",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, %lld neu."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, %lld nouveaux."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, %lld nuevos."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@、新規%lld件。"
           }
         }
       }
@@ -3891,6 +4124,90 @@
         }
       }
     },
+    "%lld places online" : {
+      "extractionState" : "manual",
+      "comment" : "The weekly note's notification: how many places went online",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "1 place online"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld places online"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "1 Ort online"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld Orte online"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "1 lieu en ligne"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld lieux en ligne"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "1 sitio en línea"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld sitios en línea"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lldか所にオンラインで送信"
+          }
+        }
+      }
+    },
     "%lld replies stayed on your Mac." : {
       "extractionState" : "manual",
       "comment" : "Safety: Papertrail line; keep exact meaning",
@@ -4860,6 +5177,89 @@
         }
       }
     },
+    "%lld weekly notes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "1 weekly note"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld weekly notes"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "1 Wochennotiz"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld Wochennotizen"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "1 note de la semaine"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld notes de la semaine"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "1 nota semanal"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld notas semanales"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "今週のまとめ%lld件"
+          }
+        }
+      }
+    },
     ", " : {
       "extractionState" : "manual",
       "comment" : "Between items of a list: a, b and c",
@@ -5330,6 +5730,36 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "静かな1週間でした。"
+          }
+        }
+      }
+    },
+    "A quiet week. Nothing recorded." : {
+      "extractionState" : "manual",
+      "comment" : "The weekly note's notification",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Eine ruhige Woche. Nichts aufgezeichnet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Une semaine calme. Rien d'enregistré."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Una semana tranquila. No hay nada registrado."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "静かな1週間でした。記録はありません。"
           }
         }
       }
@@ -9041,32 +9471,32 @@
         }
       }
     },
-    "Muted here" : {
+    "Muted" : {
       "extractionState" : "manual",
-      "comment" : "A helper's banners are muted on this device",
+      "comment" : "A helper's banners are muted on every device",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Hier stumm"
+            "value" : "Stummgeschaltet"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Son coupé ici"
+            "value" : "Son coupé"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Silenciado aquí"
+            "value" : "Silenciado"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "このデバイスでミュート中"
+            "value" : "消音中"
           }
         }
       }
@@ -9943,6 +10373,66 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "何も表示されませんでした。準備ができたら、もう一度お試しください。"
+          }
+        }
+      }
+    },
+    "Nothing went online, %lld new." : {
+      "extractionState" : "manual",
+      "comment" : "Safety: the weekly note's notification; nothing left the Mac, then how many things were new",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nichts ging online, %lld neu."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Rien n'est allé en ligne, %lld nouveaux."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No salió nada a internet, %lld nuevos."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "オンラインへの送信はありません。新規%lld件。"
+          }
+        }
+      }
+    },
+    "Nothing went online." : {
+      "extractionState" : "manual",
+      "comment" : "Safety: the weekly note's notification; nothing left the Mac",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nichts ging online."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Rien n'est allé en ligne."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No salió nada a internet."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "オンラインへの送信はありません。"
           }
         }
       }
@@ -11302,7 +11792,7 @@
     },
     "Removed" : {
       "extractionState" : "manual",
-      "comment" : "A schedule's state",
+      "comment" : "A schedule's or a connected app's state",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -14622,6 +15112,36 @@
         }
       }
     },
+    "What your helpers did, and what left your Mac." : {
+      "extractionState" : "manual",
+      "comment" : "Safety: the weekly note's notification when its counts couldn't be read; it lists what left the Mac",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Was deine Helfer getan haben und was deinen Mac verlassen hat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce que vos assistants ont fait, et ce qui a quitté votre Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que hicieron tus ayudantes y lo que salió de tu Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ヘルパーがしたことと、Macの外に送信されたもの。"
+          }
+        }
+      }
+    },
     "Worked on %lld Board tasks" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14969,6 +15489,36 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%2$@に、%1$@に「常に許可」を選びました。"
+          }
+        }
+      }
+    },
+    "You removed “%@”" : {
+      "extractionState" : "manual",
+      "comment" : "Safety: the weekly note, a connected app the person took away; the app's name",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Du hast „%@“ entfernt"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vous avez retiré « %@ »"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Quitaste «%@»"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「%@」を削除しました"
           }
         }
       }
@@ -15928,6 +16478,36 @@
         }
       }
     },
+    "Your helpers" : {
+      "extractionState" : "manual",
+      "comment" : "Stands in for the helpers' names in the weekly notification",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Deine Helfer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vos assistants"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tus ayudantes"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "あなたのヘルパー"
+          }
+        }
+      }
+    },
     "Your helpers' computers come from Cua, a free tool on your Mac. Open Nollie on your Mac to set it up." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16158,6 +16738,66 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "セッションの期限が切れました。もう一度サインインしてください。"
+          }
+        }
+      }
+    },
+    "Your week" : {
+      "extractionState" : "manual",
+      "comment" : "The weekly note's notification title",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Deine Woche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre semaine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu semana"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "今週のまとめ"
+          }
+        }
+      }
+    },
+    "Your weekly note, on the day you chose. Its counts went to your devices through your own iCloud, with your iCloud alerts." : {
+      "extractionState" : "manual",
+      "comment" : "Safety: Papertrail, why the weekly note went out; keep exact meaning",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Deine Wochennotiz, an dem Tag, den du gewählt hast. Ihre Zahlen gingen über dein eigenes iCloud an deine Geräte, mit deinen iCloud-Hinweisen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre note de la semaine, le jour que vous avez choisi. Ses chiffres sont allés vers vos appareils par votre propre iCloud, avec vos alertes iCloud."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu nota semanal, el día que elegiste. Sus cifras llegaron a tus dispositivos a través de tu propio iCloud, con tus alertas de iCloud."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "あなたが選んだ曜日の今週のまとめです。件数はあなた自身のiCloudを通じて、iCloud通知であなたのデバイスに届きました。"
           }
         }
       }

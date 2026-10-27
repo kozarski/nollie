@@ -217,6 +217,8 @@ struct TranscriptView: View {
     private var column: some View {
         let sidePad: CGFloat = prefs.wideReplies ? 10 : 16
         return VStack(alignment: .leading, spacing: 10) {
+            // The week's note opens the main chat and scrolls away with it, so it never covers the thread.
+            WeeklyNoteStrip(chat: chat)
             threadContent
             Color.clear.frame(height: 0).id("bottom")
         }

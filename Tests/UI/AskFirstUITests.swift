@@ -60,7 +60,17 @@ final class AskFirstUITests: DemoCase {
             XCTAssertTrue(still.waitForExistence(timeout: 10), "the turn-off question doesn't say what still asks")
             XCTAssertFalse(text("It will send, buy, post and delete without asking.").exists)
             shot("ask-first-turn-off-\(look)")
-            press("Cancel")
+            // On a phone the question is a popover from the switch, with no Cancel button: a tap
+            // outside it is the cancel. Either way Ask first stays on.
+            let cancel = app.buttons.matching(NSPredicate(format: "label == 'Cancel'")).firstMatch
+            let outside = app.otherElements["PopoverDismissRegion"].firstMatch
+            if cancel.exists { cancel.tap() } else if outside.exists { outside.tap() } else {
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)).tap()
+            }
+            XCTAssertTrue(poll(10) { !still.exists }, "the turn-off question stayed")
+            let toggle = find("profile.askFirst")
+            let knob = toggle.switches.firstMatch.exists ? toggle.switches.firstMatch : toggle
+            XCTAssertEqual(knob.value as? String, "1", "cancelling turned Ask first off")
         }
     }
 }

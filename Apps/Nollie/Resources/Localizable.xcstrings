@@ -65601,6 +65601,41 @@
         }
       }
     },
+    "Remove “%@” from %@?" : {
+      "comment" : "Safety: asks before taking a connected app away from a helper; the app, then the helper. Keep exact meaning",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove “%1$@” from %2$@?"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "„%1$@“ von %2$@ entfernen?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retirer « %1$@ » de %2$@ ?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "¿Quitar «%1$@» de %2$@?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%2$@から「%1$@」を削除しますか？"
+          }
+        }
+      }
+    },
     "Remove?" : {
       "comment" : "Safety: removing an assistant; keep exact meaning",
       "localizations" : {
@@ -87377,7 +87412,7 @@
       }
     },
     "This can't be undone." : {
-      "comment" : "Safety: Remove Nollie, the warning before it starts; keep exact meaning\nSafety: removing a schedule; keep exact meaning",
+      "comment" : "Safety: Remove Nollie, the warning before it starts; keep exact meaning\nSafety: under the question before removing a schedule or a connected app; keep exact meaning",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -97674,6 +97709,7 @@
     },
     "What your helpers did, and what left your Mac." : {
       "comment" : "Safety: the weekly note's notification; it lists what left the Mac",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -103182,7 +103218,7 @@
       }
     },
     "Your week" : {
-      "comment" : "A Settings page name\nThe weekly note's notification title",
+      "comment" : "A Settings page name",
       "localizations" : {
         "de" : {
           "stringUnit" : {

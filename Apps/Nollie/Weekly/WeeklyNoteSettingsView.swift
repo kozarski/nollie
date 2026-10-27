@@ -25,9 +25,11 @@ struct WeeklyNoteSettingsView: View {
                               Fact(symbol: "arrow.uturn.backward.circle.fill", word: "Undo in a tap")],
                       tint: on ? WeeklyInk.tint : Ink.text2, id: "weekly.facts")
             GlassStack {
-                GlassSwitch("Weekly note", isOn: $on, id: "weekly.switch")
+                GlassSwitch("Weekly note", isOn: Binding(get: { on }, set: { on = $0; WeeklyNoteModel.changed(model) }),
+                            id: "weekly.switch")
                 if on {
-                    GlassChoice("Day", selection: $weekday, options: WeeklyNoteDays.options(), id: "weekly.day")
+                    GlassChoice("Day", selection: Binding(get: { weekday }, set: { weekday = $0; WeeklyNoteModel.changed(model) }),
+                                options: WeeklyNoteDays.options(), id: "weekly.day")
                     GlassLink("This week", symbol: WeeklyInk.symbol, value: newCount, id: "weekly.open") {
                         WeeklyNotePage()
                     }

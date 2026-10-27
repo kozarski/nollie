@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # Builds Nollie and uploads it to TestFlight with no interactive steps.
 #
-# Signing in uses an API key from App Store Connect, so no Apple ID password and no two-factor prompt come into it.
-# Define the following in Tools/release/.env (git ignores that file) or export them:
+# Signing goes through the Apple Account signed in to Xcode (Corey's), so every certificate carries his
+# name; the key is never handed to Xcode, which would make its own "Created via API" certificate.
+# Uploads use Corey's individual App Store Connect API key, so App Store Connect shows his name rather
+# than "API user". Define the following in Tools/release/.env (git ignores that file) or export them:
 #
 #   ASC_APP_ID=<the app's ID in App Store Connect>
 #   ASC_KEY_ID=ABCD123456                 # ID of the key
 #   ASC_ISSUER_ID=aaaaaaaa-bbbb-....      # shown at the top of the keys screen
-#   ASC_KEY_PATH=$HOME/.asc/AuthKey_ABCD123456.p8
+#   ASC_KEY_PATH=$HOME/.asc/keys/ApiKey_ABCD123456.p8
+#   ASC_KEY_KIND=individual               # Corey's own key, from Edit Profile; leave out for a team key
 #
 # Two one-time chores that need a browser:
 #   1. Accept any agreements that are waiting in your App Store Connect account.
@@ -59,7 +62,8 @@ die() { printf '\n%s\n' "$1" >&2; exit 1; }
 
 # The key settings travel together to anything that talks to App Store Connect.
 with_key() {
-    ASC_KEY_ID="$ASC_KEY_ID" ASC_ISSUER_ID="$ASC_ISSUER_ID" ASC_KEY_PATH="$ASC_KEY_PATH" "$@"
+    ASC_KEY_ID="$ASC_KEY_ID" ASC_ISSUER_ID="$ASC_ISSUER_ID" ASC_KEY_PATH="$ASC_KEY_PATH" \
+        ASC_KEY_KIND="${ASC_KEY_KIND:-}" "$@"
 }
 
 # --- Checks before anything is built ---------------------------------------------------------
@@ -105,9 +109,9 @@ for leftover in "$ARCHIVE" "$EXPORT_DIR"; do
 done
 mkdir -p "$ARCHIVE_DIR"
 
-SIGNING=(-authenticationKeyPath "$ASC_KEY_PATH"
-         -authenticationKeyID "$ASC_KEY_ID"
-         -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+# Xcode signs with the account signed in to it. The API key is never passed here: given one, Xcode
+# makes and uses its own "Created via API" development certificate.
+SIGNING=()
 
 # --- Archive ----------------------------------------------------------------------------------
 
@@ -115,7 +119,7 @@ echo "==> Archiving $BUNDLE_ID $MARKETING_VERSION (build $BUILD_NUMBER) for $PLA
 if ! xcodebuild archive \
         -project "$PROJECT" -scheme "$SCHEME" -configuration Release \
         -destination "$DESTINATION" -archivePath "$ARCHIVE" \
-        -allowProvisioningUpdates "${SIGNING[@]}" \
+        -allowProvisioningUpdates ${SIGNING[@]+"${SIGNING[@]}"} \
         CURRENT_PROJECT_VERSION="$BUILD_NUMBER" MARKETING_VERSION="$MARKETING_VERSION" \
         2>&1 | tee "$LOG" | awk '/error:|warning: .*(signing|provision)|ARCHIVE/'; then
     die "Archive failed. See the saved archive log. Nothing was exported or uploaded."
@@ -139,7 +143,7 @@ export_archive() {
     shift 2
     xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportOptionsPlist "$options" -exportPath "$destination" "$@"
 }
-export_archive "$EXPORT_OPTIONS" "$EXPORT_DIR" "${SIGNING[@]}"
+export_archive "$EXPORT_OPTIONS" "$EXPORT_DIR" -allowProvisioningUpdates
 
 # Check the exported file's real signature and profile, not only what the project asked for.
 PRODUCT=$(find "$EXPORT_DIR" -maxdepth 1 -name "$PRODUCT_GLOB")
@@ -156,8 +160,11 @@ fi
 
 echo "==> Uploading to TestFlight"
 upload_product() {
-    xcrun altool --upload-app --apiIssuer "$ASC_ISSUER_ID" --apiKey "$ASC_KEY_ID" \
-        --file "$1" --type "$UPLOAD_TYPE"
+    local who=()
+    # An individual key uploads as the person who made it; a team key shows as "API user".
+    [ "${ASC_KEY_KIND:-}" = individual ] && who=(--api-key-subject user)
+    xcrun altool --upload-app --api-issuer "$ASC_ISSUER_ID" --api-key "$ASC_KEY_ID" \
+        --p8-file-path "$ASC_KEY_PATH" ${who[@]+"${who[@]}"} --file "$1" --type "$UPLOAD_TYPE"
 }
 upload_product "$PRODUCT"
 

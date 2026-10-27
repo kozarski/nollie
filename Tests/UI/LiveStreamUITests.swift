@@ -9,6 +9,13 @@ final class LiveStreamUITests: XCTestCase {
     private var app: XCUIApplication!
     private var address = ""
 
+    /// One mock gateway serves every flow in a run, so a case that stops early still leaves no helper
+    /// using the computer for the flows after it.
+    override func tearDownWithError() throws {
+        DemoCase.resetMock("api/_mock/computer-preview", ["state": "idle", "active": false, "held": false])
+        try super.tearDownWithError()
+    }
+
     func testWatchPlaysTheLivePicture() async throws {
         for look in ["light", "dark"] {
             try await watchLive(look: look)
@@ -133,7 +140,7 @@ final class LiveStreamUITests: XCTestCase {
         app = XCUIApplication(bundleIdentifier: bundle)
         app.launchArguments = ["-nollie-demo-gateway", address, "mock-token", "Studio",
                                "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES",
-                               "-bots.animate", "NO", "-launchTab", "chats", "-colorSchemePreference", look]
+                               "-bots.animate", "NO", "-launchTab", "chats", "-colorSchemePreference", look] + DemoCase.weeklyCardPutAway
         app.launch()
         _ = try visible("bots.row.default", timeout: 30)
     }

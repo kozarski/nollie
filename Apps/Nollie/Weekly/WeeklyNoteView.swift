@@ -27,7 +27,7 @@ struct WeeklyNotePage: View {
         .task { await weekly.refresh(model) }
         .reloadable { await weekly.refresh(model, force: true) }
         #if DEBUG
-        // For pictures of the lower part: `-nollie-demo-weekly-anchor center|bottom`.
+        // For pictures of the lower part: `-nollie-demo-weekly-anchor upper|center|bottom`.
         .defaultScrollAnchor(Self.demoAnchor)
         #endif
     }
@@ -36,7 +36,7 @@ struct WeeklyNotePage: View {
     private static var demoAnchor: UnitPoint? {
         let words = ProcessInfo.processInfo.arguments
         guard DemoMode.isOn, let at = words.firstIndex(of: "-nollie-demo-weekly-anchor"), at + 1 < words.count else { return nil }
-        return ["center": UnitPoint.center, "bottom": .bottom][words[at + 1]]
+        return ["upper": UnitPoint(x: 0.5, y: 0.3), "center": UnitPoint.center, "bottom": .bottom][words[at + 1]]
     }
     #endif
 
@@ -140,21 +140,27 @@ struct WeeklyHelperSection: View {
                     .accessibilityAddTraits(.isHeader)
             }
             if !typeSize.isAccessibilitySize { Spacer(minLength: 8) }
-            if HelperMute.offered(for: helper.profile) {
-                WeeklyActionButtons(actions: [helper.mute], line: "\(helper.profile)/mute")
-            }
+            WeeklyActionButtons(actions: [helper.mute], line: "\(helper.profile)/mute")
         }
     }
 }
 
 /// One line of the note on a glass capsule: its symbol, what happened, a quiet detail, "New" when it is, and its
-/// taps. At the largest text sizes the taps go under the words.
+/// taps. At the largest text sizes, and on a phone when there are two taps, the taps go under the words.
 struct WeeklyLineRow: View {
     var line: WeeklyNote.Line
     @Environment(\.dynamicTypeSize) private var typeSize
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var narrow: Bool { sizeClass == .compact }
+    #else
+    private let narrow = false
+    #endif
+
+    private var stacked: Bool { typeSize.isAccessibilitySize || (narrow && line.actions.count > 1) }
 
     var body: some View {
-        let large = typeSize.isAccessibilitySize
+        let large = stacked
         let layout = large ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 14))
         layout {
             HStack(alignment: .firstTextBaseline, spacing: 14) {
@@ -169,7 +175,7 @@ struct WeeklyLineRow: View {
                     // "New" on the quiet line, so the line's own words keep the room.
                     if line.detail != nil || tagged {
                         // Above the detail at the largest sizes, where side by side would break its words.
-                        let tagLayout = large ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                        let tagLayout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
                             : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 8))
                         tagLayout {
                             if tagged { NewTag() }
@@ -197,7 +203,7 @@ struct WeeklyLineRow: View {
 
     /// A capsule, or a softly rounded box once large text wraps the words onto more lines.
     private var shape: AnyShape {
-        typeSize.isAccessibilitySize ? AnyShape(.rect(cornerRadius: 26, style: .continuous)) : AnyShape(Capsule())
+        stacked ? AnyShape(.rect(cornerRadius: 26, style: .continuous)) : AnyShape(Capsule())
     }
 
     /// News says it is new in its words; the helper's own lines wear the tag.
@@ -258,8 +264,18 @@ struct WeeklyActionButtons: View {
                 Button("Cancel", role: .cancel) {}
             }
         } message: {
-            Text("This can't be undone.", comment: "Safety: removing a schedule; keep exact meaning")
+            Text("This can't be undone.", comment: "Safety: under the question before removing a schedule or a connected app; keep exact meaning")
         }
+        #if DEBUG
+        .task {
+            // For pictures: `-nollie-demo-weekly-ask <line id>` asks that line's Remove question, as a tap would.
+            let words = ProcessInfo.processInfo.arguments
+            guard DemoMode.isOn, let at = words.firstIndex(of: "-nollie-demo-weekly-ask"), at + 1 < words.count,
+                  words[at + 1] == line, let action = actions.first(where: \.asksFirst) else { return }
+            try? await Task.sleep(for: .seconds(2))
+            confirming = action
+        }
+        #endif
     }
 
     @ViewBuilder private var content: some View {
@@ -279,8 +295,14 @@ struct WeeklyActionButtons: View {
     }
 
     private var confirmTitle: String {
-        guard case .remove? = confirming else { return "" }
-        return String(localized: "Remove this schedule?", comment: "Safety: asks before removing a schedule")
+        switch confirming {
+        case .remove?: return String(localized: "Remove this schedule?", comment: "Safety: asks before removing a schedule")
+        case .removeApp(let bot, let app)?:
+            let helper = model.runtime?.profiles.first { $0.name == bot }?.shownName ?? ProfileInfo.shownName(of: bot)
+            return String(localized: "Remove \u{201C}\(app)\u{201D} from \(helper)?",
+                          comment: "Safety: asks before taking a connected app away from a helper; the app, then the helper. Keep exact meaning")
+        default: return ""
+        }
     }
 
     private func button(_ action: WeeklyAction, title: String) -> some View {

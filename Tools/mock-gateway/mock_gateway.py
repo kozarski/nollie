@@ -568,9 +568,16 @@ def papertrail_rest(method: str, base: str, query: dict, payload) -> tuple[int, 
 # new connected app, more questions than usual and a filter that is off) and "work" (a new, paused schedule). Each
 # schedule reads its paused state from the schedules themselves, so Pause in the note shows up here.
 # PUT /api/plugins/nollie-workflow/week/switch turns a seeded app or the web tools off and on again.
-# POST /api/_mock/week {"state": "busy"|"quiet"} empties every bot's week; "reset" restores the switches.
+# POST .../week/remove-app takes a seeded app out for good and keeps it as a change the person made.
+# GET .../mutes and PUT .../mutes/<bot> keep each helper's mute for every device; GET/PUT .../weekly-note the note's
+# switch and day; POST .../weekly-note/live is the Mac saying it sends the note itself.
+# POST /api/_mock/week {"state": "busy"|"quiet"} empties every bot's week; "reset" restores the switches, the removed
+# apps, the mutes and the note's settings.
 WEEK = dict(state="busy")
 WEEK_SWITCHES: dict = {}
+WEEK_REMOVED: list = []
+WEEK_MUTED: set = set()
+WEEK_NOTE = dict(on=True, weekday=1, live_at=None, saved=False)
 WEEK_SEED = dict(
     default=dict(
         replies=dict(stayed=40, left=11, online=10),
@@ -619,14 +626,18 @@ def week_view(bot: str, now: float | None = None) -> dict:
                               created_at=midnight(seeded["created_day"]) + 9 * 3600,
                               paused=job.get("enabled") is False or job.get("state") == "paused", finished=False,
                               runs=runs))
-    apps = [dict(app, on=WEEK_SWITCHES.get((bot, "app", app["name"]), app["on"])) for app in seed["apps"]]
+    removed = {change["name"] for change in WEEK_REMOVED if change["bot"] == bot}
+    apps = [dict(app, on=WEEK_SWITCHES.get((bot, "app", app["name"]), app["on"])) for app in seed["apps"]
+            if app["name"] not in removed]
+    changes = [dict(at=change["at"], kind="app_removed", name=change["name"])
+               for change in reversed(WEEK_REMOVED) if change["bot"] == bot]
     return dict(bot=bot, days=7, now=int(now), since=midnight(6), recording_since=midnight(30), papertrail=True,
                 replies=dict(stayed=0, left=0, online=0) if quiet else seed["replies"], places=places,
                 places_more=0, answers=dict(once=0, session=0, always=0, deny=0) if quiet else seed["answers"],
                 asks={} if quiet else seed["asks"], earlier_answers=seed["earlier_answers"], schedules=schedules,
                 runs_kept=True, schedules_kept=True,
                 board=dict(done=0, stopped=0, failed=0) if quiet else seed["board"], apps=apps,
-                web=dict(on=WEEK_SWITCHES.get((bot, "web", None), True), service="exa"), filter="off")
+                web=dict(on=WEEK_SWITCHES.get((bot, "web", None), True), service="exa"), filter="off", changes=changes)
 
 
 def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
@@ -634,12 +645,20 @@ def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object
         state = payload.get("state", "busy") if isinstance(payload, dict) else None
         if state == "reset":
             WEEK_SWITCHES.clear()
+            WEEK_REMOVED.clear()
+            WEEK_MUTED.clear()
+            WEEK_NOTE.update(on=True, weekday=1, live_at=None, saved=False)
             WEEK["state"] = "busy"
         elif state in ("busy", "quiet"):
             WEEK["state"] = state
         else:
             return refuse(422, "Send a state: busy, quiet or reset.")
         return ok(dict(state=WEEK["state"]))
+    settings = weekly_settings_rest(method, base, query, payload)
+    if settings is not None:
+        return settings
+    if base == "/api/plugins/nollie-workflow/week/remove-app":
+        return week_remove_app(method, query, payload)
     if base not in ("/api/plugins/nollie-workflow/week", "/api/plugins/nollie-workflow/week/switch"):
         return None
     if query.get("profile", "default") != "default":
@@ -662,7 +681,7 @@ def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object
                            replies=dict(stayed=0, left=0, online=0), places=[], places_more=0,
                            answers=dict(once=0, session=0, always=0, deny=0), asks={}, earlier_answers=[], schedules=[],
                            runs_kept=True, schedules_kept=True, board=dict(done=0, stopped=0, failed=0), apps=[],
-                           web=dict(on=True, service=None), filter="off"))
+                           web=dict(on=True, service=None), filter="off", changes=[]))
         return ok(week_view(bot))
     kind, name, on = fields.get("kind"), fields.get("name"), fields.get("on")
     if kind not in ("app", "web") or not isinstance(on, bool) or (kind == "app" and not isinstance(name, str)):
@@ -671,6 +690,81 @@ def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object
         return refuse(404, "This bot has no such app.")
     WEEK_SWITCHES[(bot, kind, name if kind == "app" else None)] = on
     return ok(dict(bot=bot, kind=kind, name=name if kind == "app" else None, on=on))
+
+
+def _week_bot(bot):
+    """None for a bot the weekly routes may name, else the refusal."""
+    if not isinstance(bot, str) or not PRIVATE_PROFILE_NAME.match(bot):
+        return refuse(422, "Send a bot's Hermes profile name.")
+    if private_identity(bot) or set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names():
+        return refuse(403, "The weekly note leaves private bots out.")
+    if bot not in PROFILES and bot not in CREATED_PROFILES:
+        return refuse(404, "No such bot.")
+    return None
+
+
+def week_remove_app(method, query, payload):
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+    if method != "POST":
+        return refuse(405, "Method Not Allowed")
+    fields = payload if isinstance(payload, dict) else {}
+    bot, name = fields.get("bot"), fields.get("name")
+    refused = _week_bot(bot)
+    if refused:
+        return refused
+    if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}", name):
+        return refuse(422, "Send an app's name.")
+    removed = {change["name"] for change in WEEK_REMOVED if change["bot"] == bot}
+    if name in removed or not any(app["name"] == name for app in WEEK_SEED.get(bot, {}).get("apps", [])):
+        return refuse(404, "This bot has no such app.")
+    WEEK_REMOVED.append(dict(bot=bot, name=name, at=int(time.time())))
+    return ok(dict(bot=bot, name=name, removed=True))
+
+
+def _visible_mutes():
+    return sorted(bot for bot in WEEK_MUTED if not private_identity(bot)
+                  and not set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names())
+
+
+def weekly_settings_rest(method, base, query, payload):
+    prefix = "/api/plugins/nollie-workflow/"
+    if not base.startswith(prefix):
+        return None
+    rest = base[len(prefix):]
+    if rest != "mutes" and not rest.startswith("mutes/") and rest not in ("weekly-note", "weekly-note/live"):
+        return None
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+    fields = payload if isinstance(payload, dict) else {}
+    if rest == "mutes":
+        if method != "GET":
+            return refuse(405, "Method Not Allowed")
+        return ok(dict(muted=_visible_mutes(), saved=bool(WEEK_MUTED)))
+    if rest.startswith("mutes/"):
+        if method != "PUT":
+            return refuse(405, "Method Not Allowed")
+        bot = unquote(rest[len("mutes/"):]).strip().lower()
+        refused = _week_bot(bot)
+        if refused:
+            return refused
+        if set(fields) != {"muted"} or type(fields["muted"]) is not bool:
+            return refuse(422, "Send muted true or false.")
+        (WEEK_MUTED.add if fields["muted"] else WEEK_MUTED.discard)(bot)
+        return ok(dict(muted=_visible_mutes(), saved=True))
+    if rest == "weekly-note/live":
+        if method != "POST":
+            return refuse(405, "Method Not Allowed")
+        WEEK_NOTE.update(live_at=int(time.time()), saved=True)
+        return ok(dict(live_at=WEEK_NOTE["live_at"]))
+    if method == "PUT":
+        on, weekday = fields.get("on"), fields.get("weekday")
+        if type(on) is not bool or type(weekday) is not int or not 1 <= weekday <= 7:
+            return refuse(422, "Send on true or false and a weekday from 1 to 7.")
+        WEEK_NOTE.update(on=on, weekday=weekday, saved=True)
+    elif method != "GET":
+        return refuse(405, "Method Not Allowed")
+    return ok(dict(WEEK_NOTE))
 
 
 # Ask first starts on for every demo bot. POST /api/_mock/ask-first resets the choices.
@@ -1836,6 +1930,7 @@ async def computer_preview_control(method, payload):
         COMPUTER_PREVIEW["state"] = state
         if payload.get("reset_log"):
             COMPUTER_PREVIEW["requests"] = []
+            COMPUTER_PREVIEW["writes"] = 0
             COMPUTER_PREVIEW["control_writes"] = 0
             # `live_open` is the sockets open right now, so it is never reset.
             COMPUTER_PREVIEW.update(live_connections=0, live_frames=0, live_keyframes=0, last_report=None)
@@ -1845,8 +1940,15 @@ async def computer_preview_control(method, payload):
             active = bool(payload["active"])
             COMPUTER_PREVIEW["active"] = active
             for session in list(LIVE.values()):
-                if session.stored == COMPUTER_SESSION and session.members:
+                if session.stored != COMPUTER_SESSION:
+                    continue
+                if session.members:
                     await computer_demo_event(next(iter(session.members)), session, active)
+                elif not active:
+                    # No one is attached to hear it end, but the turn ends all the same: the next
+                    # resume must not find the helper still using the computer.
+                    session.running = False
+                    session.inflight = None
     return ok(dict(COMPUTER_PREVIEW))
 
 
@@ -2157,7 +2259,9 @@ def seeded_messages(row: dict) -> tuple[str, list[dict]]:
 CONFIG = dict(
     model=MODEL,
     approvals=dict(mode="smart", timeout=300, cron_mode="deny"),
-    agent=dict(reasoning_effort="medium", max_iterations=40),
+    # Nollie's setup switches Hermes's own computer_use off in every bot it sets up (This Mac starts
+    # off), so the app finds it off and never has to write it.
+    agent=dict(reasoning_effort="medium", max_iterations=40, disabled_toolsets=["computer_use"]),
     display=dict(streaming=True, show_reasoning=True, timestamps=False),
     logging=dict(level="INFO"),
     terminal=dict(backend="local"),
@@ -2460,6 +2564,47 @@ def _media_route(route: str, query: dict) -> tuple[int, object]:
         return ok(dict(data_url=picture))
     return ok(dict(name=path.rsplit("/", 1)[-1], path=path, size=1234,
                  mime_type="image/png", data_url=picture))
+
+
+# Files written with POST /api/files/upload are kept and read back with GET /api/fs/read-text, as
+# Hermes keeps them on disk (hermes_cli/web_routers/files.py): an upload over an existing file
+# without "overwrite" is refused with 409, and reading a file that isn't there answers 404. Each demo
+# bot starts with the desktop lease Nollie's setup gives it: a person's, so This Mac starts off.
+MANAGED_FILES: dict[str, bytes] = {}
+DEMO_BOT_HOMES = ("/home/hermes/.hermes", "/home/hermes/.hermes-work")
+
+
+def seed_managed_files() -> None:
+    MANAGED_FILES.clear()
+    for home in DEMO_BOT_HOMES:
+        lease = dict(holder="human", epoch=1, since=time.time() - 86400, viewer_id="nollie-app",
+                     reason="System control is off in the Nollie app")
+        MANAGED_FILES[home + "/bot-desktop/lease.json"] = json.dumps(lease, sort_keys=True).encode()
+
+
+seed_managed_files()
+
+
+def managed_files_rest(method: str, base: str, query: dict, body) -> tuple[int, object] | None:
+    if base == "/api/fs/read-text" and method == "GET":
+        path = unquote(query.get("path", ""))
+        data = MANAGED_FILES.get(path)
+        if data is None:
+            return refuse(404, "File not found")
+        return ok(dict(binary=False, byteSize=len(data), language="json" if path.endswith(".json") else "text",
+                       mimeType="application/json" if path.endswith(".json") else "text/plain",
+                       path=path, text=data.decode("utf-8", errors="replace"), truncated=False))
+    if base != "/api/files/upload" or method != "POST" or not isinstance(body, dict) or not body.get("path"):
+        return None
+    path, data_url = str(body["path"]), str(body.get("data_url", ""))
+    if path in MANAGED_FILES and not body.get("overwrite"):
+        return refuse(409, "File already exists")
+    _, _, encoded = data_url.partition(";base64,")
+    try:
+        MANAGED_FILES[path] = base64.b64decode(encoded) if encoded else data_url.partition(",")[2].encode()
+    except ValueError:
+        return refuse(400, "Invalid data URL")
+    return ok(dict(ok=True, path=path))
 
 
 def _status_route(query: dict) -> tuple[int, object]:
@@ -3515,6 +3660,7 @@ def process_request(connection, request):
         ("quiet", lambda: week_rest(method, base, query, body)),
         ("quiet", lambda: night_shift_rest(method, base, query, body)),
         ("normal", lambda: computer_control_rest(method, base, query)),
+        ("normal", lambda: managed_files_rest(method, base, query, body)),
         ("quiet", lambda: own_computer_rest(method, base, query, body)),
         ("quiet", lambda: ask_first_rest(method, base, query, body)),
         ("quiet", lambda: apple_data_rest(method, base, query, body)),

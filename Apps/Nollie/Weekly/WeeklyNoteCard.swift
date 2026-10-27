@@ -1,8 +1,9 @@
 import SwiftUI
+import UserNotifications
 import NollieCore
 
-/// The weekly note at the top of the main chat, under the bot's header: a glass capsule with the week in a few
-/// words. A tap opens the note; the cross puts it away until next week's.
+/// The weekly note at the top of the main chat's thread, scrolling with it: a glass capsule with the week in a
+/// few words. A tap opens the note; the cross puts it away until next week's.
 struct WeeklyNoteStrip: View {
     var chat: ChatSession
     @Environment(AppModel.self) private var model
@@ -22,7 +23,8 @@ struct WeeklyNoteStrip: View {
                 })
                 .frame(maxWidth: Ink.column)
                 .fixedSize(horizontal: false, vertical: true)
-                .inset(h: 16, v: 6)
+                .padding(.vertical, 6)
+                .spread(.center)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -115,6 +117,20 @@ struct WeeklyNoteHost: ViewModifier {
                 WeeklyNoteSheet().withAppModel()
             }
             #if DEBUG
+            .task {
+                // For pictures: `-nollie-demo-weekly-notification` shows the notification the Mac would send now,
+                // with the line built from the same records, as its alerts helper builds it.
+                guard DemoMode.isOn, ProcessInfo.processInfo.arguments.contains("-nollie-demo-weekly-notification") else { return }
+                try? await Task.sleep(for: .seconds(4))
+                let content = UNMutableNotificationContent()
+                content.title = WeeklyNote.notificationTitle
+                content.body = WeeklyNoteModel.shared.note?.notificationLine ?? WeeklyNote.notificationFallback
+                content.userInfo = ["nollie": "weekly"]
+                content.threadIdentifier = WeeklyNoteReminder.identifier
+                try? await UNUserNotificationCenter.current().add(
+                    UNNotificationRequest(identifier: "nollie.weekly.demo", content: content,
+                                          trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)))
+            }
             .task {
                 // For pictures: `-nollie-demo-weekly` opens the note once the week has been read.
                 guard DemoMode.isOn, ProcessInfo.processInfo.arguments.contains("-nollie-demo-weekly") else { return }

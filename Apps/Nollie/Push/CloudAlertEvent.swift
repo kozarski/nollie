@@ -6,6 +6,8 @@ enum CloudAlertKind: String, Sendable, Codable {
     case replyReady, needsAttention, test
     /// A helper started using the Mac (Nollie Computer). The iPhone shows it with a Stop button.
     case computerStarted
+    /// The weekly note, built on the Mac when it went out, with the week's counts.
+    case weeklyNote
 }
 
 struct CloudAlertTarget: Codable, Equatable, Sendable {

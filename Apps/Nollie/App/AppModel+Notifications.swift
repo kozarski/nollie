@@ -56,13 +56,15 @@ extension AppModel {
         case .route(let route):
             return route
         case .cloud(let eventID):
-            guard let target = await cloudAlerts.openedTarget(eventID: eventID) else {
+            guard let event = await cloudAlerts.openedEvent(eventID: eventID), let target = event.target else {
                 guard isLive(generation) else { return nil }
                 notificationRequest = nil
                 notificationRouteError = String(localized: "This notification is no longer available. Open your assistant to see its latest updates.")
                 return nil
             }
             guard target.isValid, isLive(generation) else { return nil }
+            // The weekly note opens over the main chat it is shown at the top of.
+            if event.kind == .weeklyNote { weeklyRequest = UUID() }
             return PendingRoute(
                 connectionID: target.connectionID,
                 gatewayFingerprint: target.gatewayFingerprint,

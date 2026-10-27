@@ -12,6 +12,10 @@ final class WeeklyNoteModel {
     static let onKey = "nollie.weekly.on"
     static let weekdayKey = "nollie.weekly.weekday"
     static let putAwayKey = "nollie.weekly.putAway"
+    /// When the Mac last said it sends the note itself, as the gateway answered.
+    static let liveAtKey = "nollie.weekly.liveAt"
+    /// The switch or day changed here and the gateway hasn't confirmed it yet.
+    static let unsentKey = "nollie.weekly.unsent"
 
     /// The note, once read. Nil before, for a member, and with no gateway.
     private(set) var note: WeeklyNote?
@@ -50,8 +54,11 @@ final class WeeklyNoteModel {
 
     /// Reads every helper's week, at most every ten minutes unless `force`.
     func refresh(_ model: AppModel, force: Bool = false) async {
-        // The notification stays set while there is a gateway to read, even one out of reach right now.
-        WeeklyNoteReminder.sync(on: Self.isOn && model.hasConnections && !model.family.isMember(model), timing: Self.timing)
+        if let runtime = model.runtime, !model.family.isMember(model) {
+            await Self.syncSettings(runtime)
+            await HelperMute.sync(runtime, force: force)
+        }
+        Self.syncReminder(model)
         guard Self.shows(model), let runtime = model.runtime else { note = nil; return }
         let gateway = runtime.connection.id
         if !force, let readFrom, readFrom.gateway == gateway, Date().timeIntervalSince(readFrom.at) < 600, note != nil { return }
@@ -98,11 +105,11 @@ final class WeeklyNoteModel {
         switch action.effect {
         case .gateway(let request):
             worked = await Self.send(request, api: runtime.api)
+            // Every device reads the mute from the gateway; this one takes it at once.
+            if worked, case .mute(let bot) = action { HelperMute.set(true, profile: bot, connection: runtime.connection.id) }
+            if worked, case .unmute(let bot) = action { HelperMute.set(false, profile: bot, connection: runtime.connection.id) }
         case .mac(let bot, let on):
             worked = await SystemControl.shared.set(on, profile: bot, rt: runtime)
-        case .mute(let bot, let muted):
-            HelperMute.set(muted, profile: bot, connection: runtime.connection.id)
-            worked = true
         }
         guard model.runtime === runtime else { return }
         if worked {
@@ -110,6 +117,38 @@ final class WeeklyNoteModel {
         } else {
             problem = String(localized: "That didn't go through. Try again in a moment.")
         }
+    }
+
+    // MARK: The switch and day, the same on every device
+
+    /// Takes the gateway's switch and day, unless one changed here is still on its way: then that one is sent.
+    static func syncSettings(_ runtime: GatewayRuntime) async {
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: unsentKey) {
+            let sent = await send(WeeklyNoteSettings.request(on: isOn, weekday: timing.weekday), api: runtime.api)
+            if sent { defaults.set(false, forKey: unsentKey) }
+        }
+        guard let settings = try? await WeeklyNoteSettings.load(api: runtime.api), !defaults.bool(forKey: unsentKey) else { return }
+        if defaults.object(forKey: onKey) as? Bool != settings.on { defaults.set(settings.on, forKey: onKey) }
+        if defaults.object(forKey: weekdayKey) as? Int != settings.weekday { defaults.set(settings.weekday, forKey: weekdayKey) }
+        defaults.set(settings.liveAt, forKey: liveAtKey)
+    }
+
+    /// The switch or day changed on this device: kept here at once, and sent to the gateway for the others.
+    static func changed(_ model: AppModel) {
+        UserDefaults.standard.set(true, forKey: unsentKey)
+        Task {
+            if let runtime = model.runtime { await syncSettings(runtime) }
+            syncReminder(model)
+        }
+    }
+
+    /// This device's own reminder, with the fixed line, only where the live note won't come: the note is on, and
+    /// either this device has no iCloud alerts or the Mac hasn't said lately that it sends the note itself.
+    static func syncReminder(_ model: AppModel) {
+        let liveAt = UserDefaults.standard.object(forKey: liveAtKey) as? Double
+        let live = WeeklyNoteSettings(liveAt: liveAt).macSendsLive() && CloudAlertTransport.shared.isEnabled
+        WeeklyNoteReminder.sync(on: isOn && model.hasConnections && !model.family.isMember(model) && !live, timing: timing)
     }
 
     private static func send(_ request: WeeklyRequest, api: HermesAPI) async -> Bool {
@@ -123,13 +162,13 @@ final class WeeklyNoteModel {
     }
 }
 
-/// The note's notification, on the chosen day at six in the evening, every week while the note is on. Its words
-/// are the same every week, so it never says something the records don't.
+/// The fallback notification, on the chosen day at six in the evening, for a device the Mac's live note doesn't reach
+/// (see `syncReminder`). The live one is built on the Mac when it is sent, from the records (`WeeklyNoteSender`).
+/// This one can't know the week's counts ahead of time, so it says the fixed line.
 enum WeeklyNoteReminder {
     static let identifier = "nollie.weekly"
-    static let title = String(localized: "Your week", comment: "The weekly note's notification title")
-    static let body = String(localized: "What your helpers did, and what left your Mac.",
-                             comment: "Safety: the weekly note's notification; it lists what left the Mac")
+    static var title: String { WeeklyNote.notificationTitle }
+    static var body: String { WeeklyNote.notificationFallback }
 
     static func sync(on: Bool, timing: WeeklyNoteTiming, center: UNUserNotificationCenter = .current()) {
         center.removePendingNotificationRequests(withIdentifiers: [identifier])

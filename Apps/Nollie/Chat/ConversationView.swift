@@ -107,7 +107,6 @@ struct ConversationView: View {
                 .modifier(DockMeasured(metrics: $metrics))
         } header: {
             #if os(macOS)
-            WeeklyNoteStrip(chat: chat)
             BoardContextStrip(chat: chat)
             #else
             ConversationTopBar(chat: chat, actions: actions, metrics: $metrics)

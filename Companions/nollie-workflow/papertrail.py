@@ -46,7 +46,13 @@ HOOKS = ("post_api_request", "api_request_error", "post_auxiliary_call", "post_t
 # "icloud": a note Nollie on the Mac sealed for the person's own linked iPhone and put in their iCloud.
 ROUTES = frozenset({"mac", "network", "online", "icloud"})
 # An "approval" line is a person's answer, kept for the turn's Why. Older readers skip it by its source.
-SOURCES = frozenset({"model", "helper", "tool", "approval", "away", "door"})
+# A "change" line is something the person did to a bot from Nollie (removed a connected app): it stays on this Mac,
+# is never a reply, and is listed apart. Older readers skip it by its source.
+# An "alert" line is the weekly note the Mac sent through the person's own iCloud alerts: its counts, never its words.
+SOURCES = frozenset({"model", "helper", "tool", "approval", "away", "door", "change", "alert"})
+CHANGES = frozenset({"app_removed"})
+CHANGE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}\Z")
+MAX_CHANGES = 50
 # What kind of program made a connection through the door.
 # "direct": a connection the network filter saw going around the door.
 DOOR_KINDS = frozenset({"hermes", "terminal", "code", "mcp", "model", "reader", "program", "direct"})
@@ -57,6 +63,8 @@ DOOR_WINDOW = 3600
 DOOR_HOST = re.compile(r"[A-Za-z0-9._:-]{1,255}\Z")
 # What the Mac app may say it sent through iCloud: kinds of note only, never their words.
 AWAY_KINDS = frozenset({"reply", "card", "helpers", "stopped"})
+# What the Mac's iCloud alerts helper may say it sent: the weekly note, with the week's counts.
+ALERT_KINDS = frozenset({"weekly"})
 # A bot used apps on this Mac through Nollie Computer: the apps' names and the counts, never the screen. The model
 # that looked runs on the Mac, so no picture of the screen left (Hermes's own computer_use is refused).
 MAC_SESSION = "mac_session"
@@ -340,7 +348,11 @@ class Recorder:
     # Away from home through iCloud. Not a Hermes hook: the Mac app reports it through the add-on.
 
     def icloud(self, kind, session=""):
-        """One note sealed for the person's linked iPhone and put in their own iCloud. False for an unknown kind."""
+        """One note sealed for the person's linked iPhone and put in their own iCloud, or the weekly note the Mac sent
+        through their iCloud alerts. False for an unknown kind."""
+        if kind in ALERT_KINDS:
+            self._safely(lambda: self._line(route="icloud", source="alert", tool=kind))
+            return True
         if kind not in AWAY_KINDS:
             return False
         self._safely(lambda: self._line(route="icloud", source="away", tool=kind, session=_id(session), origin="chat"))
@@ -358,6 +370,15 @@ class Recorder:
             return False
         self._safely(lambda: self._line(route="mac", source="tool", tool=MAC_SESSION, session=_id(session),
                                         apps=names, actions=_count(actions), looks=_count(looks), screenshots_left=0))
+        return True
+
+    # Changes the person made from Nollie. Not a Hermes hook: the add-on records it as it makes the change.
+
+    def change(self, kind, name):
+        """One change the person made to this bot from Nollie (a connected app removed). False when unknown."""
+        if kind not in CHANGES or not isinstance(name, str) or not CHANGE_NAME.match(name):
+            return False
+        self._safely(lambda: self._line(route="mac", source="change", change=kind, name=name))
         return True
 
     # Lines.
@@ -615,7 +636,7 @@ def _calls(path, since):
                 continue
             call = {key: line.get(key) if isinstance(line.get(key), str) else ""
                     for key in ("provider", "model", "task", "tool", "turn", "session", "job", "board", "platform",
-                                "choice", "ask")}
+                                "choice", "ask", "change", "name")}
             if line["source"] == "door":
                 host_, port = line.get("host"), line.get("port")
                 if (not isinstance(host_, str) or not DOOR_HOST.match(host_) or isinstance(port, bool)
@@ -630,6 +651,9 @@ def _calls(path, since):
                         origin=line.get("origin") if line.get("origin") in ORIGINS else None,
                         backup=line.get("backup") is True)
             if call["source"] == "approval" and (call["choice"] not in CHOICES or not call["turn"]):
+                continue
+            if call["source"] == "change" and (call["change"] not in CHANGES or not CHANGE_NAME.match(call["name"])
+                                               or line["route"] != "mac"):
                 continue
             card = line.get("card")
             call.update(paid=_count(line.get("paid")),
@@ -722,7 +746,9 @@ def _entry(key, group, provider_name, titles=None):
         "pages": sum(call["pages"] for call in left),
         "images": sum(call["images"] for call in left),
         # Notes sealed for the person's own iPhone and put in their iCloud, while they were away.
-        "icloud_notes": sum(call["route"] == "icloud" for call in left),
+        "icloud_notes": sum(call["route"] == "icloud" and call["source"] == "away" for call in left),
+        # The weekly note, sent through the person's own iCloud alerts with the week's counts.
+        "weekly_notes": sum(call["route"] == "icloud" and call["source"] == "alert" for call in left),
         # Cards filled in and sent to a site: the site and the card's last four digits only.
         "payments": [{"site": call["host"], "card": call["card"] or None} for call in left
                      if call["source"] == "tool" and call["paid"] and call["host"]],
@@ -787,6 +813,10 @@ def read(home, bot, days, *, now=None, provider_name=None, titles=None, limit=MA
             if first <= day <= today:
                 calls.extend(_calls(path, since))
     groups = {}
+    # The person's own changes, newest first: never a reply, so kept out of the entries and the counts.
+    changes = sorted(({"at": int(call["at"]), "kind": call["change"], "name": call["name"]}
+                      for call in calls if call["source"] == "change"), key=lambda change: change["at"], reverse=True)
+    calls = [call for call in calls if call["source"] != "change"]
     doors = [call for call in calls if call["source"] == "door"]
     calls = [call for call in calls if call["source"] != "door"]
     for call in calls:
@@ -833,4 +863,5 @@ def read(home, bot, days, *, now=None, provider_name=None, titles=None, limit=MA
         "entries": entries if limit is None else entries[:limit],
         "more": 0 if limit is None else max(0, len(entries) - limit),
         "mac_sessions": mac_sessions[:MAX_MAC_SESSIONS],
+        "changes": changes[:MAX_CHANGES],
     }

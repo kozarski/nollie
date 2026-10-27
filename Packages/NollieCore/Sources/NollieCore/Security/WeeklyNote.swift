@@ -30,6 +30,16 @@ public struct WeekRecord: Decodable, Equatable, Sendable {
     public var web: Web?
     /// Papertrail's network filter: `on`, `off`, or `none` when there is no door.
     public var filter: String?
+    /// Changes the person made to this bot from Nollie this week, as Papertrail kept them.
+    public var changes: [Change]?
+
+    /// One change the person made: `app_removed` and the app's name.
+    public struct Change: Decodable, Equatable, Sendable {
+        public var at: Double
+        public var kind: String
+        public var name: String
+        public init(at: Double, kind: String = "app_removed", name: String) { (self.at, self.kind, self.name) = (at, kind, name) }
+    }
 
     public struct Replies: Decodable, Equatable, Sendable {
         public var stayed: Int
@@ -119,11 +129,12 @@ public struct WeekRecord: Decodable, Equatable, Sendable {
 
     public init(bot: String, since: Double, recordingSince: Double? = nil, papertrail: Bool? = true, replies: Replies? = nil,
                 places: [Place] = [], answers: Answers = Answers(), earlierAnswers: [Int]? = [], schedules: [Schedule] = [],
-                runsKept: Bool? = true, board: Board? = nil, apps: [App]? = [], web: Web? = nil, filter: String? = nil) {
+                runsKept: Bool? = true, board: Board? = nil, apps: [App]? = [], web: Web? = nil, filter: String? = nil,
+                changes: [Change]? = nil) {
         self.bot = bot; self.since = since; self.recordingSince = recordingSince; self.papertrail = papertrail
         self.replies = replies; self.places = places; self.answers = answers; self.earlierAnswers = earlierAnswers
         self.schedules = schedules; self.runsKept = runsKept; self.board = board; self.apps = apps; self.web = web
-        self.filter = filter
+        self.filter = filter; self.changes = changes
     }
 
     /// At least one whole week was recorded before this one, so something can be told apart as new.
@@ -147,14 +158,16 @@ public struct WeekRecord: Decodable, Equatable, Sendable {
 // MARK: Actions
 
 /// One tap beside a line of the note. Each is real: a schedule is paused or resumed by Hermes, an app or the web
-/// tools are switched by the add-on in the bot's config, This Mac goes through the bot's switch, and Mute is this
-/// device's own. Each has its undo, except Remove, which asks first.
+/// tools are switched by the add-on in the bot's config, This Mac goes through the bot's switch, and Mute is kept by
+/// the gateway for every device. Each has its undo, except the two Removes, which ask first.
 public enum WeeklyAction: Hashable, Sendable {
     case pause(bot: String, job: String)
     case resume(bot: String, job: String)
     case remove(bot: String, job: String)
     case appOff(bot: String, app: String)
     case appOn(bot: String, app: String)
+    /// Takes the app out of the bot's config for good, through Hermes's own config code.
+    case removeApp(bot: String, app: String)
     case webOff(bot: String)
     case webOn(bot: String)
     case macOff(bot: String)
@@ -168,14 +181,13 @@ public enum WeeklyAction: Hashable, Sendable {
         case gateway(WeeklyRequest)
         /// The bot's This Mac switch.
         case mac(bot: String, on: Bool)
-        /// This device's banners for the bot's replies.
-        case mute(bot: String, muted: Bool)
     }
 
     public var bot: String {
         switch self {
         case .pause(let bot, _), .resume(let bot, _), .remove(let bot, _), .appOff(let bot, _), .appOn(let bot, _),
-             .webOff(let bot), .webOn(let bot), .macOff(let bot), .macOn(let bot), .mute(let bot), .unmute(let bot):
+             .removeApp(let bot, _), .webOff(let bot), .webOn(let bot), .macOff(let bot), .macOn(let bot), .mute(let bot),
+             .unmute(let bot):
             bot
         }
     }
@@ -185,7 +197,7 @@ public enum WeeklyAction: Hashable, Sendable {
         switch self {
         case .pause(let bot, let job): .resume(bot: bot, job: job)
         case .resume(let bot, let job): .pause(bot: bot, job: job)
-        case .remove: nil
+        case .remove, .removeApp: nil
         case .appOff(let bot, let app): .appOn(bot: bot, app: app)
         case .appOn(let bot, let app): .appOff(bot: bot, app: app)
         case .webOff(let bot): .webOn(bot: bot)
@@ -198,7 +210,12 @@ public enum WeeklyAction: Hashable, Sendable {
     }
 
     /// Anything that deletes asks first.
-    public var asksFirst: Bool { if case .remove = self { true } else { false } }
+    public var asksFirst: Bool {
+        switch self {
+        case .remove, .removeApp: true
+        default: false
+        }
+    }
 
     /// The button's one word or two.
     public var label: String {
@@ -206,6 +223,7 @@ public enum WeeklyAction: Hashable, Sendable {
         case .pause: String(localized: "Pause", table: "Core", comment: "A button that pauses a schedule")
         case .resume: String(localized: "Resume", table: "Core", comment: "A button that resumes a schedule")
         case .remove: String(localized: "Remove", table: "Core", comment: "Safety: a button that deletes a schedule after asking")
+        case .removeApp: String(localized: "Remove", table: "Core", comment: "Safety: a button that takes a connected app away from a helper, after asking")
         // The web tools are search and pages together, so the button says so.
         case .webOff: String(localized: "Turn off web", table: "Core")
         case .webOn: String(localized: "Turn on web", table: "Core")
@@ -221,10 +239,10 @@ public enum WeeklyAction: Hashable, Sendable {
         switch self {
         case .pause: String(localized: "Paused", table: "Core", comment: "A schedule's state")
         case .resume: String(localized: "Resumed", table: "Core", comment: "A schedule's state")
-        case .remove: String(localized: "Removed", table: "Core", comment: "A schedule's state")
+        case .remove, .removeApp: String(localized: "Removed", table: "Core", comment: "A schedule's or a connected app's state")
         case .appOff, .webOff, .macOff: String(localized: "Off", table: "Core", comment: "A switch state")
         case .appOn, .webOn, .macOn: String(localized: "On", table: "Core", comment: "A switch state")
-        case .mute: String(localized: "Muted here", table: "Core", comment: "A helper's banners are muted on this device")
+        case .mute: String(localized: "Muted", table: "Core", comment: "A helper's banners are muted on every device")
         case .unmute: String(localized: "Unmuted", table: "Core", comment: "A state")
         }
     }
@@ -233,7 +251,7 @@ public enum WeeklyAction: Hashable, Sendable {
         switch self {
         case .pause: "pause.fill"
         case .resume: "play.fill"
-        case .remove: "trash"
+        case .remove, .removeApp: "trash"
         case .appOff, .webOff, .macOff: "power"
         case .appOn, .webOn, .macOn: "power"
         case .mute: "bell.slash.fill"
@@ -248,12 +266,15 @@ public enum WeeklyAction: Hashable, Sendable {
         case .remove(let bot, let job): .gateway(WeeklyRequest(method: "DELETE", path: "/api/cron/jobs/\(job)", profile: bot, body: nil))
         case .appOff(let bot, let app): .gateway(Self.switchRequest(bot: bot, kind: "app", name: app, on: false))
         case .appOn(let bot, let app): .gateway(Self.switchRequest(bot: bot, kind: "app", name: app, on: true))
+        case .removeApp(let bot, let app):
+            .gateway(WeeklyRequest(method: "POST", path: WeekRecord.path + "/remove-app", profile: nil,
+                                   body: .object(["bot": .string(bot), "name": .string(app)])))
         case .webOff(let bot): .gateway(Self.switchRequest(bot: bot, kind: "web", name: nil, on: false))
         case .webOn(let bot): .gateway(Self.switchRequest(bot: bot, kind: "web", name: nil, on: true))
         case .macOff(let bot): .mac(bot: bot, on: false)
         case .macOn(let bot): .mac(bot: bot, on: true)
-        case .mute(let bot): .mute(bot: bot, muted: true)
-        case .unmute(let bot): .mute(bot: bot, muted: false)
+        case .mute(let bot): .gateway(HelperMutes.request(bot: bot, muted: true))
+        case .unmute(let bot): .gateway(HelperMutes.request(bot: bot, muted: false))
         }
     }
 
@@ -281,6 +302,15 @@ public struct WeeklyRequest: Equatable, Sendable {
 // MARK: The note
 
 /// What goes into one helper's part of the note: its week, and the switches this device can read.
+extension WeekRecord.Place {
+    /// Went online: not the person's own iCloud, and not a host on their own network.
+    var isOnline: Bool {
+        guard kind != "icloud" else { return false }
+        guard let host else { return true }
+        return !Papertrail.isNetworkHost(URLComponents(string: host)?.host ?? host)
+    }
+}
+
 public struct WeeklyHelperInput: Sendable {
     public var profile: String
     public var name: String
@@ -325,6 +355,9 @@ public struct WeeklyNote: Equatable, Sendable {
         public var morePlaces: Int
         /// Replies that went online.
         public var online: Int
+        /// Places reached online this week, every one: not the person's iCloud or their own network. Places past
+        /// the add-on's list count as online, as Papertrail errs on the side of saying so.
+        public var onlinePlaceCount: Int = 0
         public var mute: WeeklyAction
         public var hasNews: Bool { did.contains(where: \.isNew) || left.contains(where: \.isNew) }
     }
@@ -332,6 +365,8 @@ public struct WeeklyNote: Equatable, Sendable {
     public struct Line: Equatable, Sendable, Identifiable {
         public enum Kind: String, Equatable, Sendable {
             case schedule, board, asked, mac, place
+            /// Something the person changed from Nollie, as Papertrail kept it.
+            case change
         }
 
         public var id: String
@@ -408,7 +443,7 @@ public struct WeeklyNote: Equatable, Sendable {
             let helper = part(for: input, record: record)
             news += helper.did.filter(\.isNew).map { WeeklyWords.news($0, helper: input.name) }
             news += helper.left.filter(\.isNew).map { WeeklyWords.news($0, helper: input.name) }
-            if helper.did.contains(where: { $0.kind != .mac }) || !helper.left.isEmpty {
+            if helper.did.contains(where: { ![.mac, .change].contains($0.kind) }) || !helper.left.isEmpty {
                 helpers.append(helper)
             } else {
                 quiet.append(input.name)
@@ -444,6 +479,12 @@ public struct WeeklyNote: Equatable, Sendable {
             did.append(Line(id: "\(bot)/asked", kind: .asked, symbol: "hand.raised.fill", text: WeeklyWords.asked(answers.total, more: more),
                             detail: WeeklyWords.answered(answers), count: answers.total, isNew: more))
         }
+        for change in (record.changes ?? []).filter({ $0.kind == "app_removed" && $0.at >= record.since }) {
+            did.append(Line(id: "\(bot)/change/\(Int(change.at))/\(change.name)", kind: .change, symbol: "trash",
+                            text: String(localized: "You removed \u{201C}\(change.name)\u{201D}", table: "Core",
+                                         comment: "Safety: the weekly note, a connected app the person took away; the app's name"),
+                            subject: change.name))
+        }
         if input.macOn == true {
             did.append(Line(id: "\(bot)/mac", kind: .mac, symbol: "macbook", text: String(localized: "Can use your Mac", table: "Core"), actions: [.macOff(bot: bot)]))
         }
@@ -458,8 +499,9 @@ public struct WeeklyNote: Equatable, Sendable {
             case "search", "pages":
                 if record.web?.on == true, !webOffered { actions.append(.webOff(bot: bot)); webOffered = true }
             case "mcp":
-                if let app = apps.first(where: { $0.on && $0.host != nil && $0.host?.lowercased() == place.host?.lowercased() }) {
-                    actions.append(.appOff(bot: bot, app: app.name))
+                if let app = apps.first(where: { $0.host != nil && $0.host?.lowercased() == place.host?.lowercased() }) {
+                    if app.on { actions.append(.appOff(bot: bot, app: app.name)) }
+                    actions.append(.removeApp(bot: bot, app: app.name))
                 }
             default:
                 break
@@ -474,6 +516,7 @@ public struct WeeklyNote: Equatable, Sendable {
         let more = shown.count - kept.count + (record.placesMore ?? 0)
         return Helper(profile: bot, name: input.name, did: did, leftLine: WeeklyWords.leftLine(record, name: input.name),
                       left: kept, morePlaces: more, online: record.replies?.online ?? 0,
+                      onlinePlaceCount: record.places.filter(\.isOnline).count + (record.placesMore ?? 0),
                       mute: input.muted ? .unmute(bot: bot) : .mute(bot: bot))
     }
 }
@@ -654,7 +697,7 @@ public enum WeeklyWords {
             said.text = String(localized: "\(helper) asked more than usual", table: "Core")
             said.detail = [times(line.count), line.detail]
                 .compactMap { $0 }.joined(separator: " · ")
-        case .board, .mac:
+        case .board, .mac, .change:
             break
         }
         return said

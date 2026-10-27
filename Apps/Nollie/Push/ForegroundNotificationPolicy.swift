@@ -36,6 +36,8 @@ enum ForegroundNotificationPolicy {
         // A helper started using the Mac: worth a look on the iPhone even with the app open. The
         // Mac it is about already shows the task, so there it only goes to the list.
         if event.kind == .computerStarted { return DeviceWords.isMac ? [.list] : [.banner, .list] }
+        // The weekly note has no chat of its own to be read in, so it shows even with the app open.
+        if event.kind == .weeklyNote { return [.banner, .list] }
         guard let target = event.target, target.isValid else { return [.list] }
         let route = PendingRoute(connectionID: target.connectionID, gatewayFingerprint: target.gatewayFingerprint,
                                  gatewayIdentity: target.gatewayIdentity, storedSessionID: target.sessionID,
