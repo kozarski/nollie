@@ -299,12 +299,7 @@ struct KanbanView: View {
     }
 
     private func move(_ task: KanbanTask, to status: KanbanStatus, store: KanbanStore) async {
-        switch status {
-        case .done: question = .done(task)
-        case .blocked: question = .block(task)
-        case .archived: question = .archive(task)
-        default: await apply(store.move(task, to: status), store)
-        }
+        if let ask = KanbanAsk.gate(task, movingTo: status) { question = ask } else { await apply(store.move(task, to: status), store) }
     }
 
     /// After a write: show the gateway's words if it said no, nothing if it said yes.
@@ -317,14 +312,7 @@ struct KanbanView: View {
         guard let store else { return }
         let typed = reply.trimmingCharacters(in: .whitespacesAndNewlines)
         (question, reply) = (nil, "")
-        switch ask {
-        case .done(let task): await apply(store.move(task, to: .done, summary: typed), store)
-        case .block(let task): await apply(store.move(task, to: .blocked, blockReason: typed), store)
-        case .comment(let task): if !typed.isEmpty { await apply(store.comment(task, typed), store) }
-        case .archive(let task): await apply(store.move(task, to: .archived), store)
-        case .delete(let task): await apply(store.delete(task), store)
-        case .stop(let task): await apply(store.stop(task, reason: "stopped from Nollie"), store)
-        }
+        if let accepted = await store.carryOut(ask, typed: typed) { await apply(accepted, store) }
     }
 
     private func discuss(_ task: KanbanTask) {
@@ -355,36 +343,5 @@ struct KanbanView: View {
         store.startEvents()
         await store.loadAssignees()
         await repeatEvery(60) { await store.refresh() }
-    }
-}
-
-/// The question put to the person before a board change: a text box for Done, Block and
-/// Comment, a plain yes or no for the rest.
-private struct BoardQuestions: ViewModifier {
-    @Binding var question: KanbanAsk?
-    @Binding var reply: String
-    let settle: (KanbanAsk) -> Void
-
-    private func showing(text: Bool) -> Binding<Bool> {
-        Binding(
-            get: { question.map { $0.asksForText == text } ?? false },
-            set: { if !$0 { question = nil } })
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .alert(question?.title ?? "", isPresented: showing(text: true), presenting: question) { ask in
-                TextField(ask.placeholder, text: $reply)
-                Button(ask.verb) { settle(ask) }
-                Button("Cancel", role: .cancel) { (question, reply) = (nil, "") }
-            } message: { ask in
-                Text(ask.message)
-            }
-            .confirmationDialog(question?.title ?? "", isPresented: showing(text: false), titleVisibility: .visible, presenting: question) { ask in
-                Button(ask.verb, role: ask.destructive ? .destructive : nil) { settle(ask) }
-                Button("Cancel", role: .cancel) { (question, reply) = (nil, "") }
-            } message: { ask in
-                Text(ask.message)
-            }
     }
 }

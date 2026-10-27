@@ -16,7 +16,7 @@
 
 Each file specifies intended behaviour. It is not a claim that the rewrite is implemented or verified. Public types are proposed boundaries; generated wire names follow Hermes. Existing implementation choices do not override these contracts.
 
-The separate [Papertrail](papertrail.md), [Night shift](night-shift.md) and [Apple model](apple-model.md) feature specs remain in this folder. They are outside these five rewrite modules and retain their own acceptance work.
+The separate [Papertrail](papertrail.md), [Night shift](night-shift.md) and [Apple model](apple-model.md) feature specs remain in this folder, with [In your pocket](pocket-audit.md), what works on each device. They are outside these five rewrite modules and retain their own acceptance work.
 
 ## Source boundary
 

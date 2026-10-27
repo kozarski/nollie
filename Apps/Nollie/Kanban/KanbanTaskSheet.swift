@@ -62,6 +62,18 @@ final class TaskSheetState {
         await change(store) { store, task in await store.edit(task, title: title, body: nil) }
     }
 
+    /// Moves the task to a status that needs nothing more from the person.
+    func move(to status: KanbanStatus, _ store: KanbanStore?) async {
+        await change(store) { store, task in await store.move(task, to: status) }
+    }
+
+    /// A move or change the person confirmed with its note or yes.
+    func carryOut(_ ask: KanbanAsk, typed: String, _ store: KanbanStore?) async {
+        guard let store else { return }
+        guard let accepted = await store.carryOut(ask, typed: typed) else { return }
+        if accepted { await reload(store) } else { problem = store.lastError }
+    }
+
     func describe(as text: String, _ store: KanbanStore?) async {
         guard text != (task?.body ?? "") else { return }
         await change(store) { store, task in await store.edit(task, title: nil, body: text) }
@@ -81,6 +93,9 @@ struct KanbanTaskSheet: View {
     @State private var titleDraft = ""
     @State private var bodyDraft = ""
     @State private var editingBody = false
+    /// A move that needs a note or a yes first (Done, Block, Archive).
+    @State private var boardQuestion: KanbanAsk?
+    @State private var reply = ""
 
     /// The small questions the sheet can ask.
     private enum Question { case rename, stopWorker }
@@ -119,6 +134,11 @@ struct KanbanTaskSheet: View {
                         Button("Stop", role: .destructive) { Task { await state.stopWorker(store) } }
                     },
                     message: { Text("The worker stops and the card returns to Ready.") })
+                .modifier(BoardQuestions(question: $boardQuestion, reply: $reply, settle: { ask in
+                    let typed = reply.trimmingCharacters(in: .whitespacesAndNewlines)
+                    (boardQuestion, reply) = (nil, "")
+                    Task { await state.carryOut(ask, typed: typed, store) }
+                }))
                 // A refused comment or stop while the task is showing: say so.
                 .noticeAlert("Board", $state.problem, showing: state.detail != nil)
                 // The board was fetched again (after a move or an event), so refresh the task too.
@@ -153,12 +173,32 @@ struct KanbanTaskSheet: View {
         ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
         if let task = state.task {
             ToolbarItemGroup(placement: .primaryAction) {
+                moveMenu(for: task)
                 editMenu(for: task)
                 if task.isWorking {
                     Button("Stop the Worker", systemImage: "stop.circle") { question = .stopWorker }
                 }
             }
         }
+    }
+
+    /// Where the card can go, as the Board's long press offers it. Done, Block and Archive ask first.
+    private func moveMenu(for task: KanbanTask) -> some View {
+        Menu {
+            ForEach(KanbanAsk.moveTargets(from: task.column), id: \.self) { status in
+                Button(status.title, systemImage: status.symbol) {
+                    if let ask = KanbanAsk.gate(task, movingTo: status) {
+                        boardQuestion = ask
+                    } else {
+                        Task { await state.move(to: status, store) }
+                    }
+                }
+                .testID("task.move." + status.rawValue)
+            }
+        } label: {
+            Label("Move", systemImage: "arrow.right.square")
+        }
+        .testID("task.move")
     }
 
     private func editMenu(for task: KanbanTask) -> some View {

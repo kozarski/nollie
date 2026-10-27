@@ -134,6 +134,13 @@ enum LinkDoorPolicy {
         Rule(["GET"], "/api/plugins/nollie-workflow/memory"),
         Rule(["POST", "PUT", "DELETE"], "/api/plugins/nollie-workflow/memory/notes"),
         Rule(["PUT"], "/api/plugins/nollie-workflow/memory/switch"),
+        // Ready-made helpers: the gallery's roster, its Add and the Undo that takes one back. The crew add-on
+        // keeps an added helper on the local model, with no schedule and only tools of Nollie's own that need no
+        // further yes, archives rather than deletes on Undo, and only answers for Nollie's profile. A suggestion's
+        // Add can bring a schedule, so `suggestions/*` stays on the Mac.
+        Rule(["GET"], "/api/plugins/nollie-crew/crew"),
+        Rule(["POST"], "/api/plugins/nollie-crew/members"),
+        Rule(["POST"], "/api/plugins/nollie-crew/undo"),
     ]
 
     private static func matches(_ pattern: [Substring], _ path: [Substring]) -> Bool {
