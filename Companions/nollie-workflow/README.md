@@ -185,6 +185,19 @@ other bots reloads them, but the default bot's add-on is already loaded and the 
 never reloads a mounted route, so restart the gateway and the dashboard after an upgrade.
 Until then Nollie's own bot does not record and the app says Papertrail isn't on.
 
+Each time a bot used apps on this Mac through Nollie Computer, the Mac app sends
+`POST /api/plugins/nollie-workflow/papertrail/mac-session` (`{"bot", "apps", "actions", "looks"}`,
+refused for private bots and phones) and one `mac` line keeps the apps' names and the counts, with
+`screenshots_left: 0`: the model that looked runs on the Mac. The read answer lists them in
+`mac_sessions`, newest first, apart from what left.
+
+`mac_screen.py` refuses Hermes's own `computer_use` in every bot that is not private (it would send
+this Mac's screen to the bot's model) and replaces any result of it that got through. It also refuses,
+never asks, a terminal, code or wrapped call that would take a picture of the screen or record it:
+`screencapture`, Quartz and ScreenCaptureKit calls from Python, osascript or Swift, PIL's ImageGrab, mss,
+pyautogui, ffmpeg's screen input and the like, read in the command, the code and any script the command
+runs. It is a list of known ways, not a sandbox: code that hides what it calls can still get past it.
+
 `GET /api/plugins/nollie-workflow/papertrail?bot=career&days=7` (default scope only) groups
 calls by turn and answers counts of replies that stayed and left, plus up to 200 entries
 for what left, newest first. Private bots get 403, unknown bots 404, a bot without the

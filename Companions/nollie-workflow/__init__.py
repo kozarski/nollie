@@ -1,6 +1,7 @@
 """Papertrail for every bot that is not private, the Night shift recorder, saved sign-ins, saved cards and
 the Mac's Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
-keeps a typed password out of screenshots, load in every bot, private ones too. Nothing else loads for a private bot,
+keeps a typed password out of screenshots, load in every bot, private ones too. The rule that keeps this Mac's screen on this Mac (no Hermes computer_use,
+no screen capture from a bot's terminal or code) loads in every bot that is not private. Nothing else loads for a private bot,
 and nothing is recorded from it, except that the words of chats stay out of Hermes's logs for every bot in the process.
 """
 
@@ -13,6 +14,7 @@ def register(ctx):
     # Before anything logs a word: Hermes's logs leave the words of chats out, for every bot in the process.
     _install_log_privacy()
     # First, so a call is held or refused before anything else looks at it.
+    _register_mac_screen(ctx, profile, home)
     _register_ask_first(ctx, profile, home)
     try:
         from . import private_bots
@@ -32,6 +34,24 @@ def register(ctx):
     _register_sign_ins(ctx, profile, home)
     _register_apple_data(ctx, profile, home)
     _register_payments(ctx, profile, home)
+
+
+def _register_mac_screen(ctx, profile, default_home):
+    """Hermes's own computer_use refused: it would send this Mac's screen to the bot's model. Only a private bot
+    goes without (nothing loads for it); a Private list that can't be read keeps the rule on."""
+    import logging
+    try:
+        from . import private_bots
+        try:
+            private = private_bots.names(default_home) | private_bots.carried_over_names()
+        except (OSError, ValueError):
+            private = private_bots.carried_over_names()
+        if profile and private_bots.excluded(profile, private):
+            return
+        from .mac_screen import register
+        register(ctx)
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("The Mac screen rule did not start: %s", type(exc).__name__)
 
 
 def _install_log_privacy():

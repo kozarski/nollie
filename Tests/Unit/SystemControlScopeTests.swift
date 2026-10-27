@@ -106,6 +106,36 @@ import Testing
         #expect(answer(control, a) == "session")
     }
 
+    /// Hermes's own computer_use sends whole screenshots to the bot's model: it stays switched off,
+    /// whichever way the switch goes, and an older version's "on" is taken back once. Never for a
+    /// private bot, whose settings Nollie doesn't touch.
+    @Test func hermesOwnComputerUseStaysOff() async throws {
+        // A Private list that reads, as on a signed device: an unreadable one counts every bot as private.
+        PrivateBots.useForTesting(PrivateBots(names: ["private", "moss"], settled: true))
+        let fixture = ScopeFixture(leases: ["a.invalid": "human"])
+        ScopeStub.use(fixture)
+        defer { ScopeStub.reset() }
+        let a = try runtime("a.invalid")
+        let control = SystemControl()
+        #expect(await control.set(true, profile: "default", rt: a))
+        #expect(fixture.disabledWritten("a.invalid") == [["computer_use"]])
+        #expect(control.isOn("default", a))
+        await control.refresh("default", a)
+        await control.refresh("default", a)
+        // The pretend gateway still reports nothing switched off: already asked this run, so left alone.
+        #expect(fixture.disabledWritten("a.invalid") == [["computer_use"]])
+        #expect(control.isOn("default", a), "the switch is the lease alone")
+        // A bot an older version left with it on: taken back once on the next read.
+        a.profiles.append(ProfileInfo(name: "career", path: "/fixture/a.invalid/career"))
+        await control.refresh("career", a)
+        await control.refresh("career", a)
+        #expect(fixture.disabledWritten("a.invalid") == [["computer_use"], ["computer_use"]])
+        // Never a private bot's settings.
+        a.profiles.append(ProfileInfo(name: "moss", path: "/fixture/a.invalid/moss"))
+        await control.refresh("moss", a)
+        #expect(fixture.disabledWritten("a.invalid").count == 2)
+    }
+
     /// Hermes reads no lease as the bot's. The first read gives the bot a person's, so This Mac is off
     /// until the person turns it on, and the switch shows exactly that.
     @Test func aBotWithoutALeaseStartsOff() async throws {
@@ -191,6 +221,7 @@ private final class ScopeFixture: @unchecked Sendable {
     private var appears: Set<String> = []
     private var uploadsFail: Set<String> = []
     private var holdFirst: Set<String> = []
+    private var disabled: [String: [[String]]] = [:]
     let heldRead = AsyncStream<Void>.makeStream()
 
     init(leases: [String: String]) { self.leases = leases }
@@ -202,6 +233,8 @@ private final class ScopeFixture: @unchecked Sendable {
     /// Someone else writes a lease between the read and the upload.
     func leaseAppearsOnUpload(_ host: String) { lock.withLock { _ = appears.insert(host) } }
     func holdFirstLeaseRead(_ host: String) { lock.withLock { _ = holdFirst.insert(host) } }
+    /// Each switched-off tool list a config write sent.
+    func disabledWritten(_ host: String) -> [[String]] { lock.withLock { disabled[host] ?? [] } }
 
     func waitForHeldRead() async {
         var iterator = heldRead.stream.makeAsyncIterator()
@@ -227,6 +260,9 @@ private final class ScopeFixture: @unchecked Sendable {
             case ("GET", "/api/config"):
                 return .reply(ScopeStub.Reply(200, ["config": ["command_allowlist": [String](), "agent": ["disabled_toolsets": [String]()]]]))
             case ("PUT", "/api/config"):
+                let body = (try? JSONSerialization.jsonObject(with: ScopeStub.body(request))) as? [String: Any]
+                let agent = (body?["config"] as? [String: Any])?["agent"] as? [String: Any]
+                if let tools = agent?["disabled_toolsets"] as? [String] { disabled[host, default: []].append(tools) }
                 return .reply(ScopeStub.Reply(200, [:]))
             case ("POST", "/api/files/upload"):
                 if uploadsFail.contains(host) { return .reply(ScopeStub.Reply(503, [:])) }

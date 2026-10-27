@@ -137,7 +137,7 @@ class SetupKitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             built = kit.build(Path(folder) / "Setup Kit")
             names = [item["name"] for item in built["items"]]
-            self.assertEqual(names, ["nollie-workflow", "nollie-crew", "nollie-reader", "nollie-computer"])
+            self.assertEqual(names, ["nollie-workflow", "nollie-crew", "nollie-reader", "nollie-computer", "nollie-mac"])
             crew = next(item for item in built["items"] if item["name"] == "nollie-crew")
             self.assertIn("nollie-crew/workflow.py", [entry["path"] for entry in crew["files"]])
             for item in built["items"]:
@@ -157,8 +157,11 @@ class SetupKitTests(unittest.TestCase):
     def test_add_ons_left_out_of_a_managed_setup_say_why(self):
         for item in json.loads(pinslib.PINS.read_text())["addons"]["items"]:
             self.assertTrue(item["why"])
-        self.assertNotIn("nollie-mac", kit.managed_names())
         self.assertNotIn("nollie-pairing", kit.managed_names())
+
+    def test_nollie_mac_is_carried_with_exactly_its_three_files(self):
+        self.assertIn("nollie-mac", kit.managed_names())
+        self.assertEqual(kit.addon_files("nollie-mac"), ["__init__.py", "plugin.yaml", "server.py"])
 
 
 if __name__ == "__main__":

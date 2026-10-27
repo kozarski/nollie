@@ -143,6 +143,9 @@ struct PapertrailView: View {
                          id: "papertrail.stale")
             }
             totals(trail)
+            if let sessions = trail.macSessions, !sessions.isEmpty {
+                PapertrailMacUse(sessions: sessions, todayStartsAt: trail.todayStartsAt)
+            }
             if !todayRows.isEmpty { rows("Today", todayRows, from: 0, today: true) }
             if !earlier.isEmpty { rows("Earlier this week", earlier, from: todayRows.count, today: false) }
             AdvancedLink(id: "papertrail.advanced") { PapertrailDetails(trail: trail) }
@@ -261,7 +264,53 @@ struct PapertrailRow: View {
     }
 }
 
+/// Each time the bot used apps on this Mac this week: which apps, how many steps, and when.
+/// Its pictures of the screen stayed on the Mac, so these are not counted in what left.
+struct PapertrailMacUse: View {
+    let sessions: [Papertrail.MacSession]
+    let todayStartsAt: Double?
+
+    var body: some View {
+        VStack(spacing: 14) {
+            PageHeading(PapertrailWords.usedMac)
+            ForEach(Array(sessions.sorted { $0.at > $1.at }.enumerated()), id: \.offset) { i, session in
+                row(session, index: i)
+            }
+            PageNote(PapertrailWords.picturesStayed, symbol: "lock.fill", tint: .green, id: "papertrail.mac.note")
+        }
+    }
+
+    private func row(_ session: Papertrail.MacSession, index: Int) -> some View {
+        let time = PapertrailView.time(session.at, today: session.at >= (todayStartsAt ?? .infinity))
+        return HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Image(systemName: "cursorarrow.click.2")
+                .foregroundStyle(Ink.text2)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.appsText)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Ink.text)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(session.stepsText).font(.subheadline).foregroundStyle(Ink.text2)
+            }
+            Spacer(minLength: 8)
+            Text(time).font(.body).foregroundStyle(Ink.text2).monospacedDigit()
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(session.appsText), \(session.stepsText), \(time)")
+        .accessibilityIdentifier("papertrail.mac.\(index)")
+    }
+}
+
 private enum PapertrailWords {
+    #if os(macOS)
+    static let usedMac = "Used this Mac"
+    static let picturesStayed = "Pictures of the screen stayed on this Mac."
+    #else
+    static let usedMac = "Used your Mac"
+    static let picturesStayed = "Pictures of the screen stayed on your Mac."
+    #endif
+
     /// Where the replies stayed, said from the device in hand.
     static var onMac: String {
         #if os(macOS)

@@ -14,6 +14,8 @@ from night_support import NAME, load
 
 # The Mac's calendar, reminders and contacts, registered in this order for every bot that is not private.
 APPLE_TOOLS = list(load("apple_data").TOOLS)
+# The rule that keeps this Mac's screen on this Mac: in every bot that is not private, before Ask first.
+MAC_SCREEN_HOOKS = ["pre_tool_call", "transform_tool_result"]
 # Ask first's hooks, in every bot: the picture pause (and its result and recordings), the rule, its memory of the
 # screen, and the start of each turn.
 ASK_FIRST_HOOKS = ["pre_tool_call", "transform_tool_result", "post_tool_call", "pre_tool_call", "post_tool_call",
@@ -191,17 +193,17 @@ class RegisterTests(unittest.TestCase):
         hooks, tools, started = self.register("default")
         self.assertEqual((tools, started),
                          (["nollie_followup", "request_sign_in", *APPLE_TOOLS, *PAYMENT_TOOLS], [self.home.resolve()]))
-        # The picture pause and Ask first, then the recorder's guard and its record of the call.
-        self.assertEqual(hooks.count("pre_tool_call"), 4)
+        # The Mac screen rule, the picture pause and Ask first, then the recorder's guard and its record of the call.
+        self.assertEqual(hooks.count("pre_tool_call"), 5)
 
     def test_other_profiles_get_papertrail_and_the_recorder_but_not_the_board(self):
         hooks, tools, started = self.register("career")
         self.assertEqual((tools, started), (["request_sign_in", *APPLE_TOOLS, *PAYMENT_TOOLS], []))
-        self.assertEqual(hooks.count("pre_tool_call"), 4)
+        self.assertEqual(hooks.count("pre_tool_call"), 5)
         # The recordings Ask first's pause keeps track of, its memory of the latest screen, Papertrail, and the
         # recorder.
         self.assertEqual(hooks.count("post_tool_call"), 4)
-        self.assertEqual(hooks.count("transform_tool_result"), 1)
+        self.assertEqual(hooks.count("transform_tool_result"), 2)
         self.assertTrue(set(load("papertrail").HOOKS) <= set(hooks))
         self.assertTrue((self.home / "nollie-workflow/recorders/career.json").exists())
         self.assertTrue((self.home / "profiles/career/nollie-workflow/papertrail").is_dir())
@@ -210,7 +212,7 @@ class RegisterTests(unittest.TestCase):
         with patch.object(load("papertrail"), "Recorder", side_effect=RuntimeError("broken")), \
                 self.assertLogs("nollie-workflow", "WARNING") as logged:
             hooks, _, _ = self.register("career")
-        self.assertEqual((hooks.count("pre_tool_call"), hooks.count("post_tool_call")), (4, 3))
+        self.assertEqual((hooks.count("pre_tool_call"), hooks.count("post_tool_call")), (5, 3))
         self.assertNotIn("post_api_request", hooks)
         self.assertIn("Papertrail did not start: RuntimeError", logged.output[0])
 
@@ -218,7 +220,7 @@ class RegisterTests(unittest.TestCase):
         with patch.object(load("recorder"), "register", side_effect=RuntimeError("broken")), \
                 self.assertLogs("nollie-workflow", "WARNING") as logged:
             hooks, _, _ = self.register("career")
-        self.assertEqual(hooks, ASK_FIRST_HOOKS + ["pre_llm_call", "post_llm_call"] + list(load("papertrail").HOOKS))
+        self.assertEqual(hooks, MAC_SCREEN_HOOKS + ASK_FIRST_HOOKS + ["pre_llm_call", "post_llm_call"] + list(load("papertrail").HOOKS))
         self.assertIn("The Night shift recorder did not start: RuntimeError", logged.output[0])
 
     def test_private_profiles_get_ask_first_and_nothing_else(self):
@@ -230,8 +232,10 @@ class RegisterTests(unittest.TestCase):
         self.assertFalse((self.home / "nollie-workflow/recorders/career.json").exists())
         self.assertFalse((self.home / "profiles/career/nollie-workflow/papertrail").exists())
         (self.home / "nollie-private-bots.json").write_text("{")
-        # A damaged list: Ask first doesn't need it, so every bot keeps it, and nothing else loads.
-        for profile in ("nowhere", "private", "moss"):
+        # A damaged list: Ask first doesn't need it, so every bot keeps it, and the Mac screen rule stays on for
+        # every bot but the ones that are always private. Nothing else loads.
+        self.assertEqual(self.register("nowhere"), (MAC_SCREEN_HOOKS + ASK_FIRST_HOOKS, [], []))
+        for profile in ("private", "moss"):
             self.assertEqual(self.register(profile), (ASK_FIRST_HOOKS, [], []), profile)
 
     def test_private_main_bot_never_starts_board_follow_through(self):
@@ -248,7 +252,7 @@ class RegisterTests(unittest.TestCase):
         root.mkdir()
         load("workflow_core").atomic_write(root / "state.json", load("workflow_core").initial_state())
         (self.home / "nollie-private-bots.json").write_text("{")
-        self.assertEqual(self.register("default"), (ASK_FIRST_HOOKS, [], []))
+        self.assertEqual(self.register("default"), (MAC_SCREEN_HOOKS + ASK_FIRST_HOOKS, [], []))
 
 
 class AskFirstRegistrationTests(unittest.TestCase):

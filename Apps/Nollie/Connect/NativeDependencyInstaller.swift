@@ -53,7 +53,7 @@ enum NativeSetupPlan {
         .init(id: "python", title: "Python runtime", detail: "Python 3.14.8. A 26.7 MB verified download. A separate runtime for Nollie, without changing your existing Python.", state: .notChecked, optional: false),
         .init(id: "hermes", title: "Hermes Agent", detail: "Hermes 0.22.2 at a fixed revision, an 81.5 MB verified download, with Nollie's reviewed changes for quiet bot chats, Board notes and safe scheduled checks.", state: .notChecked, optional: false),
         .init(id: "dependencies", title: "Runtime libraries", detail: "The exact versions in Hermes's lockfile, each checked against its recorded hash. About 40 MB.", state: .notChecked, optional: false),
-        .init(id: "addons", title: "Nollie add-ons", detail: "Board follow-through, Papertrail and the Night shift, the crew, the page reader and computer previews. The reader's own libraries are about 20 MB, each checked against its recorded hash.", state: .notChecked, optional: false),
+        .init(id: "addons", title: "Nollie add-ons", detail: "Board follow-through, Papertrail and the Night shift, the crew, the page reader, computer previews and using apps on this Mac. The reader's own libraries are about 20 MB, each checked against its recorded hash.", state: .notChecked, optional: false),
         .init(id: "service", title: "Background service", detail: "Keeps your assistant running while this Mac is awake, even after Nollie closes. Starting it is a separate step, with your permission.", state: .notChecked, optional: false),
         .init(id: "computer", title: "Computer access", detail: "Optional. Needs a packaged computer adapter and your macOS permission approval. No permissions are copied.", state: .blocked, optional: true)
     ] }

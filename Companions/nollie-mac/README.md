@@ -3,8 +3,9 @@
 Lets a bot use a few apps on this Mac for one task, after the person approves them in Nollie.
 Two small pieces, both installed as one Hermes plugin folder:
 
-- `server.py`, an MCP server (stdio, standard library only) with seven tools: `mac_start`,
-  `mac_look`, `mac_click`, `mac_type`, `mac_key`, `mac_scroll` and `mac_done`.
+- `server.py`, an MCP server (stdio, standard library only) with three tools: `mac_start`,
+  `mac_do` and `mac_done`. A bot never sees the screen: `mac_do(app, step)` asks for one step,
+  a model on the Mac does the clicking, and only a short sentence comes back.
 - `__init__.py`, a plugin hook. Hermes gives an MCP server no session context, so before every
   `mcp__nollie_mac__*` call the hook refuses scheduled (cron), single-query and other unattended
   runs, and stamps the call with its chat (`_nollie`), replacing anything the model wrote there.
@@ -28,8 +29,9 @@ checks on this process and on Hermes are defence in depth.
    its walkthrough instead), or when every app is one it never offers. Otherwise it shows the approval card; no answer in two minutes is a no.
 2. After a yes, Nollie starts Nollie Computer with a manifest of just those apps and returns a
    secret task id, which the server keeps per chat.
-3. Each action goes to Nollie with that id. Nollie checks it, asks the person first when it is
-   risky, and runs it in its own trusted session with the helper. The add-on never reaches the
+3. Each step goes to Nollie with that id. A model on this Mac looks at the window and picks each
+   action; Nollie checks every one, asks the person first when it is risky, and runs it in its own
+   trusted session with the helper. Only words come back, at most 300 characters. The add-on never reaches the
    helper: its shared socket allows nothing but a permission check, and only Nollie, its parent
    process, can open the sessions that act.
 4. `mac_done`, Stop, 30 minutes, 5 idle minutes, the Mac locking or sleeping, or Nollie quitting
@@ -40,7 +42,18 @@ managers, System Settings, or money and crypto apps; browsers view-only; sending
 uploading, accepting terms, installing and signing in confirmed by the person every time; nothing
 typed into a password or code field.
 
-## Installation
+## In Nollie's own setup
+
+Nollie's setup carries the add-on in its Setup Kit (`Tools/pins.json`, checked against `kit.json`
+like the others). At every start Nollie Runtime copies it into every bot that is not private
+(`Services/Runtime/managed_addons.py`) and lists it, with its MCP server on Nollie's own Python
+(`<setup>/python/<version>/bin/python3.14 -I <bot>/plugins/nollie-mac/server.py`), only in bots whose
+desktop lease is the agent's: This Mac on. Turning This Mac on or off on the Mac applies it at once
+for new chats (`ComputerManagedAddOn`); from the iPhone, at Hermes's next start. Nollie accepts it
+from that Python only by its exact path and the hash its installer recorded, under the gateway or
+dashboard this Nollie's Runtime started (`ComputerPeer.Managed`).
+
+## Installation (a hand-installed ~/.hermes)
 
 Plan first, for one bot:
 

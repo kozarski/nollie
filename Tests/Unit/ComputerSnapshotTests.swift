@@ -1,6 +1,7 @@
 #if os(macOS)
 import AppKit
 import SwiftUI
+import NollieCore
 import Testing
 @testable import Nollie
 
@@ -34,6 +35,56 @@ import Testing
         var task = ComputerTask(botName: "Scout", profile: "career", sessionID: "s", purpose: "p", apps: [notes, safari], startedAt: .now)
         task.noteActivity(in: notes, at: .now)
         try attach(ComputerStopPanelView(task: task) {}.padding(12), named: "computer-stop-panel", opaque: false)
+    }
+
+    @Test func theApprovalCardWithAnAppNotPicked() throws {
+        let approval = ComputerApproval(botName: "Scout",
+                                        request: ComputerStartRequest(sessionID: "s", profile: "career", apps: ["Notes", "Mail"],
+                                                                      purpose: "Put this week's shopping list in a new note."),
+                                        apps: [notes],
+                                        refused: [.init(name: "Mail", reason: ComputerPickedApps.notPicked("Mail")),
+                                                  .init(name: "Terminal", reason: ComputerAppRules.commands)],
+                                        chatTitle: "Groceries", platform: "Nollie")
+        // On the panel's own backing, as the card shows on the Mac.
+        try attach(ComputerApprovalCard(approval: approval) { _ in }
+            .nollieGlass(in: .rect(cornerRadius: 32), solid: Color(nsColor: .windowBackgroundColor))
+            .padding(16)
+            .background(Ink.canvas), named: "computer-approval-not-picked")
+    }
+
+    @Test func theAppsPage() throws {
+        let apps: [ComputerPickedApps.Candidate] = [
+            .init(info: ComputerAppInfo(bundleID: "com.apple.Notes", name: "Notes"), viewOnly: false),
+            .init(info: ComputerAppInfo(bundleID: "com.apple.reminders", name: "Reminders"), viewOnly: false),
+            .init(info: ComputerAppInfo(bundleID: "com.apple.TextEdit", name: "TextEdit"), viewOnly: false),
+            .init(info: ComputerAppInfo(bundleID: "com.apple.Safari", name: "Safari"), viewOnly: true),
+        ]
+        // The switch reads its own pretend settings, never this Mac's.
+        let defaults = try #require(UserDefaults(suiteName: "nollie-apps-page-\(UUID().uuidString)"))
+        for (name, on, model, picked) in [("off", false, "Qwen3.6 35B-A3B", Set<String>()),
+                                          ("ready", true, "Qwen3.6 35B-A3B", Set(["com.apple.notes", "com.apple.reminders"])),
+                                          ("needs-model", true, nil, Set<String>())] as [(String, Bool, String?, Set<String>)] {
+            defaults.set(on, forKey: ComputerCenter.enabledKey)
+            let page = NavigationStack {
+                ScrollView {
+                    VStack(spacing: 36) {
+                        ComputerAppsContent(on: on, modelName: model, candidates: apps, picked: picked) { _, _ in }
+                    }
+                    .padding(EdgeInsets(top: 28, leading: 24, bottom: 40, trailing: 24))
+                }
+                .background(Ink.canvas)
+            }
+            .frame(width: 520, height: on ? 980 : 560)
+            .defaultAppStorage(defaults)
+            try attach(page, named: "computer-apps-\(name)")
+        }
+    }
+
+    @Test func thePapertrailLinesForThisMac() throws {
+        let sessions = [Papertrail.MacSession(at: 1_760_969_000, apps: ["Notes", "TextEdit"], actions: 6, looks: 2),
+                        Papertrail.MacSession(at: 1_760_500_000, apps: ["Reminders"], actions: 1)]
+        try attach(PapertrailMacUse(sessions: sessions, todayStartsAt: 1_760_914_800)
+            .padding(24).frame(width: 460).background(Ink.canvas), named: "papertrail-mac-use")
     }
 
     @Test func theBetaSwitch() throws {

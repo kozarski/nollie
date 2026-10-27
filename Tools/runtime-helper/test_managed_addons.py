@@ -359,6 +359,83 @@ class ManagedAddOnsTests(unittest.TestCase):
                 self.assertEqual(addons.ensure_profile_workflow(self.home, path.name, path), [])
         self.assertEqual({path: self.snapshot(path) for path in homes}, before)
 
+    def seed_mac(self):
+        source = ROOT / "Companions/nollie-mac"
+        for name in addons.MAC_FILES:
+            target = self.home / "plugins/nollie-mac" / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((source / name).read_bytes())
+        python = self.installation / "python/cpython-3.14.8-macos-aarch64-none/bin/python3.14"
+        python.parent.mkdir(parents=True, exist_ok=True)
+        python.write_bytes(b"#!fixture\n")
+        return python.resolve()
+
+    def lease(self, home, holder):
+        (home / "bot-desktop").mkdir(exist_ok=True)
+        (home / "bot-desktop/lease.json").write_text(json.dumps({"holder": holder, "epoch": 2}))
+
+    def mac_state(self, home):
+        config = json.loads((home / "config.yaml").read_text())
+        return ("nollie-mac" in config.get("plugins", {}).get("enabled", []),
+                (config.get("mcp_servers") or {}).get("nollie-mac"))
+
+    def test_nollie_mac_is_copied_everywhere_but_listed_only_where_this_mac_is_on(self):
+        self.seed_workflow()
+        python = self.seed_mac()
+        scout, mason = self.bot("scout"), self.bot("mason")
+        self.lease(mason, "agent")
+        with mock.patch.object(addons, "managed_python", return_value=python):
+            addons.ensure_workflow(self.home, "first")
+        for home in (scout, mason):
+            self.assertEqual(sorted(path.name for path in (home / "plugins/nollie-mac").iterdir()), sorted(addons.MAC_FILES))
+        self.assertEqual(self.mac_state(mason), (True, {"command": str(python),
+                                                         "args": ["-I", str(mason / "plugins/nollie-mac/server.py")]}))
+        self.assertEqual(self.mac_state(scout), (False, None))
+        self.assertEqual(self.mac_state(self.home), (False, None))
+        # This Mac turned off for Mason, on for the main bot: the next start follows the leases.
+        self.lease(mason, "human")
+        self.lease(self.home, "agent")
+        with mock.patch.object(addons, "managed_python", return_value=python):
+            addons.ensure_workflow(self.home, "second")
+        self.assertEqual(self.mac_state(mason), (False, None))
+        self.assertEqual(self.mac_state(self.home)[1]["args"], ["-I", str(self.home / "plugins/nollie-mac/server.py")])
+        # Unchanged, a third start writes nothing.
+        before = self.snapshot(mason)
+        with mock.patch.object(addons, "managed_python", return_value=python):
+            addons.ensure_workflow(self.home, "third")
+        self.assertEqual(self.snapshot(mason), before)
+
+    def test_a_private_bot_never_gets_nollie_mac(self):
+        self.seed_workflow()
+        python = self.seed_mac()
+        self.private("personal")
+        personal = self.bot("personal")
+        self.lease(personal, "agent")
+        with mock.patch.object(addons, "managed_python", return_value=python):
+            addons.ensure_workflow(self.home, "first")
+        self.assertFalse((personal / "plugins/nollie-mac").exists())
+        self.assertEqual(self.mac_state(personal), (False, None))
+
+    def test_only_nollies_own_python_runs_nollie_mac(self):
+        python = self.seed_mac()
+        # Real paths: the temporary folder itself sits behind macOS's /var link.
+        installation = self.installation.resolve()
+        self.assertEqual(addons.managed_python(installation, python), python)
+        self.assertIsNone(addons.managed_python(installation, "/usr/bin/python3"))
+        linked = installation / "python/link-python"
+        linked.symlink_to(python)
+        self.assertIsNone(addons.managed_python(installation, linked))
+        copied = self.root / "copied-python3.14"
+        copied.write_bytes(python.read_bytes())
+        self.assertIsNone(addons.managed_python(installation, copied.resolve()))
+        self.seed_workflow()
+        mason = self.bot("mason")
+        self.lease(mason, "agent")
+        with mock.patch.object(addons, "managed_python", return_value=None):
+            addons.ensure_workflow(self.home, "first")
+        self.assertFalse((mason / "plugins/nollie-mac").exists())
+        self.assertEqual(self.mac_state(mason), (False, None))
+
     def test_private_bots_get_ask_first_and_this_mac_off_and_nothing_else(self):
         self.seed_workflow()
         self.private("personal", "default")

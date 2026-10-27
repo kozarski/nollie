@@ -116,11 +116,9 @@ struct ComputerAdvanced: View {
             #if os(macOS) && NOLLIE_DIRECT
             if own != nil { PageHeading("Using this Mac") }
             GlassStack {
-                ComputerBetaToggle()
-                    .toggleStyle(.switch)
-                    .inset(h: 22, v: 14)
-                    .spread(.center)
-                    .nollieGlass(.regular, in: Capsule(), solid: Ink.card)
+                // The switch, the model on this Mac and the apps a bot may use, for every bot.
+                GlassLink("Apps on this Mac", symbol: "macwindow.and.cursorarrow", value: computerOn ? "On" : "Off",
+                          id: "profile.computerApps") { ComputerAppsPage() }
                 if computerOn {
                     GlassButton("Mac permissions", symbol: "lock.shield", id: "profile.computerPermissions") {
                         ComputerPanels.shared.showPermissions()

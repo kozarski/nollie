@@ -1,6 +1,7 @@
 #if os(macOS)
 import CoreGraphics
 import Foundation
+import ImageIO
 import NollieCore
 import Testing
 @testable import Nollie
@@ -61,7 +62,7 @@ import Testing
                                               "screenshot_frame": ["x": 250, "y": 10, "w": 10, "h": 10]]
                 return ["structuredContent": ["tree_markdown": "[1] AXButton \"Send\"\n[2] AXButton \"Bold\"",
                                               "elements": [send, bold, body, link, web, picture]],
-                        "content": [["type": "image", "data": "AAAA", "mimeType": "image/png"]]]
+                        "content": [["type": "image", "data": ComputerCenterTests.picture, "mimeType": "image/png"]]]
             default:
                 return ["content": [["type": "text", "text": "ok"]]]
             }
@@ -94,6 +95,21 @@ import Testing
 
     nonisolated static let scratch = FileManager.default.temporaryDirectory.appendingPathComponent("nollie-computer-tests")
 
+    /// A real PNG of the window, 300 by 210 pixels (the window is 600 by 420 points at half scale).
+    nonisolated static let picture: String = png(width: 300, height: 210)
+
+    nonisolated static func png(width: Int, height: Int) -> String {
+        let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        context.setFillColor(CGColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        let data = NSMutableData()
+        let destination = CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil)!
+        CGImageDestinationAddImage(destination, context.makeImage()!, nil)
+        CGImageDestinationFinalize(destination)
+        return (data as Data).base64EncodedString()
+    }
+
     let center = ComputerCenter()
     let recorder = Recorder()
     let driver = FakeDriver()
@@ -101,6 +117,7 @@ import Testing
     var clock = Date(timeIntervalSince1970: 1_800_000_000)
 
     init() {
+        center.useTestScreen()
         center.presenter = recorder
         center.botName = { _ in "Scout" }
         center.helperAvailable = { true }
@@ -288,7 +305,7 @@ import Testing
         let task = try await start().get()
         let look = try await center.perform(taskID: task.id, ComputerActRequest(kind: .look, app: "Notes")).get()
         #expect(look == [.text("Element tokens for this look: s00000001:N for the row marked [N], like s00000001:3.\n[1] AXButton \"Send\"\n[2] AXButton \"Bold\""),
-                         .image(base64: "AAAA", mimeType: "image/png")])
+                         .image(base64: Self.picture, mimeType: "image/png")])
         #expect(driver.calls.map(\.tool) == ["list_windows", "get_window_state"])
         #expect(driver.calls.allSatisfy { $0.session == "use" })
         #expect(driver.calls[1].args["window_id"] as? Int == 7)
@@ -871,6 +888,7 @@ import Testing
     @Test(.enabled(if: FileManager.default.fileExists(atPath: ComputerAddOnTests.server.path)))
     func theAddOnReachesNollieAndBackThroughTheBroker() async throws {
         let center = ComputerCenter()
+        center.useTestScreen()
         let recorder = ComputerCenterTests.Recorder()
         let driver = ComputerCenterTests.FakeDriver()
         center.presenter = recorder
@@ -905,14 +923,17 @@ import Testing
         }
         defer { answering.cancel() }
 
+        // The model on this Mac: it clicks Send, then says it's done.
+        let decider = ComputerScreenTests.Scripted([.click(1), .done("Sent the note.")])
+        center.screenDecider = { _ in decider }
         let stamp: [String: Any] = ["session_id": "20261019_200000_abc", "profile": "career", "platform": "api_server"]
         let calls: [[String: Any]] = [
             ["name": "mac_start", "arguments": ["apps": ["Notes"], "task": "Look at Downloads", "_nollie": stamp]],
+            ["name": "mac_do", "arguments": ["app": "Notes", "step": "send the note", "_nollie": stamp]],
             ["name": "mac_look", "arguments": ["app": "Notes", "_nollie": stamp]],
-            ["name": "mac_click", "arguments": ["app": "Notes", "element": "s00000001:1", "_nollie": stamp]],
-            ["name": "mac_type", "arguments": ["app": "Safari", "text": "x", "_nollie": stamp]],
+            ["name": "mac_do", "arguments": ["app": "Safari", "step": "type x", "_nollie": stamp]],
             ["name": "mac_done", "arguments": ["_nollie": stamp]],
-            ["name": "mac_look", "arguments": ["app": "Notes", "_nollie": stamp]],
+            ["name": "mac_do", "arguments": ["app": "Notes", "step": "look", "_nollie": stamp]],
         ]
         let input = calls.enumerated().map { i, call in
             try! JSONSerialization.data(withJSONObject: ["jsonrpc": "2.0", "id": i + 1, "method": "tools/call", "params": call])
@@ -925,20 +946,27 @@ import Testing
         }
         func failed(_ i: Int) -> Bool { (replies[i]["result"] as? [String: Any])?["isError"] as? Bool == true }
         #expect(!failed(0) && text(0).contains("Approved for this task: Notes."))
-        let look = (replies[1]["result"] as? [String: Any])?["content"] as? [[String: Any]] ?? []
-        #expect(look.map { $0["type"] as? String } == ["text", "image"])
-        #expect(!failed(2))
+        // One short sentence back: never the picture, never the window's words.
+        let step = (replies[1]["result"] as? [String: Any])?["content"] as? [[String: Any]] ?? []
+        #expect(step.map { $0["type"] as? String } == ["text"])
+        #expect(text(1) == "Done in Notes (1 action): Sent the note.")
+        #expect(!text(1).contains("AXButton") && !text(1).contains(ComputerCenterTests.picture.prefix(40)))
+        // The picture and the rows went to the model on this Mac only.
+        #expect(decider.questions.first?.picture?.base64 == ComputerCenterTests.picture)
+        #expect(decider.questions.first?.elements.contains("[1] AXButton \"Send\"") == true)
         #expect(recorder.shown.contains("confirmation"))
+        #expect(failed(2))
         #expect(failed(3) && text(3).contains("isn't approved"))
         #expect(!failed(4))
         #expect(failed(5) && text(5).contains("mac_start"))
-        #expect(driver.calls.map(\.tool) == ["list_windows", "get_window_state", "click"])
+        #expect(driver.calls.map(\.tool) == ["list_windows", "get_window_state", "click", "list_windows", "get_window_state"])
         #expect(center.task == nil)
         #expect(center.lastEnd == .finished)
     }
 
     @Test func aRequestThatTakesTooLongIsAnsweredAndALateTaskEnds() async throws {
         let center = ComputerCenter()
+        center.useTestScreen()
         let driver = ComputerCenterTests.FakeDriver()
         center.presenter = ComputerCenterTests.Recorder()
         center.botName = { _ in "Scout" }
@@ -982,6 +1010,7 @@ import Testing
 
     @Test func anActionThatTakesTooLongMayHaveBeenDone() async throws {
         let center = ComputerCenter()
+        center.useTestScreen()
         let driver = ComputerCenterTests.FakeDriver()
         center.presenter = ComputerCenterTests.Recorder()
         center.botName = { _ in "Scout" }
@@ -1012,8 +1041,8 @@ import Testing
         broker.start(path: path, center: center)
         defer { broker.stop(path: path); try? FileManager.default.removeItem(at: folder); center.stop() }
         // "Send" waits for the person, longer than the broker waits: the bot is told it may have happened.
-        let line = try JSONSerialization.data(withJSONObject: ["op": "act", "task": task.id, "action": "click", "app": "Notes",
-                                                               "element": "s00000001:1"])
+        center.screenDecider = { _ in ComputerScreenTests.Scripted([.click(1), .done("")]) }
+        let line = try JSONSerialization.data(withJSONObject: ["op": "do", "task": task.id, "app": "Notes", "step": "send it"])
         let reply = try await Self.send(line, to: path)
         #expect(reply["error"] as? String == ComputerBroker.tooLongMaybeDone)
         // It was waiting on the person's card, not stuck somewhere else.
@@ -1076,6 +1105,22 @@ import Testing
             process.waitUntilExit()
             return collected
         }.value
+    }
+}
+#endif
+
+#if os(macOS)
+extension ComputerCenter {
+    /// The checks this Mac's screen needs, answered for tests: Notes and the viewer picked, a model
+    /// on this Mac ready, the bot's Allow Mac control on, and the app's window 7 in front.
+    func useTestScreen() {
+        pickedApps = { ["com.apple.notes", "org.example.viewer"] }
+        screenModel = { ComputerScreenModel(base: "http://127.0.0.1:9", key: "k", model: "qwen3.6-35b-a3b-test") }
+        macControlOn = { _ in true }
+        screenWindows = { [ComputerScreenWindow(id: 7, pid: 4242, layer: 0, bounds: CGRect(x: 1000, y: 500, width: 600, height: 420))] }
+        frontmostPID = { 4242 }
+        screenScale = { 2 }
+        recordSession = { _ in }
     }
 }
 #endif

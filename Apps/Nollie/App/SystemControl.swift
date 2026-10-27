@@ -5,12 +5,12 @@ import NollieCore
 /// Turning System control on didn't work.
 struct SystemControlFailure: Error {}
 
-/// System control: whether a bot may use this Mac's apps and screen (Hermes's computer_use), as one
-/// switch per bot.
+/// System control: whether a bot may ask to use this Mac's apps, as one switch per bot.
 ///
-/// On: the bot may use the screen, and its desktop lease is the agent's. Each screen action is
-/// allowed for the chat it asks in, never always, so a scheduled or unattended run (with no one to
-/// answer) can't drive the Mac. Nothing goes on the bot's always-allowed list.
+/// On: the bot's desktop lease is the agent's, and it may ask Nollie Computer for the apps the
+/// person picked, where a model on this Mac does the clicking. Hermes's own computer_use stays
+/// switched off for every bot either way (it sends whole screenshots to the bot's own model), and
+/// Nollie's add-on refuses it too, so screenshots never leave the Mac.
 /// Off: the bot's desktop lease is a person's (`<home>/bot-desktop/lease.json`, holder "human").
 /// Hermes reads that file before every screen action, captures included, in every process and chat,
 /// and refuses the action before any approval card (tools/bot_desktop/lease.py,
@@ -132,9 +132,19 @@ final class SystemControl {
             guard !busy.contains(key), writeGeneration[key] == generation, rt.connection.gateway == gateway else { return }
             lease = Lease(holder: "human", epoch: 1, confirmedHuman: true)
         }
-        states[key] = lease.explicitAgent && !cfg.disabled.contains("computer_use")
+        states[key] = lease.explicitAgent
         source[key] = gateway
+        // Older versions switched Hermes's own computer_use on: it goes off again, once, never for a
+        // private bot (whose settings Nollie doesn't touch). This only ever takes a tool away.
+        if !cfg.disabled.contains("computer_use"), !keptOff.contains(key), !Self.isPrivate(profile, connection: rt.connection.id) {
+            keptOff.insert(key)
+            let body: [String: JSONValue] = ["agent": .object(["disabled_toolsets": .array((cfg.disabled + ["computer_use"]).map { .string($0) })])]
+            let _: JSONValue? = try? await rt.api.send("PUT", "/api/config", profile: profile, json: ["config": .object(body)])
+        }
     }
+
+    /// Bots whose computer_use was switched off this run, so it is asked for once at most.
+    private var keptOff: Set<Key> = []
 
     /// A bot Nollie never reads: on the Private list for this gateway, or one of the always-private names.
     static func isPrivate(_ profile: String, connection: UUID) -> Bool {
@@ -165,9 +175,10 @@ final class SystemControl {
 
     // MARK: Writing
 
-    /// Turns a bot's System control on or off. On: the lease goes to the agent, and computer_use comes
-    /// out of its switched-off tools. Off: the lease goes to a person, which stops the bot's next
-    /// screen action. Either way, screen rules an older version left on the always-allowed list go.
+    /// Turns a bot's System control on or off. On: the lease goes to the agent, so it may ask Nollie
+    /// Computer. Off: the lease goes to a person, which stops the bot's next screen action. Either
+    /// way computer_use stays among its switched-off tools, and screen rules an older version left
+    /// on the always-allowed list go.
     @discardableResult
     func set(_ on: Bool, profile: String, rt: GatewayRuntime) async -> Bool {
         let key = Self.key(profile, rt)
@@ -190,12 +201,17 @@ final class SystemControl {
             var body: [String: JSONValue] = [:]
             let kept = Self.withoutScreenRules(cfg.allow)
             if kept.count != cfg.allow.count { body["command_allowlist"] = .array(kept.map { .string($0) }) }
-            if on, cfg.disabled.contains("computer_use") {
-                body["agent"] = .object(["disabled_toolsets": .array(cfg.disabled.filter { $0 != "computer_use" }.map { .string($0) })])
+            if !cfg.disabled.contains("computer_use") {
+                body["agent"] = .object(["disabled_toolsets": .array((cfg.disabled + ["computer_use"]).map { .string($0) })])
             }
             if !body.isEmpty {
                 let _: JSONValue = try await rt.api.send("PUT", "/api/config", profile: profile, json: ["config": .object(body)])
             }
+            keptOff.insert(key)
+            #if os(macOS)
+            // Nollie's own setup: the add-on that asks Nollie Computer comes and goes with the switch.
+            await ComputerManagedAddOn.apply(on, profile: profile, home: home, rt: rt)
+            #endif
             lastError = nil
             readAt[key] = Date()
             return true
