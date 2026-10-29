@@ -21,6 +21,13 @@ final class NightShiftMorningUITests: DemoCase {
             XCTAssertEqual(capsule.value as? String, "2 jobs overnight", "the night in a few words")
             XCTAssertTrue(find("night.card.putAway").exists, "it can be put away")
             XCTAssertFalse(find("post.nightShift").exists, "only the capsule shows in the chat, not the whole card")
+            // It opens the thread: scroll back to the start to see it.
+            XCTAssertTrue(poll(60, every: 0.1) {
+                if capsule.isHittable && capsule.frame.minY > 120 { return true }
+                scrollThread(towardStart: true)
+                return false
+            }, "the capsule is at the start of the thread")
+            pause(1)
             shot("night-capsule-\(look)")
 
             // The whole card, with a Why? beside each step.
