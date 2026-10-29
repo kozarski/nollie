@@ -157,8 +157,10 @@ import Testing
     }
 
     @Test func aLongTurnIsLeftRunningAndSaidSo() async throws {
-        let (runtime, gateway) = try await demo()
-        defer { Task { await runtime.stop(); await gateway.shutdown() } }
+        // The demo's clock never moves, so the turn stays in its typing bubble however slow the computer is.
+        let stopped = SteppedClock()
+        let (runtime, gateway) = try await demo(pace: stopped)
+        defer { Task { await runtime.stop(); await gateway.shutdown(); stopped.advance(by: .seconds(3600)) } }
 
         let outcome = await AskHelper.ask("Plan my weekend", profile: "wren", name: "Wren", on: runtime, wait: .milliseconds(10))
         guard case .stillWorking = outcome else {
@@ -171,12 +173,16 @@ import Testing
         #expect(again == .problem(AskWords.busy("Wren")))
     }
 
-    private func demo() async throws -> (GatewayRuntime, DemoGateway) {
-        let gateway = DemoGateway()
+    /// The demo gateway with its replies paced on `pace`: at once unless a test wants a turn that stays running.
+    private func demo(pace: any Clock<Duration> = InstantClock()) async throws -> (GatewayRuntime, DemoGateway) {
+        let gateway = DemoGateway(pace: pace)
         let connection = GatewayConnection(name: "Demo", gateway: gateway.address, authMode: .sessionToken)
         let runtime = GatewayRuntime(connection: connection, store: ConnectionStore(), backend: gateway.backend)
         await runtime.start()
-        for _ in 0..<100 where !runtime.socketState.isOpen { try await Task.sleep(for: .milliseconds(50)) }
+        // A guard against a socket that never opens, not a measure of how fast it does.
+        let clock = ContinuousClock()
+        let end = clock.now.advanced(by: .seconds(60))
+        while !runtime.socketState.isOpen, clock.now < end { try await Task.sleep(for: .milliseconds(5)) }
         try #require(runtime.socketState.isOpen)
         return (runtime, gateway)
     }

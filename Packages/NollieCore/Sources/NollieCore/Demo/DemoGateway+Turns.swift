@@ -73,7 +73,7 @@ extension DemoGateway {
     }
 
     private func pause(_ seconds: Double) async {
-        try? await Task.sleep(for: .milliseconds(Int(seconds * 1000)))
+        try? await pace.sleep(for: .milliseconds(Int(seconds * 1000)))
     }
 
     /// Streams text a few words at a time.

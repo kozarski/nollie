@@ -42,8 +42,12 @@ public actor DemoGateway {
     var askFirst: [String: Bool] = [:]
     var seededAsk = false
     var closed = false
+    /// Paces the replies: the typing bubble, words a few at a time, a moment per step. Tests pass a clock that does
+    /// not wait, so a turn takes no real time and nothing hangs on how busy the computer is.
+    let pace: any Clock<Duration>
 
-    public init() {
+    public init(pace: any Clock<Duration> = ContinuousClock()) {
+        self.pace = pace
         let id = UUID().uuidString.prefix(8).lowercased()
         host = "demo-\(id).nollie.invalid"
         let now = Date().timeIntervalSince1970.rounded(.down)

@@ -39,7 +39,7 @@ private final class DGTInbox: @unchecked Sendable {
         nextID += 1
         let id = nextID
         await gateway.receive(RPCFrames.request(id: id, method: method, params: params), from: channel)
-        _ = await waitFor({ heard.contains { $0["id"]?.intValue == id && $0["method"] == nil } }, seconds: 5)
+        _ = await waitFor { heard.contains { $0["id"]?.intValue == id && $0["method"] == nil } }
         let answer = try #require(heard.first { $0["id"]?.intValue == id && $0["method"] == nil })
         if let failure = answer["error"] { throw RPCError(code: failure["code"]?.intValue ?? 0, message: failure["message"]?.stringValue ?? "") }
         return answer["result"] ?? .null
@@ -50,11 +50,14 @@ private final class DGTInbox: @unchecked Sendable {
         await gateway.receive(RPCFrames.response(id: id, result: ["choice": .string(choice)]), from: channel)
     }
 
-    func waitFor(_ what: () -> Bool, seconds: Double = 20) async -> Bool {
-        let deadline = Date().addingTimeInterval(seconds)
-        while Date() < deadline {
+    /// Waits until `what` holds. The gateway's pacing runs on `InstantClock`, so no reply takes real time and this
+    /// gives up only after a minute, which ends a broken test, never a slow computer's working one.
+    func waitFor(_ what: () -> Bool) async -> Bool {
+        let clock = ContinuousClock()
+        let end = clock.now.advanced(by: .seconds(60))
+        while clock.now < end {
             if what() { return true }
-            try? await Task.sleep(for: .milliseconds(50))
+            try? await Task.sleep(for: .milliseconds(5))
         }
         return what()
     }
@@ -74,7 +77,7 @@ private func dgtREST(_ gateway: DemoGateway, _ path: String, method: String = "G
 
 struct DemoGatewayTests {
     @Test func theBotsAreNollieScoutAndTwoMore() async throws {
-        let gateway = DemoGateway()
+        let gateway = DemoGateway(pace: InstantClock())
         let listed = try await dgtREST(gateway, "/api/profiles")["profiles"]?.arrayValue ?? []
         #expect(listed.compactMap { $0["display_name"]?.stringValue } == ["Nollie", "Scout", "Mason", "Wren"])
         #expect(listed.first?["is_default"]?.boolValue == true)
@@ -89,7 +92,7 @@ struct DemoGatewayTests {
     }
 
     @Test func aChatOpensWithItsHistoryAndTheStepsItShowed() async throws {
-        let gateway = DemoGateway()
+        let gateway = DemoGateway(pace: InstantClock())
         let (_, _, resumed) = try await dgtOpen(gateway, "demo-nollie-main")
         let messages = resumed["messages"]?.arrayValue ?? []
         #expect(messages.map { $0["role"]?.stringValue } == ["user", "tool", "assistant", "user", "assistant"])
@@ -103,7 +106,7 @@ struct DemoGatewayTests {
     }
 
     @Test func aMessageGetsAReplyWithTheStepsAndThenTheWholeText() async throws {
-        let gateway = DemoGateway()
+        let gateway = DemoGateway(pace: InstantClock())
         let (inbox, session, _) = try await dgtOpen(gateway, "demo-wren-main", profile: "wren")
         let sent = try await inbox.call("prompt.submit", ["session_id": .string(session), "text": "Find me a quiet cafe near the park"])
         #expect(sent["status"]?.stringValue == "streaming")
@@ -126,7 +129,7 @@ struct DemoGatewayTests {
     }
 
     @Test func aMessageThatSendsSomethingWaitsForYesAndAllowOnceSendsIt() async throws {
-        let gateway = DemoGateway()
+        let gateway = DemoGateway(pace: InstantClock())
         let (inbox, session, resumed) = try await dgtOpen(gateway, "demo-mason-main", profile: "mason")
         // Mason is already waiting on the note for Sam when the chat opens.
         #expect(resumed["running"]?.boolValue == true)
@@ -152,7 +155,7 @@ struct DemoGatewayTests {
     }
 
     @Test func denyLeavesTheNoteUnsentAndSettlesThroughTheApprovalCall() async throws {
-        let gateway = DemoGateway()
+        let gateway = DemoGateway(pace: InstantClock())
         let (inbox, session, resumed) = try await dgtOpen(gateway, "demo-mason-main", profile: "mason")
         let request = try #require(resumed["open_requests"]?.arrayValue?.first?["params"]?["request_id"]?.stringValue)
         let settled = try await inbox.call("approval.respond", ["session_id": .string(session), "request_id": .string(request), "choice": "deny"])
@@ -164,7 +167,7 @@ struct DemoGatewayTests {
     }
 
     @Test func askingToSendInAnotherChatRaisesTheSameCard() async throws {
-        let gateway = DemoGateway()
+        let gateway = DemoGateway(pace: InstantClock())
         let (inbox, session, _) = try await dgtOpen(gateway, "demo-scout-main", profile: "scout")
         _ = try await inbox.call("prompt.submit", ["session_id": .string(session), "text": "Please send my landlord a note"])
         #expect(await inbox.waitFor { inbox.heard.contains { $0["method"]?.stringValue == "approval" } })
@@ -174,7 +177,7 @@ struct DemoGatewayTests {
     }
 
     @Test func theBoardNightShiftAndSchedulesAreThere() async throws {
-        let gateway = DemoGateway()
+        let gateway = DemoGateway(pace: InstantClock())
         let columns = try await dgtREST(gateway, "/api/plugins/kanban/board?board=default")["columns"]?.arrayValue ?? []
         let tasks = columns.flatMap { $0["tasks"]?.arrayValue ?? [] }
         #expect(tasks.count >= 6)
@@ -190,7 +193,7 @@ struct DemoGatewayTests {
     }
 
     @Test func movingACardOnTheBoardIsKeptAndABadMoveIsRefused() async throws {
-        let gateway = DemoGateway()
+        let gateway = DemoGateway(pace: InstantClock())
         let body = Data(#"{"status":"review"}"#.utf8)
         let moved = await gateway.rest("PATCH", "/api/plugins/kanban/tasks/k-2?board=default", body: body)
         #expect(moved.status == 200)
@@ -202,7 +205,7 @@ struct DemoGatewayTests {
     }
 
     @Test func aRuntimeOnTheDemoBackendConnectsListsTheBotsAndTalks() async throws {
-        let gateway = DemoGateway()
+        let gateway = DemoGateway(pace: InstantClock())
         let connection = GatewayConnection(name: "Demo", gateway: gateway.address, authMode: .sessionToken)
         let runtime = await GatewayRuntime(connection: connection, store: ConnectionStore(), backend: gateway.backend)
         await runtime.start()
@@ -215,19 +218,21 @@ struct DemoGatewayTests {
         #expect(await chat.items.count >= 2)
         let failure = await chat.send("Plan my weekend")
         #expect(failure == nil)
+        let clock = ContinuousClock()
+        let end = clock.now.advanced(by: .seconds(60))
         var heard = false
-        for _ in 0..<400 where !heard {
+        while !heard, clock.now < end {
             heard = await chat.items.contains { item in
                 if case .assistant(let text, _, _) = item.kind { return text.contains("Plan my weekend") }
                 return false
             }
-            if !heard { try? await Task.sleep(for: .milliseconds(50)) }
+            if !heard { try? await Task.sleep(for: .milliseconds(5)) }
         }
         #expect(heard)
     }
 
     @Test func onlyTheDemoSessionCanReachTheMadeUpHost() async throws {
-        let gateway = DemoGateway()
+        let gateway = DemoGateway(pace: InstantClock())
         // The made-up host never resolves, so a plain session finds nothing there.
         #expect(gateway.host.hasSuffix(".nollie.invalid"))
         let outside = try #require(URL(string: "https://\(gateway.host)/api/status"))

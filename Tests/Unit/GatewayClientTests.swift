@@ -525,6 +525,8 @@ private func gwctWithdrawn(_ effects: [GatewayMachine.Effect]) -> [String] {
 private final class GWCTNotices: @unchecked Sendable {
     private let lock = NSLock()
     private var items: [GatewayNotice] = []
+    private var watchers: [Int: (done: @Sendable (GWCTNotices) -> Bool, wake: CheckedContinuation<Bool, Never>)] = [:]
+    private var nextWatcher = 0
 
     init(_ client: GatewayClient) {
         let stream = client.notices
@@ -533,7 +535,16 @@ private final class GWCTNotices: @unchecked Sendable {
         }
     }
 
-    private func add(_ notice: GatewayNotice) { lock.withLock { items.append(notice) } }
+    private func add(_ notice: GatewayNotice) {
+        lock.withLock { items.append(notice) }
+        let watching = lock.withLock { watchers.map { (id: $0.key, done: $0.value.done) } }
+        // Conditions read the notices, so they are asked outside the lock.
+        for watcher in watching where watcher.done(self) { end(watcher.id, true) }
+    }
+
+    private func end(_ id: Int, _ outcome: Bool) {
+        lock.withLock { watchers.removeValue(forKey: id) }?.wake.resume(returning: outcome)
+    }
 
     var all: [GatewayNotice] { lock.withLock { items } }
 
@@ -545,18 +556,35 @@ private final class GWCTNotices: @unchecked Sendable {
         events.filter { $0.sessionId == session }.compactMap(\.seq)
     }
 
-    /// Waits until `done` holds for the notices so far, for at most `timeout`.
-    func wait(timeout: Duration = .seconds(5), _ done: @Sendable (GWCTNotices) -> Bool) async -> Bool {
-        await gwctEventually(timeout: timeout) { done(self) }
+    /// Waits until `done` holds for the notices so far. It is asked again as each notice arrives, so the wait has no
+    /// timer of its own; only a client stuck for `gwctHangLimit` makes it give up and return false.
+    func wait(_ done: @escaping @Sendable (GWCTNotices) -> Bool) async -> Bool {
+        let id = lock.withLock { nextWatcher += 1; return nextWatcher }
+        let hang = Task { [weak self] in
+            guard (try? await Task.sleep(for: gwctHangLimit)) != nil else { return }
+            self?.end(id, false)
+        }
+        defer { hang.cancel() }
+        return await withCheckedContinuation { wake in
+            lock.withLock { watchers[id] = (done, wake) }
+            if done(self) { end(id, true) }
+        }
     }
 }
 
-private func gwctEventually(timeout: Duration = .seconds(5), _ condition: @Sendable () -> Bool) async -> Bool {
+/// How long a wait goes on before the test calls it a hang. Nothing in these tests runs on real time (the client's
+/// timers run on `SteppedClock`), so this ends only a broken test, and it is long enough that a busy computer never
+/// ends a working one. It used to be five seconds of real time, which a loaded Mac ran past.
+private let gwctHangLimit: Duration = .seconds(60)
+
+/// Waits until `condition` holds, asking every few milliseconds, for things that send no notice (what the pretend
+/// Hermes has heard, the clock's timers). False only after `gwctHangLimit`.
+private func gwctEventually(_ condition: @Sendable () -> Bool) async -> Bool {
     let clock = ContinuousClock()
-    let end = clock.now.advanced(by: timeout)
+    let end = clock.now.advanced(by: gwctHangLimit)
     while clock.now < end {
         if condition() { return true }
-        try? await Task.sleep(for: .milliseconds(2))
+        try? await Task.sleep(for: .milliseconds(5))
     }
     return condition()
 }
@@ -572,13 +600,15 @@ private func gwctFastConfiguration() -> GatewayConfiguration {
     return configuration
 }
 
-private func gwctMakeClient(_ dials: [ScriptedGatewayTransport.Dial],
+/// A client on a scripted Hermes, its timers on `clock`. Time stands still unless the test moves the clock, so a
+/// retry, a heartbeat or a deadline happens only where the test says.
+private func gwctMakeClient(_ dials: [ScriptedGatewayTransport.Dial], clock: SteppedClock = SteppedClock(),
                             _ tune: (inout GatewayConfiguration) -> Void = { _ in })
     -> (GatewayClient, ScriptedGatewayTransport, GWCTNotices) {
     var configuration = gwctFastConfiguration()
     tune(&configuration)
     let transport = ScriptedGatewayTransport(dials)
-    let client = GatewayClient(transport: transport, configuration: configuration) {
+    let client = GatewayClient(transport: transport, configuration: configuration, clock: clock) {
         GatewayEndpoint(url: URL(string: "ws://127.0.0.1:9119/api/ws")!)
     }
     return (client, transport, GWCTNotices(client))
@@ -655,10 +685,15 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
     }
 
     @Test func aCallThatGetsNoAnswerTimesOut() async {
-        let (client, _, _) = gwctMakeClient([])
-        await #expect(throws: GatewayCallFailure.timedOut) {
-            _ = try await client.callRaw("ping", [:], timeout: .milliseconds(30))
-        }
+        let clock = SteppedClock()
+        let (client, _, _) = gwctMakeClient([], clock: clock)
+        let call = Task { try await client.callRaw("ping", [:], timeout: .milliseconds(30)) }
+        // Just short of its deadline it still waits; at the deadline it gives up.
+        #expect(await gwctEventually { clock.waiting == [.milliseconds(30)] })
+        clock.advance(by: .milliseconds(29))
+        #expect(clock.waiting == [.milliseconds(1)])
+        clock.advance(by: .milliseconds(1))
+        await #expect(throws: GatewayCallFailure.timedOut) { _ = try await call.value }
         await client.stop()
     }
 
@@ -708,9 +743,12 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
             .event(type: "message.delta", session: "s1", seq: 4),
             .event(type: "message.delta", session: "s1", seq: 5),
         ]
-        let (client, transport, notices) = gwctMakeClient([.accept(first), .accept(second)])
+        let clock = SteppedClock()
+        let (client, transport, notices) = gwctMakeClient([.accept(first), .accept(second)], clock: clock)
         await client.watch(session: "s1")
         await client.start()
+        // The drop sets a retry; it fires when the clock moves.
+        #expect(await clock.fireNext(within: .milliseconds(20)))
         #expect(await notices.wait { $0.seqs("s1").contains(5) })
         #expect(notices.seqs("s1") == [1, 2, 3, 4, 5])
         #expect(notices.readyCount == 2)
@@ -732,9 +770,12 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
             gwctProbe("s1", latest: 0, epoch: "e2"),
             .event(type: "message.delta", session: "s1", seq: 1),
         ]
-        let (client, transport, notices) = gwctMakeClient([.accept(first), .accept(second)])
+        let clock = SteppedClock()
+        let (client, transport, notices) = gwctMakeClient([.accept(first), .accept(second)], clock: clock)
         await client.watch(session: "s1")
         await client.start()
+        // The drop sets a retry; it fires when the clock moves.
+        #expect(await clock.fireNext(within: .milliseconds(20)))
         #expect(await notices.wait { $0.seqs("s1").count == 2 })
         #expect(notices.all.contains(.reload(session: "s1", .restarted)))
         #expect(notices.seqs("s1") == [3, 1])
@@ -755,9 +796,12 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
             .event(type: "message.delta", session: "s1", seq: 9),
             .event(type: "message.delta", session: "s1", seq: 11),
         ]
-        let (client, transport, notices) = gwctMakeClient([.accept(first), .accept(second)])
+        let clock = SteppedClock()
+        let (client, transport, notices) = gwctMakeClient([.accept(first), .accept(second)], clock: clock)
         await client.watch(session: "s1")
         await client.start()
+        // The drop sets a retry; it fires when the clock moves.
+        #expect(await clock.fireNext(within: .milliseconds(20)))
         #expect(await notices.wait { $0.seqs("s1").contains(11) })
         #expect(notices.all.contains(.reload(session: "s1", .truncated)))
         #expect(notices.seqs("s1") == [1, 11])
@@ -774,9 +818,12 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
         let second = ScriptedGatewayTransport.handshake(epoch: "e1") + [
             .expectCall("session.events.since", reply: .error(code: -32601, message: "unknown method")),
         ]
-        let (client, transport, notices) = gwctMakeClient([.accept(first), .accept(second)])
+        let clock = SteppedClock()
+        let (client, transport, notices) = gwctMakeClient([.accept(first), .accept(second)], clock: clock)
         await client.watch(session: "s1")
         await client.start()
+        // The drop sets a retry; it fires when the clock moves.
+        #expect(await clock.fireNext(within: .milliseconds(20)))
         #expect(await notices.wait { $0.readyCount == 2 })
         #expect(notices.all.contains(.reload(session: "s1", .replayFailed)))
         #expect(transport.problems.isEmpty, "\(transport.problems)")
@@ -784,10 +831,13 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
     }
 
     @Test func aRefusedDialClosesForGood() async {
-        let (client, transport, notices) = gwctMakeClient([.refuse(.refused(status: 403))])
+        let clock = SteppedClock()
+        let (client, transport, notices) = gwctMakeClient([.refuse(.refused(status: 403))], clock: clock)
         await client.start()
         #expect(await notices.wait { $0.phases.contains(.closed(.refused(code: 403))) })
-        try? await Task.sleep(for: .milliseconds(40))
+        // Nothing is left to fire: no retry, no deadline.
+        #expect(await gwctEventually { clock.waiting.isEmpty })
+        clock.advance(by: .seconds(3600))
         #expect(transport.openCount == 1)
         #expect(notices.phases == [.connecting(attempt: 1), .closed(.refused(code: 403))])
         await #expect(throws: GatewayCallFailure.closed) { _ = try await client.callRaw("ping", [:]) }
@@ -796,19 +846,23 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
 
     @Test func aRefusedCloseCodeClosesForGood() async {
         let steps = ScriptedGatewayTransport.handshake(epoch: "e1") + [.drop(code: 4401)]
-        let (client, transport, notices) = gwctMakeClient([.accept(steps)])
+        let clock = SteppedClock()
+        let (client, transport, notices) = gwctMakeClient([.accept(steps)], clock: clock)
         await client.start()
         #expect(await notices.wait { $0.phases.contains(.closed(.refused(code: 4401))) })
-        try? await Task.sleep(for: .milliseconds(40))
+        #expect(await gwctEventually { clock.waiting.isEmpty })
+        clock.advance(by: .seconds(3600))
         #expect(transport.openCount == 1)
         #expect(transport.problems.isEmpty, "\(transport.problems)")
     }
 
     @Test func anUnreachableHermesIsRetriedUntilTheBudgetRunsOut() async {
-        let (client, transport, notices) = gwctMakeClient([.refuse(.unreachable("down")), .refuse(.unreachable("down"))]) {
+        let clock = SteppedClock()
+        let (client, transport, notices) = gwctMakeClient([.refuse(.unreachable("down")), .refuse(.unreachable("down"))], clock: clock) {
             $0.maxAttempts = 2
         }
         await client.start()
+        #expect(await clock.fireNext(within: .milliseconds(20)))
         #expect(await notices.wait { $0.phases.contains(.closed(.gaveUp)) })
         #expect(transport.openCount == 2)
         #expect(notices.phases.contains { if case .retrying(2, _) = $0 { true } else { false } })
@@ -816,9 +870,11 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
     }
 
     @Test func aFailedOpenIsRetried() async {
+        let clock = SteppedClock()
         let (client, transport, notices) = gwctMakeClient([.refuse(.unreachable("down")),
-                                                           .accept(ScriptedGatewayTransport.handshake(epoch: "e1"))])
+                                                           .accept(ScriptedGatewayTransport.handshake(epoch: "e1"))], clock: clock)
         await client.start()
+        #expect(await clock.fireNext(within: .milliseconds(20)))
         #expect(await notices.wait { $0.phases.contains(.ready) })
         #expect(transport.openCount == 2)
         #expect(notices.phases.contains(.connecting(attempt: 2)))
@@ -828,12 +884,15 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
 
     @Test func aCallInFlightWhenTheLineDropsFailsAsConnectionLostAndIsNotRepeated() async {
         let first = ScriptedGatewayTransport.handshake(epoch: "e1") + [.expectCall("prompt.submit", reply: .silence), .drop(code: 1006)]
-        let (client, transport, notices) = gwctMakeClient([.accept(first), .accept(ScriptedGatewayTransport.handshake(epoch: "e1"))])
+        let clock = SteppedClock()
+        let (client, transport, notices) = gwctMakeClient([.accept(first), .accept(ScriptedGatewayTransport.handshake(epoch: "e1"))],
+                                                          clock: clock)
         await client.start()
         #expect(await notices.wait { $0.phases.contains(.ready) })
         await #expect(throws: GatewayCallFailure.connectionLost) {
             _ = try await client.callRaw("prompt.submit", ["session_id": "s1", "text": "hello"])
         }
+        #expect(await clock.fireNext(within: .milliseconds(20)))
         #expect(await notices.wait { $0.readyCount == 2 })
         try? await Task.sleep(for: .milliseconds(30))
         // The second socket's script expects only the handshake, so a repeated prompt.submit would be a problem.
@@ -924,10 +983,15 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
             // Left unanswered, so no third ping goes out while this one is outstanding.
             .expectCall("ping", params: [:], reply: .silence),
         ]
-        let (client, transport, notices) = gwctMakeClient([.accept(steps)]) { $0.heartbeatInterval = .milliseconds(20) }
+        let clock = SteppedClock()
+        let (client, transport, notices) = gwctMakeClient([.accept(steps)], clock: clock) { $0.heartbeatInterval = .milliseconds(20) }
         await client.start()
-        #expect(await gwctEventually { transport.finished })
-        try? await Task.sleep(for: .milliseconds(60))
+        #expect(await notices.wait { $0.phases.contains(.ready) })
+        // Each beat is one move of the clock: the first ping is answered, the second is not, the third beat sends nothing.
+        for _ in 0..<3 { #expect(await clock.fireNext(within: .milliseconds(20))) }
+        // The beat is set again only after the third one was handled.
+        #expect(await gwctEventually { clock.waiting.first == .milliseconds(20) })
+        #expect(transport.finished)
         #expect(gwctSentFrames(transport).filter { $0["method"] == "ping" }.count == 2)
         #expect(notices.readyCount == 1)
         #expect(transport.problems.isEmpty, "\(transport.problems)")
@@ -936,16 +1000,25 @@ private func gwctEvent(_ session: String, _ seq: Int, type: String = "message.de
 
     @Test func aSilentSocketLeadsToAReconnect() async {
         let silent = ScriptedGatewayTransport.handshake(epoch: "e1") + [.expectCall("ping", reply: .silence)]
-        let (client, transport, notices) = gwctMakeClient([.accept(silent), .accept(silent)]) {
+        let clock = SteppedClock()
+        let (client, transport, notices) = gwctMakeClient([.accept(silent), .accept(silent)], clock: clock) {
             $0.heartbeatInterval = .milliseconds(20)
             $0.silenceLimit = .milliseconds(300)
         }
         await client.start()
+        #expect(await notices.wait { $0.phases.contains(.ready) })
+        // A beat sends a ping that is never answered; 300 ms after the last word from Hermes the socket is given up.
+        #expect(await clock.fireNext(within: .milliseconds(20)))
+        #expect(await gwctEventually { transport.openCount == 1 && clock.waiting.first == .milliseconds(20) })
+        clock.advance(by: .milliseconds(280))
+        #expect(await notices.wait { $0.phases.contains { if case .retrying(2, _) = $0 { true } else { false } } })
+        #expect(await clock.fireNext(within: .milliseconds(20)))
         #expect(await notices.wait { $0.readyCount == 2 })
+        // The new socket beats too. The clock stops here, so it is never found silent.
+        #expect(await clock.fireNext(within: .milliseconds(20)))
         #expect(await gwctEventually { transport.finished })
         await client.stop()
         #expect(transport.openCount == 2)
-        #expect(notices.phases.contains { if case .retrying(2, _) = $0 { true } else { false } })
         #expect(transport.problems.isEmpty, "\(transport.problems)")
     }
 }
