@@ -15,13 +15,19 @@ import WebKit
         init(_ value: Value) { self.value = value }
     }
 
-    @MainActor @Test func webKitSeesTheDelegateAndAPageCannotWalkOffTheCard() async throws {
+    @MainActor @Test(.timeLimit(.minutes(2))) func webKitSeesTheDelegateAndAPageCannotWalkOffTheCard() async throws {
         let measured = Cell<CGFloat>(0)
         let finished = Cell(false)
+        // The card says it has loaded by setting `loaded`, once WebKit finished the page and it was first measured.
+        // The test waits for exactly that, however long a busy computer takes to start WebKit and build the card's rules.
+        let (loads, loadSeen) = AsyncStream.makeStream(of: Void.self)
         let page = "<p id=\"line\">hello</p><a href=\"https://example.org/away\">leave</a>"
         let view = HTMLWebView(document: HTMLCard.document(page, dark: false), scrolls: false,
                                height: Binding(get: { measured.value }, set: { measured.value = $0 }),
-                               loaded: Binding(get: { finished.value }, set: { finished.value = $0 }))
+                               loaded: Binding(get: { finished.value }, set: {
+                                   finished.value = $0
+                                   if $0 { loadSeen.yield() }
+                               }))
         // The web view only holds its delegate weakly, so the coordinator is kept here.
         let coordinator = view.makeCoordinator()
         let web = view.makeWebView(coordinator)
@@ -32,8 +38,10 @@ import WebKit
         let hears = listener?.responds(to: policy) ?? false
         #expect(hears)
 
-        for _ in 0..<200 where !finished.value { try await Task.sleep(for: .milliseconds(50)) }
-        #expect(finished.value)
+        // The test's two-minute limit ends this wait only if the page never loads.
+        var waiting = loads.makeAsyncIterator()
+        _ = await waiting.next()
+        try #require(finished.value, "the card never said its page had loaded")
         let first = try await web.evaluateJavaScript("document.getElementById('line').textContent") as? String
         #expect(first == "hello")
 
