@@ -10,14 +10,10 @@ struct WeeklyNoteStrip: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var weekly: WeeklyNoteModel { .shared }
 
-    /// Only in Nollie's own main chat, as the night shift's card.
-    private var isMainChat: Bool {
-        chat.profileName == "default" && BotsHome.shared.entry(chat.runtime, "default").storedID == chat.storedID
-    }
-
     var body: some View {
         Group {
-            if isMainChat, weekly.cardShows(model), let note = weekly.note {
+            // Only in Nollie's own main chat, beside the morning's Night shift.
+            if chat.isNolliesMainChat, weekly.cardShows(model), let note = weekly.note {
                 WeeklyNoteCard(note: note, open: { model.weeklyRequest = UUID() }, putAway: {
                     withAnimation(reduceMotion ? nil : .snappy) { weekly.putAway() }
                 })
@@ -37,6 +33,28 @@ struct WeeklyNoteCard: View {
     var note: WeeklyNote
     var open: () -> Void
     var putAway: () -> Void
+
+    var body: some View {
+        ThreadCapsule(symbol: WeeklyInk.symbol, tint: WeeklyInk.tint, title: Text("Your week"), line: note.headline,
+                      isNew: !note.news.isEmpty, hint: Text("Opens the note"), putAwayLabel: Text("Put away until next week"),
+                      id: "weekly.card", open: open, putAway: putAway)
+    }
+}
+
+/// A glass capsule at the top of the main chat's thread, scrolling with it: a symbol, a name, one line and a cross.
+/// The weekly note and the morning's Night shift each wear one. A tap opens what it names; the cross puts it away.
+struct ThreadCapsule: View {
+    var symbol: String
+    var tint: Color
+    var title: Text
+    var line: String
+    var isNew = false
+    var hint: Text
+    var putAwayLabel: Text
+    /// Its test id; the cross adds `.putAway`.
+    var id: String
+    var open: () -> Void
+    var putAway: () -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
@@ -44,22 +62,22 @@ struct WeeklyNoteCard: View {
             Button(action: open) {
                 HStack(spacing: 14) {
                     if !large {
-                        Image(systemName: WeeklyInk.symbol)
+                        Image(systemName: symbol)
                             .font(.title3.weight(.semibold))
-                            .foregroundStyle(WeeklyInk.tint)
+                            .foregroundStyle(tint)
                             .accessibilityHidden(true)
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        // At the largest sizes the card keeps to its name, so it never fills the chat.
+                        // At the largest sizes the capsule keeps to its name, so it never fills the chat.
                         let titleLayout = large ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
                             : AnyLayout(HStackLayout(spacing: 8))
                         titleLayout {
-                            Text("Your week").font(.headline).foregroundStyle(Ink.text)
+                            title.font(.headline).foregroundStyle(Ink.text)
                                 .fixedSize(horizontal: false, vertical: true)
-                            if !note.news.isEmpty { NewTag() }
+                            if isNew { NewTag() }
                         }
                         if !large {
-                            Text(note.headline).font(.subheadline).foregroundStyle(Ink.text2)
+                            Text(line).font(.subheadline).foregroundStyle(Ink.text2)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -69,9 +87,9 @@ struct WeeklyNoteCard: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
-            .accessibilityValue(note.headline)
-            .accessibilityHint("Opens the note")
-            .testID("weekly.card")
+            .accessibilityValue(line)
+            .accessibilityHint(hint)
+            .testID(id)
             Button(action: putAway) {
                 Image(systemName: "xmark")
                     .font(.footnote.weight(.bold))
@@ -80,8 +98,8 @@ struct WeeklyNoteCard: View {
                     .contentShape(.circle)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Put away until next week")
-            .testID("weekly.card.putAway")
+            .accessibilityLabel(putAwayLabel)
+            .testID(id + ".putAway")
         }
         .padding(.leading, 20).padding(.trailing, 10).padding(.vertical, 10)
         .nollieGlass(.regular, in: shape, solid: Ink.card)

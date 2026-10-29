@@ -58351,6 +58351,34 @@
         }
       }
     },
+    "Opens the night's work" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Öffnet die Arbeit der Nacht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre el trabajo de la noche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ouvre le travail de la nuit"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "夜の作業を開きます"
+          }
+        }
+      }
+    },
     "Opens the note" : {
       "localizations" : {
         "de" : {
@@ -62276,6 +62304,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "来週までしまう"
+          }
+        }
+      }
+    },
+    "Put away until tomorrow" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bis morgen weglegen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardar hasta mañana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ranger jusqu'à demain"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "明日までしまう"
           }
         }
       }
