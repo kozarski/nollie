@@ -40,6 +40,8 @@ public actor DemoGateway {
     var kanban: DemoKanban
     var schedules: [JSONValue]
     var askFirst: [String: Bool] = [:]
+    /// Night shift's switch, on as the demo's morning card supposes.
+    var nightShiftOn = true
     var seededAsk = false
     var closed = false
 

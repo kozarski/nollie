@@ -55780,7 +55780,7 @@
       }
     },
     "Off" : {
-      "comment" : "A Status row's state word\nA switch state\nThe weekly note is switched off\nUsing this Mac is switched off",
+      "comment" : "A Status row's state word\nA switch state\nNight shift is switched off\nThe weekly note is switched off\nUsing this Mac is switched off",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58347,6 +58347,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "チャットを開きます"
+          }
+        }
+      }
+    },
+    "Opens the night's work" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Öffnet die Arbeit der Nacht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre el trabajo de la noche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ouvre le travail de la nuit"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "夜の作業を開きます"
           }
         }
       }
@@ -62276,6 +62304,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "来週までしまう"
+          }
+        }
+      }
+    },
+    "Put away until tomorrow" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bis morgen weglegen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardar hasta mañana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ranger jusqu'à demain"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "明日までしまう"
           }
         }
       }
@@ -91230,6 +91286,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "先に%@でオンにしてください。"
+          }
+        }
+      }
+    },
+    "Turn it on to see each morning what your helpers did overnight, and why." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Schalte es ein, um jeden Morgen zu sehen, was deine Helfer über Nacht getan haben, und warum."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Actívalo para ver cada mañana lo que tus ayudantes hicieron durante la noche, y por qué."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Active-le pour voir chaque matin ce que tes assistants ont fait pendant la nuit, et pourquoi."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "オンにすると、ヘルパーが夜のあいだに何をしたか、その理由とともに毎朝わかります。"
           }
         }
       }

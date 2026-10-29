@@ -159,6 +159,15 @@ struct TranscriptView: View {
             #endif
             .sheet(item: selectedTextItem) { selectTextSheet($0).withAppModel() }
             .sheet(isPresented: $showAwayGrace) { awayGraceSheet().withAppModel() }
+            #if DEBUG
+            .task {
+                // For pictures of what opens the main chat (the weekly note, the morning's Night shift):
+                // `-nollie-demo-thread-top` scrolls to the start once the thread has settled.
+                guard DemoMode.isOn, ProcessInfo.processInfo.arguments.contains("-nollie-demo-thread-top") else { return }
+                try? await Task.sleep(for: .seconds(8))
+                scrollPosition.scrollTo(edge: .top)
+            }
+            #endif
     }
 
     private var selectedTextItem: Binding<SelectTextItem?> {
@@ -217,8 +226,10 @@ struct TranscriptView: View {
     private var column: some View {
         let sidePad: CGFloat = prefs.wideReplies ? 10 : 16
         return VStack(alignment: .leading, spacing: 10) {
-            // The week's note opens the main chat and scrolls away with it, so it never covers the thread.
+            // The week's note and the morning's Night shift open the main chat and scroll away with it, so they
+            // never cover the thread.
             WeeklyNoteStrip(chat: chat)
+            NightShiftStrip(chat: chat)
             threadContent
             Color.clear.frame(height: 0).id("bottom")
         }
