@@ -1006,6 +1006,9 @@ def arguments(argv=None):
 
 def main(argv=None):
     args = arguments(argv)
+    # Lines in order with the tools' own output, even into a log file.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
     try:
         ship = Ship(args)
         if args.status:
