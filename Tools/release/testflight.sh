@@ -27,6 +27,12 @@
 # which makes the App Store profiles and uses his installer certificate for the Mac.
 #
 # Set DRY_RUN=1 on either platform to stop once the export and its checks are done; nothing is uploaded.
+# Add OFFLINE=1 (with DRY_RUN=1 and a BUILD_NUMBER) to skip App Store Connect too: no key, no app record
+# check, no build number lookup. That is for a rehearsal that reads and sends nothing.
+#
+# UPLOAD_PRODUCT=<the .ipa or .pkg a DRY_RUN exported> uploads that export without building again. It is
+# checked once more first (Corey's signature, production signing, this build number), and the app record
+# is checked as for any upload. Tools/release/ship.sh uses this to show the exact file before it goes.
 
 set -e -u -o pipefail
 
@@ -60,6 +66,16 @@ esac
 
 die() { printf '\n%s\n' "$1" >&2; exit 1; }
 
+if [ -n "${OFFLINE:-}" ]; then
+    [ -n "${DRY_RUN:-}" ] || die "OFFLINE only goes with DRY_RUN. An upload always checks the app record first."
+    [ -z "${UPLOAD_PRODUCT:-}" ] || die "OFFLINE cannot upload."
+    [ -n "${BUILD_NUMBER:-}" ] || die "OFFLINE needs BUILD_NUMBER, since the next number comes from App Store Connect."
+fi
+if [ -n "${UPLOAD_PRODUCT:-}" ]; then
+    [ -z "${DRY_RUN:-}" ] || die "UPLOAD_PRODUCT uploads, so it does not go with DRY_RUN."
+    [ -n "${BUILD_NUMBER:-}" ] || die "UPLOAD_PRODUCT needs the BUILD_NUMBER it was built with."
+fi
+
 # The key settings travel together to anything that talks to App Store Connect.
 with_key() {
     ASC_KEY_ID="$ASC_KEY_ID" ASC_ISSUER_ID="$ASC_ISSUER_ID" ASC_KEY_PATH="$ASC_KEY_PATH" \
@@ -68,11 +84,15 @@ with_key() {
 
 # --- Checks before anything is built ---------------------------------------------------------
 
-for name in ASC_APP_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_PATH; do
-    [ -n "${!name:-}" ] || die "$name is not set. See the top of this script."
-done
-[ -f "$ASC_KEY_PATH" ] || die "There is no API key file at $ASC_KEY_PATH"
-with_key python3 Tools/release/release_guard.py app "$ASC_APP_ID"
+if [ -z "${OFFLINE:-}" ]; then
+    for name in ASC_APP_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_PATH; do
+        [ -n "${!name:-}" ] || die "$name is not set. See the top of this script."
+    done
+    [ -f "$ASC_KEY_PATH" ] || die "There is no API key file at $ASC_KEY_PATH"
+    with_key python3 Tools/release/release_guard.py app "$ASC_APP_ID"
+else
+    echo "==> Offline rehearsal: App Store Connect is not contacted"
+fi
 
 # The project file holds the real version; Info.plist only has the $(MARKETING_VERSION) macro.
 MARKETING_VERSION="${MARKETING_VERSION:-$(sed -n 's/.*MARKETING_VERSION = \(.*\);/\1/p' "$PROJECT/project.pbxproj" | head -1)}"
@@ -97,6 +117,17 @@ if [ -z "${BUILD_NUMBER:-}" ]; then
         die "Reading the existing builds from App Store Connect failed, so no build number could be chosen. Pass BUILD_NUMBER=<n> to set one yourself."
 fi
 [[ "$BUILD_NUMBER" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]] || die "BUILD_NUMBER must be a numeric build version."
+
+if [ -n "${UPLOAD_PRODUCT:-}" ]; then
+    case "$UPLOAD_PRODUCT" in
+        *.${PRODUCT_GLOB#*.}) ;;
+        *) die "UPLOAD_PRODUCT must be the $PRODUCT_GLOB a dry run exported for $PLATFORM." ;;
+    esac
+    [ -f "$UPLOAD_PRODUCT" ] || die "There is no export at $UPLOAD_PRODUCT."
+    echo "==> Checking the export made earlier"
+    python3 Tools/release/release_guard.py export "$UPLOAD_PRODUCT" "$PLATFORM" "$BUILD_NUMBER"
+    PRODUCT="$UPLOAD_PRODUCT"
+else  # Build, export and check it here. (Not indented, to keep the steps easy to compare with history.)
 
 ARCHIVE="$ARCHIVE_DIR/$PREFIX-$BUILD_NUMBER.xcarchive"
 EXPORT_DIR="$ARCHIVE_DIR/export-$PREFIX-$BUILD_NUMBER"
@@ -155,6 +186,7 @@ if [ "${DRY_RUN:-}" ]; then
     printf '\nDry run: %s passed identity and production signing checks. Nothing was uploaded.\n' "$PRODUCT"
     exit 0
 fi
+fi  # UPLOAD_PRODUCT
 
 # --- Upload -------------------------------------------------------------------------------------
 
