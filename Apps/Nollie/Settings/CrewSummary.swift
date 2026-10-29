@@ -18,24 +18,78 @@ final class CrewSummaryModel {
     private(set) var bots: [BotDay]?
     /// The newest Night shift card of the last day and a half. Nil when there is none.
     private(set) var night: ConversationPost.NightShift?
+    /// When that card was posted.
+    private(set) var nightAt: Date?
     private(set) var loaded = false
     private var key: String?
+    /// When the card was last read, for the main chat's capsule.
+    private var nightReadAt: Date?
+    /// The time of the morning card last put away from the main chat (`NightShiftMorning`).
+    private(set) var nightPutAway: Date?
+    private let defaults: UserDefaults
+
+    static let nightPutAwayKey = "nollie.nightShift.putAway"
+    /// How often the main chat reads the card again while it stays open.
+    static let nightEvery: TimeInterval = 15 * 60
 
     /// Across every bot that keeps a Papertrail: what left today, and the part that went online.
     var leftToday: Int? { bots.map { $0.reduce(0) { $0 + $1.today.left } } }
     var onlineToday: Int? { bots.map { $0.reduce(0) { $0 + $1.today.online } } }
 
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        nightPutAway = defaults.object(forKey: Self.nightPutAwayKey) as? Date
+    }
+
     func load(_ runtime: GatewayRuntime) async {
-        let key = runtime.connection.id.uuidString
-        if self.key != key { bots = nil; night = nil; loaded = false; self.key = key }
+        let key = switchTo(runtime)
         async let days = Self.days(runtime)
-        async let card = Self.latestNight(runtime)
-        let (read, latest) = await (days, card)
+        async let posts = Self.nightPosts(runtime)
+        let (read, answered) = await (days, posts)
         guard !Task.isCancelled, self.key == key else { return }
         bots = read
-        night = latest
+        if let answered { keep(Self.newestNight(answered)) }
         loaded = true
     }
+
+    /// Reads only the Night shift card, at most every `nightEvery` unless `force`: the main chat's capsule.
+    func loadNight(_ runtime: GatewayRuntime, force: Bool = false, now: Date = Date()) async {
+        let key = switchTo(runtime)
+        if !force, let read = nightReadAt, now.timeIntervalSince(read) < Self.nightEvery { return }
+        // A read that fails keeps the card already shown, and tries again next time.
+        guard let answered = await Self.nightPosts(runtime), !Task.isCancelled, self.key == key else { return }
+        keep(Self.newestNight(answered))
+    }
+
+    /// Whether the main chat shows this morning's card (`NightShiftMorning`).
+    func nightCardShows(now: Date = Date()) -> Bool {
+        night != nil && NightShiftMorning.cardShows(postedAt: nightAt, now: now, putAway: nightPutAway)
+    }
+
+    /// Puts this morning's card away from the main chat until the next one. It stays in Settings › Night shift.
+    func putNightAway() {
+        guard let nightAt else { return }
+        nightPutAway = nightAt
+        defaults.set(nightAt, forKey: Self.nightPutAwayKey)
+    }
+
+    /// Forgets what was read from another gateway; answers this one's key.
+    private func switchTo(_ runtime: GatewayRuntime) -> String {
+        let key = runtime.connection.id.uuidString
+        if self.key != key { bots = nil; night = nil; nightAt = nil; nightReadAt = nil; loaded = false; self.key = key }
+        return key
+    }
+
+    private func keep(_ post: ConversationPost?) {
+        night = post?.nightShift
+        nightAt = post?.at
+        nightReadAt = Date()
+    }
+
+    #if DEBUG
+    /// For tests: a card as if just read.
+    func show(_ post: ConversationPost?) { keep(post) }
+    #endif
 
     private static func days(_ runtime: GatewayRuntime) async -> [BotDay]? {
         var found: [BotDay] = []
@@ -48,8 +102,17 @@ final class CrewSummaryModel {
 
     /// The newest Night shift card of the last day and a half, or nil. The Watch's note reads it too.
     static func latestNight(_ runtime: GatewayRuntime) async -> ConversationPost.NightShift? {
-        let posts = try? await HermesConversationPosts(api: runtime.api).posts(since: Date().addingTimeInterval(-36 * 3600))
-        return posts?.filter { $0.nightShift != nil }.max { $0.at < $1.at }?.nightShift
+        await nightPosts(runtime).flatMap(newestNight)?.nightShift
+    }
+
+    /// The add-on's posts of the last day and a half, or nil when they could not be read.
+    private static func nightPosts(_ runtime: GatewayRuntime) async -> [ConversationPost]? {
+        try? await HermesConversationPosts(api: runtime.api).posts(since: Date().addingTimeInterval(-36 * 3600))
+    }
+
+    /// The newest Night shift card among `posts`.
+    static func newestNight(_ posts: [ConversationPost]) -> ConversationPost? {
+        posts.filter { $0.nightShift != nil }.max { $0.at < $1.at }
     }
 }
 
