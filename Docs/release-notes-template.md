@@ -1,7 +1,9 @@
 <!--
-Template for a release's notes. Copy it, fill in every {braces}, and delete this comment and any
-section that has nothing to say. The release workflow starts a draft release from this file and fills
-in {version} for you. The tone is Nollie's: plain, warm, short, no em-dashes.
+Template for a release's notes. Copy it to Docs/releases/<version>.md, fill in every {braces}, and
+delete this comment and any section that has nothing to say. Leave {build}, {dmg sha256} and
+{zip sha256}: Tools/release/ship.sh fills them in once the files are made. The release workflow starts a
+draft release from this file and fills in {version} for you. The tone is Nollie's: plain, warm, short,
+no em-dashes.
 -->
 Nollie {version} {one sentence on what is better, said the way you would say it to a friend}.
 

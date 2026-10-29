@@ -29,9 +29,68 @@ The Mac app and the iPhone app share one version number, `MARKETING_VERSION`, th
 The build number, `CURRENT_PROJECT_VERSION`, goes up with every upload. A release is tagged `v` plus the
 version, such as `v1.0`. The release workflow refuses a tag that does not match.
 
-## Making a release
+## One command: ship.sh
 
-Run these from the repository root, on a clean `main` that has passed CI and `Tools/dev/verify.py`.
+`Tools/release/ship.sh <version>` makes a whole release, one step at a time, and stops for Corey's yes
+before anything leaves this Mac. Run it from the repository root, on the branch the release comes from.
+
+```sh
+Tools/release/ship.sh 1.3 --dry-run     # rehearse it: every local step, nothing sent
+Tools/release/ship.sh 1.3               # the real thing
+Tools/release/ship.sh 1.3 --status      # what is done so far
+Tools/release/ship.sh 1.3 --from mac    # go again from a step
+```
+
+| Step | What it does | Sends? |
+| :--- | :--- | :--- |
+| `preflight` | Clean tree; every commit since the last tag is Corey's, with no attribution lines and no mention of AI tools; no secrets in the tree or in what was added since; the Developer ID signer and the gh login are Corey's; the CloudKit production schema matches `Tools/cloudkit/nollie-alerts.ckdb`; the notes are finished; every version and build number agrees; Corey's own key is set for uploads and the team key only for notarization; the site is committed | No, it only reads |
+| `bump` | Sets `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in every place and commits "Nollie 1.3: version 1.3 (7)" | No |
+| `check` | The full check, `Tools/dev/verify.py` (`--check-stages build unit` for fewer) | No |
+| `mac` | `direct-release.sh`, then the checksums go into the notes, the appcast is written again with them, and `Nollie.dmg`, `Nollie.zip`, their `.sha256` files and `appcast.xml` are put in `build/ship/<version>/assets` | Apple's notary service |
+| `ios` | Builds and checks the iPhone, iPad and Watch app, shows the exact `.ipa`, then uploads it | TestFlight |
+| `macstore` | The same for the Mac App Store `.pkg` | TestFlight |
+| `draft` | Tags the release commit, checks every commit that would be pushed, pushes the branch, makes the draft release with the files and notes, then pushes the tag | GitHub |
+| `appcast` | Checks the files and the appcast, then reads the draft back: every file unchanged, the notes the same as the appcast's | No, it only reads |
+| `publish` | Publishes the draft, then waits until the live appcast offers the new version | GitHub |
+| `site` | Deploys nollie.app with wrangler, then checks the live page is this `index.html` | Cloudflare |
+
+**Checkpoints.** Before each send, the script shows exactly what will go and where (each file with its size
+and SHA-256, and the command it will run) and asks for `yes`. Anything else stops it, and nothing is sent.
+Where there is no terminal to ask in, it stops at the checkpoint; once Corey has said yes, carry on with
+`--from <step> --approve <step>`. The script refuses any send that has not passed its checkpoint, so a step
+cannot send by accident.
+
+**Resuming.** Progress is kept in `build/ship/<version>/state.json`. Running the same command again carries on
+from the first step not yet done. A build that is already made and checked is not made again: if the iPhone
+upload stopped at its checkpoint, the next run shows the same `.ipa` and uploads that one.
+
+**Keys.** Uploads use Corey's own App Store Connect key from `Tools/release/.env` (`ASC_KEY_KIND=individual`), so
+they show his name. The Mac download is notarized with the team key `LA7B5435SG` from
+`~/.asc/keys/AuthKey_LA7B5435SG.p8`; its issuer comes from `NOLLIE_NOTARY_ISSUER_ID` or the `asc` tool's
+`~/.asc/config.json`. Each tool gets only its own key: the team key never reaches `testflight.sh`, and the
+preflight stops if `.env` names it.
+
+**Notes.** Write them in `Docs/releases/<version>.md` (or pass `--notes <file>`), from
+[release-notes-template.md](release-notes-template.md). Leave `{build}`, `{dmg sha256}` and `{zip sha256}` as
+they are: the `mac` step fills them in once the files exist, before the appcast is written, so the update
+window and the release page say the same thing. Any other `{braces}` stop the preflight.
+
+**Dry run.** `--dry-run` works on a throwaway checkout in `build/ship/<version>-dry-run/checkout`, so the branch
+is not touched and no tag is made. It runs the preflight, the bump commit, the full check and all three builds;
+signs the app, the DMG and the zip with Developer ID; makes the checksums; and writes an appcast signed with a
+stand-in key, which installed copies would refuse. It reads the remote tags, the CloudKit production schema,
+the gh login and the published appcast, and contacts nothing else: no App Store Connect, no notary service, no
+push, no release, no deploy. Everything a real run would send is in `would-send.txt` beside it. A dry run
+does not need `Tools/release/.env`. Afterwards, `--dry-run --clean` removes the checkout, its builds and its
+Xcode caches, and keeps the reports.
+
+Builds take the shared lock, `/tmp/nollie-xcodebuild.lock` (`NOLLIE_BUILD_LOCK` to change it), so they wait
+their turn behind other checkouts.
+
+## Making a release by hand
+
+`ship.sh` does all of this. These are the same steps on their own, for when one needs doing by hand.
+Run them from the repository root, on a clean branch that has passed CI and `Tools/dev/verify.py`.
 
 1. **Choose the version.** Set `MARKETING_VERSION` everywhere and raise the build number. Commit it.
 2. **Write the notes.** Copy [release-notes-template.md](release-notes-template.md) and fill it in. The
@@ -44,7 +103,9 @@ Run these from the repository root, on a clean `main` that has passed CI and `To
    (`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_PATH`) are set; without either it warns at the end, and the DMG
    must not ship until it is notarized and stapled. It then signs the DMG and the zip for Sparkle and writes
    `appcast.xml` beside them (see [Automatic updates](#automatic-updates-direct-mac)). It stops before
-   building anything if the update key is still the placeholder.
+   building anything if the update key is still the placeholder. With `DRY_RUN=1` it sends nothing to Apple:
+   it signs with Developer ID here, skips the checks that need Apple's ticket, and signs the appcast with a
+   stand-in key.
 4. **Name and checksum the files.** Give them the plain names the download links use, then write a checksum
    file beside each. `appcast.xml` keeps its name; it already points at `Nollie.zip`:
 
@@ -164,6 +225,9 @@ Its guard verifies the intended app record before work begins.
 Keep private keys outside the repository and never include credential values in logs or documentation.
 
 `DRY_RUN=1` prevents upload, but still performs archive/export and authenticated account checks.
+Add `OFFLINE=1` and a `BUILD_NUMBER` to skip App Store Connect as well, for a rehearsal that contacts nothing.
+`UPLOAD_PRODUCT=<.ipa or .pkg>` uploads an export a dry run made, after checking it again, without building it
+a second time; `ship.sh` uses it so the file shown at the checkpoint is the file that goes.
 Inspect the script and export options before running it.
 An actual upload or external release action needs Corey's approval.
 
