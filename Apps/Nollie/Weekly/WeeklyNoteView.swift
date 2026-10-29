@@ -212,9 +212,7 @@ struct WeeklyLineRow: View {
     static func unhyphenated(_ text: String) -> String {
         text.split(separator: " ", omittingEmptySubsequences: false).map { word in
             guard word.split(separator: ".").count >= 3 else { return String(word) }
-            return word.split(separator: ".", omittingEmptySubsequences: false)
-                .map { $0.map(String.init).joined(separator: "\u{2060}") }
-                .joined(separator: ".\u{200B}")
+            return LineBreaks.address(String(word))
         }
         .joined(separator: " ")
     }

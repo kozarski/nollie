@@ -387,7 +387,7 @@ private struct PapertrailDetails: View {
             let amount = entry.amountText
             if !amount.isEmpty { Text(amount).font(.body).foregroundStyle(Ink.text2) }
             if !place.isEmpty {
-                Text(place).font(.callout.monospaced()).foregroundStyle(Ink.text2).textSelection(.enabled)
+                AddressText(place).font(.callout.monospaced()).foregroundStyle(Ink.text2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             // Every place it connected to, each once.
