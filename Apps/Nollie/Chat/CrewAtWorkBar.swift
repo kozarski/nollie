@@ -91,7 +91,10 @@ struct CrewAtWorkBar: View {
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Ink.text)
                     .fixedSize(horizontal: false, vertical: true)
-                if !members.isEmpty, let line = outcome.map(Self.short) ?? (members.count == 1 ? members.first?.step : nil) {
+                // At the largest text sizes the step is left to the helper's own row above, which
+                // says the same words, so the bar stays one short line over the list.
+                if !members.isEmpty,
+                   let line = outcome.map(Self.short) ?? (members.count == 1 && !typeSize.isAccessibilitySize ? members.first?.step : nil) {
                     Text(line)
                         .font(.subheadline)
                         .foregroundStyle(outcome == nil ? Ink.text2 : (outcome == MacStopWords.stopped ? Ink.text2 : .orange))

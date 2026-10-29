@@ -127,7 +127,9 @@ struct ProfileCardView: View {
     private var page: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ProfileCardHeader(state: state, today: today, botState: chat?.botState ?? .idle, floating: floatingControls)
+                // On the Papertrail tab its own page says today's answer in large type, so the header doesn't say it twice.
+                ProfileCardHeader(state: state, today: tab == .papertrail ? nil : today, botState: chat?.botState ?? .idle,
+                                  floating: floatingControls)
                 ProfileTabRow(tabs: ProfileTab.available(withChat: chat != nil, privateBot: state.isHidden,
                                                          memory: ProfileMemoryTab.access(state: state, runtime: runtime) != .hidden),
                               selected: $tab)

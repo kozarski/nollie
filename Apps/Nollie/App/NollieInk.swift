@@ -381,7 +381,12 @@ struct InkSearchField<Trailing: View>: View {
 
     private var glyph: some View {
         Image(systemName: "magnifyingglass")
+            #if os(macOS)
             .font(Font.system(size: 13).weight(.medium))
+            #else
+            // Grows with the words beside it.
+            .font(.subheadline.weight(.medium))
+            #endif
             .foregroundStyle(Ink.text3)
     }
 
@@ -414,7 +419,8 @@ private struct SearchCapsule: ViewModifier {
         #if os(macOS)
         content.frame(height: 34).background(Ink.field, in: .capsule)
         #else
-        content.frame(height: 44).nollieGlass(.regular, in: Capsule(), solid: Ink.field)
+        // At least a fingertip tall, and taller when large text needs the room.
+        content.padding(.vertical, 6).frame(minHeight: 44).nollieGlass(.regular, in: Capsule(), solid: Ink.field)
         #endif
     }
 }
