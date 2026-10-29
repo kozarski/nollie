@@ -56,4 +56,37 @@ final class NightShiftMorningUITests: DemoCase {
             XCTAssertFalse(find("night.card").exists, "a card put away stays away for the morning")
         }
     }
+
+    /// Settings › Night shift: the owner's switch, saying plainly when it's off, and back on again.
+    func testTheSwitchInSettings() throws {
+        try requireMock()
+        try inBothLooks { look in
+            Self.resetMock("api/_mock/night-shift", [:])
+            try startDemo(look: look)
+            tap("chats.settings", timeout: 30)
+            tap("settings.summary.night", timeout: 30)
+            let toggle = expectShown(find("night.switch"), within: 20, "Night shift's switch")
+            XCTAssertTrue(wait(for: toggle, "value == '1'"), "on, as the Mac has it")
+            shot("night-switch-on-\(look)")
+
+            flip(toggle)
+            XCTAssertTrue(wait(for: toggle, "value == '0'"), "turned off")
+            let hero = find("night.hero")
+            XCTAssertTrue(wait(for: hero, "label == 'Off'"), "the page says plainly it's off: \(hero.label)")
+            expectShown(text("Turn it on to see each morning"), "what turning it on gives")
+            shot("night-switch-off-\(look)")
+
+            // The Mac kept it: a fresh start reads it off.
+            try startDemo(look: look)
+            tap("chats.settings", timeout: 30)
+            let tile = expectShown(find("settings.summary.night"), within: 30, "the tile")
+            XCTAssertTrue(wait(for: tile, "label CONTAINS 'Off'"), "the tile says off: \(tile.label)")
+            tile.tap()
+            let again = expectShown(find("night.switch"), within: 20, "the switch")
+            XCTAssertTrue(wait(for: again, "value == '0'"))
+            flip(again)
+            XCTAssertTrue(wait(for: again, "value == '1'"), "on again")
+            XCTAssertFalse(find("night.switch.problem").exists, "no problem line")
+        }
+    }
 }

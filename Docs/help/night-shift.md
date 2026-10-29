@@ -23,7 +23,9 @@ what stopped it. If Nollie didn't keep the reason, it says so.
 The share button in the corner makes a picture of the night. Personal details are blurred, and nothing is sent
 until you pick where.
 
-## Is it on?
+## Turn it on or off
 
-Night shift starts off, and for now it's turned on in the Nollie add-on on your Mac, not in the app. Until it's
-on, there's no morning card, and **Settings › Night shift** has no night to show.
+Night shift starts off. Turn it on with the **Night shift** switch in **Settings › Night shift**, on your Mac, iPhone
+or iPad. While it's off, the page says **Off**, and there's no morning card.
+
+Only you can turn it on or off. Someone you share a helper with never sees the switch.
