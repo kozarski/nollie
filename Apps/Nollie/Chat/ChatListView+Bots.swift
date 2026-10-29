@@ -37,8 +37,13 @@ extension ChatListView {
         .scrollDismissesKeyboard(.immediately)
         .overlay(alignment: .bottom) { SummaryProgressStrip().padding(.bottom, 6) }
         .safeAreaInset(edge: .top, spacing: 0) { topBars(runtime) }
-        // Beside a chat, Settings sits at the foot of the sidebar.
-        .safeAreaInset(edge: .bottom, spacing: 0) { if opensBeside { besideFoot } }
+        // Who is working, with Stop, then beside a chat Settings at the foot of the sidebar.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                if !selecting { CrewAtWorkBar(open: openBot) }
+                if opensBeside { besideFoot }
+            }
+        }
         .background((showingBots && searchText.isEmpty ? Ink.canvas : Color(.systemGroupedBackground)).ignoresSafeArea())
         #endif
         .animation(.snappy, value: [runtime.restartRequired == nil, model.needsSignIn == nil])
@@ -60,9 +65,12 @@ extension ChatListView {
             LazyVStack(alignment: .leading, spacing: 2) {
                 #if os(iOS)
                 if let reach = model.linkReach {
-                    LinkReachLine(reach: reach, alertsOn: model.cloudAlerts.isEnabled || DemoMode.alertsOn) { model.awayPrompt = true }
+                    LinkReachLine(reach: reach, alertsOn: model.cloudAlerts.isEnabled || DemoMode.alertsOn,
+                                  iCloud: AwayPhone.shared.isOn) { model.awayPrompt = true }
                 }
                 #endif
+                // Someone at home is waiting on a yes.
+                if model.family.canShare(model) { FamilyAsksSection() }
                 if let errorText, model.needsSignIn == nil {
                     Text(errorText).font(.footnote).foregroundStyle(.red)
                         .inset(h: 12, v: 6)
@@ -76,7 +84,7 @@ extension ChatListView {
                 ForEach(rows) { botRow($0, runtime: runtime, selected: openName == $0.name) }
                 #if os(iOS)
                 if opensBeside {
-                    SidebarActionRow(title: "New bot", symbol: "plus") { model.newBotRequest = UUID() }
+                    SidebarActionRow(title: String(localized: "New bot"), symbol: "plus") { model.newBotRequest = UUID() }
                         .accessibilityIdentifier("chats.newBot")
                 }
                 #endif
@@ -125,7 +133,7 @@ extension ChatListView {
 
     /// The foot of the sidebar: Settings, where the Mac keeps it.
     private var besideFoot: some View {
-        SidebarActionRow(title: "Settings", symbol: "gearshape") { model.selectedTab = .settings }
+        SidebarActionRow(title: String(localized: "Settings", comment: "The app's settings"), symbol: "gearshape") { model.selectedTab = .settings }
             .accessibilityIdentifier("chats.settings")
             .inset(h: 8, v: 6)
     }
@@ -198,7 +206,7 @@ extension ChatListView {
     /// Mail's and Safari's fields keep a button there. The field stays pinned under the title and the
     /// list scrolls behind it.
     var searchField: some View {
-        InkSearchField(text: $searchText, prompt: "Search", focused: $searchFocused) {
+        InkSearchField(text: $searchText, prompt: String(localized: "Search"), focused: $searchFocused) {
             if model.runtime != nil { PapertrailSearchButton() }
         }
         .clipShape(.capsule)
@@ -235,6 +243,9 @@ extension ChatListView {
                     .padding(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
+            #if os(iOS)
+            QuickAnswerAwayBar(runtime: runtime)
+            #endif
         }
     }
 
@@ -338,7 +349,11 @@ struct BotsHomeHooks: ViewModifier {
     func body(content: Content) -> some View {
         content
             .task(id: runtime?.connection.id) { await keepFresh() }
-            .onChange(of: runtime?.profiles.map(\.name) ?? []) { _, _ in refresh(force: true) }
+            .onChange(of: runtime?.profiles.map(\.name) ?? []) { _, _ in
+                refresh(force: true)
+                // A bot made on another device arrives with the look picked there.
+                if let runtime { Task { await BotLookSharing.sync(runtime, force: true); await HelperMute.sync(runtime, force: true) } }
+            }
             .onChange(of: runtime?.socketState) { _, state in if case .open? = state { refresh() } }
             .onReceive(NotificationCenter.default.publisher(for: .hermesSessionsChanged)) { _ in refresh() }
             .onReceive(NotificationCenter.default.publisher(for: .hermesReplyCompleted)) { note in
@@ -360,12 +375,16 @@ struct BotsHomeHooks: ViewModifier {
     /// starts or finishes work elsewhere shows it here.
     private func keepFresh() async {
         guard let runtime else { return }
+        await BotLookSharing.sync(runtime, force: true)
+        await HelperMute.sync(runtime, force: true)
         await home.refresh(runtime, force: true)
         if let first = home.firstPins(home.ordered(runtime), raw: pinnedRaw) { pinnedRaw = first }
         while !Task.isCancelled {
             let busy = runtime.profiles.contains { home.entry(runtime, $0.name).busy }
             try? await Task.sleep(for: .seconds(busy ? 8 : 25))
             guard !Task.isCancelled, model.runtime === runtime else { return }
+            await BotLookSharing.sync(runtime)
+            await HelperMute.sync(runtime)
             await home.refresh(runtime, force: busy)
         }
     }

@@ -77,7 +77,7 @@ struct GatewaysView: View {
         .task(id: placeKey) {
             guard includesSetup, let runtime, runtime.socketState.isOpen, !model.lock.isLocked else { place = nil; return }
             if let options = await ModelPlace.read(runtime), !Task.isCancelled {
-                place = ModelPlace.word(options) ?? "Not chosen"
+                place = ModelPlace.word(options) ?? String(localized: "Not chosen", comment: "No model chosen yet")
             }
         }
         .navigationDestination(item: $signInAgain) { GatewayFormView(existing: $0) }
@@ -161,32 +161,33 @@ struct ConnectionHero: View {
         }
         var title: String {
             switch self {
-            case .setUp: "Let's set up Nollie"
-            case .connected: "Connected"
-            case .linked: "Linked to your Mac"
-            case .connecting: "Connecting"
-            case .signIn: "Sign in again"
+            case .setUp: String(localized: "Let's set up Nollie")
+            case .connected: String(localized: "Connected")
+            case .linked: String(localized: "Linked to your Mac")
+            case .connecting: String(localized: "Connecting")
+            case .signIn: String(localized: "Sign in again")
             case .unreachable:
                 #if os(macOS)
-                "Can't connect"
+                String(localized: "Can't connect")
                 #else
-                "Can't reach your Mac"
+                String(localized: "Can't reach your Mac")
                 #endif
             }
         }
         var line: String {
             switch self {
-            case .setUp: "It takes a few minutes."
-            case .connected(let name): "\(name) is ready."
+            case .setUp: String(localized: "It takes a few minutes.")
+            case .connected(let name): String(localized: "\(name) is ready.")
             case .linked(let name, let tailnet):
-                tailnet ? "Connected through Tailscale." : name.map { "\($0) is ready." } ?? "Everything works."
-            case .connecting: "Nollie keeps trying by itself."
-            case .signIn: "Your sign-in ended."
+                tailnet ? String(localized: "Connected through Tailscale.")
+                    : name.map { String(localized: "\($0) is ready.") } ?? String(localized: "Everything works.")
+            case .connecting: String(localized: "Nollie keeps trying by itself.")
+            case .signIn: String(localized: "Your sign-in ended.")
             case .unreachable(let away):
                 #if os(macOS)
-                "Nollie keeps trying by itself."
+                String(localized: "Nollie keeps trying by itself.")
                 #else
-                away ? "You're away from home." : "Check that it's awake and online."
+                away ? String(localized: "You're away from home.") : String(localized: "Check that it's awake and online.")
                 #endif
             }
         }
@@ -203,7 +204,7 @@ struct ConnectionHero: View {
     var state: State
 
     var body: some View {
-        PageHero(symbol: state.symbol, title: state.title, line: state.line, tint: state.tint, id: "settings.connection.hero")
+        PageHero(symbol: state.symbol, title: .verbatim(state.title), line: .verbatim(state.line), tint: state.tint, id: "settings.connection.hero")
     }
 }
 
@@ -215,7 +216,7 @@ struct ConnectionAdvancedView: View {
     var body: some View {
         let hero = self.hero
         SettingsPage("settings.connection.advanced.page") {
-            PageHero(symbol: hero.symbol, title: hero.title, line: hero.line, tint: hero.tint,
+            PageHero(symbol: hero.symbol, title: .verbatim(hero.title), line: .verbatim(hero.line), tint: hero.tint,
                      id: "settings.connection.advanced.hero")
             ConnectionAdvancedContent()
         }
@@ -224,12 +225,12 @@ struct ConnectionAdvancedView: View {
     private var hero: (symbol: String, title: String, line: String?, tint: Color) {
         let connections = model.store.connections
         guard !connections.isEmpty else {
-            return ("server.rack", "No assistants yet", "Add one by address below.", Ink.text2)
+            return ("server.rack", String(localized: "No assistants yet"), String(localized: "Add one by address below."), Ink.text2)
         }
         let one = connections.count == 1
-        let title = one ? connections[0].name : "\(connections.count) assistants"
+        let title = one ? connections[0].name : String(localized: "\(connections.count) assistants")
         guard let runtime = model.runtime else {
-            return ("server.rack", title, "None in use right now.", Ink.text2)
+            return ("server.rack", title, String(localized: "None in use right now."), Ink.text2)
         }
         let name = runtime.connection.name
         let kind = GatewayFormView.ConnectionKind(rawValue: runtime.connection.connectionKind ?? "")
@@ -237,30 +238,36 @@ struct ConnectionAdvancedView: View {
         case .open:
             let line: String
             if runtime.connection.linkedMac != nil {
-                line = one ? "Linked to your Mac." : "\(name) is linked to your Mac."
-            } else if let over = Self.over(kind) {
-                line = one ? "Connected over \(over)." : "\(name) is connected over \(over)."
+                line = one ? String(localized: "Linked to your Mac.") : String(localized: "\(name) is linked to your Mac.")
             } else {
-                line = one ? "Connected." : "\(name) is connected."
+                line = Self.connected(kind, name: one ? nil : name)
             }
             return (kind?.symbol ?? "checkmark.circle.fill", title, line, .green)
         case .connecting, .reconnecting:
-            return ("arrow.triangle.2.circlepath", title, one ? "Connecting." : "Connecting to \(name).", .orange)
+            return ("arrow.triangle.2.circlepath", title,
+                    one ? String(localized: "Connecting.") : String(localized: "Connecting to \(name)."), .orange)
         case .authRejected:
-            return ("person.badge.key.fill", title, one ? "Sign in again." : "Sign in to \(name) again.", .orange)
+            return ("person.badge.key.fill", title,
+                    one ? String(localized: "Sign in again.") : String(localized: "Sign in to \(name) again."), .orange)
         case .idle, .failed:
-            return ("wifi.exclamationmark", title, one ? "Can't reach it right now." : "Can't reach \(name) right now.", .red)
+            return ("wifi.exclamationmark", title,
+                    one ? String(localized: "Can't reach it right now.") : String(localized: "Can't reach \(name) right now."), .red)
         }
     }
 
-    /// How the assistant in use is reached, as the end of "Connected over …".
-    private static func over(_ kind: GatewayFormView.ConnectionKind?) -> String? {
-        switch kind {
-        case .local: "your local network"
-        case .tailscale: "Tailscale"
-        case .cloudflare: "Cloudflare Access"
-        case .other: "the internet"
-        case nil: nil
+    /// "Connected over …": how the assistant in use is reached, naming it when there are several.
+    private static func connected(_ kind: GatewayFormView.ConnectionKind?, name: String?) -> String {
+        switch (kind, name) {
+        case (.local?, nil): String(localized: "Connected over your local network.")
+        case (.local?, let name?): String(localized: "\(name) is connected over your local network.")
+        case (.tailscale?, nil): String(localized: "Connected over Tailscale.")
+        case (.tailscale?, let name?): String(localized: "\(name) is connected over Tailscale.")
+        case (.cloudflare?, nil): String(localized: "Connected over Cloudflare Access.")
+        case (.cloudflare?, let name?): String(localized: "\(name) is connected over Cloudflare Access.")
+        case (.other?, nil): String(localized: "Connected over the internet.")
+        case (.other?, let name?): String(localized: "\(name) is connected over the internet.")
+        case (nil, nil): String(localized: "Connected.")
+        case (nil, let name?): String(localized: "\(name) is connected.")
         }
     }
 }
@@ -278,7 +285,8 @@ struct ConnectionAdvancedContent: View {
             if let runtime = model.runtime { now(runtime) }
         }
         .sheet(isPresented: $showAdd) { NavigationStack { GatewayFormView() }.sheetFrame().withAppModel() }
-        .alert(pendingDelete.map { "Remove \($0.name)?" } ?? "Remove?", isPresented: .present($pendingDelete), presenting: pendingDelete) { doomed in
+        .alert(pendingDelete.map { String(localized: "Remove \($0.name)?", comment: "Safety: removing an assistant; keep exact meaning") }
+               ?? String(localized: "Remove?", comment: "Safety: removing an assistant; keep exact meaning"), isPresented: .present($pendingDelete), presenting: pendingDelete) { doomed in
             Button("Remove", role: .destructive) { Task { await model.deleteConnection(doomed.id) } }
             Button("Cancel", role: .cancel) {}
         } message: { _ in
@@ -363,7 +371,7 @@ struct ConnectionAdvancedContent: View {
                 Task { await runtime.reconnectNow() }
             }
             if case .authRejected(let why) = runtime.socketState {
-                ConnectionLine(text: "What it said: \(why)", tint: .red)
+                ConnectionLine(text: String(localized: "What it said: \(why)", comment: "The assistant's reason for turning down the sign-in"), tint: .red)
                 GlassLink("Sign in again", symbol: "person.badge.key", id: "settings.connection.signIn") {
                     GatewayFormView(existing: runtime.connection)
                 }

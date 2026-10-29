@@ -139,6 +139,21 @@ final class ComputerCenter {
     @ObservationIgnored var isLocked: () -> Bool = ComputerPresence.isLocked
     /// Reads an element of an app again, live, from its screen frame (for typing and keys).
     @ObservationIgnored var inspect: @Sendable (_ pid: Int, _ frame: CGRect?) -> ComputerAction.Target? = ComputerAXProbe.target
+    /// The apps the person picked for using this Mac, read again each time.
+    @ObservationIgnored var pickedApps: () -> Set<String> = { ComputerPickedApps.read() }
+    /// The model on this Mac that sees the screen, or nil when there is none.
+    @ObservationIgnored var screenModel: @Sendable () -> ComputerScreenModel? = { ComputerScreenModels.find() }
+    /// Asks that model what to do next.
+    @ObservationIgnored var screenDecider: @Sendable (ComputerScreenModel) -> any ComputerScreenDeciding = { ComputerScreenClient(model: $0) }
+    /// Whether a bot's own switch, Allow Mac control, is on, as Hermes keeps it. Nil when it can't be read.
+    @ObservationIgnored var macControlOn: (String) async -> Bool? = ComputerCenter.readMacControl
+    /// The windows on screen, front to back, by the window server's word.
+    @ObservationIgnored var screenWindows: @Sendable () -> [ComputerScreenWindow] = ComputerWindowGuard.onScreen
+    @ObservationIgnored var frontmostPID: () -> Int? = { ComputerWindowGuard.frontmostPID }
+    @ObservationIgnored var screenScale: () -> Double = { ComputerWindowGuard.maxScreenScale }
+    @ObservationIgnored var ownPID = Int(ProcessInfo.processInfo.processIdentifier)
+    /// A finished task's line in its bot's Papertrail: the apps and how many actions, never the screen.
+    @ObservationIgnored var recordSession: @MainActor (ComputerTask) -> Void = { ComputerPapertrail.record($0) }
 
     @ObservationIgnored private var helper: (any ComputerDriving)?
     /// The process the running task answers to: the one that asked for it.
@@ -192,6 +207,7 @@ final class ComputerCenter {
 
     // MARK: Ask
 
+    // Refusals go back to the bot's model, so they stay in English.
     static let noHelper = "This copy of Nollie can't use the Mac."
     static let off = "Nollie Computer is off on this Mac. The person can turn it on in a bot's settings, under Your Mac."
     /// The setting, app-wide: off until the person turns it on.
@@ -203,6 +219,16 @@ final class ComputerCenter {
     static let asking = "Nollie is already asking the person about another request."
     static let noAnswer = "Nobody answered on the Mac, so nothing was allowed."
     static let declined = "The person said no. Don't try again unless they ask."
+    static let macControlOff = "Allow Mac control is off for %@. The person can turn it on in its settings, under Computer."
+    static let cantCheckMacControl = "Nollie couldn't check whether %@ may use the Mac, so it won't ask the person. Try again in a moment."
+    static let notOnThisMac = "Not on this Mac."
+
+    /// A bot's Allow Mac control, read again from Hermes now.
+    static func readMacControl(_ profile: String) async -> Bool? {
+        guard let rt = AppModel.shared.runtime else { return nil }
+        await SystemControl.shared.refresh(profile, rt)
+        return SystemControl.shared.state(profile, rt)
+    }
 
     func requestStart(_ request: ComputerStartRequest) async -> Result<ComputerTask, Refusal> {
         guard helperAvailable() else {
@@ -214,6 +240,11 @@ final class ComputerCenter {
         // A private bot's chats are never read, so they can't be checked: never.
         if isPrivate(request.profile) { return .failure(Refusal(message: ComputerSessionCheck.unknown)) }
         guard enabled() else { return .failure(Refusal(message: Self.off)) }
+        // Only the apps the person picked, and only with a model on this Mac to look at them.
+        let picked = pickedApps()
+        guard !picked.isEmpty else { return .failure(Refusal(message: ComputerPickedApps.nonePicked)) }
+        let model = screenModel
+        guard await Self.off({ model() }) != nil else { return .failure(Refusal(message: ComputerScreenModels.missing)) }
         // One request at a time, from here until it is answered: a second one can't slip in
         // between the checks and the card.
         if approval != nil || starting || requesting { return .failure(Refusal(message: Self.asking)) }
@@ -235,6 +266,12 @@ final class ComputerCenter {
         // From here on, the bot is the one Hermes filed the chat under.
         let profile = facts.profile.isEmpty ? request.profile : facts.profile
         if isPrivate(profile) { return .failure(Refusal(message: ComputerSessionCheck.unknown)) }
+        // The bot's own switch, Allow Mac control.
+        switch await macControlOn(profile) {
+        case true?: break
+        case false?: return .failure(Refusal(message: String(format: Self.macControlOff, botName(profile))))
+        case nil: return .failure(Refusal(message: String(format: Self.cantCheckMacControl, botName(profile))))
+        }
         let call = facts.chat + "/" + facts.callID
         guard !usedCalls.contains(call) else { return .failure(Refusal(message: ComputerSessionCheck.noPendingCall)) }
         if approval != nil || starting { return .failure(Refusal(message: Self.asking)) }
@@ -250,10 +287,15 @@ final class ComputerCenter {
         let found = await Task.detached { request.apps.prefix(8).map { (name: $0, info: resolve($0)) } }.value
         for (name, info) in found {
             guard let info else {
-                refused.append(.init(name: name, reason: "Not on this Mac."))
+                refused.append(.init(name: name, reason: Self.notOnThisMac))
                 continue
             }
-            switch ComputerAppRules.access(for: info) {
+            let access = ComputerAppRules.access(for: info)
+            if access.isAllowed, !picked.contains(info.bundleID.lowercased()) {
+                refused.append(.init(name: info.name, reason: ComputerPickedApps.notPicked(info.name)))
+                continue
+            }
+            switch access {
             case .use: apps.append(.init(info: info, viewOnly: false))
             case .viewOnly: apps.append(.init(info: info, viewOnly: true))
             case let .never(reason): refused.append(.init(name: info.name, reason: reason))
@@ -284,6 +326,10 @@ final class ComputerCenter {
         if let otherDriver = await otherControl() { return .failure(Refusal(message: otherDriver)) }
         guard await stillPending(request, facts.callID) else { return .failure(Refusal(message: ComputerSessionCheck.noPendingCall)) }
         if self.task != nil { return .failure(Refusal(message: Self.busy)) }
+        // An app turned off while the card was up isn't started.
+        let stillPicked = pickedApps()
+        apps = apps.filter { stillPicked.contains($0.bundleID.lowercased()) }
+        guard !apps.isEmpty else { return .failure(Refusal(message: ComputerPickedApps.nonePicked)) }
         let helper: any ComputerDriving
         do {
             helper = try await startHelper(apps)
@@ -314,14 +360,18 @@ final class ComputerCenter {
     func allowWithOwner() async {
         guard let approval else { return }
         let apps = approval.apps.map(\.name).joined(separator: ", ")
-        guard await authenticate("let \(approval.botName) use \(apps)"), self.approval?.id == approval.id else { return }
+        let reason = String(localized: "let \(approval.botName) use \(apps)",
+                            comment: "Safety: Touch ID reason for Allow; finishes 'Nollie is trying to …'; keep exact meaning")
+        guard await authenticate(reason), self.approval?.id == approval.id else { return }
         answerApproval(true)
     }
 
     /// Allow Once, from a confirmation card: the same proof, for each risky step.
     func allowOnceWithOwner(id: UUID) async {
         guard let confirmation, confirmation.id == id else { return }
-        guard await authenticate("let \(confirmation.botName) \(confirmation.sentence)"), self.confirmation?.id == id else { return }
+        let reason = String(localized: "let \(confirmation.botName) \(confirmation.sentence)",
+                            comment: "Safety: Touch ID reason for Allow Once; finishes 'Nollie is trying to …'; the second part is a step like 'send something in Mail'")
+        guard await authenticate(reason), self.confirmation?.id == id else { return }
         answerConfirmation(true, id: id)
     }
 
@@ -380,6 +430,7 @@ final class ComputerCenter {
 
     // MARK: Act
 
+    // To the bot's model: English.
     static let ended = "Access to the Mac has ended. Ask again with mac_start if the person wants."
     static let stillActing = "Nollie is still doing the last action. Wait for its answer, then try again."
     static let staleElement = "Use an element from a new mac_look of that app: each look is good for one action."
@@ -399,6 +450,139 @@ final class ComputerCenter {
         return await performOne(task, act)
     }
 
+    // MARK: A step, on the model on this Mac
+
+    /// Most actions one step may take before it hands back.
+    static let movesPerStep = 10
+    static let didntAnswer = "The model on this Mac didn't answer, so Nollie stopped there."
+
+    /// One step a bot asked for in one app (`mac_do`). The model on this Mac looks at that window
+    /// and picks each action; every action goes through the same rules, cards and window checks as
+    /// any other, and only a short sentence comes back. The bot's own model never gets the picture
+    /// or the window's words. No new action starts after `deadline`.
+    func doStep(taskID: String, app name: String, step: String, from peer: ComputerPeer? = nil,
+                deadline: Date = .distantFuture) async -> Result<String, Refusal> {
+        guard let task, task.id == taskID, helper != nil, peer == owner else { return .failure(Refusal(message: Self.ended)) }
+        guard !acting else { return .failure(Refusal(message: Self.stillActing)) }
+        acting = true
+        defer { acting = false }
+        guard let app = task.app(named: name) else {
+            return .failure(Refusal(message: "\(name) isn't approved for this task. Approved: \(task.apps.map(\.name).joined(separator: ", "))."))
+        }
+        let finder = screenModel
+        guard let model = await Self.off({ finder() }) else { return .failure(Refusal(message: ComputerScreenModels.missing)) }
+        let decider = screenDecider(model)
+        let words = step.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !words.isEmpty else { return .failure(Refusal(message: "Say what to do in \(app.name).")) }
+        var soFar: [String] = []
+        var done = 0
+        for _ in 0..<Self.movesPerStep {
+            guard now() < deadline, let current = self.task, current.id == taskID else { break }
+            let look = await performOne(current, ComputerActRequest(kind: .look, app: app.name))
+            guard case let .success(content) = look else {
+                if case let .failure(refusal) = look { return done == 0 ? .failure(refusal) : .success(Self.summary(app, done, "stopped: " + refusal.message)) }
+                break
+            }
+            let question = Self.question(content, step: words, app: app.name, soFar: soFar)
+            // One more try when the answer can't be read: a model on this Mac is sometimes slow to wake.
+            var answer = try? await decider.decide(question)
+            if answer == nil { answer = try? await decider.decide(question) }
+            guard let move = answer else {
+                return done == 0 ? .failure(Refusal(message: Self.didntAnswer)) : .success(Self.summary(app, done, Self.didntAnswer))
+            }
+            guard let current = self.task, current.id == taskID else { break }
+            let act: ComputerActRequest
+            var label: String?
+            switch move {
+            case let .done(result): return .success(Self.summary(app, done, result.isEmpty ? "done." : result, finished: true))
+            case let .stuck(why): return .success(Self.summary(app, done, "couldn't finish: " + (why.isEmpty ? "no way found." : why)))
+            case let .click(n), let .type(n, _), let .scroll(n, _):
+                guard let snapshot = Self.snapshot(content), let element = elements["\(snapshot):\(n)"] else {
+                    soFar.append("No element [\(n)] in that look.")
+                    continue
+                }
+                act = Self.request(for: move, app: app.name, token: "\(snapshot):\(n)", element: element)
+                label = element.label
+            case let .key(keys):
+                act = ComputerActRequest(kind: .key, app: app.name, keys: keys)
+            }
+            switch await performOne(current, act) {
+            case .success:
+                done += 1
+                soFar.append(Self.said(move, label: label))
+            case let .failure(refusal):
+                // The person's no, their silence or the end of the task end the step at once.
+                if [Self.saidNo, Self.noAnswerAction, Self.ended, lastEnd?.message].contains(refusal.message) || self.task?.id != taskID {
+                    return .success(Self.summary(app, done, "stopped: " + refusal.message))
+                }
+                soFar.append("Refused: " + refusal.message)
+            }
+        }
+        if self.task?.id != taskID { return .failure(Refusal(message: lastEnd?.message ?? Self.ended)) }
+        return .success(Self.summary(app, done, "stopped before finishing. Ask for what's left as a new step."))
+    }
+
+    /// The look's own snapshot id, from Nollie's note on its tokens: rows marked [N] are `<id>:N`.
+    nonisolated static func snapshot(_ content: [ComputerContent]) -> String? {
+        let lead = "Element tokens for this look: "
+        for case let .text(text) in content {
+            guard let line = text.split(separator: "\n").first, line.hasPrefix(lead) else { continue }
+            let rest = line.dropFirst(lead.count)
+            guard let colon = rest.firstIndex(of: ":") else { continue }
+            let id = rest[..<colon]
+            return id.isEmpty ? nil : String(id)
+        }
+        return nil
+    }
+
+    /// The action for a move: links by their spot in the picture (as the rules want), the rest by token.
+    nonisolated static func request(for move: ComputerScreenMove, app: String, token: String, element: Element) -> ComputerActRequest {
+        switch move {
+        case .click:
+            if element.role == "AXLink" || element.inLink, let spot = element.screenshotFrame {
+                return ComputerActRequest(kind: .click, app: app, x: spot.midX, y: spot.midY)
+            }
+            return ComputerActRequest(kind: .click, app: app, element: token)
+        case let .type(_, text): return ComputerActRequest(kind: .type, app: app, element: token, text: text)
+        case let .scroll(_, direction): return ComputerActRequest(kind: .scroll, app: app, element: token, direction: direction, amount: 3)
+        case let .key(keys): return ComputerActRequest(kind: .key, app: app, keys: keys)
+        case .done, .stuck: return ComputerActRequest(kind: .look, app: app)
+        }
+    }
+
+    /// What a look gives the model on this Mac: the element rows (without Nollie's token note) and the picture.
+    nonisolated static func question(_ content: [ComputerContent], step: String, app: String, soFar: [String]) -> ComputerScreenQuestion {
+        var rows = ""
+        var picture: (base64: String, mimeType: String)?
+        for part in content {
+            switch part {
+            case let .text(text):
+                rows = text.split(separator: "\n", omittingEmptySubsequences: false)
+                    .filter { !$0.hasPrefix("Element tokens for this look:") }.joined(separator: "\n")
+            case let .image(data, mime): picture = (data, mime)
+            }
+        }
+        return ComputerScreenQuestion(step: step, app: app, elements: rows, picture: picture, soFar: soFar)
+    }
+
+    /// Nollie's own words for a move that went through, for the model on this Mac only.
+    nonisolated static func said(_ move: ComputerScreenMove, label: String? = nil) -> String {
+        let named = label.map { $0.isEmpty ? "" : " \u{201C}\(ComputerScreenWords.short(String($0.prefix(60))))\u{201D}" } ?? ""
+        switch move {
+        case let .click(n): return "Clicked [\(n)]\(named)."
+        case let .type(n, text): return "Typed \u{201C}\(ComputerScreenWords.short(String(text.prefix(60))))\u{201D} into [\(n)]\(named)."
+        case let .key(keys): return "Pressed \(keys.joined(separator: "+"))."
+        case let .scroll(n, direction): return "Scrolled \(direction) at [\(n)]\(named)."
+        case .done, .stuck: return ""
+        }
+    }
+
+    /// The one short line a bot gets back.
+    nonisolated static func summary(_ app: ComputerTask.App, _ actions: Int, _ result: String, finished: Bool = false) -> String {
+        let count = actions == 1 ? "1 action" : "\(actions) actions"
+        return ComputerScreenWords.short("\(finished ? "Done" : "Not done") in \(app.name) (\(count)): \(result)")
+    }
+
     private func performOne(_ started: ComputerTask, _ act: ComputerActRequest) async -> Result<[ComputerContent], Refusal> {
         var task = started
         if let limit = task.limit(at: now()) {
@@ -407,6 +591,10 @@ final class ComputerCenter {
         }
         guard let app = task.app(named: act.app) else {
             return .failure(Refusal(message: "\(act.app) isn't approved for this task. Approved: \(task.apps.map(\.name).joined(separator: ", "))."))
+        }
+        // Turned off since the task began: from the next action on.
+        guard pickedApps().contains(app.bundleID.lowercased()) else {
+            return .failure(Refusal(message: ComputerPickedApps.turnedOff(app.name)))
         }
         // Asking other apps (Accessibility, signatures) can wait on them: never on the main thread,
         // so Stop and the cards always answer.
@@ -498,6 +686,13 @@ final class ComputerCenter {
             }
         }
         let action = ComputerAction(kind: act.kind, target: target, text: act.text, keys: act.keys, shortcut: shortcut)
+        // Where it lands on the screen: the app's own window, with the app (or Nollie) in front and
+        // nothing of another app's over the spot.
+        let landing: CGPoint? = act.kind == .scroll ? element?.frame.map { CGPoint(x: $0.midX, y: $0.midY) } : clickPoint
+        let window = element?.windowID ?? lastWindow[pid]
+        if act.kind != .look, let refusal = await windowRefusal(act.kind, app: app, pid: pid, window: window, point: landing, in: task) {
+            return .failure(Refusal(message: refusal))
+        }
         // Stop while Nollie was asking the app wins.
         guard let current = self.task, current.id == started.id else { return .failure(Refusal(message: lastEnd?.message ?? Self.ended)) }
         task = current
@@ -511,8 +706,8 @@ final class ComputerCenter {
             switch await waitForConfirmation(asking) {
             case .allow: break
             case .ended: return .failure(Refusal(message: lastEnd?.message ?? Self.ended))
-            case .timeout: return .failure(Refusal(message: "Nobody answered on the Mac, so Nollie didn't do that."))
-            case .deny: return .failure(Refusal(message: "The person said no to that. Don't do it another way."))
+            case .timeout: return .failure(Refusal(message: Self.noAnswerAction))
+            case .deny: return .failure(Refusal(message: Self.saidNo))
             }
             // The person said yes to what was under that spot then. Content moves and pages change
             // their words: the same thing, with the same words and address, must still be there.
@@ -545,9 +740,16 @@ final class ComputerCenter {
             if act.kind == .look {
                 let (content, seen, window) = try await Task.detached { try Self.look(helper, session: session, pid: pid, query: act.query) }.value
                 guard self.task?.id == taskID else { return .failure(Refusal(message: lastEnd?.message ?? Self.ended)) }
+                // The picture is of that one window, the app's own, and nothing more.
+                let screens = screenWindows
+                let windows = await Self.off { screens() }
+                if let refusal = Self.lookRefusal(content, app: app, pid: pid, window: window, windows: windows, scale: screenScale()) {
+                    return .failure(Refusal(message: refusal))
+                }
                 elements = elements.filter { $0.value.pid != pid }.merging(seen) { $1 }
                 lastWindow[pid] = window
                 if act.query?.isEmpty ?? true { freshLook.insert(pid) } else { freshLook.remove(pid) }
+                self.task?.noteLook()
                 return .success(content)
             }
             // Each look is good for one action: after it, the window may have changed.
@@ -555,6 +757,10 @@ final class ComputerCenter {
             elements = elements.filter { $0.value.pid != pid }
             guard let (tool, arguments) = Self.driverArguments(act, pid: pid, element: element, lastWindow: lastWindow[pid]) else {
                 return .failure(Refusal(message: "Nollie couldn't work out where to do that."))
+            }
+            // The screen again after any card: it may have changed while the person was asked.
+            if let refusal = await windowRefusal(act.kind, app: app, pid: pid, window: element?.windowID ?? lastWindow[pid], point: landing, in: task) {
+                return .failure(Refusal(message: refusal))
             }
             // The last word before anything reaches the app: a Stop pressed during the checks wins.
             guard self.task?.id == taskID, self.helper === helper else { return .failure(Refusal(message: lastEnd?.message ?? Self.ended)) }
@@ -566,7 +772,8 @@ final class ComputerCenter {
                 botInput = botInput.suffix(50)
             }
             try await Task.detached { _ = try helper.call(session, tool, arguments.dictionary) }.value
-            return .success([.text("Done. Use mac_look before the next action.")])
+            if self.task?.id == taskID { self.task?.noteAction() }
+            return .success([.text("Done. Look again before the next action.")])
         } catch ComputerHelper.Failure.refused(let message) {
             return .failure(Refusal(message: message))
         } catch {
@@ -579,6 +786,32 @@ final class ComputerCenter {
     /// Work that may wait on another app (Accessibility, signatures), off the main thread.
     nonisolated static func off<T: Sendable>(_ work: @escaping @Sendable () -> T) async -> T {
         await Task.detached { work() }.value
+    }
+
+    static let saidNo = "The person said no to that. Don't do it another way."
+    static let noAnswerAction = "Nobody answered on the Mac, so Nollie didn't do that."
+
+    /// The window guard, with the screen as it is now.
+    private func windowRefusal(_ kind: ComputerAction.Kind, app: ComputerTask.App, pid: Int, window: Int?, point: CGPoint?,
+                               in task: ComputerTask) async -> String? {
+        let screens = screenWindows, find = runningPID, apps = task.apps
+        let (windows, pids) = await Self.off { (screens(), Set(apps.compactMap(find))) }
+        return ComputerWindowGuard.refusal(for: kind, app: app.name, pid: pid, windowID: window, point: point,
+                                           frontmostPID: frontmostPID(), taskPIDs: pids, ownPID: ownPID, windows: windows)
+    }
+
+    /// Why a look's picture can't be used: the window isn't the app's, or the picture shows more
+    /// than that window. Nil when it is fine.
+    nonisolated static func lookRefusal(_ content: [ComputerContent], app: ComputerTask.App, pid: Int, window: Int,
+                                        windows: [ComputerScreenWindow], scale: Double) -> String? {
+        guard let listed = windows.first(where: { $0.id == window }), listed.pid == pid else { return ComputerWindowGuard.notItsWindow(app.name) }
+        for case let .image(data, _) in content {
+            guard let size = ComputerWindowGuard.pictureSize(base64: data),
+                  ComputerWindowGuard.pictureFits(width: size.width, height: size.height, window: listed.bounds, maxScale: scale) else {
+                return ComputerWindowGuard.notJustTheWindow
+            }
+        }
+        return nil
     }
 
     nonisolated static func probe(_ probe: @escaping @Sendable (Int, CGRect?) -> ComputerAction.Target?, _ pid: Int,
@@ -721,6 +954,7 @@ final class ComputerCenter {
     /// Ends the task now: the helper process is revoked and gone within a second.
     func end(_ reason: ComputerTask.End) {
         guard task != nil || helper != nil else { resolveConfirmation(.ended); return }
+        if let task { recordSession(task) }
         lastEnd = reason
         resolveConfirmation(.ended)
         let helper = self.helper
@@ -856,7 +1090,8 @@ final class ComputerCenter {
             approval = ComputerApproval(botName: "Scout",
                                         request: ComputerStartRequest(sessionID: "preview", profile: "career", apps: [],
                                                                       purpose: "Copy the three job links from your Safari tabs into a new note."),
-                                        apps: [notes, safari], refused: [.init(name: "Terminal", reason: ComputerAppRules.commands)],
+                                        apps: [notes, safari], refused: [.init(name: "Mail", reason: ComputerPickedApps.notPicked("Mail")),
+                                                                         .init(name: "Terminal", reason: ComputerAppRules.commands)],
                                         chatTitle: "Job hunt", platform: "Nollie")
             presenter?.showApproval()
         case "confirm":

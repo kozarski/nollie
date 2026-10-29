@@ -14,6 +14,7 @@ extension ChatSession {
         }
     }
 
+    /// Sets `statusLine`, which stays in English: the app reads it as a state. `statusWords` shows it.
     private func setStatus(_ line: String) {
         guard statusLine != line else { return }
         statusLine = line
@@ -115,7 +116,7 @@ extension ChatSession {
         case .toolOutputRisk:
             _ = withTool(payload.text("tool_id") ?? "") { $0.risk = payload.text("risk") }
         case .error:
-            appendError(payload.text("message") ?? "Unknown error")
+            appendError(payload.text("message") ?? String(localized: "Unknown error", table: "Core"))
             endPhase = "error"
             isRunning = false
             closeTurnSurface(phase: "error")
@@ -131,7 +132,9 @@ extension ChatSession {
         case .sessionReclaimed:
             stale = true
             isRunning = false
-            banner = "The gateway let this session go (\(payload.text("reason") ?? "idle")). Your next message starts it again."
+            let reason = payload.text("reason") ?? "idle"
+            banner = String(localized: "The gateway let this session go (\(reason)). Your next message starts it again.", table: "Core",
+                            comment: "The value is the gateway's own reason word, such as idle")
         case .sessionResumeProgress:
             statusLine = payload.text("message")
         case .reasoningAvailable:
@@ -210,7 +213,7 @@ extension ChatSession {
             appendError(error)
         } else if status == "interrupted", InterruptedTurn.parse(text ?? "") == nil {
             // The gateway's "Operation interrupted." text becomes a card that says the same thing.
-            addNote("Interrupted", symbol: "stop.circle")
+            addNote(String(localized: "Interrupted", table: "Core", comment: "A reply was stopped before it finished"), symbol: "stop.circle")
         }
         noteWarning(payload)
         summarizedRowShown = false
@@ -286,7 +289,8 @@ extension ChatSession {
         sealStreamingForTool()
         items.append(TranscriptItem(id: rowID, kind: .tool(call)))
         statusLine = "Running \(call.displayName)…"
-        activity.update(for: self, attention: false, detail: "Running \(call.displayName)")
+        let name = call.displayName
+        activity.update(for: self, attention: false, detail: String(localized: "Running \(name)", table: "Core", comment: "A tool a bot is using"))
     }
 
     private func toolFinished(_ payload: JSONValue) {

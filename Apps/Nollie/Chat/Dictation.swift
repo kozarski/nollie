@@ -72,7 +72,7 @@ final class DictationController {
         do {
             let heard = try await DeviceTranscriber.transcribe(file: file)
             transcript = heard
-            if heard.isEmpty { error = "I didn't catch anything. Try again closer to the mic." }
+            if heard.isEmpty { error = String(localized: "I didn't catch anything. Try again closer to the mic.") }
         } catch let failure {
             transcript = ""
             error = failure.localizedDescription
@@ -104,11 +104,11 @@ struct TalkButton: View {
             .accessibilityLabel(spokenLabel)
     }
 
-    private var spokenLabel: String { dictation.isListening ? "Stop dictating" : "Dictate" }
+    private var spokenLabel: String { dictation.isListening ? String(localized: "Stop dictating") : String(localized: "Dictate") }
 
     private var spokenHint: String {
-        if dictation.isListening { return "Stops, then types what you said" }
-        return "Records you, then writes it out on this device"
+        if dictation.isListening { return String(localized: "Stops, then types what you said") }
+        return String(localized: "Records you, then writes it out on this device")
     }
 
     private func toggle() {

@@ -27,9 +27,10 @@ struct ToolCallSheet: View {
         let runsCommands = activity.name == "terminal" || activity.name == "bash"
         let args = nonEmpty(activity.argsText)
         let candidates: [(String, String?)] = [
-            (runsCommands ? "Command" : "Arguments", nonEmpty(call)),
-            ("Arguments", args == call ? nil : args),
-            ("Output", nonEmpty(activity.resultText)),
+            (runsCommands ? String(localized: "Command", comment: "A heading over a shell command") : String(localized: "Arguments", comment: "A heading over a tool call's arguments"),
+             nonEmpty(call)),
+            (String(localized: "Arguments", comment: "A heading over a tool call's arguments"), args == call ? nil : args),
+            (String(localized: "Output", comment: "A heading over what a tool returned"), nonEmpty(activity.resultText)),
         ]
         return candidates.compactMap { title, body in body.map { (title, $0) } }
     }

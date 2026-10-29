@@ -33,7 +33,8 @@ final class AppLock {
         }
     }
 
-    /// What the device will ask with, for button text.
+    /// What the device will ask with, for button text. Settings matches on "Passcode", so it stays in
+    /// English; show it through `RememberedSignInCopy.shownMethod(_:)`.
     var biometryName: String {
         let probe = LAContext()
         _ = probe.canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
@@ -53,16 +54,17 @@ final class AppLock {
 
     func unlock() async {
         let check = LAContext()
-        check.localizedCancelTitle = "Cancel"
+        check.localizedCancelTitle = String(localized: "Cancel")
         var unavailable: NSError?
         guard check.canEvaluatePolicy(.deviceOwnerAuthentication, error: &unavailable) else {
             // No way to authenticate on this device: do not lock the person out.
-            lastError = unavailable?.localizedDescription ?? "Authentication unavailable"
+            lastError = unavailable?.localizedDescription ?? String(localized: "Authentication unavailable")
             isLocked = false
             return
         }
         do {
-            let passed = try await check.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Unlock Nollie")
+            let passed = try await check.evaluatePolicy(.deviceOwnerAuthentication,
+                                                        localizedReason: String(localized: "Unlock Nollie", comment: "Safety: why Face ID is asked"))
             guard passed else { return }
             (isLocked, lastError) = (false, nil)
         } catch {

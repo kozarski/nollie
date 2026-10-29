@@ -38,12 +38,11 @@ enum ApprovalOwnerCheck {
 
     /// What the system shows beside the check, such as "Let Scout pay for something".
     static func reason(_ approval: ApprovalRequest, bot: String) -> String {
-        let doing = switch AskFirstAsk(approval)?.kind ?? kind(of: approval) {
-        case .buy: "pay for something"
-        case .post: "post something"
-        default: "send something"
+        switch AskFirstAsk(approval)?.kind ?? kind(of: approval) {
+        case .buy: String(localized: "Let \(bot) pay for something", comment: "Safety: why Face ID is asked before a payment")
+        case .post: String(localized: "Let \(bot) post something", comment: "Safety: why Face ID is asked before a post")
+        default: String(localized: "Let \(bot) send something", comment: "Safety: why Face ID is asked before sending")
         }
-        return "Let \(bot) \(doing)"
     }
 
     /// The kind named in the rule's key, for a request whose words could not be read.

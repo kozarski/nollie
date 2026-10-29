@@ -203,6 +203,11 @@ struct NollieLinkDoorTests {
             ("GET", "/api/plugins/kanban/events", true), ("GET", "/api/plugins/nollie-workflow/attention", false),
             ("GET", "/api/plugins/nollie-workflow/private-bots", false),
             ("GET", "/api/plugins/nollie-workflow/papertrail", false),
+            ("GET", "/api/plugins/nollie-workflow/week", false), ("PUT", "/api/plugins/nollie-workflow/week/switch", false),
+            ("POST", "/api/plugins/nollie-workflow/week/remove-app", false),
+            ("GET", "/api/plugins/nollie-workflow/mutes", false), ("PUT", "/api/plugins/nollie-workflow/mutes/career", false),
+            ("GET", "/api/plugins/nollie-workflow/weekly-note", false), ("PUT", "/api/plugins/nollie-workflow/weekly-note", false),
+            ("GET", "/api/plugins/nollie-workflow/bot-looks", false), ("PUT", "/api/plugins/nollie-workflow/bot-looks/planner", false),
             ("GET", "/api/plugins/nollie-computer/preview", false), ("POST", "/nollie/link/claim", false),
             ("GET", "/api/plugins/nollie-workflow/posts", false), ("GET", "/api/plugins/nollie-workflow/sleep", false),
             ("POST", "/api/plugins/nollie-workflow/rehearsals/rehearsal-career-3f2a9c-e-81/turn-on", false),
@@ -214,6 +219,8 @@ struct NollieLinkDoorTests {
             ("GET", "/nollie/live", true), ("POST", "/nollie/stop", false),
             ("POST", "/api/plugins/nollie-computer/take-over", false), ("POST", "/api/plugins/nollie-computer/hand-back", false),
             ("GET", "/nollie/link/hosts", false), ("POST", "/nollie/link/away/on", false), ("POST", "/nollie/link/away/off", false),
+            ("GET", "/api/plugins/nollie-crew/crew", false), ("POST", "/api/plugins/nollie-crew/members", false),
+            ("POST", "/api/plugins/nollie-crew/undo", false),
         ]
         for (method, path, socket) in allowed {
             #expect(LinkDoorPolicy.route(method: method, path: path, websocket: socket) != .refused, "\(method) \(path)")
@@ -241,6 +248,7 @@ struct NollieLinkDoorTests {
             // Bots: never deleted from a phone.
             ("DELETE", "/api/profiles/scout", false), ("GET", "/api/profiles/scout/setup-command", false),
             ("PUT", "/api/plugins/nollie-workflow/private-bots", false), ("POST", "/api/plugins/nollie-crew/anything", false),
+            ("PUT", "/api/plugins/nollie-workflow/bot-looks", false), ("DELETE", "/api/plugins/nollie-workflow/bot-looks/planner", false),
             ("POST", "/api/plugins/kanban/boards/import", false), ("POST", "/api/plugins/kanban/reset-state", false),
             ("POST", "/api/dashboard/agent-plugins/install", false), ("POST", "/api/dashboard/agent-plugins/kanban/enable", false),
             ("DELETE", "/api/dashboard/agent-plugins/kanban", false), ("GET", "/api/dashboard/plugins/hub", false),
@@ -259,6 +267,13 @@ struct NollieLinkDoorTests {
             ("GET", "/api/ws", false), ("GET", "/api/status", true), ("GET", "/api/console", true), ("GET", "/api/pty", true),
             ("POST", "/api/status", false), ("GET", "/api/plugins/kanban", false), ("GET", "/nollie/link/claim", false),
             ("GET", "/api/sessionsX", false), ("GET", "/api/profiles/", false), ("GET", "/api/sessions//messages", false),
+            // The weekly note: read it, and switch an app or the web tools. Nothing else under it.
+            ("POST", "/api/plugins/nollie-workflow/week", false), ("DELETE", "/api/plugins/nollie-workflow/week/switch", false),
+            ("GET", "/api/plugins/nollie-workflow/week/switch", false), ("PUT", "/api/plugins/nollie-workflow/week/apps", false),
+            ("DELETE", "/api/plugins/nollie-workflow/week/remove-app", false), ("GET", "/api/plugins/nollie-workflow/week/remove-app", false),
+            ("POST", "/api/plugins/nollie-workflow/weekly-note/live", false), ("DELETE", "/api/plugins/nollie-workflow/mutes", false),
+            ("PUT", "/api/plugins/nollie-workflow/mutes", false), ("PUT", "/api/plugins/nollie-workflow/mutes/a/b", false),
+            ("DELETE", "/api/mcp/servers/notes", false),
             // The main chat's cards: read, Turn on and Keep off only.
             ("POST", "/api/plugins/nollie-workflow/posts", false), ("DELETE", "/api/plugins/nollie-workflow/posts", false),
             ("PUT", "/api/plugins/nollie-workflow/sleep", false), ("GET", "/api/plugins/nollie-workflow/sleep/1", false),
@@ -942,6 +957,27 @@ extension NollieLinkDoorTests {
         #expect(LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "profile=default"))
     }
 
+    @Test func readyMadeHelpersAllowOnlyTheRosterAddAndUndo() {
+        let base = "/api/plugins/nollie-crew"
+        for (method, path) in [("GET", base + "/crew"), ("POST", base + "/members"), ("POST", base + "/undo")] {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .hermes, "\(method) \(path)")
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: true) == .refused, "\(method) \(path)")
+        }
+        let refused: [(String, String)] = [
+            // A suggestion's Add can bring a schedule, so it stays on the Mac, and so does everything else.
+            ("POST", base + "/suggestions/abc"), ("GET", base + "/suggestions/abc"), ("POST", base + "/suggestions"),
+            ("POST", base + "/crew"), ("PUT", base + "/crew"), ("DELETE", base + "/crew"), ("GET", base + "/members"),
+            ("PUT", base + "/members"), ("DELETE", base + "/members"), ("PATCH", base + "/members"), ("GET", base + "/undo"),
+            ("POST", base + "/members/scout"), ("DELETE", base + "/members/scout"), ("POST", base + "/undo/abc"),
+            ("POST", base + "/retire"), ("POST", base + "/settings"), ("GET", base), ("POST", base), ("GET", base + "/"),
+            ("POST", base + "/members/"), ("POST", base + "//members"), ("POST", "/api/plugins/nollie-crew%2fmembers"),
+            ("POST", "/api/plugins/nollie-crewx/members"), ("GET", "/dashboard-plugins/nollie-crew/index.js"),
+        ]
+        for (method, path) in refused {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .refused, "\(method) \(path)")
+        }
+    }
+
     @Test func takeOverAndHandBackPassAsPostsWithOnlyAProfile() {
         for path in ["/api/plugins/nollie-computer/take-over", "/api/plugins/nollie-computer/hand-back"] {
             #expect(LinkDoorPolicy.route(method: "POST", path: path, websocket: false) == .hermes)
@@ -1051,6 +1087,85 @@ extension NollieLinkDoorTests {
         let withBody = "POST /nollie/link/away/on HTTP/1.1\r\nHost: h\r\nX-Hermes-Session-Token: \(linked.credential)\r\nContent-Length: 2\r\n\r\n{}"
         #expect(try await RawTLS.exchange(port: port, pin: pin, send: Data(withBody.utf8)).hasPrefix("HTTP/1.1 413 "))
         #expect(!door.devices.away)
+        #expect(fixture.hermes.requests.isEmpty)
+    }
+
+    @Test func theAwayKeySwapIsItsOwnRouteAndThePhoneNeverReachesPapertrailsWriter() {
+        #expect(LinkDoorPolicy.route(method: "POST", path: "/nollie/link/seal", websocket: false) == .seal)
+        for (method, path, socket) in [("GET", "/nollie/link/seal", false), ("PUT", "/nollie/link/seal", false),
+                                       ("POST", "/nollie/link/seal", true), ("POST", "/nollie/link/seal/", false),
+                                       ("POST", "/api/nollie/link/seal", false), ("POST", "/nollie/link/Seal", false)] {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: socket) == .refused, "\(method) \(path)")
+        }
+        // Only the Mac app records what it sent through iCloud.
+        #expect(LinkDoorPolicy.route(method: "POST", path: "/api/plugins/nollie-workflow/papertrail/icloud", websocket: false) == .refused)
+        #expect(LinkDoorPolicy.route(method: "GET", path: "/api/plugins/nollie-workflow/papertrail", websocket: false) == .hermes)
+    }
+
+    @Test func theWeeklyNoteIsReadOneBotAtATime() {
+        let path = "/api/plugins/nollie-workflow/week"
+        #expect(LinkDoorPolicy.allowsQuery(path: path, query: "bot=career"))
+        for bad in [nil, "", "bot=a&bot=b", "bot=career&days=35", "profile=default", "bot=../x"] {
+            #expect(!LinkDoorPolicy.allowsQuery(path: path, query: bad), "\(bad ?? "nil")")
+        }
+        // The switch takes its bot in the body, which the add-on checks.
+        #expect(LinkDoorPolicy.allowsQuery(path: path + "/switch", query: nil))
+        // A member's phone never reaches it: the family door lets members through to chats only.
+        #expect(LinkDoorFamily.memberRoute(method: "GET", path: path, query: "bot=career", websocket: false) == .refused)
+        for (method, owned) in [("GET", "/api/plugins/nollie-workflow/mutes"), ("PUT", "/api/plugins/nollie-workflow/mutes/career"),
+                                ("PUT", "/api/plugins/nollie-workflow/weekly-note"), ("POST", path + "/remove-app")] {
+            #expect(LinkDoorFamily.memberRoute(method: method, path: owned, query: nil, websocket: false) == .refused)
+        }
+    }
+
+    @Test(.timeLimit(.minutes(1))) func aLinkedPhoneSwapsAwayKeysAndOnlyPublicKeysPass() async throws {
+        let fixture = try await DoorFixture.start()
+        defer { fixture.stop() }
+        let door = fixture.door
+        let linked = try door.devices.claim(secret: door.devices.makeOffer().secret, name: "Corey's iPhone")
+        try await door.refresh()
+        let port = Int(try #require(door.port))
+        let pin = door.identity.pin
+        let phone = AwayKey()
+        let body = Data(#"{"key":"\#(AwayBase64URL.encode(phone.publicKey))"}"#.utf8)
+
+        let stranger = "POST /nollie/link/seal HTTP/1.1\r\nHost: h\r\nContent-Length: \(body.count)\r\n\r\n" + String(decoding: body, as: UTF8.self)
+        #expect(try await RawTLS.exchange(port: port, pin: pin, send: Data(stranger.utf8)).hasPrefix("HTTP/1.1 401 "))
+
+        let gateway = try GatewayURL.normalize("https://127.0.0.1:\(port)")
+        let owner = UUID()
+        GatewayTrust.shared.register(pin: pin, host: "127.0.0.1", port: port, owner: owner)
+        defer { GatewayTrust.shared.forget(owner: owner) }
+        let api = HermesAPI(gateway: gateway, signer: RequestSigner(authMode: .sessionToken, secrets: .init(sessionToken: linked.credential, linkedDevice: true)))
+
+        // Before the Mac app gave its key, the door says to open Nollie on the Mac.
+        var (reply, http) = try await api.raw("POST", NollieLinkClient.sealPath, body: (body, "application/json"), authenticated: true, answers: [503])
+        #expect(http.statusCode == 503)
+        #expect(door.devices.devices.first?.awayKey == nil)
+
+        let mac = AwayKey()
+        try door.devices.setAwayMacKey(mac.publicKey)
+        (reply, http) = try await api.raw("POST", NollieLinkClient.sealPath, body: (body, "application/json"), authenticated: true)
+        #expect(http.statusCode == 200)
+        let answer = try #require(try JSONSerialization.jsonObject(with: reply) as? [String: String])
+        #expect(answer == ["key": AwayBase64URL.encode(mac.publicKey)])
+        #expect(door.devices.devices.first?.awayKey == phone.publicKey)
+
+        // Both ends now make the same channel.
+        let phoneEnd = try AwayChannel(own: phone, side: .phone, otherPublic: try #require(AwayBase64URL.decode(answer["key"] ?? "")))
+        let macEnd = try AwayChannel(own: mac, side: .mac, otherPublic: try #require(door.devices.devices.first?.awayKey))
+        #expect(phoneEnd.macTag == macEnd.macTag && phoneEnd.phoneTag == macEnd.phoneTag)
+
+        // Odd bodies are refused and change nothing.
+        for bad in [#"{"key":"short"}"#, #"{"key":"\#(AwayBase64URL.encode(phone.publicKey))","extra":1}"#, #"{}"#, "not json"] {
+            (_, http) = try await api.raw("POST", NollieLinkClient.sealPath, body: (Data(bad.utf8), "application/json"), authenticated: true, answers: [400])
+            #expect(http.statusCode == 400, "\(bad)")
+        }
+        #expect(door.devices.devices.first?.awayKey == phone.publicKey)
+
+        // A new Mac key forgets the phones' keys: each swaps again at home.
+        try door.devices.setAwayMacKey(AwayKey().publicKey)
+        #expect(door.devices.devices.first?.awayKey == nil)
         #expect(fixture.hermes.requests.isEmpty)
     }
 

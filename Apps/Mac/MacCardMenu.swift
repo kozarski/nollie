@@ -7,15 +7,15 @@ enum CardMenuAction: Hashable {
 
     var title: String {
         switch self {
-        case .open: "Open"
-        case .comment: "Comment…"
-        case .unblock: "Unblock"
-        case .block: "Block…"
-        case .finish: "Done…"
-        case .stopWorker: "Stop the Worker…"
-        case .discuss: "Discuss task"
-        case .archive: "Archive…"
-        case .delete: "Delete…"
+        case .open: String(localized: "Open", comment: "Board card menu: opens the card")
+        case .comment: String(localized: "Comment…", comment: "Board card menu: adds a comment")
+        case .unblock: String(localized: "Unblock", comment: "Board card menu")
+        case .block: String(localized: "Block…", comment: "Board card menu: marks the task blocked")
+        case .finish: String(localized: "Done…", comment: "Board card menu: marks the task done")
+        case .stopWorker: String(localized: "Stop the Worker…", comment: "Safety: Board card menu; stops the worker on this task")
+        case .discuss: String(localized: "Discuss task")
+        case .archive: String(localized: "Archive…", comment: "Board card menu")
+        case .delete: String(localized: "Delete…", comment: "Safety: Board card menu; deletes the task")
         }
     }
 
@@ -108,7 +108,7 @@ struct MacCardMenu: View {
                 Button {
                     if status.isMoveTarget { move(to: status) } else { notice = status.notMovableReason }
                 } label: {
-                    let name = status.isMoveTarget ? status.title : status.title + " (gateway only)"
+                    let name = status.isMoveTarget ? status.title : String(localized: "\(status.title) (gateway only)", comment: "A Board status only the gateway can move a card to")
                     Label(name, systemImage: status.symbol)
                 }
             }
@@ -119,7 +119,7 @@ struct MacCardMenu: View {
 
     private var assignMenu: some View {
         Menu {
-            choice("Unassigned", current: task.assignee == nil) { change { await store.reassign(task, to: nil) } }
+            choice(String(localized: "Unassigned", comment: "A Board task with no bot"), current: task.assignee == nil) { change { await store.reassign(task, to: nil) } }
             ForEach(store.assignees) { person in
                 choice(person.name, current: task.assignee == person.name) {
                     change { await store.reassign(task, to: person.name) }

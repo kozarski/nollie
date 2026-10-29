@@ -19,11 +19,11 @@ enum ScheduledWork {
     static func failureMessage(_ error: Error) -> String {
         switch error {
         case HermesAPIError.sessionExpired:
-            return "Sign in again, then reopen Schedules."
+            return String(localized: "Sign in again, then reopen Schedules.")
         case HermesAPIError.http(let code, _) where code == 401 || code == 403:
-            return "This change is not allowed. Check your connection and sign-in, then reopen Schedules."
+            return String(localized: "This change is not allowed. Check your connection and sign-in, then reopen Schedules.")
         default:
-            return "Your assistant did not confirm the change. Reopen Schedules and check the task before trying again."
+            return String(localized: "Your assistant did not confirm the change. Reopen Schedules and check the task before trying again.")
         }
     }
 
@@ -58,17 +58,19 @@ enum ScheduledWork {
 
     /// One word for the job's standing, shown in the list.
     static func status(_ job: CronJob, raw: JSONValue) -> String {
-        if CronRun.isRunning(raw) { return "Checking now" }
-        if completed(job) { return "Finished" }
-        if paused(job) { return "Paused" }
-        if let last = job.lastStatus, last != "skipped", !CronRun.isGood(last) { return "Check needed" }
-        return "Scheduled"
+        if CronRun.isRunning(raw) { return String(localized: "Checking now", comment: "A scheduled task's standing") }
+        if completed(job) { return String(localized: "Finished", comment: "A scheduled task's standing") }
+        if paused(job) { return String(localized: "Paused", comment: "A scheduled task's standing") }
+        if let last = job.lastStatus, last != "skipped", !CronRun.isGood(last) {
+            return String(localized: "Check needed", comment: "A scheduled task's standing")
+        }
+        return String(localized: "Scheduled", comment: "A scheduled task's standing")
     }
 
     static func next(_ job: CronJob) -> String {
-        if completed(job) { return "No more checks" }
-        if paused(job) { return "Paused" }
-        return date(job.nextRunAt) ?? "Not yet reported"
+        if completed(job) { return String(localized: "No more checks") }
+        if paused(job) { return String(localized: "Paused", comment: "A scheduled task's standing") }
+        return date(job.nextRunAt) ?? String(localized: "Not yet reported")
     }
 
     /// A timestamp as a short date and time, or nil when it cannot be read.
@@ -91,8 +93,8 @@ enum ScheduledWork {
     }
 
     static func result(_ job: CronJob) -> String {
-        guard let status = job.lastStatus, !status.isEmpty else { return "No result yet" }
-        if CronRun.isGood(status) { return "Completed" }
+        guard let status = job.lastStatus, !status.isEmpty else { return String(localized: "No result yet") }
+        if CronRun.isGood(status) { return String(localized: "Completed", comment: "A scheduled task's last result") }
         return status.replacingOccurrences(of: "_", with: " ").capitalized
     }
 

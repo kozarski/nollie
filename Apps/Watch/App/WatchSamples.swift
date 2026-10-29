@@ -1,7 +1,7 @@
 #if DEBUG
 import Foundation
 
-/// `-nollie-watch-sample approval|phone|crew|stopping|quiet`: a debug build shows made-up helpers and
+/// `-nollie-watch-sample approval|phone|crew|stopping|quiet|night|night-quiet|week`: a debug build shows made-up helpers and
 /// approvals without a phone, for pictures of each screen. Nothing is sent anywhere.
 enum WatchSamples {
     struct Sample {
@@ -40,10 +40,32 @@ enum WatchSamples {
         case "quiet":
             snapshot.helpers = []
             return Sample(snapshot: snapshot, page: WatchModel.crewPage)
+        case "night":
+            snapshot.night = night
+            return Sample(snapshot: snapshot, page: WatchModel.nightPage)
+        case "week":
+            snapshot.week = WatchWire.WeekNote(
+                range: "19 to 25 Oct", headline: "3 helpers busy. 2 new things.",
+                helpers: [.init(title: "Scout", detail: "7 runs · asked 5 times · online 31 times · 2 new"),
+                          .init(title: "Nollie", detail: "3 tasks · online 12 times"),
+                          .init(title: "Mason", detail: "2 runs · online twice")],
+                more: 0, hasNews: true)
+            return Sample(snapshot: snapshot, page: WatchModel.weekPage)
+        case "night-quiet":
+            snapshot.night = WatchWire.NightNote(at: now, since: "Since 7:00 yesterday", counts: "Quiet night. Nothing ran.",
+                                                 runs: [], more: 0, needsLook: false)
+            return Sample(snapshot: snapshot, page: WatchModel.nightPage)
         default:
             return Sample(snapshot: snapshot, page: WatchModel.crewPage)
         }
     }
+
+    private static let night = WatchWire.NightNote(
+        at: Date(), since: "Since 7:02 yesterday", counts: "3 runs · 7 actions · 1 held",
+        runs: [.init(title: "Morning job alerts", detail: "Scout · Done · 6:10"),
+               .init(title: "Tidy the Downloads folder", detail: "Mason · Done · 2:31"),
+               .init(title: "Reply to the plumber", detail: "Nollie · Stopped · 1:05")],
+        more: 0, needsLook: true)
 
     private static let archive = WatchWire.Approval(
         id: "sample-1", requestID: "req-1", chatID: "chat-1", profile: "career", connectionID: "", botName: "Scout",

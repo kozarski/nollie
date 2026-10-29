@@ -35,7 +35,7 @@ struct PaySheet: View {
             }
             HStack(spacing: 14) {
                 fact("creditcard", ask.cardLabel)
-                fact("person.fill", "\(ask.bot) asked")
+                fact("person.fill", String(localized: "\(ask.bot) asked", comment: "Safety: payment; which bot asked to pay"))
             }
             SecureField("Security code", text: $code, prompt: Text("Security code"))
                 .textContentType(.creditCardSecurityCode)
@@ -130,7 +130,7 @@ enum PaySheetWindow {
         let panel = window ?? NSPanel(contentRect: .zero, styleMask: [.titled, .fullSizeContentView],
                                       backing: .buffered, defer: false)
         panel.contentViewController = host
-        panel.title = "Pay"
+        panel.title = String(localized: "Pay", comment: "Safety: payment; window title of the pay sheet")
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         panel.isReleasedWhenClosed = false

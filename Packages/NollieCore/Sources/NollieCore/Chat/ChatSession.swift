@@ -20,7 +20,7 @@ public struct QueuedMessage: Identifiable, Hashable, Sendable {
     /// What the queue shows: the words, or a count of files when there are none.
     public var summary: String {
         guard text.isEmpty, !attachments.isEmpty else { return text }
-        return attachments.count == 1 ? "1 file" : "\(attachments.count) files"
+        return String(localized: "\(attachments.count) files", table: "Core")
     }
 }
 
@@ -113,12 +113,39 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
     public internal(set) var isResuming = false
     public var id: String { storedID }
 
+    /// The turn's step. In English, because the app reads it as a state ("Thinking…", "Running …", "Queued …"), and it
+    /// also carries the gateway's own words. `statusWords` is the same in the person's language, for the screen.
     public var statusLine: String? {
         didSet {
             guard isRunning, statusLine != oldValue, cards.isEmpty else { return }
             activity.update(for: self, attention: false)
         }
     }
+
+    /// `statusLine` in the person's language. The gateway's own words pass through as they came.
+    public var statusWords: String? { statusLine.map(Self.statusWords) }
+
+    public static func statusWords(_ line: String) -> String {
+        switch line {
+        case "Thinking…": return String(localized: "Thinking…", table: "Core")
+        case "Writing…": return String(localized: "Writing…", table: "Core")
+        case "Sending…": return String(localized: "Sending…", table: "Core")
+        case "Queued on the gateway": return String(localized: "Queued on the gateway", table: "Core")
+        case CompressionNotice.summarizingLine: return CompressionNotice.summarizingWords
+        default: break
+        }
+        if line.hasSuffix("…") {
+            for lead in ["Running ", "Preparing "] where line.hasPrefix(lead) {
+                let name = String(line.dropFirst(lead.count).dropLast())
+                return lead == "Running " ? String(localized: "Running \(name)…", table: "Core", comment: "A tool a bot is using")
+                    : String(localized: "Preparing \(name)…", table: "Core", comment: "A tool a bot is about to use")
+            }
+        }
+        return line
+    }
+
+    /// A chat's title before it has one of its own.
+    public static var newChatTitle: String { String(localized: "New chat", table: "Core") }
 
     public var isRunning = false {
         didSet {
@@ -160,7 +187,7 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
     public init(runtime: GatewayRuntime, storedID: String? = nil, title: String? = nil, profile: String? = nil) {
         let named = (profile ?? "").isEmpty ? nil : profile
         self.storedID = storedID ?? ""
-        self.title = title ?? "New chat"
+        self.title = title ?? Self.newChatTitle
         self.activity = runtime.activityReporterFactory()
         self.profile = named ?? runtime.selectedProfile
         self.runtime = runtime
@@ -179,7 +206,7 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
     /// bot's name is the part the person can best spare.
     public var subtitle: String {
         let shortModel = modelName.split(separator: "/").last.map(String.init) ?? modelName
-        var parts = [modelName.isEmpty ? "no model" : shortModel]
+        var parts = [modelName.isEmpty ? String(localized: "no model", table: "Core", comment: "A chat has no model set") : shortModel]
         if let percent = usage?.computedContextPercent { parts.append("\(percent)%") }
         parts.append(profileName)
         return parts.joined(separator: " · ")
@@ -291,7 +318,7 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
         storedID = answer.text("stored_session_id") ?? live
         info = try? answer["info"]?.decode(SessionLiveInfo.self)
         let given = info?.title ?? ""
-        title = given.isEmpty ? "New chat" : given
+        title = given.isEmpty ? Self.newChatTitle : given
         items.removeAll()
         await loadUsage()
     }
@@ -350,8 +377,8 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
         // A one-time run, such as a scheduled task, can disappear: it was never stored, or a restart lost it.
         let missing = why.localizedCaseInsensitiveContains("not found")
         banner = missing
-            ? "This chat is gone from the gateway. It may have been a one-off run, or the gateway restarted without it. Start a new chat to carry on."
-            : "Back online, but this chat could not be picked up again: \(why)"
+            ? String(localized: "This chat is gone from the gateway. It may have been a one-off run, or the gateway restarted without it. Start a new chat to carry on.", table: "Core")
+            : String(localized: "Back online, but this chat could not be picked up again: \(why)", table: "Core")
     }
 
     /// While `resume()` runs, shows the most recent transcript this device holds, or a REST page if

@@ -59,8 +59,8 @@ public struct KanbanRun: Codable, Sendable, Identifiable, Hashable {
 
     /// "running" while open, afterwards how it ended ("completed", "blocked", "crashed"...).
     public var stateText: String {
-        guard !isOpen else { return "running" }
-        return outcome ?? status ?? "ended"
+        guard !isOpen else { return String(localized: "running", table: "Core", comment: "A Board task's run is going") }
+        return outcome ?? status ?? String(localized: "ended", table: "Core", comment: "A Board task's run is over")
     }
 }
 
@@ -78,30 +78,32 @@ public struct KanbanEvent: Codable, Sendable, Identifiable, Hashable {
     public var created: Date { Date(timeIntervalSince1970: Double(createdAt)) }
 
     /// Wording for the kinds that read well as they are. Kinds not listed get their own cases below.
-    private static let wording: [(kind: String, text: String)] = [
-        ("attached", "File added"),
-        ("unlinked", "Link taken off"),
-        ("archived", "Put away"),
-        ("scheduled", "Given a time"),
-        ("edited", "Details changed"),
-        ("reprioritized", "Priority set again"),
-        ("promoted_manual", "Moved up by hand"),
-        ("claim_rejected", "Claim turned down"),
-        ("reclaimed", "Worker taken back"),
-        ("review_requested", "Review requested"),
-        ("commented", "Comment"),
-    ]
+    private static var wording: [(kind: String, text: String)] { [
+        ("attached", String(localized: "File added", table: "Core", comment: "An event in a Board task's timeline")),
+        ("unlinked", String(localized: "Link taken off", table: "Core", comment: "An event in a Board task's timeline")),
+        ("archived", String(localized: "Put away", table: "Core", comment: "An event in a Board task's timeline")),
+        ("scheduled", String(localized: "Given a time", table: "Core", comment: "An event in a Board task's timeline")),
+        ("edited", String(localized: "Details changed", table: "Core", comment: "An event in a Board task's timeline")),
+        ("reprioritized", String(localized: "Priority set again", table: "Core", comment: "An event in a Board task's timeline")),
+        ("promoted_manual", String(localized: "Moved up by hand", table: "Core", comment: "An event in a Board task's timeline")),
+        ("claim_rejected", String(localized: "Claim turned down", table: "Core", comment: "An event in a Board task's timeline")),
+        ("reclaimed", String(localized: "Worker taken back", table: "Core", comment: "An event in a Board task's timeline")),
+        ("review_requested", String(localized: "Review requested", table: "Core", comment: "An event in a Board task's timeline")),
+        ("commented", String(localized: "Comment", table: "Core", comment: "An event in a Board task's timeline")),
+    ] }
 
     /// A few words for a row in the task's timeline.
     public var line: String {
         if let hit = Self.wording.first(where: { $0.kind == kind }) { return hit.text }
         if kind == "status" {
             let target = payload?["to"]?.stringValue ?? payload?["status"]?.stringValue
-            guard let target else { return "Status changed" }
-            return "Moved to \(KanbanStatus(rawValue: target)?.title ?? target)"
+            guard let target else { return String(localized: "Status changed", table: "Core") }
+            let status = KanbanStatus(rawValue: target)?.title ?? target
+            return String(localized: "Moved to \(status)", table: "Core", comment: "A Board task moved to this status")
         }
         if kind == "blocked" {
-            return payload?["reason"]?.stringValue.map { "Blocked: \($0)" } ?? "Blocked"
+            return payload?["reason"]?.stringValue.map { String(localized: "Blocked: \($0)", table: "Core", comment: "A Board task was blocked, and why") }
+                ?? String(localized: "Blocked", table: "Core", comment: "A Board status")
         }
         let words = kind.split(separator: "_").joined(separator: " ")
         return words.capitalized

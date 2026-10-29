@@ -35,7 +35,7 @@ struct KanbanView: View {
 
     var body: some View {
         content
-            .inlineTitle("Board")
+            .inlineTitle(LocalizedStringResource("Board", comment: "The Board, Nollie's task board; a name"))
             .toolbar { toolbar }
             .onAppear {
                 hasAppeared = true
@@ -47,7 +47,7 @@ struct KanbanView: View {
             .task(id: isShowing) { await keepFresh() }
             .sheet(item: $cover) { sheet(for: $0).withAppModel() }
             .modifier(BoardQuestions(question: $question, reply: $reply, settle: { ask in Task { await settle(ask) } }))
-            .noticeAlert("Board", $notice)
+            .noticeAlert(LocalizedStringResource("Board", comment: "The Board, Nollie's task board; a name"), $notice)
     }
 
     @ViewBuilder private func sheet(for cover: Cover) -> some View {
@@ -72,18 +72,20 @@ struct KanbanView: View {
         if let store {
             switch (store.effective, store.board) {
             case (.absent, _):
-                Placeholder("Kanban is off on this gateway", symbol: "rectangle.split.3x1", detail: "Switch on the kanban plugin in the gateway dashboard, under Plugins, and your Board shows up here.")
+                Placeholder(LocalizedStringResource("Kanban is off on this gateway"), symbol: "rectangle.split.3x1",
+                            detail: LocalizedStringResource("Switch on the kanban plugin in the gateway dashboard, under Plugins, and your Board shows up here."))
             case (_, let board?):
                 lanes(of: board, in: store)
             case (_, nil):
                 if let message = store.lastError, !store.loading {
-                    Placeholder("Could not read the board", symbol: "exclamationmark.triangle", detail: message)
+                    Placeholder(LocalizedStringResource("Could not read the board"), symbol: "exclamationmark.triangle", detail: .verbatim(message))
                 } else {
                     ProgressView("Reading the board…")
                 }
             }
         } else {
-            Placeholder("No gateway", symbol: "antenna.radiowaves.left.and.right.slash", detail: "Add a gateway in Settings and its board will show here.")
+            Placeholder(LocalizedStringResource("No gateway"), symbol: "antenna.radiowaves.left.and.right.slash",
+                        detail: LocalizedStringResource("Add a gateway in Settings and its board will show here."))
         }
     }
 
@@ -186,10 +188,10 @@ struct KanbanView: View {
 
     static func priorityName(_ level: Int) -> String {
         switch level {
-        case 0: "Normal"
-        case 1: "High"
-        case 2: "Urgent"
-        default: "Critical"
+        case 0: String(localized: "Normal", comment: "A task priority")
+        case 1: String(localized: "High", comment: "A task priority")
+        case 2: String(localized: "Urgent", comment: "A task priority")
+        default: String(localized: "Critical", comment: "A task priority")
         }
     }
 
@@ -220,7 +222,7 @@ struct KanbanView: View {
         ToolbarItemGroup(placement: .primaryAction) {
             Menu {
                 Button("About the Board badge", systemImage: "info.circle") {
-                    notice = "The blue badge counts tasks that need your help. The agents handle routine reviews."
+                    notice = String(localized: "The blue badge counts tasks that need your help. The agents handle routine reviews.")
                 }
                 Button("Check for tasks", systemImage: "play.circle") { Task { await store?.nudge() } }
                 Button("Refresh", systemImage: "arrow.clockwise") { Task { await store?.refresh() } }
@@ -235,7 +237,8 @@ struct KanbanView: View {
     private func menuTitle(for board: KanbanBoardMeta, in store: KanbanStore) -> String {
         let summary = BoardReviewSummary(boards: [board], selectedBoard: store.selectedBoard, loadedBoard: store.board)
         let waiting = summary.entries.first(where: { $0.slug == board.slug })?.count ?? 0
-        return waiting > 0 ? "\(board.displayName) (\(waiting) needing your help)" : board.displayName
+        return waiting > 0 ? String(localized: "\(board.displayName) (\(waiting) needing your help)", comment: "A board's name and how many of its tasks need help")
+                           : board.displayName
     }
 
     // MARK: Card actions
@@ -257,7 +260,7 @@ struct KanbanView: View {
         }
 
         Menu("Reassign", systemImage: "person.crop.circle.badge.checkmark") {
-            tickable("Unassigned", ticked: task.assignee == nil) {
+            tickable(String(localized: "Unassigned", comment: "A task no bot holds"), ticked: task.assignee == nil) {
                 Task { await apply(store.reassign(task, to: nil), store) }
             }
             ForEach(store.assignees) { person in
@@ -299,12 +302,7 @@ struct KanbanView: View {
     }
 
     private func move(_ task: KanbanTask, to status: KanbanStatus, store: KanbanStore) async {
-        switch status {
-        case .done: question = .done(task)
-        case .blocked: question = .block(task)
-        case .archived: question = .archive(task)
-        default: await apply(store.move(task, to: status), store)
-        }
+        if let ask = KanbanAsk.gate(task, movingTo: status) { question = ask } else { await apply(store.move(task, to: status), store) }
     }
 
     /// After a write: show the gateway's words if it said no, nothing if it said yes.
@@ -317,14 +315,7 @@ struct KanbanView: View {
         guard let store else { return }
         let typed = reply.trimmingCharacters(in: .whitespacesAndNewlines)
         (question, reply) = (nil, "")
-        switch ask {
-        case .done(let task): await apply(store.move(task, to: .done, summary: typed), store)
-        case .block(let task): await apply(store.move(task, to: .blocked, blockReason: typed), store)
-        case .comment(let task): if !typed.isEmpty { await apply(store.comment(task, typed), store) }
-        case .archive(let task): await apply(store.move(task, to: .archived), store)
-        case .delete(let task): await apply(store.delete(task), store)
-        case .stop(let task): await apply(store.stop(task, reason: "stopped from Nollie"), store)
-        }
+        if let accepted = await store.carryOut(ask, typed: typed) { await apply(accepted, store) }
     }
 
     private func discuss(_ task: KanbanTask) {
@@ -342,7 +333,7 @@ struct KanbanView: View {
         if let task = board.task(id: target.taskID) {
             cover = .task(task)
         } else {
-            notice = "This task is no longer on the board."
+            notice = String(localized: "This task is no longer on the board.")
         }
     }
 
@@ -355,36 +346,5 @@ struct KanbanView: View {
         store.startEvents()
         await store.loadAssignees()
         await repeatEvery(60) { await store.refresh() }
-    }
-}
-
-/// The question put to the person before a board change: a text box for Done, Block and
-/// Comment, a plain yes or no for the rest.
-private struct BoardQuestions: ViewModifier {
-    @Binding var question: KanbanAsk?
-    @Binding var reply: String
-    let settle: (KanbanAsk) -> Void
-
-    private func showing(text: Bool) -> Binding<Bool> {
-        Binding(
-            get: { question.map { $0.asksForText == text } ?? false },
-            set: { if !$0 { question = nil } })
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .alert(question?.title ?? "", isPresented: showing(text: true), presenting: question) { ask in
-                TextField(ask.placeholder, text: $reply)
-                Button(ask.verb) { settle(ask) }
-                Button("Cancel", role: .cancel) { (question, reply) = (nil, "") }
-            } message: { ask in
-                Text(ask.message)
-            }
-            .confirmationDialog(question?.title ?? "", isPresented: showing(text: false), titleVisibility: .visible, presenting: question) { ask in
-                Button(ask.verb, role: ask.destructive ? .destructive : nil) { settle(ask) }
-                Button("Cancel", role: .cancel) { (question, reply) = (nil, "") }
-            } message: { ask in
-                Text(ask.message)
-            }
     }
 }

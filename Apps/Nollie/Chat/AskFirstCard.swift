@@ -12,18 +12,18 @@ struct AskFirstCardBody: View {
     var onChoice: (String) -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
 
-    private var who: String { botName.isEmpty ? "Your bot" : botName }
+    private var who: String { botName.isEmpty ? String(localized: "Your bot", comment: "Stands in for a bot's name when it has none") : botName }
 
     var title: String {
         switch ask.kind {
-        case .send: "\(who) wants to send something"
-        case .buy: "\(who) wants to pay for something"
-        case .post: "\(who) wants to post something"
-        case .delete: "\(who) wants to delete something"
-        case .unsure: "\(who) wants to do something"
-        case .calendar: "\(who) wants to change your calendar"
-        case .reminders: "\(who) wants to change your reminders"
-        case .contacts: "\(who) wants to change your contacts"
+        case .send: String(localized: "\(who) wants to send something", comment: "Safety: Ask first card title; a bot's name comes first")
+        case .buy: String(localized: "\(who) wants to pay for something", comment: "Safety: Ask first card title; a bot's name comes first")
+        case .post: String(localized: "\(who) wants to post something", comment: "Safety: Ask first card title; a bot's name comes first")
+        case .delete: String(localized: "\(who) wants to delete something", comment: "Safety: Ask first card title; a bot's name comes first")
+        case .unsure: String(localized: "\(who) wants to do something", comment: "Safety: Ask first card title; a bot's name comes first")
+        case .calendar: String(localized: "\(who) wants to change your calendar", comment: "Safety: Ask first card title; a bot's name comes first")
+        case .reminders: String(localized: "\(who) wants to change your reminders", comment: "Safety: Ask first card title; a bot's name comes first")
+        case .contacts: String(localized: "\(who) wants to change your contacts", comment: "Safety: Ask first card title; a bot's name comes first")
         }
     }
 
@@ -93,7 +93,8 @@ struct AskFirstCardBody: View {
     }
 
     @ViewBuilder private func answers(fill: Bool) -> some View {
-        ApproveButton(title: "Allow once", locked: locked, fill: fill) { onChoice("once") }
+        ApproveButton(title: LocalizedStringResource("Allow once", comment: "Safety: approval answer, allows this one action only"),
+                      locked: locked, fill: fill) { onChoice("once") }
         Button("Deny") { onChoice("deny") }
             .buttonStyle(OutlinePillStyle(fill: fill))
             .accessibilityIdentifier("approval.deny")
@@ -107,6 +108,17 @@ struct ApproveButton: View {
     var locked: Bool
     var fill: Bool
     var action: () -> Void
+
+    init(title: LocalizedStringResource, locked: Bool, fill: Bool, action: @escaping () -> Void) {
+        self.init(verbatim: String(localized: title), locked: locked, fill: fill, action: action)
+    }
+
+    fileprivate init(verbatim title: String, locked: Bool, fill: Bool, action: @escaping () -> Void) {
+        self.title = title
+        self.locked = locked
+        self.fill = fill
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
@@ -122,7 +134,7 @@ struct ApproveButton: View {
         }
         .buttonStyle(InkPillStyle(fill: fill))
         .accessibilityLabel(title)
-        .accessibilityHint(locked ? "Checks it's you first" : "")
+        .accessibilityHint(locked ? String(localized: "Checks it's you first", comment: "Safety: a yes on this card asks for Face ID or Touch ID first") : "")
         .accessibilityIdentifier("approval.once")
     }
 }

@@ -165,14 +165,19 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.write_kit({**files, **self.workflow_files()})
         scout = self.bot("scout", {"plugins": {"enabled": ["custom"], "disabled": ["nollie-reader"]}})
         hidden = self.bot("personal")
+        (hidden / "sessions").mkdir()
+        (hidden / "sessions/chat.json").write_text("{}")
+        moss = self.bot("moss")
         self.private("personal")
-        before = self.snapshot(hidden)
+        before, untouched = self.snapshot(hidden), self.snapshot(moss)
         self.assertEqual(self.install(), 0)
         self.assertIn("nollie-workflow", self.config()["plugins"]["enabled"])
         self.assertEqual(json.loads((scout / "config.yaml").read_text())["plugins"],
                          {"enabled": ["custom", "nollie-workflow"], "disabled": ["nollie-reader"]})
-        self.assertTrue((scout / "plugins/nollie-workflow/recorder-only").is_file())
-        self.assertEqual(self.snapshot(hidden), before)
+        self.assertFalse((scout / "plugins/nollie-workflow/recorder-only").exists(), "every helper keeps a Papertrail")
+        # A Private bot gets Ask first and the lease, and nothing else of it changes.
+        self.assert_only_safety_added(hidden, before)
+        self.assertEqual(self.snapshot(moss), untouched)
         current = self.snapshot(self.home)
         self.assertEqual(self.install(), 0)
         self.assertEqual(self.snapshot(self.home), current)
@@ -202,20 +207,66 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.assertEqual(addons.ensure_workflow(self.home, "second"), [])
         self.assertEqual(self.snapshot(self.home), before)
 
-    def test_startup_keeps_ask_first_off_after_the_person_changes_either_list(self):
+    def test_an_add_on_switched_off_comes_back_on_with_the_switch_off(self):
         self.seed_workflow()
         scout = self.bot("scout")
         mason = self.bot("mason")
+        juniper = self.bot("juniper")
         addons.ensure_workflow(self.home, "first")
         for home, plugins in ((self.home, {"enabled": [], "disabled": ["nollie-workflow"]}),
                               (scout, {"enabled": ["nollie-workflow"], "disabled": ["user/nollie-workflow"]}),
                               (mason, {"enabled": ["custom"]})):
             (home / "config.yaml").write_text(json.dumps({"plugins": plugins}))
+        (juniper / "nollie-workflow" / "ask-first.json").write_text(json.dumps({"version": 1, "enabled": True}))
+        self.assertEqual(addons.ensure_workflow(self.home, "second"), ["default", "mason", "scout"])
+        for home in (self.home, scout, mason):
+            plugins = json.loads((home / "config.yaml").read_text())["plugins"]
+            self.assertIn("nollie-workflow", plugins["enabled"])
+            self.assertFalse([name for name in plugins.get("disabled", []) if name.endswith("nollie-workflow")])
+            switch = home / "nollie-workflow" / "ask-first.json"
+            self.assertEqual(json.loads(switch.read_text()), {"version": 1, "enabled": False})
+            self.assertEqual(switch.stat().st_mode & 0o777, 0o600)
+            self.assertTrue(list(home.glob("config.yaml.bak-nollie-addons-second")))
+        # A bot whose add-on stayed on keeps its switch as it was.
+        self.assertEqual(json.loads((juniper / "nollie-workflow" / "ask-first.json").read_text())["enabled"], True)
         before = self.snapshot(self.home)
-        self.assertEqual(addons.ensure_workflow(self.home, "second"), [])
+        self.assertEqual(addons.ensure_workflow(self.home, "third"), [])
         self.assertEqual(self.snapshot(self.home), before)
 
-    def test_install_update_keeps_ask_first_off_after_the_person_changes_either_list(self):
+    def test_an_unreadable_config_after_setup_is_left_as_hermes_finds_it(self):
+        self.seed_workflow()
+        scout = self.bot("scout")
+        addons.ensure_workflow(self.home, "first")
+        (scout / "config.yaml").write_bytes(b"not a readable config\xff")
+        before = self.snapshot(scout)
+        self.assertEqual(addons.ensure_workflow(self.home, "second"), [])
+        self.assertEqual(self.snapshot(scout), before)
+
+    def test_every_bot_starts_with_this_mac_off(self):
+        self.seed_workflow()
+        scout = self.bot("scout")
+        mason = self.bot("mason")
+        lease = mason / "bot-desktop" / "lease.json"
+        lease.parent.mkdir()
+        lease.write_text(json.dumps({"holder": "agent", "epoch": 4}))
+        addons.ensure_workflow(self.home, "first")
+        for home in (self.home, scout):
+            written = home / "bot-desktop" / "lease.json"
+            body = json.loads(written.read_text())
+            self.assertEqual((body["holder"], body["epoch"], body["viewer_id"]), ("human", 1, "nollie-app"))
+            self.assertEqual(written.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(written.parent.stat().st_mode & 0o777, 0o700)
+        # The person's own choice stays: This Mac was turned on for Mason.
+        self.assertEqual(json.loads(lease.read_text()), {"holder": "agent", "epoch": 4})
+        # A linked lease is never written through.
+        juniper = self.bot("juniper")
+        outside = self.root / "outside-lease"
+        (juniper / "bot-desktop").mkdir()
+        (juniper / "bot-desktop" / "lease.json").symlink_to(outside)
+        addons.ensure_workflow(self.home, "second")
+        self.assertFalse(outside.exists())
+
+    def test_install_update_keeps_ask_first_off_as_its_own_switch(self):
         files = {path.relative_to(self.kit).as_posix(): path.read_bytes()
                  for path in self.kit.rglob("*") if path.is_file() and path.name != "kit.json"}
         self.write_kit({**files, **self.workflow_files()})
@@ -227,8 +278,13 @@ class ManagedAddOnsTests(unittest.TestCase):
         before = {home: (home / "config.yaml").read_bytes() for home in (self.home, scout)}
         self.write_kit({**files, **self.workflow_files(), "nollie-workflow/plugin.yaml": b"name: nollie-workflow\n# newer\n"})
         self.assertEqual(self.install(), 0)
-        for home, original in before.items():
-            self.assertEqual((home / "config.yaml").read_bytes(), original)
+        # Off by either list: the add-on is back on in both, and the choice is the switch's.
+        for home, enabled in ((self.home, ["nollie-crew", "nollie-reader", "nollie-workflow"]),
+                              (scout, ["nollie-workflow"])):
+            plugins = json.loads((home / "config.yaml").read_text())["plugins"]
+            self.assertEqual((plugins["enabled"], plugins.get("disabled", [])), (enabled, []))
+            self.assertFalse(json.loads((home / "nollie-workflow/ask-first.json").read_text())["enabled"])
+            self.assertTrue(list(home.glob("config.yaml.bak-nollie-addons-*")))
 
     def test_new_staged_bot_is_covered_before_it_is_published(self):
         self.seed_workflow()
@@ -236,7 +292,7 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.assertEqual(addons.ensure_profile_workflow(self.home, "juniper", staged), ["juniper"])
         self.assertEqual(json.loads((staged / "config.yaml").read_text())["plugins"]["enabled"],
                          ["nollie-workflow"])
-        self.assertTrue((staged / "plugins/nollie-workflow/recorder-only").is_file())
+        self.assertFalse((staged / "plugins/nollie-workflow/recorder-only").exists())
         self.assertEqual((staged / "nollie-workflow/ask-first-initialized").read_text(), "1\n")
         self.assertFalse((self.home / "profiles/juniper").exists())
 
@@ -277,17 +333,25 @@ class ManagedAddOnsTests(unittest.TestCase):
             addons.ensure_profile_workflow(self.home, "juniper", moss)
         self.assertEqual(self.snapshot(moss), before)
 
-    def test_private_bots_are_not_read_or_given_addons(self):
+    def assert_only_safety_added(self, home, before):
+        """Only Ask first's pieces and the lease were added: the add-on, its record, the config and its backup."""
+        after = self.snapshot(home)
+        safety = ("plugins/", "nollie-workflow/", "bot-desktop/lease.json", "config.yaml")
+        self.assertEqual({k: v for k, v in after.items() if not k.startswith(safety)},
+                         {k: v for k, v in before.items() if not k.startswith(safety)})
+        self.assertIn("nollie-workflow", json.loads((home / "config.yaml").read_text())["plugins"]["enabled"])
+        self.assertEqual(json.loads((home / "bot-desktop/lease.json").read_text())["holder"], "human")
+
+    def test_the_always_private_bots_are_never_read_or_given_addons(self):
         self.seed_workflow()
-        self.private("personal")
-        homes = [self.bot(name) for name in ("private", "moss", "personal", "personal-notes")]
+        homes = [self.bot(name) for name in ("private", "moss", "private-notes", "moss_diary")]
         for path in homes:
             (path / "config.yaml").write_bytes(b"not a readable config\xff")
         before = {path: self.snapshot(path) for path in homes}
         read_bytes = Path.read_bytes
         def read(path):
             if any(home == path or home in path.parents for home in homes):
-                self.fail("a private bot was read")
+                self.fail("an always-private bot was read")
             return read_bytes(path)
         with mock.patch.object(Path, "read_bytes", read):
             self.assertEqual(addons.ensure_workflow(self.home), ["default"])
@@ -295,16 +359,101 @@ class ManagedAddOnsTests(unittest.TestCase):
                 self.assertEqual(addons.ensure_profile_workflow(self.home, path.name, path), [])
         self.assertEqual({path: self.snapshot(path) for path in homes}, before)
 
-    def test_private_main_is_unchanged_while_other_bots_get_safety(self):
+    def seed_mac(self):
+        source = ROOT / "Companions/nollie-mac"
+        for name in addons.MAC_FILES:
+            target = self.home / "plugins/nollie-mac" / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((source / name).read_bytes())
+        python = self.installation / "python/cpython-3.14.8-macos-aarch64-none/bin/python3.14"
+        python.parent.mkdir(parents=True, exist_ok=True)
+        python.write_bytes(b"#!fixture\n")
+        return python.resolve()
+
+    def lease(self, home, holder):
+        (home / "bot-desktop").mkdir(exist_ok=True)
+        (home / "bot-desktop/lease.json").write_text(json.dumps({"holder": holder, "epoch": 2}))
+
+    def mac_state(self, home):
+        config = json.loads((home / "config.yaml").read_text())
+        return ("nollie-mac" in config.get("plugins", {}).get("enabled", []),
+                (config.get("mcp_servers") or {}).get("nollie-mac"))
+
+    def test_nollie_mac_is_copied_everywhere_but_listed_only_where_this_mac_is_on(self):
         self.seed_workflow()
-        self.private("default")
-        self.bot("juniper")
-        config = self.home / "config.yaml"
-        config.write_bytes(b"not a readable config\xff")
-        before = config.read_bytes()
-        self.assertEqual(addons.ensure_workflow(self.home), ["juniper"])
-        self.assertEqual(config.read_bytes(), before)
-        self.assertEqual(list(self.home.glob("config.yaml.bak-*")), [])
+        python = self.seed_mac()
+        scout, mason = self.bot("scout"), self.bot("mason")
+        self.lease(mason, "agent")
+        with mock.patch.object(addons, "managed_python", return_value=python):
+            addons.ensure_workflow(self.home, "first")
+        for home in (scout, mason):
+            self.assertEqual(sorted(path.name for path in (home / "plugins/nollie-mac").iterdir()), sorted(addons.MAC_FILES))
+        self.assertEqual(self.mac_state(mason), (True, {"command": str(python),
+                                                         "args": ["-I", str(mason / "plugins/nollie-mac/server.py")]}))
+        self.assertEqual(self.mac_state(scout), (False, None))
+        self.assertEqual(self.mac_state(self.home), (False, None))
+        # This Mac turned off for Mason, on for the main bot: the next start follows the leases.
+        self.lease(mason, "human")
+        self.lease(self.home, "agent")
+        with mock.patch.object(addons, "managed_python", return_value=python):
+            addons.ensure_workflow(self.home, "second")
+        self.assertEqual(self.mac_state(mason), (False, None))
+        self.assertEqual(self.mac_state(self.home)[1]["args"], ["-I", str(self.home / "plugins/nollie-mac/server.py")])
+        # Unchanged, a third start writes nothing.
+        before = self.snapshot(mason)
+        with mock.patch.object(addons, "managed_python", return_value=python):
+            addons.ensure_workflow(self.home, "third")
+        self.assertEqual(self.snapshot(mason), before)
+
+    def test_a_private_bot_never_gets_nollie_mac(self):
+        self.seed_workflow()
+        python = self.seed_mac()
+        self.private("personal")
+        personal = self.bot("personal")
+        self.lease(personal, "agent")
+        with mock.patch.object(addons, "managed_python", return_value=python):
+            addons.ensure_workflow(self.home, "first")
+        self.assertFalse((personal / "plugins/nollie-mac").exists())
+        self.assertEqual(self.mac_state(personal), (False, None))
+
+    def test_only_nollies_own_python_runs_nollie_mac(self):
+        python = self.seed_mac()
+        # Real paths: the temporary folder itself sits behind macOS's /var link.
+        installation = self.installation.resolve()
+        self.assertEqual(addons.managed_python(installation, python), python)
+        self.assertIsNone(addons.managed_python(installation, "/usr/bin/python3"))
+        linked = installation / "python/link-python"
+        linked.symlink_to(python)
+        self.assertIsNone(addons.managed_python(installation, linked))
+        copied = self.root / "copied-python3.14"
+        copied.write_bytes(python.read_bytes())
+        self.assertIsNone(addons.managed_python(installation, copied.resolve()))
+        self.seed_workflow()
+        mason = self.bot("mason")
+        self.lease(mason, "agent")
+        with mock.patch.object(addons, "managed_python", return_value=None):
+            addons.ensure_workflow(self.home, "first")
+        self.assertFalse((mason / "plugins/nollie-mac").exists())
+        self.assertEqual(self.mac_state(mason), (False, None))
+
+    def test_private_bots_get_ask_first_and_this_mac_off_and_nothing_else(self):
+        self.seed_workflow()
+        self.private("personal", "default")
+        personal = self.bot("personal")
+        (personal / "SOUL.md").write_text("Keep my diary.")
+        (personal / "memories").mkdir()
+        (personal / "memories/notes.md").write_text("private")
+        before, main = self.snapshot(personal), self.snapshot(self.home)
+        self.assertEqual(addons.ensure_workflow(self.home, "first"), ["default", "personal"])
+        self.assert_only_safety_added(personal, before)
+        # No marker needed: the add-on loads only Ask first in a Private bot and never records there.
+        self.assertFalse((personal / "plugins/nollie-workflow/recorder-only").exists())
+        self.assertEqual(json.loads((self.home / "config.yaml").read_text())["plugins"]["enabled"], ["nollie-workflow"])
+        self.assertEqual(json.loads((self.home / "bot-desktop/lease.json").read_text())["holder"], "human")
+        # Creating a bot under a Private name is still refused before it is covered.
+        staged = self.bot(f".personal.staging-{os.getpid()}")
+        self.assertEqual(addons.ensure_profile_workflow(self.home, "personal", staged), [])
+        self.assertFalse((staged / "plugins").exists())
 
     def test_installer_refuses_a_private_main_before_installing(self):
         files = {path.relative_to(self.kit).as_posix(): path.read_bytes()
@@ -324,12 +473,13 @@ class ManagedAddOnsTests(unittest.TestCase):
             addons.ensure_workflow(self.home)
         self.assertEqual(self.snapshot(self.home), before)
 
-    def test_profile_copy_updates_keep_papertrail_choice_and_old_copy(self):
+    def test_profile_copy_updates_drop_an_old_marker_and_keep_the_old_copy(self):
         self.seed_workflow()
         scout = self.bot("scout")
         addons.ensure_workflow(self.home, "first")
         target = scout / "plugins/nollie-workflow"
-        (target / "recorder-only").unlink()
+        # An older Nollie left this marker to keep Papertrail off; the next update takes it away.
+        (target / "recorder-only").write_text(addons.RECORDER_NOTE)
         original = (target / "plugin.yaml").read_bytes()
         (self.home / "plugins/nollie-workflow/plugin.yaml").write_bytes(original + b"\n# newer\n")
         addons.ensure_workflow(self.home, "second")

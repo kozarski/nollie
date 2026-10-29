@@ -4,9 +4,10 @@ import NollieCore
 import UIKit
 #endif
 
-// Siri, Shortcuts and Spotlight: open a recent chat, start a new one, ask what a bot is doing and,
-// when the person has switched it on, answer the one approval that is waiting. The phrases are
-// generic. Nothing in them names anyone's bot or gateway.
+// Siri, Shortcuts and Spotlight: ask a helper something (SiriAskHelper.swift), open a recent chat,
+// start a new one, ask what a bot is doing, Stop and, when the person has switched it on, answer
+// the one approval that is waiting. The phrases are generic. Nothing in them names anyone's bot or
+// gateway.
 
 /// One spoken line as an intent result.
 private func spoken(_ line: String) -> some IntentResult & ProvidesDialog {
@@ -85,9 +86,12 @@ struct AnswerApprovalIntent: AppIntent {
             let choice = answer == .approve ? "once" : "deny"
             // A yes that needs Face ID can't be given by voice: nothing goes out and the card waits.
             guard await waiting.chat.respond(card: waiting.card, result: ["choice": .string(choice)]) else {
-                return spoken("Nothing was approved. Open Nollie to answer it.")
+                return spoken(String(localized: "Nothing was approved. Open Nollie to answer it.",
+                                     comment: "Safety: Siri says no approval went out; keep exact meaning"))
             }
-            return spoken(answer == .approve ? "Approved." : "Denied.")
+            return spoken(answer == .approve
+                          ? String(localized: "Approved.", comment: "Safety: Siri confirms an approval was given")
+                          : String(localized: "Denied.", comment: "Safety: Siri confirms an approval was denied"))
         }
     }
 }
@@ -124,9 +128,15 @@ enum MacStop {
         if app.runtime == nil { await app.activateSavedConnection() }
         guard let runtime = app.runtime, runtime.connection.linkedMac != nil else { return MacStopWords.notLinked }
 
+        // Away: Stop goes through iCloud straight away, with no wait for the door first.
+        let away = AwayPhone.shared
+        if runtime.linkReach == .away, away.carries(app) {
+            return await away.stop() ? MacStopWords.sentThroughICloud : MacStopWords.notSent
+        }
         do {
             _ = try await runtime.api.raw("POST", "/nollie/stop", body: nil, authenticated: true, timeout: 8)
         } catch {
+            if await away.stop() { return MacStopWords.sentThroughICloud }
             return MacStopWords.unreachable
         }
         // The Mac stops what it runs. Replies started on this phone stop once the answer is out,
@@ -140,8 +150,20 @@ enum MacStop {
 }
 #endif
 
+/// Ready with no setup: Siri, Spotlight, the Shortcuts app and the Action button list these.
 struct NollieShortcuts: AppShortcutsProvider {
+    static var shortcutTileColor: ShortcutTileColor { .lightBlue }
+
     static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: AskHelperIntent(),
+            phrases: [
+                "Ask \(.applicationName)",
+                "Ask \(.applicationName) something",
+                "Ask \(\.$helper) in \(.applicationName)",
+            ],
+            shortTitle: LocalizedStringResource("Ask Nollie"),
+            systemImageName: "bubble.left.and.text.bubble.right.fill")
         AppShortcut(
             intent: OpenChatIntent(),
             phrases: ["Open my \(\.$chat) chat in \(.applicationName)", "Open \(\.$chat) in \(.applicationName)"],
@@ -159,6 +181,8 @@ struct NollieShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: BotStatusIntent(),
             phrases: [
+                "What is \(.applicationName) doing",
+                "What's \(.applicationName) doing",
                 "What is my bot doing in \(.applicationName)",
                 "\(.applicationName) status",
                 "What is \(\.$bot) doing in \(.applicationName)",
@@ -170,13 +194,11 @@ struct NollieShortcuts: AppShortcutsProvider {
             phrases: ["Answer the approval in \(.applicationName)", "\(.applicationName) approval"],
             shortTitle: LocalizedStringResource("Answer Approval"),
             systemImageName: "checkmark.shield")
-        #if os(iOS)
         AppShortcut(
             intent: StopMacIntent(),
-            phrases: ["Stop \(.applicationName)", "Stop \(.applicationName) now"],
+            phrases: ["Stop \(.applicationName)", "Stop \(.applicationName) now", "Stop all helpers in \(.applicationName)"],
             shortTitle: LocalizedStringResource("Stop Nollie"),
             systemImageName: "stop.circle")
-        #endif
     }
 }
 
@@ -206,7 +228,7 @@ enum SiriAsk {
     /// The gateway with an open socket, or else the line Siri should say.
     static func readyRuntime() async throws -> GatewayRuntime {
         let app = AppModel.shared
-        guard app.hasConnections else { throw NotReady(line: "Add a gateway in Nollie first.") }
+        guard app.hasConnections else { throw NotReady(line: String(localized: "Add a gateway in Nollie first.")) }
         if app.runtime == nil { await app.activateSavedConnection() }
         guard let runtime = app.runtime else { throw NotReady(line: unreachableLine) }
 
@@ -214,11 +236,11 @@ enum SiriAsk {
         while !runtime.socketState.isOpen, Date.now < giveUp {
             try? await Task.sleep(for: .milliseconds(250))
         }
-        guard runtime.socketState.isOpen else { throw NotReady(line: "Your gateway isn't replying at the moment.") }
+        guard runtime.socketState.isOpen else { throw NotReady(line: String(localized: "Your gateway isn't replying at the moment.")) }
         return runtime
     }
 
-    private static let unreachableLine = "Nollie can't reach your gateway."
+    private static let unreachableLine = String(localized: "Nollie can't reach your gateway.")
 
     /// What is running and what is pending, worded for Siri.
     static func status(bot: BotEntity?) async -> String {
@@ -231,7 +253,7 @@ enum SiriAsk {
 
         let running = runtime.chats.compactMap { chat -> (bot: String, title: String)? in
             guard chat.isRunning else { return nil }
-            return (chat.profileName, chat.title.isEmpty ? "a chat" : chat.title)
+            return (chat.profileName, chat.title.isEmpty ? String(localized: "a chat", comment: "Siri: Scout is working on a chat") : chat.title)
         }
         let waiting = Set(runtime.chats.filter(\.needsAttention).map(\.storedID)).union(runtime.needsAttention)
         return SiriWords.status(running: running, waiting: waiting.count, bot: bot?.label)
@@ -249,14 +271,18 @@ enum SiriAsk {
     /// Works out what to say or ask for an Approve or Deny by voice.
     static func plan(for answer: ApprovalAnswer) async -> Plan {
         guard SiriCatalog.answersApprovals else {
-            return .say("Siri does not answer approvals. Turn on Answer approvals by voice in Settings, under Siri & Shortcuts, Advanced, if you want that.")
+            return .say(String(localized: "Siri does not answer approvals. Turn on Answer approvals by voice in Settings, under Siri & Shortcuts, Advanced, if you want that.",
+                               comment: "Safety: approvals by voice are off; keep exact meaning"))
         }
         let all: [Waiting]
         do { all = approvals(in: try await readyRuntime()) } catch { return .say(unreachableLine) }
 
         // One approval can be answered here. With none or several, the screen is the place.
         guard all.count == 1, let waiting = all.first else {
-            return .say(all.count > 1 ? "\(all.count) approvals are pending. Open Nollie to choose one." : "No approval is waiting.")
+            return .say(all.count > 1
+                        ? String(localized: "\(all.count) approvals are pending. Open Nollie to choose one.",
+                                 comment: "Siri; the number is always 2 or more")
+                        : String(localized: "No approval is waiting."))
         }
         if answer == .approve, let refusal = SiriWords.approveRefusal(waiting.request) {
             return .say(refusal)

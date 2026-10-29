@@ -9,7 +9,10 @@ import Foundation
 ///   Hermes, asks the person (the card) and, once approved, starts Nollie Computer. The reply
 ///   carries the task's secret id, and the task answers only to the process that asked: the
 ///   nollie-mac add-on that Hermes's own gateway or dashboard runs (`ComputerPeer`).
-/// - `{"op":"act","task","action":"look|click|type|key|scroll",...}` runs one checked action.
+/// - `{"op":"do","task","app","step"}` does one step in one app: the model on this Mac looks and
+///   picks each action, Nollie's rules judge each one, and only a short sentence comes back. The
+///   add-on, and so the bot's own model, never gets a screenshot or the window's words.
+/// - `{"op":"act",...}` (single actions, with pictures) is refused: it would hand the screen out.
 /// - `{"op":"end","task"}` ends the task.
 ///
 /// The add-on never reaches the helper itself: Nollie holds its only trusted sessions.
@@ -117,7 +120,9 @@ final class ComputerBroker: @unchecked Sendable {
         let box = ReplyBox()
         Task { @MainActor in
             let target = center ?? .shared
-            let answer = await Self.handle(parsed, peer: peer, center: target)
+            // New actions stop well before the answer is given up on: a card may still take its two minutes.
+            let deadline = Date().addingTimeInterval(max(1, self.requestLimit - target.answerTimeout - 30))
+            let answer = await Self.handle(parsed, peer: peer, center: target, deadline: deadline)
             // Too late: nobody is waiting for that task, so it ends at once.
             if !box.set(answer), let task = answer["task"] as? String { target.finish(taskID: task, from: peer) }
             semaphore.signal()
@@ -125,13 +130,18 @@ final class ComputerBroker: @unchecked Sendable {
         // Every request ends: one that takes too long gets an answer and frees its place.
         _ = semaphore.wait(timeout: .now() + requestLimit)
         // An action may still go through after its answer was given up on: say so.
-        let late: String = if case let .act(_, act) = parsed, act.kind != .look { Self.tooLongMaybeDone } else { Self.tooLong }
+        let late: String = switch parsed {
+        case let .act(_, act) where act.kind != .look: Self.tooLongMaybeDone
+        case .step: Self.tooLongMaybeDone
+        default: Self.tooLong
+        }
         let reply = box.take() ?? ["ok": false, "error": late]
         guard var data = try? JSONSerialization.data(withJSONObject: reply) else { return }
         data.append(0x0A)
         _ = data.withUnsafeBytes { write(client, $0.baseAddress, data.count) }
     }
 
+    // Answers to the add-on reach the bot's model, so they stay in English.
     static let tooLong = "Nollie took too long to answer, so nothing was done."
     static let tooLongMaybeDone = "Nollie took too long to answer. That action may have been done: look again before going on."
 
@@ -150,6 +160,7 @@ final class ComputerBroker: @unchecked Sendable {
     enum Request: Sendable, Equatable {
         case start(ComputerStartRequest)
         case act(task: String, ComputerActRequest)
+        case step(task: String, app: String, step: String)
         case end(task: String)
         case invalid(String)
     }
@@ -177,6 +188,8 @@ final class ComputerBroker: @unchecked Sendable {
                                          direction: string("direction", max: 10), amount: (json["amount"] as? NSNumber)?.intValue,
                                          query: string("query", max: 100))
             return .act(task: task, act)
+        case "do":
+            return .step(task: string("task", max: 100) ?? "", app: string("app", max: 100) ?? "", step: string("step", max: 500) ?? "")
         case "end":
             return .end(task: string("task", max: 100) ?? "")
         default:
@@ -184,8 +197,12 @@ final class ComputerBroker: @unchecked Sendable {
         }
     }
 
-    /// `peer`: the process that sent it, which a task then answers to alone.
-    @MainActor static func handle(_ request: Request, peer: ComputerPeer?, center: ComputerCenter) async -> [String: Any] {
+    static let oneStepAtATime = "Nollie takes one step at a time with mac_do, so the screen stays on this Mac. Nothing was done."
+
+    /// `peer`: the process that sent it, which a task then answers to alone. `deadline`: when the
+    /// last new action of a step may start, so a step ends before its answer is given up on.
+    @MainActor static func handle(_ request: Request, peer: ComputerPeer?, center: ComputerCenter,
+                                  deadline: Date = .distantFuture) async -> [String: Any] {
         switch request {
         case let .invalid(message):
             return ["ok": false, "error": message]
@@ -198,10 +215,13 @@ final class ComputerBroker: @unchecked Sendable {
             case let .failure(refusal):
                 return ["ok": false, "error": refusal.message]
             }
-        case let .act(task, act):
-            switch await center.perform(taskID: task, act, from: peer) {
-            case let .success(content):
-                return ["ok": true, "content": content.map(\.json)]
+        case .act:
+            return ["ok": false, "error": oneStepAtATime]
+        case let .step(task, app, step):
+            switch await center.doStep(taskID: task, app: app, step: step, from: peer, deadline: deadline) {
+            case let .success(words):
+                // Words only: never a picture, never the window's own text.
+                return ["ok": true, "content": [ComputerContent.text(words).json]]
             case let .failure(refusal):
                 return ["ok": false, "error": refusal.message]
             }

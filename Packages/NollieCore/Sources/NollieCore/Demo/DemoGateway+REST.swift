@@ -42,6 +42,11 @@ extension DemoGateway {
                 return refuse(404, "Papertrail is not on for this bot.")
             }
             return (200, view)
+        case "/api/plugins/nollie-workflow/week":
+            return (200, DemoRoutes.week(bot: query["bot"] ?? "default", now: now))
+        case "/api/plugins/nollie-workflow/week/switch":
+            return (200, ["bot": body["bot"] ?? "default", "kind": body["kind"] ?? "web", "name": body["name"] ?? nil,
+                          "on": body["on"] ?? true])
         case "/api/plugins/nollie-computer/ask-first":
             let bot = query["profile"] ?? "default"
             if method == "PUT" { askFirst[bot] = body["enabled"]?.boolValue ?? true }

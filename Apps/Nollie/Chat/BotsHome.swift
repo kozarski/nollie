@@ -204,7 +204,7 @@ final class BotsHome {
         let cal = Calendar.current
         if cal.isDate(date, inSameDayAs: now) { return date.formatted(date: .omitted, time: .shortened) }
         let wasYesterday = cal.date(byAdding: .day, value: -1, to: now).map { cal.isDate(date, inSameDayAs: $0) } ?? false
-        if wasYesterday { return "Yesterday" }
+        if wasYesterday { return String(localized: "Yesterday") }
         let thisWeek = cal.date(byAdding: .day, value: -6, to: now).map { date > $0 } ?? false
         if thisWeek { return date.formatted(.dateTime.weekday(.wide)) }
         return date.formatted(.dateTime.day().month(.abbreviated))

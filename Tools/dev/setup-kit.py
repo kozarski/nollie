@@ -27,6 +27,7 @@ SELECTION = {
     "nollie-crew": ["__init__.py", "plugin.yaml", "crew.py", "handoffs.py", "hermes_profiles.py", "policy.py", "workflow.py",
                     "profiles.py", "store.py", "tools.py", "dashboard"],
     "nollie-computer": ["__init__.py", "plugin.yaml", "dashboard"],
+    "nollie-mac": ["__init__.py", "plugin.yaml", "server.py"],
 }
 
 

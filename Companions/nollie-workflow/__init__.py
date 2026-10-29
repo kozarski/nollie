@@ -1,6 +1,8 @@
-"""Papertrail for the main bot and the bots chosen for it, the Night shift recorder, saved sign-ins, saved cards and
+"""Papertrail for every bot that is not private, the Night shift recorder, saved sign-ins, saved cards and
 the Mac's Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
-keeps a typed password out of screenshots, load in every bot that is not private. Nothing loads for a private bot.
+keeps a typed password out of screenshots, load in every bot, private ones too. The rule that keeps this Mac's screen on this Mac (no Hermes computer_use,
+no screen capture from a bot's terminal or code) loads in every bot that is not private. Nothing else loads for a private bot,
+and nothing is recorded from it, except that the words of chats stay out of Hermes's logs for every bot in the process.
 """
 
 
@@ -9,7 +11,10 @@ def register(ctx):
     from hermes_cli.profiles import get_profile_dir
     profile = str(getattr(ctx, "profile_name", "") or "")
     home = Path(get_profile_dir("default")).resolve()
+    # Before anything logs a word: Hermes's logs leave the words of chats out, for every bot in the process.
+    _install_log_privacy()
     # First, so a call is held or refused before anything else looks at it.
+    _register_mac_screen(ctx, profile, home)
     _register_ask_first(ctx, profile, home)
     try:
         from . import private_bots
@@ -17,6 +22,7 @@ def register(ctx):
             return
     except Exception:
         return
+    _register_log_privacy(ctx)
     _register_papertrail(ctx, profile, home)
     if profile == "default":
         from .service import start
@@ -30,12 +36,48 @@ def register(ctx):
     _register_payments(ctx, profile, home)
 
 
+def _register_mac_screen(ctx, profile, default_home):
+    """Hermes's own computer_use refused: it would send this Mac's screen to the bot's model. Only a private bot
+    goes without (nothing loads for it); a Private list that can't be read keeps the rule on."""
+    import logging
+    try:
+        from . import private_bots
+        try:
+            private = private_bots.names(default_home) | private_bots.carried_over_names()
+        except (OSError, ValueError):
+            private = private_bots.carried_over_names()
+        if profile and private_bots.excluded(profile, private):
+            return
+        from .mac_screen import register
+        register(ctx)
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("The Mac screen rule did not start: %s", type(exc).__name__)
+
+
+def _install_log_privacy():
+    import logging
+    try:
+        from .log_privacy import install
+        install()
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("Log privacy did not start: %s", type(exc).__name__)
+
+
+def _register_log_privacy(ctx):
+    import logging
+    try:
+        from .log_privacy import register
+        register(ctx)
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("Log privacy did not start: %s", type(exc).__name__)
+
+
 def _register_papertrail(ctx, profile, default_home):
     import logging
     try:
         from pathlib import Path
-        if profile != "default" and (Path(__file__).parent / "recorder-only").exists():
-            return  # The installer copied the add-on here for the Night shift recorder only.
+        # Every bot that is not private keeps a Papertrail. A "recorder-only" marker left by an older
+        # installer no longer turns it off: Nollie Runtime's door records there anyway.
         from hermes_constants import get_hermes_home
         from .private_bots import Watch
         bot_home = Path(get_hermes_home()).resolve()
@@ -134,28 +176,16 @@ def _register_payments(ctx, profile, default_home):
 
 
 def _register_ask_first(ctx, profile, default_home):
-    """Ask first and the picture pause: two pre_tool_call hooks. If they can't load, the bot's computer and
-    risky tools are refused outright instead of running unguarded."""
+    """Ask first and the picture pause: two pre_tool_call hooks, in every bot, private ones included. They
+    record nothing: a private bot's calls are read to decide whether to ask, and kept nowhere. If they can't
+    load, the bot's computer and risky tools are refused outright instead of running unguarded."""
     import logging
     from pathlib import Path
-    bot_home = Path(default_home) if profile == "default" else Path(default_home) / "profiles" / profile
-    is_private = None
+    bot_home = Path(default_home) if profile in ("default", "") else Path(default_home) / "profiles" / profile
     try:
-        from . import private_bots
-        try:
-            private = private_bots.names(default_home) | private_bots.carried_over_names()
-        except (OSError, ValueError):
-            # A damaged Private list: nothing reads this bot's work, but its risky calls stay refused. The
-            # bots that are always private (Moss) get nothing at all.
-            if profile and not private_bots.excluded(profile, private_bots.carried_over_names()):
-                ctx.register_hook("pre_tool_call", _refuse_unguarded)
-            return
-        if not profile or private_bots.excluded(profile, private):
-            return
-        is_private = private_bots.Watch(default_home, profile)
-        from .ask_first import AskFirst, hermes_bypassed, hermes_unattended
+        from .ask_first import AskFirst, Switch, hermes_bypassed, hermes_describe, hermes_files, hermes_unattended
         from .receipts import hermes_redactor
-        from .screen_text import HermesScreen, Memory, capture_space, owned_space
+        from .screen_text import HermesScreen, Memory, capture_space, owned_space, read_page_forms
         from .sign_ins import RECORDINGS, PicturePause, typing_now
         pause = PicturePause(default_home)
         ctx.register_hook("pre_tool_call", pause.hook)
@@ -171,17 +201,21 @@ def _register_ask_first(ctx, profile, default_home):
             image = capture_space(sandbox)
             return None if typing_now(default_home) else image
         memory = Memory()
-        screen = HermesScreen(memory, capture=capture, default_space=lambda: owned_space(default_home, profile))
+        screen = HermesScreen(memory, capture=capture, default_space=lambda: owned_space(default_home, profile),
+                              page=read_page_forms)
+        files = hermes_files(bot_home)
         rule = AskFirst(unattended=hermes_unattended(ctx), bypassed=hermes_bypassed, screen=screen,
-                        redactor=hermes_redactor())
-        ctx.register_hook("pre_tool_call", _while_ask_first_on(rule.hook, bot_home, is_private))
+                        redactor=hermes_redactor(), describe=hermes_describe, files=files, unsure=Switch(bot_home))
+        ctx.register_hook("pre_tool_call", _while_ask_first_on(rule.hook, bot_home))
         ctx.register_hook("post_tool_call", memory.post_tool_call)
+        # Each turn starts afresh: a file the bot made in an earlier turn is the person's now.
+        ctx.register_hook("pre_llm_call", files.new_turn)
     except Exception as exc:
         logging.getLogger("nollie-workflow").warning("Ask first did not start: %s", type(exc).__name__)
-        ctx.register_hook("pre_tool_call", _while_ask_first_on(_refuse_unguarded, bot_home, is_private))
+        ctx.register_hook("pre_tool_call", _while_ask_first_on(_refuse_unguarded, bot_home))
 
 
-def _while_ask_first_on(hook, home, is_private=None):
+def _while_ask_first_on(hook, home):
     """A running bot follows config changes too, before Hermes reloads its add-ons."""
     from functools import wraps
     import json
@@ -189,8 +223,6 @@ def _while_ask_first_on(hook, home, is_private=None):
     @wraps(hook)
     def checked(*args, **kwargs):
         try:
-            if is_private is not None and is_private():
-                return None
             config = home / "config.yaml"
             if config.is_symlink():
                 raise ValueError("linked bot config")

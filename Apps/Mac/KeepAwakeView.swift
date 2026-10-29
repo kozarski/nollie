@@ -66,21 +66,21 @@ struct KeepAwakeHero: View {
         }
         var title: String {
             switch self {
-            case .off: "Sleeps as usual"
-            case .elsewhere: "Your crew runs elsewhere"
-            case .working, .due: "Awake for your crew"
-            case .resting: "Saving battery"
-            case .ready: "Ready"
+            case .off: String(localized: "Sleeps as usual")
+            case .elsewhere: String(localized: "Your crew runs elsewhere")
+            case .working, .due: String(localized: "Awake for your crew")
+            case .resting: String(localized: "Saving battery")
+            case .ready: String(localized: "Ready", comment: "The Mac is ready and sleeps as usual")
             }
         }
         func line(clock: SleepNote.Clock = SleepNote.clock) -> String {
             switch self {
-            case .off: "Schedules wait while it sleeps."
-            case .elsewhere: "That computer has to stay awake."
-            case .working: "A helper is working."
-            case .due(let date): "Next schedule at \(clock(date))."
-            case .resting: "Your Mac can sleep."
-            case .ready: "Nothing due. It sleeps as usual."
+            case .off: String(localized: "Schedules wait while it sleeps.")
+            case .elsewhere: String(localized: "That computer has to stay awake.")
+            case .working: String(localized: "A helper is working.")
+            case .due(let date): String(localized: "Next schedule at \(clock(date)).")
+            case .resting: String(localized: "Your Mac can sleep.")
+            case .ready: String(localized: "Nothing due. It sleeps as usual.")
             }
         }
         var tint: Color {
@@ -96,6 +96,6 @@ struct KeepAwakeHero: View {
     var state: State
 
     var body: some View {
-        PageHero(symbol: state.symbol, title: state.title, line: state.line(), tint: state.tint, id: "awake.hero")
+        PageHero(symbol: state.symbol, title: .verbatim(state.title), line: .verbatim(state.line()), tint: state.tint, id: "awake.hero")
     }
 }

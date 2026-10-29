@@ -54,7 +54,7 @@ struct NightShiftShareModel: Equatable {
                 },
                 more: max(run.actions.count - Self.actionsPerRun, 0) + run.more)
         } + card.missed.map { missed in
-            Run(id: "missed:\(missed.bot):\(missed.jobId)", bot: missed.bot, title: Self.pieces(missed.title.isEmpty ? "Schedule" : missed.title),
+            Run(id: "missed:\(missed.bot):\(missed.jobId)", bot: missed.bot, title: Self.pieces(missed.title.isEmpty ? NightShiftWords.untitledSchedule : missed.title),
                 line: NightShiftWords.missedLine(missed), actions: [], more: 0)
         }
         moreRuns = card.moreRuns > 0 ? NightShiftWords.moreRuns(card.moreRuns) : nil
@@ -252,7 +252,8 @@ struct NightShiftShareSheet: View {
                         .accessibilityLabel("The picture to share, with personal details blurred")
                         .accessibilityIdentifier("share.preview")
                 }
-                Text("Personal details are blurred. Nothing is sent until you pick where.")
+                Text("Personal details are blurred. Nothing is sent until you pick where.",
+                     comment: "Safety: what sharing the picture sends; keep exact meaning")
                     .font(Ink.stamp).foregroundStyle(Ink.text3).multilineTextAlignment(.center)
                 ShareLink(item: picture, preview: SharePreview("Night shift", image: Image(uiImage: image))) {
                     Label("Share", systemImage: "square.and.arrow.up")

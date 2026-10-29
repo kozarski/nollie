@@ -4,6 +4,9 @@ import SwiftUI
 struct SettingsHeaderSection: View {
     var title: String
 
+    init(title: LocalizedStringResource) { self.title = String(localized: title) }
+    fileprivate init(verbatim title: String) { self.title = title }
+
     var body: some View {
         Section {
             Text(title)

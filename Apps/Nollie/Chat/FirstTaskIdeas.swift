@@ -6,9 +6,9 @@ enum FirstTaskIdea: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .day: "Plan my day"
-        case .purchase: "Compare a purchase"
-        case .weekend: "Find weekend plans"
+        case .day: String(localized: "Plan my day")
+        case .purchase: String(localized: "Compare a purchase")
+        case .weekend: String(localized: "Find weekend plans")
         }
     }
     var symbol: String {
@@ -18,11 +18,12 @@ enum FirstTaskIdea: String, CaseIterable, Identifiable {
         case .weekend: "sparkles"
         }
     }
+    /// Sent as the person's own message, so it is in their language.
     var message: String {
         switch self {
-        case .day: "Can you help me plan my day?"
-        case .purchase: "Can you help me find a better price?"
-        case .weekend: "Can you help me find something fun to do this weekend?"
+        case .day: String(localized: "Can you help me plan my day?")
+        case .purchase: String(localized: "Can you help me find a better price?")
+        case .weekend: String(localized: "Can you help me find something fun to do this weekend?")
         }
     }
 }

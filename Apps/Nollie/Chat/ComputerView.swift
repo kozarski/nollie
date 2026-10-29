@@ -49,7 +49,7 @@ struct ComputerView: View {
                             controlMessage = nil
                             Task {
                                 let saved = await control.set(enabled, profile: profile, rt: chat.runtime)
-                                controlError = saved ? nil : "Couldn’t change Mac access. Try again."
+                                controlError = saved ? nil : String(localized: "Couldn’t change Mac access. Try again.")
                             }
                         })) {
                             Label("Allow Mac control", systemImage: "desktopcomputer")
@@ -86,13 +86,13 @@ struct ComputerView: View {
                             if preview.loading { ProgressView().controlSize(.small) }
                         }
                         if preview.kind == "space" {
-                            Text(preview.computerName ?? "Virtual computer")
+                            Text(preview.computerName ?? String(localized: "Virtual computer"))
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
                         if preview.image != nil, preview.kind == "space" {
                             previewControls
                         } else {
-                            Text(preview.loading ? "Checking computer…" : computerStatus)
+                            Text(preview.loading ? String(localized: "Checking computer…") : computerStatus)
                                 .font(.subheadline).foregroundStyle(.secondary)
                                 .accessibilityIdentifier("computer.unavailable")
                         }
@@ -133,7 +133,7 @@ struct ComputerView: View {
         .sheet(isPresented: $expanded) {
             NavigationStack {
                 screen(large: true).padding(12)
-                    .navigationTitle(preview.computerName ?? "Computer")
+                    .navigationTitle(preview.computerName ?? String(localized: "Computer", comment: "A computer the bot uses; a noun"))
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) { Button("Done") { expanded = false } }
                     }
@@ -144,11 +144,11 @@ struct ComputerView: View {
     }
 
     private var computerStatus: String {
-        if preview.signInPaused { return WatchPolicy.signInPausedLine + "." }
-        if preview.needsCompanion { return "Computer preview is unavailable on this gateway." }
-        if preview.kind == "space" { return "Preview unavailable. Reconnecting…" }
-        if preview.interrupted || preview.unavailable && preview.kind == nil { return "Couldn’t check the computer. Trying again…" }
-        return "No virtual computer connected to this chat yet."
+        if preview.signInPaused { return WatchPolicy.signInPausedSentence }
+        if preview.needsCompanion { return String(localized: "Computer preview is unavailable on this gateway.") }
+        if preview.kind == "space" { return String(localized: "Preview unavailable. Reconnecting…") }
+        if preview.interrupted || preview.unavailable && preview.kind == nil { return String(localized: "Couldn’t check the computer. Trying again…") }
+        return String(localized: "No virtual computer connected to this chat yet.")
     }
 
     private var previewControls: some View {
@@ -178,8 +178,8 @@ struct ComputerView: View {
                 !model.lock.isLocked && model.runtime === runtime
             }
             guard !Task.isCancelled, !model.lock.isLocked, model.runtime === runtime else { return }
-            controlMessage = stopped ? "Mac control is off." : nil
-            controlError = stopped ? nil : "Couldn't confirm Mac control is off. Check the connection and try again."
+            controlMessage = stopped ? String(localized: "Mac control is off.") : nil
+            controlError = stopped ? nil : String(localized: "Couldn't confirm Mac control is off. Check the connection and try again.")
         }
     }
 
@@ -190,14 +190,14 @@ struct ComputerView: View {
                 Color.black.opacity(0.92)
                 if let image = preview.image {
                     Image(image, scale: 1, label: Text("\(name)’s computer screen")).resizable().scaledToFit()
-                        .accessibilityValue(preview.frame?.capturedAt.map { Date(timeIntervalSince1970: $0).formatted(date: .omitted, time: .standard) } ?? "Last screen")
+                        .accessibilityValue(preview.frame?.capturedAt.map { Date(timeIntervalSince1970: $0).formatted(date: .omitted, time: .standard) } ?? String(localized: "Last screen"))
                         .accessibilityIdentifier("computer.frame")
                 } else {
                     VStack(spacing: 12) {
                         if preview.loading { ProgressView().tint(.white) }
                         else { Image(systemName: "desktopcomputer").font(.largeTitle) }
-                        Text(preview.loading ? "Connecting to the screen…"
-                             : (preview.signInPaused ? WatchPolicy.signInPausedLine + "." : "No screen to show yet"))
+                        Text(preview.loading ? String(localized: "Connecting to the screen…")
+                             : (preview.signInPaused ? WatchPolicy.signInPausedSentence : String(localized: "No screen to show yet")))
                             .font(.subheadline)
                     }.foregroundStyle(.white.opacity(0.8))
                 }

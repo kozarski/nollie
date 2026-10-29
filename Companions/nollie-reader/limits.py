@@ -199,6 +199,7 @@ class HostPacer:
         wait = slot - self.clock()
         if wait > 0:
             self.sleep(wait)
+        return slot
 
     def rest(self, host, seconds=None):
         pause = min(max(float(seconds or HOST_REST_DEFAULT), 60.0), MAX_BACKOFF)

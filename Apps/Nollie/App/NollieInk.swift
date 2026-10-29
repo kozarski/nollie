@@ -233,13 +233,11 @@ extension ProfileInfo {
         return first.uppercased() + name.dropFirst()
     }
 
-    /// A bot marked Private in Bot settings on this gateway, or one that runs only on this Mac (a
-    /// local model): its rows say so instead of showing what it last said. Without a gateway, a bot
-    /// private on any gateway counts.
+    /// A bot marked Private in Bot settings on this gateway: its rows say so instead of showing what
+    /// it last said. A bot on a local model is not Private by that alone; ready-made helpers run on
+    /// one and stay ordinary helpers. Without a gateway, a bot private on any gateway counts.
     func isPrivateBot(on connection: UUID?) -> Bool {
-        let local: Set<String> = ["ollama", "llamacpp", "llama.cpp", "llama-cpp", "lmstudio", "lm-studio", "mlx", "local"]
-        if let p = provider?.lowercased(), local.contains(p) { return true }
-        return PrivateBots.isPrivate(name, connection: connection)
+        PrivateBots.isPrivate(name, connection: connection)
     }
 }
 
@@ -355,11 +353,11 @@ private struct HeaderIconFace<Label: View>: View {
 /// there is text. A tap anywhere else in the capsule puts the cursor in the field.
 struct InkSearchField<Trailing: View>: View {
     @Binding var text: String
-    var prompt = "Search"
+    var prompt = String(localized: "Search")
     var focused: FocusState<Bool>.Binding
     private let trailing: Trailing
 
-    init(text: Binding<String>, prompt: String = "Search", focused: FocusState<Bool>.Binding,
+    init(text: Binding<String>, prompt: String = String(localized: "Search"), focused: FocusState<Bool>.Binding,
          @ViewBuilder trailing: () -> Trailing = { EmptyView() }) {
         _text = text
         self.prompt = prompt

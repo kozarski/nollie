@@ -10,9 +10,10 @@ struct LocalModelHardware: Decodable, Equatable, Sendable {
     var gpuName: String?
 
     var summary: String {
-        guard let total = ramTotalBytes, total > 0 else { return "Hermes computer memory is not available." }
+        guard let total = ramTotalBytes, total > 0 else { return String(localized: "Hermes computer memory is not available.") }
         let memory = ByteCountFormatter.string(fromByteCount: Int64(clamping: total), countStyle: .memory)
-        return uma == true ? "\(memory) shared memory on your Hermes computer" : "\(memory) memory on your Hermes computer"
+        return uma == true ? String(localized: "\(memory) shared memory on your Hermes computer", comment: "%@ is an amount of memory, such as 16 GB")
+            : String(localized: "\(memory) memory on your Hermes computer", comment: "%@ is an amount of memory, such as 16 GB")
     }
 }
 
@@ -35,7 +36,7 @@ struct LocalModelCatalogEntry: Decodable, Equatable, Identifiable, Sendable {
     var quantValidated: Bool?
 
     var downloadLabel: String {
-        guard let bytes = sizeBytes, bytes > 0 else { return "Download size not available" }
+        guard let bytes = sizeBytes, bytes > 0 else { return String(localized: "Download size not available") }
         return ByteCountFormatter.string(fromByteCount: Int64(clamping: bytes), countStyle: .file)
     }
 
@@ -61,10 +62,10 @@ enum LocalModelSetupIssue: Equatable, Sendable {
 
     var message: String {
         switch self {
-        case .unsupported: "This Hermes version does not offer local model setup here."
-        case .signInRequired: "Sign in to your Hermes connection to check local models."
-        case .unavailable: "Could not check local models. Try again when the connection is ready."
-        case .invalidResponse: "Hermes returned incomplete model information. No model was selected."
+        case .unsupported: String(localized: "This Hermes version does not offer local model setup here.")
+        case .signInRequired: String(localized: "Sign in to your Hermes connection to check local models.")
+        case .unavailable: String(localized: "Could not check local models. Try again when the connection is ready.")
+        case .invalidResponse: String(localized: "Hermes returned incomplete model information. No model was selected.")
         }
     }
 }
@@ -84,9 +85,10 @@ struct LocalModelSetupSnapshot: Equatable, Sendable {
         if let catalogIssue { return catalogIssue.message }
         if let hardwareIssue { return hardwareIssue.message }
         if let model = recommended {
-            return "\(model.displayName) is Hermes' suggested fit for this computer. Review its \(model.downloadLabel) model download before continuing."
+            return String(localized: "\(model.displayName) is Hermes' suggested fit for this computer. Review its \(model.downloadLabel) model download before continuing.",
+                          comment: "The first %@ is a model name, the second its download size")
         }
-        return "Hermes has no automatic recommendation for this computer. You can review models that fit or keep your current setup."
+        return String(localized: "Hermes has no automatic recommendation for this computer. You can review models that fit or keep your current setup.")
     }
 }
 

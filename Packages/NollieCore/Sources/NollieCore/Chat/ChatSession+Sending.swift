@@ -25,7 +25,7 @@ extension ChatSession {
         await awaitResume()
         if let failure = resumeError {
             staged = files + staged
-            return "This chat could not be opened on the gateway: " + failure
+            return String(localized: "This chat could not be opened on the gateway: \(failure)", table: "Core")
         }
         composerHistory += text.isEmpty ? [] : [text]
 
@@ -135,14 +135,16 @@ extension ChatSession {
         let said = error.localizedDescription
         let tellTales = ["not installed", "package required", "no such file", "command not found", "not found: "]
         if !tellTales.contains(where: { said.localizedCaseInsensitiveContains($0) }) {
-            return "Attachment \(name) failed: \(said)"
+            return String(localized: "Attachment \(name) failed: \(said)", table: "Core", comment: "A file name, then the gateway's own error")
         }
-        let missing: String = switch kind {
-        case .pdf: "the tool it reads PDFs with (the poppler-utils package). Pictures and text files still go through."
-        case .image: "a tool it needs for pictures."
-        case .audio, .video, .file: "a tool it needs for this kind of file."
+        return switch kind {
+        case .pdf:
+            String(localized: "Attachment \(name) was not taken: the gateway is missing the tool it reads PDFs with (the poppler-utils package). Pictures and text files still go through. The gateway said: \(said)", table: "Core")
+        case .image:
+            String(localized: "Attachment \(name) was not taken: the gateway is missing a tool it needs for pictures. The gateway said: \(said)", table: "Core")
+        case .audio, .video, .file:
+            String(localized: "Attachment \(name) was not taken: the gateway is missing a tool it needs for this kind of file. The gateway said: \(said)", table: "Core")
         }
-        return "Attachment \(name) was not taken: the gateway is missing \(missing) The gateway said: \(said)"
     }
 
     /// Sends one staged attachment to the gateway. Files come back as a text reference to add to
@@ -173,7 +175,8 @@ extension ChatSession {
         do {
             try bytes.write(to: file)
         } catch {
-            banner = "Could not stage \(fileName): \(error.localizedDescription)"
+            let why = error.localizedDescription
+            banner = String(localized: "Could not stage \(fileName): \(why)", table: "Core", comment: "A file name, then why it could not be prepared")
             return
         }
         staged.append(AttachmentPreview(id: file.lastPathComponent, name: fileName, serverPath: nil, kind: kind,

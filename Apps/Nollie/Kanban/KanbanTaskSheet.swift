@@ -40,6 +40,7 @@ final class TaskSheetState {
 
     func stopWorker(_ store: KanbanStore?) async {
         guard let store, let task else { return }
+        // The reason goes to the gateway, so it stays in English.
         if await store.stop(task, reason: "stopped from Nollie") == false { problem = store.lastError }
         await reload(store)
     }
@@ -62,6 +63,18 @@ final class TaskSheetState {
         await change(store) { store, task in await store.edit(task, title: title, body: nil) }
     }
 
+    /// Moves the task to a status that needs nothing more from the person.
+    func move(to status: KanbanStatus, _ store: KanbanStore?) async {
+        await change(store) { store, task in await store.move(task, to: status) }
+    }
+
+    /// A move or change the person confirmed with its note or yes.
+    func carryOut(_ ask: KanbanAsk, typed: String, _ store: KanbanStore?) async {
+        guard let store else { return }
+        guard let accepted = await store.carryOut(ask, typed: typed) else { return }
+        if accepted { await reload(store) } else { problem = store.lastError }
+    }
+
     func describe(as text: String, _ store: KanbanStore?) async {
         guard text != (task?.body ?? "") else { return }
         await change(store) { store, task in await store.edit(task, title: nil, body: text) }
@@ -81,6 +94,9 @@ struct KanbanTaskSheet: View {
     @State private var titleDraft = ""
     @State private var bodyDraft = ""
     @State private var editingBody = false
+    /// A move that needs a note or a yes first (Done, Block, Archive).
+    @State private var boardQuestion: KanbanAsk?
+    @State private var reply = ""
 
     /// The small questions the sheet can ask.
     private enum Question { case rename, stopWorker }
@@ -96,16 +112,16 @@ struct KanbanTaskSheet: View {
     /// A run's length in words: seconds, minutes, or hours and minutes.
     static func duration(_ seconds: Int) -> String {
         switch seconds {
-        case ..<60: "\(seconds)s"
-        case ..<3600: "\(seconds / 60) min"
-        default: "\(seconds / 3600) h \((seconds % 3600) / 60) min"
+        case ..<60: String(localized: "\(seconds)s", comment: "A run's length in seconds, short")
+        case ..<3600: String(localized: "\(seconds / 60) min", comment: "A run's length in minutes, short")
+        default: String(localized: "\(seconds / 3600) h \((seconds % 3600) / 60) min", comment: "A run's length in hours and minutes, short")
         }
     }
 
     var body: some View {
         NavigationStack {
             page
-                .inlineTitle(state.task?.title ?? "Task")
+                .inlineTitle(.verbatim(state.task?.title ?? String(localized: "Task", comment: "A Board task; a title")))
                 .toolbar { toolbar }
                 .alert("Rename", isPresented: isAsking(.rename)) {
                     TextField("Title", text: $titleDraft)
@@ -119,8 +135,13 @@ struct KanbanTaskSheet: View {
                         Button("Stop", role: .destructive) { Task { await state.stopWorker(store) } }
                     },
                     message: { Text("The worker stops and the card returns to Ready.") })
+                .modifier(BoardQuestions(question: $boardQuestion, reply: $reply, settle: { ask in
+                    let typed = reply.trimmingCharacters(in: .whitespacesAndNewlines)
+                    (boardQuestion, reply) = (nil, "")
+                    Task { await state.carryOut(ask, typed: typed, store) }
+                }))
                 // A refused comment or stop while the task is showing: say so.
-                .noticeAlert("Board", $state.problem, showing: state.detail != nil)
+                .noticeAlert(LocalizedStringResource("Board", comment: "The Board, Nollie's task board; a name"), $state.problem, showing: state.detail != nil)
                 // The board was fetched again (after a move or an event), so refresh the task too.
                 .onChange(of: store?.lastRead) { Task { await state.reload(store) } }
                 .task(id: state.task?.isWorking) { await state.follow(store) }
@@ -139,7 +160,7 @@ struct KanbanTaskSheet: View {
                     Task { await state.sendComment(store) }
                 })
         } else if let problem = state.problem {
-            Placeholder("Could not read the task", symbol: "exclamationmark.triangle", detail: problem)
+            Placeholder(LocalizedStringResource("Could not read the task"), symbol: "exclamationmark.triangle", detail: .verbatim(problem))
         } else {
             ProgressView()
         }
@@ -153,12 +174,32 @@ struct KanbanTaskSheet: View {
         ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
         if let task = state.task {
             ToolbarItemGroup(placement: .primaryAction) {
+                moveMenu(for: task)
                 editMenu(for: task)
                 if task.isWorking {
                     Button("Stop the Worker", systemImage: "stop.circle") { question = .stopWorker }
                 }
             }
         }
+    }
+
+    /// Where the card can go, as the Board's long press offers it. Done, Block and Archive ask first.
+    private func moveMenu(for task: KanbanTask) -> some View {
+        Menu {
+            ForEach(KanbanAsk.moveTargets(from: task.column), id: \.self) { status in
+                Button(status.title, systemImage: status.symbol) {
+                    if let ask = KanbanAsk.gate(task, movingTo: status) {
+                        boardQuestion = ask
+                    } else {
+                        Task { await state.move(to: status, store) }
+                    }
+                }
+                .testID("task.move." + status.rawValue)
+            }
+        } label: {
+            Label("Move", systemImage: "arrow.right.square")
+        }
+        .testID("task.move")
     }
 
     private func editMenu(for task: KanbanTask) -> some View {
@@ -443,7 +484,7 @@ struct KanbanLogView: View {
 
     var body: some View {
         ScrollView { shown }
-            .inlineTitle("Worker log")
+            .inlineTitle(LocalizedStringResource("Worker log"))
             .task {
                 await worker.refresh(taskID, from: model.runtime?.kanban)
                 if live { await repeatEvery(4) { await worker.refresh(taskID, from: model.runtime?.kanban) } }
@@ -455,9 +496,9 @@ struct KanbanLogView: View {
         case .waiting:
             ProgressView().padding()
         case .empty:
-            Placeholder("No log yet", symbol: "doc.plaintext", detail: "A log shows up once a worker starts.")
+            Placeholder(LocalizedStringResource("No log yet"), symbol: "doc.plaintext", detail: LocalizedStringResource("A log shows up once a worker starts."))
         case .problem(let why):
-            Placeholder("Could not read the log", symbol: "exclamationmark.triangle", detail: why)
+            Placeholder(LocalizedStringResource("Could not read the log"), symbol: "exclamationmark.triangle", detail: .verbatim(why))
         case .text(let log):
             Text(log.content)
                 .textSelection(.enabled)

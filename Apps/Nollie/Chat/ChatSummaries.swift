@@ -70,10 +70,11 @@ final class ChatSummarizer {
         if pretend { return nil }
         guard case .unavailable(let why) = SystemLanguageModel.default.availability else { return nil }
         switch why {
-        case .deviceNotEligible: return "Apple Intelligence doesn't work on this device."
-        case .appleIntelligenceNotEnabled: return "First, switch on Apple Intelligence in \(DeviceWords.settings)."
-        case .modelNotReady: return "Apple Intelligence is still getting its model ready."
-        default: return "Apple Intelligence isn't available at the moment."
+        case .deviceNotEligible: return String(localized: "Apple Intelligence doesn't work on this device.")
+        case .appleIntelligenceNotEnabled:
+            return String(localized: "First, switch on Apple Intelligence in \(DeviceWords.settings).", comment: "The name of the Settings app follows in")
+        case .modelNotReady: return String(localized: "Apple Intelligence is still getting its model ready.")
+        default: return String(localized: "Apple Intelligence isn't available at the moment.")
         }
     }
 

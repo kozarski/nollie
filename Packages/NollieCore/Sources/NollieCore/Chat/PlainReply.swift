@@ -5,9 +5,9 @@ import Foundation
 /// short note: code, tables and HTML cards. Callers hand over the bot's own text only, never
 /// tool calls, tool output, thinking or helper rows.
 public enum PlainReply {
-    public static let tableOmitted = "There's a table in the app."
-    public static let cardOmitted = "There's a card in the app."
-    public static let codeOmitted = "There's a code block in the app."
+    public static var tableOmitted: String { String(localized: "There's a table in the app.", table: "Core") }
+    public static var cardOmitted: String { String(localized: "There's a card in the app.", table: "Core") }
+    public static var codeOmitted: String { String(localized: "There's a code block in the app.", table: "Core") }
 
     public static func text(_ markdown: String) -> String {
         var reader = Incremental()
@@ -194,7 +194,7 @@ public enum PlainReply {
     /// Rewrites applied in order to the inside of a line: each pattern and what replaces it.
     /// There is no lookbehind in this engine, so a single mark keeps the character before it.
     private static let markRemovals: [(NSRegularExpression, String)] = [
-        (#"!\[\]\([^)]*\)"#, "an image"),
+        (#"!\[\]\([^)]*\)"#, NSRegularExpression.escapedTemplate(for: String(localized: "an image", table: "Core", comment: "Read out in place of a picture with no description"))),
         (#"!\[([^\]]+)\]\([^)]*\)"#, "$1"),
         (#"\[([^\]]+)\]\([^)]*\)"#, "$1"),
         (#"`([^`]*)`"#, "$1"),
@@ -221,7 +221,8 @@ public enum PlainReply {
         isListy = dropLeading(#"(?:[-*+]|\d+[.)])\s+"#, from: &text) || isListy
         if let box = text.range(of: #"^\[([ xX])\]\s*"#, options: .regularExpression) {
             let done = text[box].lowercased().contains("x")
-            text.replaceSubrange(box, with: done ? "Done: " : "To do: ")
+            text.replaceSubrange(box, with: done ? String(localized: "Done: ", table: "Core", comment: "Read out before a ticked checklist item; keep the space")
+                : String(localized: "To do: ", table: "Core", comment: "Read out before an unticked checklist item; keep the space"))
             isListy = true
         }
         _ = dropLeading(#">\s?"#, from: &text)

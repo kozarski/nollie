@@ -121,7 +121,9 @@ struct NewChatSheet: View {
     }
 
     private var messageField: some View {
-        let hint = recipient.bot == nil ? "Choose a bot first" : "Message"
+        let hint = recipient.bot == nil
+            ? String(localized: "Choose a bot first")
+            : String(localized: "Message", comment: "Placeholder in the message box")
         return ComposerTextView(text: $draft.text, placeholder: hint, focused: $messageFocused,
                                 accessibilityID: "newchat.text",
                                 onSend: { Task { await send() } },

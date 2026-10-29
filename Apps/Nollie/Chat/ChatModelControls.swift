@@ -73,7 +73,8 @@ enum ReasoningEffort {
     /// Title for the menu: the level in use, or a note that none is set.
     static func title(current: String?) -> String {
         let trimmed = (current ?? "").trimmingCharacters(in: .whitespaces)
-        return "Reasoning: \(trimmed.isEmpty ? "not set" : trimmed)"
+        guard !trimmed.isEmpty else { return String(localized: "Reasoning: not set") }
+        return String(localized: "Reasoning: \(trimmed)", comment: "The reasoning level in use, a config value like high")
     }
 
     /// Reads the level choices out of the gateway's config schema, if it lists any.

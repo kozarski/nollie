@@ -56,7 +56,7 @@ struct LiveConversationView: View {
 
     var body: some View {
         stage
-            .inlineTitle(route.title ?? botName(route.profile ?? "default"))
+            .inlineTitle(.verbatim(route.title ?? botName(route.profile ?? "default")))
             .hidesTabBar()
             .task(id: storedID) { await open() }
             .onAppear { model.visibleChatID = storedID }
@@ -71,7 +71,7 @@ struct LiveConversationView: View {
         if let live {
             screen(for: live)
         } else if let failure {
-            Placeholder("Could not open chat", symbol: "exclamationmark.triangle", detail: failure)
+            Placeholder(LocalizedStringResource("Could not open chat"), symbol: "exclamationmark.triangle", detail: .verbatim(failure))
         } else {
             ProgressView()
         }
@@ -105,7 +105,7 @@ struct LiveConversationView: View {
         guard let runtime = model.runtime,
               route.connectionID == nil || route.connectionID == runtime.connection.id
         else {
-            failure = "The connection for this conversation is no longer open."
+            failure = String(localized: "The connection for this conversation is no longer open.")
             return
         }
         let profile = route.profile ?? runtime.selectedProfile ?? "default"
@@ -153,9 +153,9 @@ private struct PillReading {
     init(_ engine: ConversationEngine) {
         let chat = engine.state
         if engine.phase != .ready {
-            word = "Connecting"
+            word = String(localized: "Connecting", comment: "What the bot is doing now")
         } else {
-            word = chat.activity.shownWords ?? (chat.running ? "Writing" : nil)
+            word = chat.activity.shownWords ?? (chat.running ? String(localized: "Writing", comment: "What the bot is doing now") : nil)
         }
         // Pending questions take the line first; otherwise it shows the turn's current step.
         if !chat.cards.isEmpty {

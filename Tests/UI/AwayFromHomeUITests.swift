@@ -97,6 +97,46 @@ final class AwayFromHomeUITests: DemoCase {
         XCTAssertEqual(composer.value as? String, "Are you there?", "the typed words were lost")
     }
 
+    /// Away through iCloud, ready: the page says it works away from home first, with one switch, and
+    /// Tailscale waits under Advanced.
+    func testThroughICloudThePageSaysItWorksAwayFromHome() throws {
+        for look in Look.allCases {
+            try requireMock()
+            mock(linkRoute, ["reset": true])
+            try startDemo(["-nollie-demo-tab", "settings", "-nollie-demo-reach", "home", "-nollie-demo-icloud", "ready",
+                           "-nollie-demo-settings", "away"], look: look)
+            XCTAssertTrue(find("away.hero").waitForExistence(timeout: 15), "no away page")
+            XCTAssertTrue(poll(10) { self.find("away.hero").label == "Works away from home" }, find("away.hero").label)
+            XCTAssertEqual(find("away.lead").label, "Through your own iCloud.")
+            let facts = find("away.icloud.facts").label
+            for word in ["Chat", "Approve", "Stop"] { XCTAssertTrue(facts.contains(word), facts) }
+            let toggle = app.switches["away.icloud.switch"]
+            XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+            XCTAssertEqual(toggle.value as? String, "1", "on by default once it is safe")
+            XCTAssertFalse(find("away.without").exists, "the old comparison leads no more")
+            shot("away-icloud-\(look.rawValue)")
+            app.swipeUp(velocity: .slow)
+            XCTAssertTrue(find("away.tailscaleHeading").waitForExistence(timeout: 5))
+            XCTAssertTrue(app.switches["away.switch"].exists, "Tailscale's switch stays, under Advanced")
+            shot("away-icloud-advanced-\(look.rawValue)")
+
+            // Turned off, the page goes back to what works without it.
+            app.swipeDown(velocity: .slow)
+            flip(toggle)
+            XCTAssertTrue(poll(10) { self.find("away.hero").label == "At home" }, "the page did not change")
+            shot("away-icloud-off-\(look.rawValue)")
+            app.terminate()
+        }
+    }
+
+    /// Away, with iCloud ready, the bots list says how the phone reaches the Mac.
+    func testAwayThroughICloudTheListSaysSo() throws {
+        try startLinked("away", ["-nollie-demo-icloud", "ready"])
+        XCTAssertTrue(find("link.reach").waitForExistence(timeout: 10), "no status line")
+        XCTAssertTrue(poll(10) { self.find("link.reach").label == "Away · through iCloud" }, find("link.reach").label)
+        picture("status-icloud")
+    }
+
     /// Opens the Work bot's Computer tab on a Mac that sends everything through an exit node.
     private func startBehindExitNode() throws {
         try startLinked("home", ["-nollie-demo-bot-page", "settings", "-nollie-demo-bot-profile", "work", "-nollie-demo-bot-tab", "computer"])

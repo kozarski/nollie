@@ -43,8 +43,8 @@ struct KanbanNewTaskSheet: View {
 
     private var footnote: String {
         draft.startInTriage
-            ? "It stays in Triage until someone picks it up."
-            : "With a bot chosen, the task starts in Ready and the dispatcher passes it along."
+            ? String(localized: "It stays in Triage until someone picks it up.")
+            : String(localized: "With a bot chosen, the task starts in Ready and the dispatcher passes it along.")
     }
 
     var body: some View {
@@ -101,7 +101,7 @@ struct KanbanNewTaskSheet: View {
         isSaving = true
         defer { isSaving = false }
         guard let made = await store.create(draft.request) else {
-            problem = store.lastError ?? "The gateway turned the task away."
+            problem = store.lastError ?? String(localized: "The gateway turned the task away.")
             return
         }
         dismiss()

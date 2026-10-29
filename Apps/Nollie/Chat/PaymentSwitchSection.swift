@@ -29,7 +29,7 @@ struct PaymentSwitchSection: View {
                         PageNote("Every payment asks you first.", symbol: "hand.raised.fill", id: "profile.payments.note")
                     }
                     if let problem {
-                        PageNote(problem, symbol: "exclamationmark.triangle.fill", tint: .orange, id: "profile.payments.problem")
+                        PageNote(.verbatim(problem), symbol: "exclamationmark.triangle.fill", tint: .orange, id: "profile.payments.problem")
                     }
                 }
                 .id("payments")
@@ -51,7 +51,7 @@ struct PaymentSwitchSection: View {
             unavailable = true   // an older add-on, or a bot that may never pay
         } catch {
             guard !Task.isCancelled else { return }
-            problem = "Couldn't check this. Try again."
+            problem = String(localized: "Couldn't check this. Try again.")
         }
     }
 
@@ -62,13 +62,14 @@ struct PaymentSwitchSection: View {
         defer { saving = false }
         if want {
             let bot = runtime.profiles.first { $0.name == profileName }?.shownName ?? profileName.capitalized
-            guard await RememberedSignInCoordinator.defaultAuthenticator().authenticate(reason: "Let \(bot) pay with your cards") != nil else { return }
+            guard await RememberedSignInCoordinator.defaultAuthenticator().authenticate(
+                reason: String(localized: "Let \(bot) pay with your cards", comment: "Safety: the reason shown with Face ID or Touch ID before a bot may pay; a bot's name follows Let")) != nil else { return }
         }
         do {
             on = try await runtime.savePaymentSwitch(bot: profileName, on: want).on
             problem = nil
         } catch {
-            problem = "Couldn't change that. Try again."
+            problem = String(localized: "Couldn't change that. Try again.")
         }
     }
 }

@@ -19,6 +19,8 @@ final class ProfileCardState {
     var options: ModelOptionsResult?
     /// "Saved…" in green or what went wrong in orange, under the open tab.
     var note: String?
+    /// The note says a save went through (green), not what went wrong.
+    var noteSaved = false
     /// What went wrong last, word for word, for the Advanced pages.
     var lastProblem: String?
     var deleting = false
@@ -44,7 +46,7 @@ final class ProfileCardState {
     /// The provider and model as saved, or "Not set".
     var savedModel: String {
         let parts = [info?.provider, info?.model].compactMap { $0 }.filter { !$0.isEmpty }
-        return parts.isEmpty ? "Not set" : parts.joined(separator: "/")
+        return parts.isEmpty ? String(localized: "Not set", comment: "No model is saved for a bot") : parts.joined(separator: "/")
     }
 
     /// The model's last path part, as a choice shows it.
@@ -71,7 +73,10 @@ final class ProfileCardState {
         let provider = (info?.provider ?? "").trimmingCharacters(in: .whitespaces)
         guard !provider.isEmpty, !(info?.model ?? "").isEmpty else { return .unset }
         if ModelNames.isLocal(provider) { return .mac }
-        if ModelNames.isPlan(provider) { return .plan(Papertrail.providerLabel(provider) ?? "Your plan") }
+        if ModelNames.isPlan(provider) {
+            return .plan(Papertrail.providerLabel(provider)
+                         ?? String(localized: "Your plan", comment: "A paid plan, like a Claude or ChatGPT plan, when its name is unknown"))
+        }
         return .key(Papertrail.providerLabel(provider) ?? options?.providers.first { $0.slug == provider }?.name)
     }
 
@@ -97,6 +102,7 @@ final class ProfileCardState {
 
     private func failed(_ words: String, _ error: Error) {
         note = words
+        noteSaved = false
         lastProblem = error.localizedDescription
     }
 
@@ -109,18 +115,22 @@ final class ProfileCardState {
             await runtime.loadProfiles()
             return true
         } catch {
-            failed("Couldn't save that. Try again.", error)
+            failed(String(localized: "Couldn't save that. Try again."), error)
             return false
         }
     }
 
     func saveBlurb() async {
-        if await put("description", ["description": .string(blurb)]) { note = "Saved description." }
+        if await put("description", ["description": .string(blurb)]) {
+            note = String(localized: "Saved description.")
+            noteSaved = true
+        }
     }
 
     func saveModel(provider: String, model: String) async {
         guard await put("model", ["provider": .string(provider), "model": .string(model)]) else { return }
-        note = "Saved. \(label) uses \(ModelNames.tail(model)) from now on."
+        note = String(localized: "Saved. \(label) uses \(ModelNames.tail(model)) from now on.", comment: "A bot's name, then a model's name")
+        noteSaved = true
     }
 
     func setPrivacy(_ on: Bool) async {
@@ -144,7 +154,8 @@ final class ProfileCardState {
         do {
             try await runtime.retryPrivateSync()
             privacyNeedsRetry = false
-            note = "Saved. \(label) is private."
+            note = String(localized: "Saved. \(label) is private.")
+            noteSaved = true
         } catch {
             privacyFailed(error)
         }
@@ -154,7 +165,8 @@ final class ProfileCardState {
     /// off needs the gateway's yes.
     private func privacyFailed(_ error: Error) {
         let sync = error as? PrivateBotsSyncError
-        note = sync?.errorDescription ?? "Couldn't save that. Try again."
+        note = sync?.errorDescription ?? String(localized: "Couldn't save that. Try again.")
+        noteSaved = false
         lastProblem = sync?.detail ?? error.localizedDescription
         privacyNeedsRetry = sync?.kind == .notTold
         isPrivate = isHidden
@@ -175,7 +187,7 @@ final class ProfileCardState {
             NotificationCenter.default.post(name: .hermesSessionsChanged, object: nil)
             leave()
         } catch {
-            failed("Couldn't delete \(label). Try again.", error)
+            failed(String(localized: "Couldn't delete \(label). Try again."), error)
         }
     }
 
@@ -184,12 +196,14 @@ final class ProfileCardState {
     func chooseLook(_ choice: CharacterChoice) {
         avatar = choice
         BotAvatarStore.set(choice, for: name)
+        BotLookSharing.share(name, runtime: runtime)
     }
 
     func chooseColour(_ hex: String) {
         var colours = BotColors.stored()
         colours[name] = hex
         BotColors.save(colours)
+        BotLookSharing.share(name, runtime: runtime)
         tint = Color(hex: hex) ?? tint
     }
 
@@ -201,6 +215,7 @@ final class ProfileCardState {
         var colours = BotColors.stored()
         colours[name] = nil
         BotColors.save(colours)
+        BotLookSharing.share(name, runtime: runtime)
         refreshTint()
     }
 }

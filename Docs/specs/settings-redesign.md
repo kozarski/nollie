@@ -47,7 +47,7 @@ iPhone, with the same symbol as the tile, opening the same page; a tap anywhere 
 takes its place while there is text. Above it, the Board is a sideways glass capsule and New Bot a round glass button
 beside it, on both; the iPhone's clock is gone (Schedules is in each bot's menu).
 
-Each bot's settings say the same for that bot under its face ("Nothing left your Mac today", "Went online 3 times
+Each bot's settings say the same for that bot under its face ("Nothing seen leaving today", "Went online 3 times
 today").
 
 Every Advanced page also leads with what's true in that layer ("Siri won't answer", "How bots move", "Version 0.1
@@ -79,10 +79,10 @@ Identifiers that UI tests use stay as they are unless a page's own test is updat
 | **Advanced** (Developer Mode) | The worst Status light: "All good", "Needs a look", "Something is off" | Hermes dashboard, Companion, Status, Troubleshooting | It is the Advanced area |
 | **Status** | Worst light wins, same words | One capsule per area with its light | Details per row, versions |
 | **Troubleshooting** | "What's wrong?" | One capsule per topic | Server specifics stay in each topic |
-| **What left your Mac** (new) | "Nothing left your Mac today" | One capsule per bot with today's count | |
+| **What left your Mac** (new) | "Nothing seen leaving today" | One capsule per bot with today's count | |
 | **Night shift** (new) | "A quiet night" / "2 jobs overnight" | The morning card with Share | |
 | **Bot settings** | The bot's face and name, then the Papertrail line for today | Tabs as today | Raw model ids, home path |
-| **Bot settings › Papertrail** | "Stayed on your Mac" (green), "Went online 3 times today" (blue), "Not recording yet", "Couldn't check" | Totals and today's rows, route and time only | Token counts, models, hosts (today's Developer Mode details) |
+| **Bot settings › Papertrail** | "All quiet" (green), "Went online 3 times today" (blue), "Not recording yet", "Couldn't check" | Totals and today's rows, route and time only | Token counts, models, hosts (today's Developer Mode details) |
 | **Bot settings › Computer** | "Hands off your Mac", "Can use your Mac", "Using your Mac", "Has its own computer" | Allow Mac control, its own computer | Nollie Computer beta, Mac permissions, reset and remove its computer |
 | **Bot settings › Model** | "On this Mac", "Claude plan", "Uses an API key" | The plain choices | The full model menu with raw ids |
 

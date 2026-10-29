@@ -66,7 +66,7 @@ final class AwayFromHomeModel {
             facts = Self.facts(try await NollieLinkMacClient.away())
             issue = nil
         } catch {
-            issue = "Couldn't check. Make sure Nollie's background service is on."
+            issue = String(localized: "Couldn't check. Make sure Nollie's background service is on.")
         }
         #else
         guard let runtime = model.runtime else { return }
@@ -88,11 +88,12 @@ final class AwayFromHomeModel {
         #endif
         #if os(macOS)
         do { facts = Self.facts(try await NollieLinkMacClient.away(on: on)) } catch {
-            issue = "Couldn't change it. Try again."
+            issue = String(localized: "Couldn't change it. Try again.")
         }
         #else
         guard let runtime = model.runtime, let reply = await runtime.setLinkAway(on) else {
-            issue = on ? "Your Mac didn't answer. Turn this on at home, or on your Mac." : "Your Mac didn't answer. Try again."
+            issue = on ? String(localized: "Your Mac didn't answer. Turn this on at home, or on your Mac.")
+                         : String(localized: "Your Mac didn't answer. Try again.")
             return
         }
         facts = AwayFacts(on: reply.away, tailscale: reply.tailscale)
@@ -104,13 +105,13 @@ final class AwayFromHomeModel {
     func save(host: String) async -> String? {
         let typed = host.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard typed.isEmpty || (NollieTailnet.isTailnetHost(typed) && NollieTailnet.validLinkHost(typed)) else {
-            return "That isn't a Tailscale name. It looks like your-mac.tail1234.ts.net."
+            return String(localized: "That isn't a Tailscale name. It looks like your-mac.tail1234.ts.net.")
         }
         #if DEBUG
         if pretend { demo.host = typed.isEmpty ? nil : typed; facts = demo; return nil }
         #endif
         do { facts = Self.facts(try await NollieLinkMacClient.away(host: typed)) } catch {
-            return "Couldn't save it. Try again."
+            return String(localized: "Couldn't save it. Try again.")
         }
         return nil
     }
@@ -129,7 +130,29 @@ struct AwayFromHomeView: View {
     @Environment(AppModel.self) private var model
     @State private var away = AwayFromHomeModel()
 
+    /// Whether a phone shows this page: linked to a Mac, and never on a member's phone, since
+    /// shared helpers work at home only and never through Tailscale or iCloud.
+    static func shows(reach: NollieLinkReach?, isMember: Bool) -> Bool { reach != nil && !isMember }
+
+    /// Away through iCloud on this device.
+    private var iCloud: AwayICloudState {
+        #if os(macOS)
+        AwayMacBridge.shared.shownState
+        #else
+        AwayPhone.shared.state
+        #endif
+    }
+
+    private func setICloud(_ on: Bool) {
+        #if os(macOS)
+        Task { await AwayMacBridge.shared.setOn(on) }
+        #else
+        Task { await AwayPhone.shared.setOn(on, runtime: model.runtime) }
+        #endif
+    }
+
     private var hero: AwayHero.State {
+        if iCloud == .ready { return .iCloud }
         #if os(macOS)
         guard let facts = away.facts, facts.on else { return .home }
         return facts.ready ? .anywhere : .needsTailscale
@@ -155,9 +178,11 @@ struct AwayFromHomeView: View {
         ScrollViewReader { reader in
             ScrollView {
                 AwayFromHomePage(hero: hero, facts: away.facts, busy: away.busy, issue: away.issue,
+                                 iCloud: iCloud, setICloud: setICloud,
                                  set: { on in Task { await away.set(on, model) } },
                                  save: save)
                     .animation(.snappy, value: away.facts)
+                    .animation(.snappy, value: iCloud)
             }
             .background(Ink.canvas.ignoresSafeArea())
             #if os(iOS)
@@ -178,6 +203,9 @@ struct AwayFromHomeView: View {
             // Nollie looks again by itself while the screen is open, so "Ready" shows up on its own.
             while !Task.isCancelled {
                 await away.refresh(model)
+                #if os(iOS)
+                await AwayPhone.shared.refresh(model.runtime)
+                #endif
                 try? await Task.sleep(for: .seconds(3))
             }
         }
@@ -190,13 +218,23 @@ struct AwayFromHomePage: View {
     var facts: AwayFacts?
     var busy = false
     var issue: String?
+    /// Away through iCloud on this device. Ready leads the page; Tailscale moves under Advanced.
+    var iCloud: AwayICloudState = .unavailable
+    var setICloud: (Bool) -> Void = { _ in }
     var set: (Bool) -> Void = { _ in }
     var save: (String) async -> String? = { _ in nil }
 
     var body: some View {
         VStack(spacing: 40) {
             AwayHero(state: hero)
-            AwayComparison()
+            if iCloud == .ready {
+                FactStrip(facts: AwayICloudFacts.facts, tint: .green, id: "away.icloud.facts")
+                iCloudSwitch
+                AdvancedHeading()
+            } else {
+                AwayComparison()
+                if iCloud != .unavailable { iCloudSwitch }
+            }
             VStack(spacing: 18) {
                 switchRow
                 if let facts, facts.on, facts.ready {
@@ -229,16 +267,23 @@ struct AwayFromHomePage: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// One clear row: the switch, on a glass capsule.
-    private var switchRow: some View {
-        Toggle(isOn: Binding(get: { facts?.on ?? false }, set: set)) {
-            Text("Use Nollie away from home").font(.headline).foregroundStyle(Ink.text)
+    /// Away through iCloud: one switch, and a few words when it can't be on yet.
+    private var iCloudSwitch: some View {
+        VStack(spacing: 10) {
+            GlassSwitch(.verbatim(AwayICloudFacts.switchTitle), isOn: Binding(get: { iCloud == .ready }, set: setICloud), id: "away.icloud.switch")
+                .disabled(!iCloud.canTurnOn)
+            if let words = AwayWords.state(iCloud) {
+                Text(words).foregroundStyle(Ink.text2).multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .testID("away.icloud.state")
+            }
         }
-        .toggleStyle(.switch)
-        .disabled(facts == nil || busy)
-        .inset(h: 22, v: 14)
-        .nollieGlass(.regular, in: Capsule(), solid: Ink.card)
-        .testID("away.switch")
+    }
+
+    /// Tailscale's one switch, on a glass capsule like the iCloud one above it.
+    private var switchRow: some View {
+        GlassSwitch("Use Tailscale", isOn: Binding(get: { facts?.on ?? false }, set: set), id: "away.switch")
+            .disabled(facts == nil || busy)
     }
 }
 
@@ -246,9 +291,12 @@ struct AwayFromHomePage: View {
 struct AwayHero: View {
     enum State: Equatable {
         case home, tailnet, away, alertsOnly, anywhere, needsTailscale
+        /// Away through iCloud is ready: the answer the page is for.
+        case iCloud
 
         var symbol: String {
             switch self {
+            case .iCloud: "icloud.fill"
             case .home: "house.fill"
             case .tailnet, .anywhere: "globe.americas.fill"
             case .away, .alertsOnly, .needsTailscale: "airplane"
@@ -256,25 +304,27 @@ struct AwayHero: View {
         }
         var title: String {
             switch self {
-            case .home: "At home"
-            case .tailnet: "Connected through Tailscale"
-            case .away, .needsTailscale: "Away from home"
-            case .alertsOnly: "Alerts only"
-            case .anywhere: "Ready anywhere"
+            case .iCloud: String(localized: "Works away from home")
+            case .home: String(localized: "At home", comment: "Where you are now")
+            case .tailnet: String(localized: "Connected through Tailscale")
+            case .away, .needsTailscale: String(localized: "Away from home", comment: "Where you are now")
+            case .alertsOnly: String(localized: "Alerts only")
+            case .anywhere: String(localized: "Ready anywhere")
             }
         }
         var line: String {
             switch self {
-            case .home: "Everything works."
-            case .tailnet, .anywhere: "Everything works, wherever you are."
-            case .away, .alertsOnly: "Your Mac is out of reach."
-            case .needsTailscale: "This needs Tailscale."
+            case .iCloud: String(localized: "Through your own iCloud.")
+            case .home: String(localized: "Everything works.")
+            case .tailnet, .anywhere: String(localized: "Everything works, wherever you are.")
+            case .away, .alertsOnly: String(localized: "Your Mac is out of reach.")
+            case .needsTailscale: String(localized: "This needs Tailscale.")
             }
         }
         var tint: Color {
             switch self {
             case .home: .blue
-            case .tailnet, .anywhere: .green
+            case .tailnet, .anywhere, .iCloud: .green
             case .away, .needsTailscale: .orange
             case .alertsOnly: .purple
             }
@@ -284,7 +334,36 @@ struct AwayHero: View {
     var state: State
 
     var body: some View {
-        PageHero(symbol: state.symbol, title: state.title, line: state.line, tint: state.tint, id: "away.hero")
+        PageHero(symbol: state.symbol, title: .verbatim(state.title), line: .verbatim(state.line), tint: state.tint, id: "away.hero")
+    }
+}
+
+/// What works away through iCloud, and the switch's words, on the phone and on the Mac.
+enum AwayICloudFacts {
+    static let facts = [Fact(symbol: "bubble.left.fill", word: "Chat"), Fact(symbol: "checkmark", word: "Approve"),
+                        Fact(symbol: "stop.fill", word: "Stop")]
+    static var switchTitle: String {
+        #if os(macOS)
+        String(localized: "Answer through iCloud")
+        #else
+        String(localized: "Use iCloud away from home")
+        #endif
+    }
+}
+
+/// Tailscale, under Advanced: what it adds, in a few words.
+struct AdvancedHeading: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Advanced").font(.title3.weight(.semibold)).foregroundStyle(Ink.text)
+                .accessibilityAddTraits(.isHeader)
+            Text("Tailscale adds Watch, the Board and files.").foregroundStyle(Ink.text2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 12)
+        .accessibilityElement(children: .combine)
+        .testID("away.tailscaleHeading")
     }
 }
 
@@ -344,7 +423,7 @@ struct TailscaleSetupSteps: View {
         .testID("away.steps")
     }
 
-    private func step<Action: View>(_ number: Int, _ title: String, detail: String? = nil, last: Bool = false,
+    private func step<Action: View>(_ number: Int, _ title: LocalizedStringResource, detail: LocalizedStringResource? = nil, last: Bool = false,
                                     @ViewBuilder action: () -> Action) -> some View {
         HStack(alignment: .top, spacing: 16) {
             // The number, and a quiet line down to the next one.
@@ -440,11 +519,11 @@ struct AwayManualHost: View {
 /// can't carry the helpers' computers' traffic: they then get no internet. Open Tailscale only
 /// opens the app; Nollie never changes it.
 struct ExitNodeCard: View {
-    private static var where_: String {
+    private static var words: String {
         #if os(macOS)
-        "this Mac"
+        String(localized: "Your Mac sends everything through a Tailscale exit node, so your helpers' computers can't reach the internet. Turn off the exit node in Tailscale on this Mac.")
         #else
-        "your Mac"
+        String(localized: "Your Mac sends everything through a Tailscale exit node, so your helpers' computers can't reach the internet. Turn off the exit node in Tailscale on your Mac.")
         #endif
     }
 
@@ -455,7 +534,7 @@ struct ExitNodeCard: View {
                     .accessibilityHidden(true)
                     .foregroundStyle(.orange)
                     .font(.title2.weight(.semibold))
-                Text("Your Mac sends everything through a Tailscale exit node, so your helpers' computers can't reach the internet. Turn off the exit node in Tailscale on \(Self.where_).")
+                Text(Self.words)
                     .foregroundStyle(Ink.text)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -485,6 +564,14 @@ struct AwayCardSheet: View {
     private var link: LinkedMac? { model.runtime?.connection.linkedMac }
     /// The Mac was ready: Tailscale may be off on a device, or the Mac asleep.
     private var macReady: Bool { link?.awayReady == true }
+    /// Chat, approvals and Stop go through iCloud: only this one thing waits for home.
+    private var iCloud: Bool {
+        #if os(iOS)
+        AwayPhone.shared.isOn
+        #else
+        false
+        #endif
+    }
 
     var body: some View {
         FittedSheet {
@@ -494,6 +581,28 @@ struct AwayCardSheet: View {
                     Button { dismiss() } label: { Text("Done").fullWidthLabel() }
                         .buttonStyle(.nollieGlassProminent)
                         .testID("awayCard.done")
+                } else if iCloud {
+                    Image(systemName: "house.fill")
+                        .font(.system(size: 56, weight: .regular))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.blue)
+                        .accessibilityHidden(true)
+                    Text("This one works at home.")
+                        .font(.title2.weight(.bold)).multilineTextAlignment(.center)
+                        .testID("awayCard.title")
+                    Text("Away, chat, approvals and Stop go through iCloud.")
+                        .font(.body).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .testID("awayCard.message")
+                    VStack(spacing: 10) {
+                        Button { dismiss() } label: { Text("OK").fullWidthLabel() }
+                            .buttonStyle(.nollieGlassProminent)
+                            .testID("awayCard.done")
+                        Button("Use Tailscale") { withAnimation(.snappy) { steps = true } }
+                            .small(.subheadline, .secondary)
+                            .testID("awayCard.setUp")
+                    }
+                    .padding(.top, 6)
                 } else {
                     Image(systemName: macReady ? "moon.zzz.fill" : "airplane")
                         .font(.system(size: 56, weight: .regular))
@@ -532,13 +641,16 @@ struct AwayCardSheet: View {
 struct LinkReachLine: View {
     var reach: NollieLinkReach
     var alertsOn: Bool
+    /// Away through iCloud is ready: chat, approvals and Stop still work.
+    var iCloud = false
     var onAway: () -> Void = {}
 
-    static func text(_ reach: NollieLinkReach, alertsOn: Bool) -> String {
+    static func text(_ reach: NollieLinkReach, alertsOn: Bool, iCloud: Bool = false) -> String {
         switch reach {
-        case .home: "At home"
-        case .tailnet: "Connected through Tailscale"
-        case .away: alertsOn ? "Away · alerts only" : "Away from home"
+        case .home: String(localized: "At home", comment: "Where you are now")
+        case .tailnet: String(localized: "Connected through Tailscale")
+        case .away where iCloud: String(localized: "Away · through iCloud")
+        case .away: alertsOn ? String(localized: "Away · alerts only") : String(localized: "Away from home", comment: "Where you are now")
         }
     }
 
@@ -546,12 +658,13 @@ struct LinkReachLine: View {
         switch reach {
         case .home: "house.fill"
         case .tailnet: "point.3.connected.trianglepath.dotted"
+        case .away where iCloud: "icloud.fill"
         case .away: "moon.zzz.fill"
         }
     }
 
     var body: some View {
-        let label = Label(Self.text(reach, alertsOn: alertsOn), systemImage: symbol)
+        let label = Label(Self.text(reach, alertsOn: alertsOn, iCloud: iCloud), systemImage: symbol)
             .font(.footnote.weight(.medium))
             .foregroundStyle(.secondary)
             .inset(h: 12, v: 4)
@@ -563,7 +676,7 @@ struct LinkReachLine: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Self.text(reach, alertsOn: alertsOn))
+        .accessibilityLabel(Self.text(reach, alertsOn: alertsOn, iCloud: iCloud))
         .testID("link.reach")
     }
 }

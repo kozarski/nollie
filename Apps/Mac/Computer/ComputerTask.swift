@@ -30,6 +30,10 @@ struct ComputerTask: Equatable, Sendable, Identifiable {
     private(set) var lastActivity: Date
     /// The app the bot last acted in, for the "Using Mail: Stop" panel.
     private(set) var currentApp: String?
+    /// Actions that reached an app, and pictures of a window the model on this Mac looked at, for
+    /// Papertrail. Pictures never leave the Mac, so none of them is ever sent anywhere.
+    private(set) var actions = 0
+    private(set) var looks = 0
 
     init(id: String = ComputerTask.newID(), botName: String, profile: String, sessionID: String, chatIDs: [String] = [],
          purpose: String, apps: [App], startedAt: Date) {
@@ -52,7 +56,7 @@ struct ComputerTask: Equatable, Sendable, Identifiable {
 
     enum End: Equatable, Sendable {
         case expired, idle, stopped, phone, finished, presence, away, otherApp, otherControl, helperExited
-        /// What the person reads afterwards.
+        /// Why it ended. Goes back to the bot's model as a refusal, so it stays in English.
         var message: String {
             switch self {
             case .expired: "Time's up. The 30 minutes you allowed are over."
@@ -90,6 +94,9 @@ struct ComputerTask: Equatable, Sendable, Identifiable {
 
     /// Session ids found to continue this task's chat.
     mutating func noteChatIDs(_ ids: [String]) { chatIDs.formUnion(ids) }
+
+    mutating func noteAction() { actions += 1 }
+    mutating func noteLook() { looks += 1 }
 
     mutating func noteActivity(in app: App?, at now: Date) {
         lastActivity = max(lastActivity, now)

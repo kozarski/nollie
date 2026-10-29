@@ -94,6 +94,15 @@ final class NotificationService: UNNotificationServiceExtension {
                 #if os(macOS)
                 target.interruptionLevel = .passive
                 #endif
+            } else if event.kind == .weeklyNote {
+                // The weekly note: Nollie's plain look, and a tap opens the note.
+                target.categoryIdentifier = "NOLLIE_WEEKLY"
+                var info = target.userInfo
+                info["nollie"] = "weekly"
+                target.userInfo = info
+                target.threadIdentifier = "nollie.weekly"
+                Self.present(target, profile: destination.profile, connection: destination.connectionID, gate: gate, policy: policy)
+                return
             } else {
                 target.categoryIdentifier = "HERMES_CLOUD_REPLY"
             }
@@ -162,6 +171,13 @@ final class NotificationService: UNNotificationServiceExtension {
             return
         }
         let kind = routing("kind", in: content)
+        // A muted helper's finished reply goes quietly to the list: no banner, no sound. Questions, approvals and
+        // failures still come as they are.
+        if ["HERMES_TURN", "HERMES_CLOUD_REPLY"].contains(content.categoryIdentifier),
+           HelperMutes.isMutedHere(profile, connection: connection) {
+            content.interruptionLevel = .passive
+            content.sound = nil
+        }
         // Building the sender happens on the main actor. Content and the system's completion closure are
         // both non-Sendable, and nothing else touches them past this point.
         nonisolated(unsafe) let handedOver = content

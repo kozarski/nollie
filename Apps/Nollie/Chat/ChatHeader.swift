@@ -51,13 +51,16 @@ struct ChatHeader: View {
     /// Beside the list there is nowhere to go back to; the list itself switches chats.
     @Environment(\.chatOpensBeside) private var besideList
 
+    /// On a member's phone: no computer, no bot info, only their own chat.
+    @Environment(\.familyOwner) private var familyOwner
+
     var body: some View {
         // Deliberately not inside a glass container: that draws its glass above everything and
         // would hide the bot standing on the pill.
         HStack(alignment: .top, spacing: 12) {
             backButton
             Spacer(minLength: 0)
-            ChatHeaderPill(chat: chat, onProfile: onProfile, onRename: onRename)
+            ChatHeaderPill(chat: chat, onProfile: familyOwner == nil ? onProfile : {}, onRename: onRename)
             Spacer(minLength: 0)
             trailing
         }
@@ -93,7 +96,7 @@ struct ChatHeader: View {
 
     private var trailing: some View {
         HStack(spacing: 12) {
-            ComputerControlsButton(profile: chat.profileName, action: onComputer)
+            if familyOwner == nil { ComputerControlsButton(profile: chat.profileName, action: onComputer) }
             Menu {
                 ChatMenuItems(chat: chat, onProfile: onProfile, onRename: onRename, onContext: onContext,
                               onEditBot: onEditBot, onNewChat: onNewChat, onClose: onClose)
@@ -162,10 +165,10 @@ private struct ChatHeaderPill: View {
         if chat.isRunning {
             // Use the goal that the device model wrote, falling back to the current step.
             let goal = ChatGoals.shared.goal(for: chat.storedID)
-            return StatusLine(text: goal ?? chat.statusLine ?? "Thinking…", goal: goal)
+            return StatusLine(text: goal ?? chat.statusWords ?? String(localized: "Thinking…"), goal: goal)
         }
-        if workingOnComputer { return StatusLine(text: "Working…") }
-        if chat.isResuming { return StatusLine(text: "Syncing…") }
+        if workingOnComputer { return StatusLine(text: String(localized: "Working…")) }
+        if chat.isResuming { return StatusLine(text: String(localized: "Syncing…")) }
         if headerShowsTitle { return StatusLine(text: chat.subtitle) }
         return StatusLine(text: shortened(shownTitle, limit: 30, keep: 29))
     }
@@ -324,8 +327,8 @@ struct ChatMenuItems: View {
     }
 
     private var contextTitle: String {
-        guard let percent = chat.usage?.computedContextPercent else { return "Context usage" }
-        return "Context usage · \(percent)%"
+        guard let percent = chat.usage?.computedContextPercent else { return String(localized: "Context usage") }
+        return String(localized: "Context usage · \(percent)%")
     }
 
     private var showsShortcuts: Bool {
@@ -343,10 +346,15 @@ struct ChatMenuItems: View {
         Menu { thisChatItems } label: { Label("This chat", systemImage: "bubble.left") }
     }
 
+    /// On a member's phone, the owner's model choices stay the owner's.
+    @Environment(\.familyOwner) private var familyOwner
+
     @ViewBuilder private var thisChatItems: some View {
-        ReasoningEffortMenu(chat: chat)
-        ChatModeToggles(chat: chat)
-        entry("Rename…", "pencil", onRename)
+        if familyOwner == nil {
+            ReasoningEffortMenu(chat: chat)
+            ChatModeToggles(chat: chat)
+        }
+        entry(String(localized: "Rename…"), "pencil", onRename)
         entry(contextTitle, "gauge.with.dots.needle.33percent", onContext)
         Divider()
         Button(role: .destructive, action: onClose) { Label("Close chat", systemImage: "xmark.circle") }

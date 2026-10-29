@@ -110,7 +110,7 @@ extension ChatListView {
             var opening: String?
             if case .user(let text, _)? = first?.kind { opening = text }
             let lastSeen = chat.items.last?.timestamp.timeIntervalSince1970 ?? now
-            var stand = StoredSession(id: chat.storedID, title: chat.title == "New chat" ? nil : chat.title, preview: opening)
+            var stand = StoredSession(id: chat.storedID, title: chat.title == ChatSession.newChatTitle ? nil : chat.title, preview: opening)
             stand.source = "ios"
             stand.model = chat.modelName.isEmpty ? nil : chat.modelName
             stand.startedAt = first?.timestamp.timeIntervalSince1970 ?? now
@@ -155,7 +155,8 @@ extension ChatListView {
             do {
                 try await updateOnGateway(session.id, fields)
             } catch {
-                errorText = "\u{201C}\(session.displayTitle)\u{201D} did not archive: \(error.localizedDescription)"
+                errorText = String(localized: "\u{201C}\(session.displayTitle)\u{201D} did not archive: \(error.localizedDescription)",
+                                   comment: "A chat's title in quotes, then the reason")
             }
         }
         await load()
@@ -203,7 +204,7 @@ extension ChatListView {
             droppedIDs.insert(session.id)
         } catch {
             sessions = before
-            errorText = "Could not update the chat: \(error.localizedDescription)"
+            errorText = String(localized: "Could not update the chat: \(error.localizedDescription)")
             return
         }
         await load()

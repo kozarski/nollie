@@ -72,7 +72,8 @@ public actor GatewayClient {
     }
 
     /// Sets a shown question aside on this device without answering it, so a window elsewhere that shows the
-    /// chat can still answer. When the person says no, answer instead (for an approval, its deny choice).
+    /// chat can still answer. When the person says no, answer instead (for an approval, its deny choice). The message
+    /// goes to the gateway, so it stays in English.
     public func decline(id: String, message: String = "Not answered on this device.") {
         feed(.decline(question: id, message: message))
     }

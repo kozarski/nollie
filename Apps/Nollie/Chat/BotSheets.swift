@@ -4,7 +4,7 @@ import NollieCore
 /// One of a bot's own pages: its history, what it knows, its settings and, on the phone, the
 /// Board and the schedules (the Mac shows those two in the window, where the chat was).
 struct BotSheet: Identifiable, Hashable {
-    enum Kind: String, Sendable { case history, knows, settings, board, schedules }
+    enum Kind: String, Sendable { case history, knows, settings, board, schedules, share }
     var kind: Kind
     var profile: String
     /// The chat the menu was opened from: Bot settings opens on its "This chat" tab.
@@ -47,7 +47,7 @@ struct BotMenuItems: View {
 
     /// One menu row: its words, symbol, test id and what it does. `key` adds a Command shortcut
     /// where `shortcuts` is on.
-    private func row(_ title: String, _ symbol: String, id: String, key: Character? = nil,
+    private func row(_ title: LocalizedStringKey, _ symbol: String, id: String, key: Character? = nil,
                      action: @escaping () -> Void) -> some View {
         Button(action: action) { Label(title, systemImage: symbol) }
             .modifier(MenuKey(key: key ?? " ", on: shortcuts && key != nil))
@@ -63,6 +63,15 @@ struct BotMenuItems: View {
     }
 
     var body: some View {
+        if model.family.isMember(model) {
+            // Someone at home has their chats and nothing of the owner's.
+            row("New chat", "square.and.pencil", id: "sideChat") { model.requestNewChat(profile: profile) }
+        } else {
+            ownerItems
+        }
+    }
+
+    @ViewBuilder private var ownerItems: some View {
         row("History", "clock", id: "history", key: "y", action: page(.history))
         if model.runtime?.kanban.isPresent == true {
             row("Board", "rectangle.split.3x1", id: "board", key: "b", action: page(.board))
@@ -77,6 +86,9 @@ struct BotMenuItems: View {
         Divider()
         // The private bot keeps to itself, so its switch lives only in its own settings.
         if !hidesMacControl { SystemControlToggle(profile: profile) }
+        if model.family.canShare(model, profile: profile) {
+            row("Share…", "person.2", id: "share", action: page(.share))
+        }
         row("Bot settings…", "slider.horizontal.3", id: "settings", action: page(.settings))
     }
 }
@@ -153,6 +165,8 @@ private struct BotSheetContent: View {
             NavigationStack { KanbanView(embedded: true).doneToolbar() }
         case .schedules:
             NavigationStack { CronView().navigationTitle("Schedules").doneToolbar(id: "schedules.close") }
+        case .share:
+            FamilyShareView(profile: sheet.profile)
         }
     }
 }
@@ -327,7 +341,7 @@ struct BotHistoryRow: View {
 
     private var isRun: Bool { (session.source ?? "").lowercased() == "cron" || session.id.hasPrefix("cron_") }
     private var title: String {
-        if isMain { return "Main chat" }
+        if isMain { return String(localized: "Main chat") }
         return MainChatCard.shownTitle(session.displayTitle)
     }
 

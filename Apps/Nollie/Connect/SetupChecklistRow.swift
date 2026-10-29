@@ -6,13 +6,13 @@ enum SetupCheckState: Equatable {
 
     var title: String {
         switch self {
-        case .notChecked: "Not checked"
-        case .needed: "Not yet"
-        case .working: "In progress"
-        case .ready: "Ready"
-        case .attention: "Needs attention"
-        case .unavailable: "Not in this version"
-        case .optional: "Optional"
+        case .notChecked: String(localized: "Not checked", comment: "A setup step's state")
+        case .needed: String(localized: "Not yet", comment: "A setup step's state")
+        case .working: String(localized: "In progress", comment: "A setup step's state")
+        case .ready: String(localized: "Ready", comment: "A setup step's state")
+        case .attention: String(localized: "Needs attention", comment: "A setup step's state")
+        case .unavailable: String(localized: "Not in this version", comment: "A setup step's state")
+        case .optional: String(localized: "Optional", comment: "A setup step's state")
         }
     }
     var symbol: String {
@@ -132,7 +132,7 @@ struct NativeSetupChecklistView: View {
             : states.contains(.failed) ? .failed
             : states.contains(.blocked) ? .blocked
             : states.contains(.notChecked) ? .notChecked : .needsInstall
-        let summary = NativeDependencyStep(id: "prepare", title: "Getting Nollie ready", detail: "", state: state, optional: false)
+        let summary = NativeDependencyStep(id: "prepare", title: String(localized: "Getting Nollie ready"), detail: "", state: state, optional: false)
         return [summary] + displayDependencies.filter { !Self.preparationIDs.contains($0.id) }
     }
 
@@ -140,8 +140,9 @@ struct NativeSetupChecklistView: View {
     private var isReady: Bool { !isWorkingPreview && !setup.managedRuntime.isBusy && setup.canConnect }
     private var runtimeProgressTitle: String? {
         guard !isWorkingPreview, setup.managedRuntime.isBusy else { return nil }
-        if isStoppingService { return "Stopping" }
-        return setup.managedRuntime.state == .starting ? "Starting" : "Checking"
+        if isStoppingService { return String(localized: "Stopping", comment: "The background service's state") }
+        return setup.managedRuntime.state == .starting ? String(localized: "Starting", comment: "The background service's state")
+            : String(localized: "Checking", comment: "The background service's state")
     }
 
     var body: some View {
@@ -172,7 +173,7 @@ struct NativeSetupChecklistView: View {
             }
             VStack(spacing: 12) {
             if setup.error != nil, !isWorkingPreview {
-                Text(setup.error.map { "\($0) Your progress is saved." } ?? "")
+                Text(setup.error.map { String(localized: "\($0) Your progress is saved.", comment: "After an error message") } ?? "")
                     .font(.subheadline).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -182,7 +183,7 @@ struct NativeSetupChecklistView: View {
                     guard !isWorking, !isLocked else { return }
                     connect()
                 } label: {
-                    primaryLabel(isConnecting ? "Connecting…" : "Connect")
+                    primaryLabel(isConnecting ? String(localized: "Connecting…") : String(localized: "Connect"))
                 }
                     .buttonStyle(OnboardingPrimaryButtonStyle())
                     .disabled(isWorking || isLocked)
@@ -195,7 +196,7 @@ struct NativeSetupChecklistView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     if setup.managedRuntime.state == .requiresApproval {
                         Button { setup.managedRuntime.openApprovalSettings() } label: {
-                            primaryLabel("Open Login Items")
+                            primaryLabel(String(localized: "Open Login Items"))
                         }
                             .buttonStyle(OnboardingPrimaryButtonStyle())
                             .accessibilityIdentifier("onboarding.runtime.approve")
@@ -219,7 +220,8 @@ struct NativeSetupChecklistView: View {
                         observedWork = true
                         Task { await setup.installDependencies(preferences: preferences) }
                     } label: {
-                        primaryLabel(setup.error == nil ? (preparedCount == 0 ? "Get Nollie ready" : "Finish getting ready") : "Try again")
+                        primaryLabel(setup.error == nil ? (preparedCount == 0 ? String(localized: "Get Nollie ready") : String(localized: "Finish getting ready"))
+                                     : String(localized: "Try again"))
                     }
                     .buttonStyle(OnboardingPrimaryButtonStyle())
                     .disabled(!setup.directInstallationAvailable)
@@ -369,41 +371,41 @@ struct NativeSetupChecklistView: View {
 
     private func shortTitle(_ id: String) -> String {
         switch id {
-        case "prepare": "Getting Nollie ready"
-        case "service": "Keep it running"
-        case "computer": "Add a computer"
-        default: "Set up"
+        case "prepare": String(localized: "Getting Nollie ready")
+        case "service": String(localized: "Keep it running")
+        case "computer": String(localized: "Add a computer")
+        default: String(localized: "Set up", comment: "A setup step's name")
         }
     }
 
     private func shortDetail(_ dependency: NativeDependencyStep) -> String {
         if dependency.id == "service", runtimeProgressTitle != nil {
-            if isStoppingService { return "Turning it off. Your setup files are kept." }
+            if isStoppingService { return String(localized: "Turning it off. Your setup files are kept.") }
             return setup.managedRuntime.state == .starting
-                ? "Starting and checking the connection."
-                : "Checking the background service."
+                ? String(localized: "Starting and checking the connection.")
+                : String(localized: "Checking the background service.")
         }
         if dependency.optional, dependency.state == .blocked {
-            return "Optional. Coming in a later version."
+            return String(localized: "Optional. Coming in a later version.")
         }
         if dependency.id == "service", !isWorkingPreview, setup.managedRuntime.state == .requiresApproval {
-            return "Allow Nollie Runtime in Login Items, then check again."
+            return String(localized: "Allow Nollie Runtime in Login Items, then check again.")
         }
-        if dependency.state == .blocked { return "Not in this version yet." }
-        if dependency.state == .failed { return "Didn't finish. Try again below." }
+        if dependency.state == .blocked { return String(localized: "Not in this version yet.") }
+        if dependency.state == .failed { return String(localized: "Didn't finish. Try again below.") }
         switch dependency.id {
         case "prepare":
             let total = preparation.count
             switch dependency.state {
-            case .ready: return "Everything your assistant needs is in place."
-            case .installing: return "\(preparedCount) of \(total) parts ready. Keep Nollie open."
+            case .ready: return String(localized: "Everything your assistant needs is in place.")
+            case .installing: return String(localized: "\(preparedCount) of \(total) parts ready. Keep Nollie open.")
             default:
                 return preparedCount == 0
-                    ? "About \(NativeSetupPlan.downloadMegabytes) MB to download. Usually 2 to 5 minutes, longer on a slow connection."
-                    : "\(preparedCount) of \(total) parts ready. The rest takes a few minutes."
+                    ? String(localized: "About \(NativeSetupPlan.downloadMegabytes) MB to download. Usually 2 to 5 minutes, longer on a slow connection.")
+                    : String(localized: "\(preparedCount) of \(total) parts ready. The rest takes a few minutes.")
             }
-        case "service": return "Works while this Mac is awake."
-        case "computer": return "Optional space to browse and work."
+        case "service": return String(localized: "Works while this Mac is awake.")
+        case "computer": return String(localized: "Optional space to browse and work.")
         default: return dependency.detail
         }
     }

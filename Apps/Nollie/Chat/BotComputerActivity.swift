@@ -8,10 +8,10 @@ enum BotComputerActivity {
         case usingComputer, working, idle, unknown
         var title: String {
             switch self {
-            case .usingComputer: "Using the computer"
-            case .working: "Working on a task"
-            case .idle: "No active task reported"
-            case .unknown: "Activity not available"
+            case .usingComputer: String(localized: "Using the computer")
+            case .working: String(localized: "Working on a task")
+            case .idle: String(localized: "No active task reported")
+            case .unknown: String(localized: "Activity not available")
             }
         }
     }

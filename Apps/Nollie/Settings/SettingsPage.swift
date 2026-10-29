@@ -3,6 +3,10 @@ import SwiftUI
 // The pieces of every Settings page, after Away from home: what is true right now at the top in
 // one large symbol and a few words, a handful of facts as symbols, one clear switch on glass,
 // and anything technical behind one Advanced row. No lists of grey rows, no small grey text.
+//
+// Words: a literal passed to these pieces is looked up in the string catalog (the
+// `LocalizedStringResource` inits); a `String` is shown as it is, so build it with
+// `String(localized:)` when it holds the app's own words.
 
 /// A settings page: a centred column on the canvas that scrolls, with air between its parts.
 struct SettingsPage<Content: View>: View {
@@ -40,6 +44,18 @@ struct PageHero: View {
     var tint: Color
     /// The title's identifier; the line's is the same with `.lead` in place of `.hero`.
     var id: String
+
+    init(symbol: String, title: LocalizedStringResource, line: LocalizedStringResource? = nil, tint: Color, id: String) {
+        self.init(verbatim: symbol, title: String(localized: title), line: line.map { String(localized: $0) }, tint: tint, id: id)
+    }
+
+    fileprivate init(verbatim symbol: String, title: String, line: String? = nil, tint: Color, id: String) {
+        self.symbol = symbol
+        self.title = title
+        self.line = line
+        self.tint = tint
+        self.id = id
+    }
 
     /// The large symbol, in a box tall enough that the page does not jump when it changes.
     private var mark: some View {
@@ -84,6 +100,15 @@ struct Fact: Identifiable, Hashable {
     var symbol: String
     var word: String
     var id: String { word }
+
+    init(symbol: String, word: LocalizedStringResource) {
+        self.init(verbatim: symbol, word: String(localized: word))
+    }
+
+    fileprivate init(verbatim symbol: String, word: String) {
+        self.symbol = symbol
+        self.word = word
+    }
 }
 
 /// A few facts side by side, each a large symbol over its word or two.
@@ -144,6 +169,17 @@ struct FactTile: View {
     var facts: [Fact]
     var id: String
 
+    init(title: LocalizedStringResource, tint: Color, facts: [Fact], id: String) {
+        self.init(verbatim: String(localized: title), tint: tint, facts: facts, id: id)
+    }
+
+    fileprivate init(verbatim title: String, tint: Color, facts: [Fact], id: String) {
+        self.title = title
+        self.tint = tint
+        self.facts = facts
+        self.id = id
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(title).foregroundStyle(Ink.text2).font(.subheadline.weight(.semibold))
@@ -200,7 +236,11 @@ struct GlassSwitch: View {
     @Binding var isOn: Bool
     var id: String
 
-    init(_ title: String, isOn: Binding<Bool>, id: String) {
+    init(_ title: LocalizedStringResource, isOn: Binding<Bool>, id: String) {
+        self.init(verbatim: String(localized: title), isOn: isOn, id: id)
+    }
+
+    fileprivate init(verbatim title: String, isOn: Binding<Bool>, id: String) {
         self.title = title
         _isOn = isOn
         self.id = id
@@ -237,7 +277,11 @@ struct GlassChoice<Value: Hashable>: View {
     var options: [(Value, String)]
     var id: String
 
-    init(_ title: String, selection: Binding<Value>, options: [(Value, String)], id: String) {
+    init(_ title: LocalizedStringResource, selection: Binding<Value>, options: [(Value, String)], id: String) {
+        self.init(verbatim: String(localized: title), selection: selection, options: options, id: id)
+    }
+
+    fileprivate init(verbatim title: String, selection: Binding<Value>, options: [(Value, String)], id: String) {
         self.title = title
         _selection = selection
         self.options = options
@@ -278,7 +322,13 @@ struct GlassLink<Destination: View>: View {
     var id: String
     private let destination: Destination
 
-    init(_ title: String, symbol: String, value: String? = nil, badge: Int = 0, id: String,
+    /// `value` is worked out in code (a count, a bot's name), so it is shown as it is.
+    init(_ title: LocalizedStringResource, symbol: String, value: String? = nil, badge: Int = 0, id: String,
+         @ViewBuilder destination: () -> Destination) {
+        self.init(verbatim: String(localized: title), symbol: symbol, value: value, badge: badge, id: id, destination: destination)
+    }
+
+    fileprivate init(verbatim title: String, symbol: String, value: String? = nil, badge: Int = 0, id: String,
          @ViewBuilder destination: () -> Destination) {
         self.title = title
         self.symbol = symbol
@@ -306,7 +356,13 @@ struct GlassButton: View {
     var id: String
     var action: () -> Void
 
-    init(_ title: String, symbol: String, value: String? = nil, role: ButtonRole? = nil, id: String, action: @escaping () -> Void) {
+    /// `value` is worked out in code, so it is shown as it is.
+    init(_ title: LocalizedStringResource, symbol: String, value: String? = nil, role: ButtonRole? = nil, id: String,
+         action: @escaping () -> Void) {
+        self.init(verbatim: String(localized: title), symbol: symbol, value: value, role: role, id: id, action: action)
+    }
+
+    fileprivate init(verbatim title: String, symbol: String, value: String? = nil, role: ButtonRole? = nil, id: String, action: @escaping () -> Void) {
         self.title = title
         self.symbol = symbol
         self.value = value
@@ -394,7 +450,11 @@ struct PageNote: View {
     var tint: Color = Ink.text2
     var id: String? = nil
 
-    init(_ text: String, symbol: String? = nil, tint: Color = Ink.text2, id: String? = nil) {
+    init(_ text: LocalizedStringResource, symbol: String? = nil, tint: Color = Ink.text2, id: String? = nil) {
+        self.init(verbatim: String(localized: text), symbol: symbol, tint: tint, id: id)
+    }
+
+    fileprivate init(verbatim text: String, symbol: String? = nil, tint: Color = Ink.text2, id: String? = nil) {
         self.text = text
         self.symbol = symbol
         self.tint = tint
@@ -419,7 +479,8 @@ struct PageNote: View {
 /// A heading over a group on a page: plain, in the page's words.
 struct PageHeading: View {
     var text: String
-    init(_ text: String) { self.text = text }
+    init(_ text: LocalizedStringResource) { self.text = String(localized: text) }
+    fileprivate init(verbatim text: String) { self.text = text }
     var body: some View {
         Text(text).font(.title3.weight(.semibold)).foregroundStyle(Ink.text)
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -72,7 +72,7 @@ struct ManagedRuntimeServiceControl {
 
 enum ManagedRuntimeOperation: Sendable {
     case start(UUID), status, stop
-    case linkOffer, linkStatus, linkCancel, linkRemove(UUID), linkAway(Data)
+    case linkOffer, linkStatus, linkCancel, linkRemove(UUID), linkAway(Data), linkFamily(Data)
     case cuaSetupStart, cuaSetupStatus, cuaWake, prepareRemoval
     var timeout: Duration {
         switch self {
@@ -81,6 +81,8 @@ enum ManagedRuntimeOperation: Sendable {
         case .prepareRemoval: .seconds(120)
         case .stop: .seconds(15)
         case .status, .linkOffer, .linkStatus, .linkCancel, .linkRemove, .linkAway, .cuaSetupStart, .cuaSetupStatus: .seconds(8)
+        // Sharing may make a code or reach Hermes for an answer.
+        case .linkFamily: .seconds(20)
         }
     }
 }
@@ -219,6 +221,7 @@ final class ManagedRuntimeRequest {
         case .linkCancel: proxy.linkCancelOffer(withReply: callbacks.statusReply)
         case .linkRemove(let id): proxy.linkRemove(deviceID: id.uuidString, withReply: callbacks.statusReply)
         case .linkAway(let request): proxy.linkAway(request: request, withReply: callbacks.statusReply)
+        case .linkFamily(let request): proxy.linkFamily(request: request, withReply: callbacks.statusReply)
         case .cuaSetupStart: proxy.cuaSetupStart(withReply: callbacks.statusReply)
         case .cuaSetupStatus: proxy.cuaSetupStatus(withReply: callbacks.statusReply)
         case .cuaWake: proxy.cuaWake(withReply: callbacks.statusReply)
@@ -245,7 +248,7 @@ final class ManagedRuntimeRequest {
 final class ManagedRuntimeClient {
     enum State: Equatable { case unavailable, off, requiresApproval, starting, needsVerification, ready, stopped, failed }
     private(set) var state: State = .off
-    private(set) var message = "Background service is off."
+    private(set) var message = String(localized: "Background service is off.")
     private(set) var isBusy = false
     private(set) var isRegistered = false
     private(set) var endpoint: URL?
@@ -275,13 +278,13 @@ final class ManagedRuntimeClient {
 
     func refresh(installationID: UUID?) async {
         guard !isBusy else { return }
-        guard isAvailable else { clearConnection(); state = .unavailable; message = "Background setup needs the direct Mac edition."; return }
+        guard isAvailable else { clearConnection(); state = .unavailable; message = String(localized: "Background setup needs the direct Mac edition."); return }
         let status = service.status()
         isRegistered = status == .enabled || status == .requiresApproval
         guard isPackaged() else { missingPackage(); return }
         guard status == .enabled else { applyRegistration(status); return }
         guard let installationID else {
-            clearConnection(); state = .needsVerification; message = "Prepare or select your Nollie setup first."; return
+            clearConnection(); state = .needsVerification; message = String(localized: "Prepare or select your Nollie setup first."); return
         }
         isBusy = true
         defer { isBusy = false }
@@ -290,7 +293,7 @@ final class ManagedRuntimeClient {
             try Task.checkCancellation()
             apply(response, installationID: installationID)
         } catch is CancellationError { return }
-        catch { fail("Could not check the background service. Try again.") }
+        catch { fail(String(localized: "Could not check the background service. Try again.")) }
     }
 
     func start(installationID: UUID) async {
@@ -298,7 +301,7 @@ final class ManagedRuntimeClient {
         isBusy = true
         defer { isBusy = false }
         clearConnection()
-        state = .starting; message = "Starting your assistant's background service."
+        state = .starting; message = String(localized: "Starting your assistant's background service.")
         guard isPackaged() else { missingPackage(); return }
         do {
             if service.status() != .enabled && service.status() != .requiresApproval { try service.register() }
@@ -314,18 +317,18 @@ final class ManagedRuntimeClient {
                   let endpoint = response.snapshot.endpoint, Self.isAllowedEndpoint(endpoint),
                   let token = reply.token, NollieRuntimeContract.validToken(token) else {
                 apply(response, installationID: installationID)
-                if state != .failed { fail("The service has not returned a verified connection yet. Check again or retry.") }
+                if state != .failed { fail(String(localized: "The service has not returned a verified connection yet. Check again or retry.")) }
                 return
             }
-            message = "Checking the secure connection."
+            message = String(localized: "Checking the secure connection.")
             guard try await verify(endpoint, token) else { throw ManagedRuntimeFailure.verificationFailed }
             try Task.checkCancellation()
             self.endpoint = endpoint; sessionToken = token; verifiedInstallationID = installationID
-            state = .ready; message = "Connection verified. Model and computer setup come next."
+            state = .ready; message = String(localized: "Connection verified. Model and computer setup come next.")
         } catch is CancellationError {
-            clearConnection(); state = .needsVerification; message = "Setup continues in the background. Check the connection when you're ready."
+            clearConnection(); state = .needsVerification; message = String(localized: "Setup continues in the background. Check the connection when you're ready.")
         } catch {
-            fail("The background connection could not be verified. Check its status, then try again.")
+            fail(String(localized: "The background connection could not be verified. Check its status, then try again."))
         }
     }
 
@@ -348,13 +351,13 @@ final class ManagedRuntimeClient {
             let status = service.status()
             isRegistered = status == .enabled || status == .requiresApproval
             if isRegistered {
-                fail("macOS has not disabled the service yet. Check Login Items, then try again.")
+                fail(String(localized: "macOS has not disabled the service yet. Check Login Items, then try again."))
             } else if stopped {
-                state = .off; message = "Background service is off. Your setup files are kept."
+                state = .off; message = String(localized: "Background service is off. Your setup files are kept.")
             } else {
-                state = .stopped; message = "Background service is unregistered. Its last stop could not be confirmed; your setup files are kept."
+                state = .stopped; message = String(localized: "Background service is unregistered. Its last stop could not be confirmed; your setup files are kept.")
             }
-        } catch { fail("Could not turn off the background service. Try again. Your setup files are kept.") }
+        } catch { fail(String(localized: "Could not turn off the background service. Try again. Your setup files are kept.")) }
     }
 
     func openApprovalSettings() {
@@ -381,24 +384,24 @@ final class ManagedRuntimeClient {
 
     private func apply(_ response: NollieRuntimeIPCResponse, installationID: UUID) {
         let snapshot = response.snapshot
-        guard response.error == nil, snapshot.phase != .failed else { fail("The background service needs attention. Retry after checking the setup files."); return }
+        guard response.error == nil, snapshot.phase != .failed else { fail(String(localized: "The background service needs attention. Retry after checking the setup files.")); return }
         if let selected = snapshot.installationID, selected != installationID {
-            fail("Another Nollie setup is running. Turn off its background service before starting this one."); return
+            fail(String(localized: "Another Nollie setup is running. Turn off its background service before starting this one.")); return
         }
         switch snapshot.phase {
         case .ready:
             guard snapshot.enabledInstallationID == installationID, let url = snapshot.endpoint, Self.isAllowedEndpoint(url) else {
-                fail("The service returned an unexpected connection. No connection was saved."); return
+                fail(String(localized: "The service returned an unexpected connection. No connection was saved.")); return
             }
             if verifiedInstallationID == installationID && endpoint == url && sessionToken != nil {
-                state = .ready; message = "Connection verified. Model and computer setup come next."
+                state = .ready; message = String(localized: "Connection verified. Model and computer setup come next.")
             } else {
-                clearConnection(); state = .needsVerification; message = "The service is running. Verify its connection to continue."
+                clearConnection(); state = .needsVerification; message = String(localized: "The service is running. Verify its connection to continue.")
             }
         case .validating, .starting, .restarting:
-            clearConnection(); state = .starting; message = "The background service is starting. Check again shortly."
+            clearConnection(); state = .starting; message = String(localized: "The background service is starting. Check again shortly.")
         case .stopped:
-            clearConnection(); state = .stopped; message = "Background service is stopped. Your setup files are kept."
+            clearConnection(); state = .stopped; message = String(localized: "Background service is stopped. Your setup files are kept.")
         case .failed: break
         }
     }
@@ -407,11 +410,11 @@ final class ManagedRuntimeClient {
         clearConnection()
         switch status {
         case .requiresApproval:
-            state = .requiresApproval; message = "Allow Nollie Runtime in System Settings > General > Login Items, then check again."
+            state = .requiresApproval; message = String(localized: "Allow Nollie Runtime in System Settings > General > Login Items, then check again.")
         case .notFound, .notRegistered:
-            state = .off; message = "Background service is ready to start."
+            state = .off; message = String(localized: "Background service is ready to start.")
         default:
-            state = .off; message = "Background service is off."
+            state = .off; message = String(localized: "Background service is off.")
         }
     }
 
@@ -419,7 +422,7 @@ final class ManagedRuntimeClient {
     private func fail(_ message: String) { clearConnection(); state = .failed; self.message = message }
     private func missingPackage() {
         clearConnection(); state = .unavailable
-        message = "This build is missing a valid signed background service."
+        message = String(localized: "This build is missing a valid signed background service.")
     }
 
     private static func verifyConnection(_ endpoint: URL, token: String) async throws -> Bool {

@@ -17,6 +17,29 @@ import Testing
         }
     }
 
+    /// The weekly note and its card, from a fixed week: what is new, one helper's week with its taps, and the filter
+    /// line. Drawn on whichever platform runs the test, so the Mac's own fonts and sizes show.
+    @Test func theWeeklyNote() throws {
+        let since = Calendar.current.startOfDay(for: Date()).addingTimeInterval(-6 * 86_400).timeIntervalSince1970
+        let record = WeekRecord(
+            bot: "career", since: since, recordingSince: since - 30 * 86_400,
+            replies: .init(stayed: 40, left: 11, online: 10),
+            places: [.init(kind: "model", count: 31, firstAt: since - 20 * 86_400, provider: "claude-subscription-direct"),
+                     .init(kind: "mcp", count: 4, firstAt: since + 2 * 86_400, host: "mcp.notes.example.com"),
+                     .init(kind: "search", count: 6, firstAt: since - 20 * 86_400, service: "exa"),
+                     .init(kind: "terminal", count: 3, firstAt: since - 15 * 86_400, host: "github.com")],
+            answers: .init(once: 3, session: 1, deny: 1), earlierAnswers: [1, 2, 1],
+            schedules: [.init(id: "a1b2c3", name: "Morning prices", createdAt: since - 40 * 86_400, runs: .init(done: 5)),
+                        .init(id: "d4e5f6", name: "Bin day", createdAt: since + 3 * 86_400, paused: true, runs: .init())],
+            board: .init(done: 3), apps: [.init(name: "notes", host: "mcp.notes.example.com")], web: .init(on: true),
+            filter: "off")
+        let note = WeeklyNote.build([WeeklyHelperInput(profile: "career", name: "Scout", record: record)], isPrivate: { _ in false })
+        attach(VStack(spacing: 36) {
+            WeeklyNoteCard(note: note, open: {}, putAway: {})
+            WeeklyNoteBody(note: note)
+        }.padding(28), named: "weekly-note", width: 560)
+    }
+
     /// Fixed setup choices only. These pictures do not connect, install or request permissions.
     @Test func onboardingFixtures() {
         for step in [OnboardingProgress.Step.welcome, .home, .team] {
@@ -92,6 +115,11 @@ import Testing
                named: "away-mac-needs-setup", width: 760)
         attach(AwayFromHomePage(hero: .anywhere, facts: AwayFacts(on: true, tailscale: "ready")),
                named: "away-mac-ready", width: 760)
+        // Away through iCloud: it leads, and Tailscale waits under Advanced.
+        attach(AwayFromHomePage(hero: .iCloud, facts: AwayFacts(on: false, tailscale: "missing"), iCloud: .ready),
+               named: "away-mac-icloud", width: 760)
+        attach(AwayFromHomePage(hero: .home, facts: AwayFacts(on: false, tailscale: "missing"), iCloud: .needsLink),
+               named: "away-mac-icloud-needs-link", width: 760)
     }
     #endif
 

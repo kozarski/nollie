@@ -46,7 +46,7 @@ final class NewBotCreation {
     ) async -> Bool {
         guard !isBusy, allowed(), !Task.isCancelled else { return false }
         guard proposed.isConfigured else {
-            issue = "Choose a model, or choose a bot to copy."
+            issue = String(localized: "Choose a model, or choose a bot to copy.")
             return false
         }
         isBusy = true
@@ -77,11 +77,11 @@ final class NewBotCreation {
             return true
         } catch {
             if phase == .unconfirmed {
-                issue = "The creation response was lost. Check Bots for \(draft.name) before trying a different name. Checking again will not create another bot."
+                issue = String(localized: "The creation response was lost. Check Bots for \(draft.name) before trying a different name. Checking again will not create another bot.")
             } else if error is CancellationError {
-                issue = "\(draft.name) was created. Its model still needs checking."
+                issue = String(localized: "\(draft.name) was created. Its model still needs checking.")
             } else {
-                issue = "\(draft.name) was created, but its model was not confirmed. Retry setup to save and check the chosen model."
+                issue = String(localized: "\(draft.name) was created, but its model was not confirmed. Retry setup to save and check the chosen model.")
             }
             return false
         }

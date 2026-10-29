@@ -104,7 +104,7 @@ public struct LocalModelAPI: Sendable {
     private static func validate(_ id: String) throws {
         guard !id.isEmpty, id.utf8.count <= 200,
               id.utf8.allSatisfy({ (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || [45, 46, 95].contains($0) }) else {
-            throw HermesAPIError.decoding("Invalid local model identifier")
+            throw HermesAPIError.decoding(String(localized: "Invalid local model identifier", table: "Core"))
         }
     }
 }

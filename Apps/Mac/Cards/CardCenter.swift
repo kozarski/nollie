@@ -205,7 +205,7 @@ final class CardCenter {
         guard let shown = asking, let rt = localRuntime() else { return nil }
         let digits = code.filter { !$0.isWhitespace }
         guard digits.count == shown.codeLength, digits.allSatisfy({ $0.isASCII && $0.isNumber }) else {
-            return "Enter the \(shown.codeLength)-digit security code."
+            return String(localized: "Enter the \(shown.codeLength)-digit security code.")
         }
         guard let plan = plans[shown.requestID] else { return nil }
         guard let card = store.items.first(where: { $0.id == plan.cardID }) else {
@@ -213,8 +213,10 @@ final class CardCenter {
             try? await rt.reportPayment(shown.requestID, outcome: "failed", reason: .notSavedHere, showing: false)
             return nil
         }
-        guard let context = await store.confirmOwner(reason: "pay \(shown.amount) to \(shown.site)") else {
-            return "Nothing was paid. Try again when you're ready."
+        let reason = String(localized: "pay \(shown.amount) to \(shown.site)",
+                            comment: "Safety: payment; Touch ID reason, finishes 'Nollie is trying to …'; the amount, then the site")
+        guard let context = await store.confirmOwner(reason: reason) else {
+            return String(localized: "Nothing was paid. Try again when you're ready.", comment: "Safety: payment")
         }
         let secret: CardSecret
         do { secret = try store.secret(card, context: context) } catch {

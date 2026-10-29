@@ -81,7 +81,7 @@ class AddTests(unittest.TestCase):
                 installed = home.root / "profiles/rover/plugins/nollie-workflow"
                 source = home.root / "plugins/nollie-workflow"
                 self.assertEqual((installed / "ask_first.py").read_bytes(), (source / "ask_first.py").read_bytes())
-                self.assertTrue((installed / "recorder-only").is_file())
+                self.assertFalse((installed / "recorder-only").exists(), "every crew bot keeps a Papertrail")
                 marker = home.root / "profiles/rover/nollie-workflow/ask-first-initialized"
                 self.assertEqual(marker.read_text(), "1\n")
                 self.assertEqual(marker.stat().st_mode & 0o777, 0o600)

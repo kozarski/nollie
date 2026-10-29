@@ -14,33 +14,37 @@ struct CompanionScript: Equatable {
     var footnote: String
     var action: Action
 
-    private static let pitch = "Get replies and questions when Nollie is closed. Set up the companion once to keep in touch while you're away."
+    private static let pitch = String(localized: "Get replies and questions when Nollie is closed. Set up the companion once to keep in touch while you're away.")
 
     /// With no Companion on the gateway we offer to set it up. If it is there already (installed from
     /// a different device), this device just needs notification permission.
     init(companionFound: Bool, authorization: UNAuthorizationStatus) {
         guard companionFound else {
             self = CompanionScript(
-                message: Self.pitch, buttonTitle: "Set up notifications", skipTitle: "Later",
-                footnote: "No rush. Settings will remind you.", action: .install)
+                message: Self.pitch, buttonTitle: String(localized: "Set up notifications"),
+                skipTitle: String(localized: "Later", comment: "A button that puts off setting up notifications"),
+                footnote: String(localized: "No rush. Settings will remind you."), action: .install)
             return
         }
-        let place = DeviceWords.isMac ? "this Mac" : DeviceWords.this
+        let place = DeviceWords.this
         let (message, button): (String, String)
         switch authorization {
         case .denied:
-            message = "Notifications are off on \(place). Turn them on in Settings to get replies and questions while you're away."
-            button = "Open " + (DeviceWords.isMac ? "System Settings" : "Settings")
+            message = String(localized: "Notifications are off on \(place). Turn them on in Settings to get replies and questions while you're away.",
+                             comment: "%@ is a phrase like this iPhone")
+            button = DeviceWords.isMac ? String(localized: "Open System Settings") : String(localized: "Open Settings")
         case .authorized, .provisional, .ephemeral:
-            message = "Notifications are allowed on \(place). You can change this any time in Settings."
-            button = "Continue"
+            message = String(localized: "Notifications are allowed on \(place). You can change this any time in Settings.",
+                             comment: "%@ is a phrase like this iPhone")
+            button = String(localized: "Continue")
         default:
-            message = "Allow notifications on \(place) so Nollie can let you know when a reply is ready or it needs your help."
-            button = "Allow notifications"
+            message = String(localized: "Allow notifications on \(place) so Nollie can let you know when a reply is ready or it needs your help.",
+                             comment: "%@ is a phrase like this iPhone")
+            button = String(localized: "Allow notifications")
         }
         self = CompanionScript(
-            message: message, buttonTitle: button, skipTitle: "Not now",
-            footnote: "Settings \u{203A} Notifications can turn it on later.", action: .askForPermission)
+            message: message, buttonTitle: button, skipTitle: String(localized: "Not now"),
+            footnote: String(localized: "Settings \u{203A} Notifications can turn it on later."), action: .askForPermission)
     }
 
     private init(message: String, buttonTitle: String, skipTitle: String, footnote: String, action: Action) {

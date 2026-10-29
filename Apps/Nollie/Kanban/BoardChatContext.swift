@@ -16,7 +16,7 @@ struct BoardChatContext: Hashable, Sendable {
         guard let session = task.sessionId, !session.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
         self.connectionID = connectionID
         self.board = board
-        self.boardName = boardName.flatMap { $0.isEmpty ? nil : $0 } ?? "Board"
+        self.boardName = boardName.flatMap { $0.isEmpty ? nil : $0 } ?? String(localized: "Board", comment: "The Board, Nollie's task board; a name")
         sessionID = session
         taskID = task.id
         title = task.title

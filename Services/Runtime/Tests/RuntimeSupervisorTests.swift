@@ -23,8 +23,30 @@ struct RuntimeSupervisorTests {
             #expect(values["OPENAI_API_KEY"] == nil)
             #expect(values["SSH_AUTH_SOCK"] == nil)
             #expect(values["HERMES_DASHBOARD_SESSION_TOKEN"] == (role == .api ? token : nil))
+            // Keys come on their own pipe; none is ever in the environment.
+            #expect(values["NOLLIE_KEYS_FD"] == "4")
+            #expect(values["NOLLIE_OWNER_FD"] == "3")
+            #expect(values.keys.filter(RuntimeKeyNames.isKey).isEmpty)
             #expect(plan.arguments(for: role).first == "-I")
             #expect(!plan.arguments(for: role).contains(token))
+        }
+    }
+    @Test func hermesLeavesOnlyThroughPapertrailsDoor() {
+        var plan = plan()
+        #expect(plan.environment(for: .api, token: token)["HTTPS_PROXY"] == nil)
+        plan.door = C.Door(port: 41_234, secret: String(repeating: "cd", count: 32))
+        let url = "http://unplaced.program:\(String(repeating: "cd", count: 32))@127.0.0.1:41234"
+        for role in [C.Role.api, .gateway] {
+            let values = plan.environment(for: role, token: token)
+            for name in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"] {
+                #expect(values[name] == url, "\(name)")
+            }
+            #expect(values["NO_PROXY"] == "localhost,127.0.0.1,::1")
+            #expect(values["no_proxy"] == "localhost,127.0.0.1,::1")
+            #expect(values["NODE_USE_ENV_PROXY"] == "1")
+            #expect(values["HERMES_HOME"] == plan.home.path)
+            // The key pipe and the door both, every launch; the door's secret is the only credential in it.
+            #expect(values["NOLLIE_KEYS_FD"] == "4")
         }
     }
     @Test func readinessRejectsPublicHealthAndOtherProcesses() throws {
@@ -68,6 +90,17 @@ struct RuntimeSupervisorTests {
         try FileManager.default.removeItem(at: root.appendingPathComponent("user"))
         try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("user"), withDestinationURL: root.appendingPathComponent("home"))
         #expect(throws: (any Error).self) { try NativeRuntimeBackend.validateOwnership(root, installationID: id) }
+    }
+    @Test func keysLeftInFilesReachTheSnapshot() async throws {
+        var prepared = plan()
+        prepared.keysLeftInFiles = 0
+        let backend = FakeRuntimeBackend(plan: prepared)
+        let supervisor = NollieRuntimeSupervisor(backend: backend, pollInterval: .milliseconds(1), startupPolls: 10)
+        let id = prepared.installationID
+        #expect(await supervisor.snapshot().keysLeftInFiles == nil)
+        let result = try await supervisor.start(installationID: id, token: token, consent: .init(installationID: id))
+        #expect(result.keysLeftInFiles == 0)
+        await supervisor.stop()
     }
     @Test func bothVerifiedChildrenAreRequiredBeforeReady() async throws {
         let backend = FakeRuntimeBackend(plan: plan())

@@ -50,6 +50,8 @@ The authenticated default-profile dashboard namespace exposes:
   installation boundary are server-owned. This endpoint is read-only.
 - `GET` and `PUT /api/plugins/nollie-workflow/private-bots`: the Private list, described
   below.
+- `GET /api/plugins/nollie-workflow/bot-looks` and `PUT .../bot-looks/<profile>`: each
+  bot's look, described under [Bot looks](#bot-looks).
 - `GET /api/plugins/nollie-workflow/memory?bot=<name>`: what a helper remembers, from its
   Hermes memory files (`memories/USER.md` and `memories/MEMORY.md`), and whether Hermes uses
   memory for it (`memory.py`). `POST`, `PUT` and `DELETE .../memory/notes` add, change or forget one entry,
@@ -125,6 +127,32 @@ gets 403), answer with `Cache-Control: no-store`:
 The mock gateway in `Tools/mock-gateway` serves the same two routes from memory.
 `POST /api/_mock/private-bots` forgets its saved list.
 
+## Bot looks
+
+The character and colour the person picks for a bot in Nollie, so every device draws it
+the same way: a helper added on the phone looks on the Mac as it was picked. Before this,
+a look stayed on the device where it was picked and the others guessed one from the name.
+The file is `nollie-bot-looks.json` in the main bot's Hermes home, with
+`nollie-bot-looks.lock` beside it and user-only permissions:
+
+```json
+{"version": 1, "bots": {"planner": {"look": "duo", "colour": "#336699"}}}
+```
+
+`look` is a character id, `colour` is `#RRGGBB`, and either may be missing (the default).
+A photo never comes here; it stays on its device. At most 64 bots.
+
+- `GET /api/plugins/nollie-workflow/bot-looks` returns `{"bots": {...}, "saved": true}`
+  (`{}` and `false` before any look is kept). Private bots are left out.
+- `PUT /api/plugins/nollie-workflow/bot-looks/<profile>` with `{"look": "duo", "colour": "#336699"}`
+  keeps one bot's look and returns them all; both null forgets it. One bot at a time, so a
+  change on one device never undoes another device's change to another bot. A private bot
+  gets 403, a bad name, look or colour 422. A damaged file answers 503.
+
+The app takes the gateway's look for each bot it lists, except one changed on that device
+and not yet confirmed, and offers its own for a bot the gateway has none for. The mock
+gateway serves both routes from memory; `POST /api/_mock/bot-looks` forgets them.
+
 ## Papertrail
 
 Papertrail is each bot's record of what left this Mac. The add-on listens to five Hermes
@@ -157,6 +185,19 @@ other bots reloads them, but the default bot's add-on is already loaded and the 
 never reloads a mounted route, so restart the gateway and the dashboard after an upgrade.
 Until then Nollie's own bot does not record and the app says Papertrail isn't on.
 
+Each time a bot used apps on this Mac through Nollie Computer, the Mac app sends
+`POST /api/plugins/nollie-workflow/papertrail/mac-session` (`{"bot", "apps", "actions", "looks"}`,
+refused for private bots and phones) and one `mac` line keeps the apps' names and the counts, with
+`screenshots_left: 0`: the model that looked runs on the Mac. The read answer lists them in
+`mac_sessions`, newest first, apart from what left.
+
+`mac_screen.py` refuses Hermes's own `computer_use` in every bot that is not private (it would send
+this Mac's screen to the bot's model) and replaces any result of it that got through. It also refuses,
+never asks, a terminal, code or wrapped call that would take a picture of the screen or record it:
+`screencapture`, Quartz and ScreenCaptureKit calls from Python, osascript or Swift, PIL's ImageGrab, mss,
+pyautogui, ffmpeg's screen input and the like, read in the command, the code and any script the command
+runs. It is a list of known ways, not a sandbox: code that hides what it calls can still get past it.
+
 `GET /api/plugins/nollie-workflow/papertrail?bot=career&days=7` (default scope only) groups
 calls by turn and answers counts of replies that stayed and left, plus up to 200 entries
 for what left, newest first. Private bots get 403, unknown bots 404, a bot without the
@@ -165,11 +206,15 @@ add-on 404, and a malformed name or `days` outside 1 to 35 gets 422. Responses c
 
 ## Ask first
 
-Every bot that is not private gets Ask first: a `pre_tool_call` hook (`ask_first.py`) that holds any
-call that sends, pays or buys, posts or deletes until the person says yes. It reads the call by fixed
-rules: the tool's name and arguments, shell commands and scripts it can read, code, web requests, and
-for a click on a computer the label under the click (`screen_text.py`: the bot's own Cua computer is
-read with the Mac's text recognition, this Mac and the browser from the bot's latest capture or page).
+Every bot gets Ask first, Private ones too (nothing else of the add-on loads there, and nothing is
+recorded): a `pre_tool_call` hook (`ask_first.py`) that holds any call that sends, pays or buys, posts
+or deletes until the person says yes. It reads the call by fixed rules: the tool's name and arguments,
+what another server's tool said about itself when Hermes registered it, shell commands and the scripts,
+package scripts and Makefiles they run, code, web requests, whether a file being written was already
+there, and for a click on a computer the label under the click and, for OK or Continue, the window,
+dialog or page form around it (`screen_text.py`: the bot's own Cua computer is read with the Mac's text
+recognition, this Mac and the browser from the bot's latest capture or page). A call it can't read asks
+as `unsure`; the bot's Ask first switch (`nollie-workflow/ask-first.json`) turns only those off.
 In a chat the call waits for Hermes's approval card with the whole action in plain words, and only
 Allow once or Deny; each call gets a fresh key. In a schedule, Board work or any run nobody can answer,
 the call is held and not done, and Night shift lists it as held. With approvals switched off it is
@@ -192,7 +237,7 @@ threat model and what is not done yet are in [Saved sign-ins](../../Docs/saved-s
 
 Pictures pause while a sign-in is typed. From the yes until 10 seconds after the Mac reports back
 (`SETTLE`), a `pre_tool_call` hook (`PicturePause` in `sign_ins.py`) refuses every screenshot,
-recording and action on a computer, in every bot that is not private, and says when to try again.
+recording and action on a computer, in every bot, and says when to try again.
 Ask first doesn't look at a screen then either, and the computer preview pauses too. The tool
 answers only once the pause is over. A request file that can't be read, or a linked sign-ins folder,
 counts as typing.
@@ -334,6 +379,7 @@ Version 0.3 adds two features, both off until turned on. The design is in
 
 | File | Job |
 | :--- | :--- |
+| `log_privacy.py` | Keeps the words of chats out of Hermes's logs, in every Hermes process the add-on loads in |
 | `receipts.py` | Classify one call with Hermes's own predicates, scrub text, the look-only list |
 | `recorder.py` | The hooks in every followed profile: the guard and the recorder |
 | `rehearsals.py` | The registry, the schedule signature and which runs rehearse |
@@ -343,10 +389,9 @@ Version 0.3 adds two features, both off until turned on. The design is in
 | `sleep_watch.py` | When the Mac was asleep, off or without Hermes, from the service's own ticks |
 
 In the default profile `register` keeps everything above and also loads the recorder.
-Every other profile loads the recorder, and only when it is not Private. It also loads
-Papertrail when its copy came from `--papertrail-bots`; a copy that `--recorder` made
-alone holds a `recorder-only` marker, so there it loads only the recorder. A damaged
-Private list loads no recorder anywhere until it is repaired.
+Every other profile loads the recorder and Papertrail, and only when it is not Private. A
+`recorder-only` marker an older installer left in a copy no longer keeps Papertrail off. A
+damaged Private list loads no recorder anywhere until it is repaired.
 
 ### The recorder
 
@@ -468,14 +513,11 @@ python3 ~/.hermes/plugins/nollie-workflow/control.py night-shift on
 python3 ~/.hermes/plugins/nollie-workflow/control.py rehearsals on
 ```
 
-The first command prints which profiles get the recorder only and which also get
-Papertrail. `--recorder` copies the add-on into each followed profile's `plugins/` (backing up a previous copy in
+The first command prints which profiles get the recorder and Papertrail. `--recorder` copies the add-on into each followed profile's `plugins/` (backing up a previous copy in
 `~/.hermes/plugin-backups/nollie-workflow-<profile>-<stamp>`) and runs
 `hermes --profile <profile> plugins enable nollie-workflow`. It never installs into a
 Private profile or one named `private`, and installs none when the Private list is
-damaged. A profile not named in `--papertrail-bots` in the same run gets the
-`recorder-only` marker in its copy (0600), so Papertrail stays off there; a later
-`--papertrail-bots` copy replaces the folder and turns Papertrail on. Restart the
+damaged. Every copy keeps a Papertrail. Restart the
 gateway while idle afterwards. Profiles added later need the
 installer again; until then the card names them as not watched.
 

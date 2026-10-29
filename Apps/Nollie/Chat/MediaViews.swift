@@ -25,6 +25,13 @@ enum TranscriptMedia {
         hints(text, anyOf: ["MEDIA:", "]("]) ? MediaScan.files(in: text) : []
     }
 
+    /// What the bubble says once the media it names sit under it. A `MEDIA:` mark always goes, even
+    /// one whose file can't be shown (a folder, a path on another machine), so its line is never
+    /// left in the words.
+    static func words(of text: String, naming count: Int) -> String {
+        count == 0 && !MediaScan.hasMediaMark(text) ? text : MediaScan.textWithoutMedia(text)
+    }
+
     /// The pictures a person attached to their own message, found by name in its text.
     static func attachedImages(in text: String, profile: String?) -> [MediaRef] {
         if !text.contains("[User attached image:") { return [] }
@@ -59,11 +66,15 @@ struct MediaThumbStrip: View {
     var body: some View {
         let items = Array(refs.prefix(Self.limit))
         Group {
-            // One or two pictures sit still. More scroll sideways.
+            // One or two pictures sit still where they fit. More, or two too wide for a narrow
+            // bubble, scroll sideways rather than push the thread off the screen.
             if items.count > 2 {
                 ScrollView(.horizontal, showsIndicators: false) { thumbs(items) }
             } else {
-                thumbs(items)
+                ViewThatFits(in: .horizontal) {
+                    thumbs(items)
+                    ScrollView(.horizontal, showsIndicators: false) { thumbs(items) }
+                }
             }
         }
         .spread(alignment == .trailing ? .trailing : .leading)

@@ -66,14 +66,15 @@ struct NewBotSheet: View {
     }
 
     private var buttonTitle: String {
-        if working { return editing == nil ? "Creating…" : "Saving…" }
-        if editing != nil { return "Save" }
-        if creation.phase == .unconfirmed { return "Check again" }
-        return creation.request == nil ? "Create" : "Retry setup"
+        if working { return editing == nil ? String(localized: "Creating…") : String(localized: "Saving…") }
+        if editing != nil { return String(localized: "Save") }
+        if creation.phase == .unconfirmed { return String(localized: "Check again") }
+        return creation.request == nil ? String(localized: "Create", comment: "A button that makes the new bot")
+                                       : String(localized: "Retry setup")
     }
 
     private var modelLabel: String {
-        if modelName.isEmpty { return cloneFrom.isEmpty ? "Choose a model" : "Copy bot's model" }
+        if modelName.isEmpty { return cloneFrom.isEmpty ? String(localized: "Choose a model") : String(localized: "Copy bot's model") }
         return modelName.split(separator: "/").last.map(String.init) ?? modelName
     }
 
@@ -148,7 +149,8 @@ struct NewBotSheet: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom, spacing: 0) { footer }
-        .navigationTitle(editing.map { "Edit \($0.label)" } ?? (makingOwn ? "Your Own" : "New Bot"))
+        .navigationTitle(editing.map { String(localized: "Edit \($0.label)") }
+                         ?? (makingOwn ? String(localized: "Your Own", comment: "Title: making your own bot") : String(localized: "New Bot")))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { if !makingOwn { cancelItem } }
         .task { await prepare() }
@@ -296,14 +298,17 @@ struct NewBotSheet: View {
     }
 
     private func deleteSection(_ bot: ProfileInfo) -> some View {
-        Button("Delete \(bot.label)", role: .destructive) { asksToDelete = true }
+        Button(String(localized: "Delete \(bot.label)", comment: "Safety: starts deleting a bot"), role: .destructive) { asksToDelete = true }
             .buttonStyle(SoftButtonStyle(compact: true))
             .disabled(working || bot.isDefault == true)
             // Attached to its own button so the dialog appears next to it rather than at the top of the sheet.
             .confirmationDialog(
-                "Delete \(bot.label)?", isPresented: $asksToDelete, titleVisibility: .visible,
-                actions: { Button("Delete bot", role: .destructive, action: asTask(deleteBot)) },
-                message: { Text("This deletes its SOUL.md, config and chats from the gateway for good.") })
+                Text("Delete \(bot.label)?", comment: "Safety: asks before deleting a bot"), isPresented: $asksToDelete, titleVisibility: .visible,
+                actions: {
+                    Button(String(localized: "Delete bot", comment: "Safety: deletes the bot for good"), role: .destructive, action: asTask(deleteBot))
+                },
+                message: { Text("This deletes its SOUL.md, config and chats from the gateway for good.",
+                                comment: "Safety: what deleting a bot does; keep exact meaning") })
             .padding(.top, 8)
     }
 
@@ -352,6 +357,7 @@ struct NewBotSheet: View {
             let modelChanged = (modelName, provider) != (bot.model ?? "", bot.provider ?? "")
             if modelChanged, !modelName.isEmpty { try await calls.choose(model: modelName, from: provider, for: bot.name) }
             BotAvatarStore.set(look, for: bot.name)
+            BotLookSharing.share(bot.name, runtime: runtime)
             await finish(announcing: false)
         } catch {
             problem = error.localizedDescription
@@ -402,6 +408,7 @@ struct NewBotSheet: View {
         }
         // The look picked here now belongs to the new name.
         BotAvatarStore.set(look, for: created)
+        BotLookSharing.share(created, runtime: runtime)
         await finish(announcing: true)
     }
 }

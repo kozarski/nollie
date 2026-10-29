@@ -5,9 +5,14 @@ import Foundation
 //
 // The gateway never sends these as bytes in a message. A person's attachment is stored as the
 // words "[User attached image: <name>]" with the file in the profile's images folder. A bot's
-// own files arrive as `MEDIA:/path` lines (how the gateway names a file in a reply), as a markdown
+// own files arrive as `MEDIA:/path` marks (how the gateway names a file in a reply), as a markdown
 // link to a path, or as a path a tool printed. Here we spot those references and download the
 // bytes through the gateway, while thumbnails come from what the gateway keeps on disk.
+//
+// A `MEDIA:` mark is read the way the gateway reads it: up to three marks around it (` " ' * _, as
+// when a model sets it in code or bold), spaces after the colon, and a path that is bare or sits in
+// backticks or quotes (then it may hold spaces). Every mark leaves the words, even one whose path
+// can't be shown, so a reply never shows the gateway's plumbing.
 
 /// One file the chat refers to, found at one of a few possible places on the gateway.
 public struct MediaRef: Identifiable, Sendable, Hashable {
@@ -72,11 +77,12 @@ public enum MediaScan {
 
     /// Files a reply mentions that are not pictures. Recognised forms: `MEDIA:` tokens, markdown links
     /// pointing at a gateway path, and lines made of a bare path. A candidate must end in a file name with
-    /// an extension; if the same file turns up twice, only one card is made.
+    /// an extension, except that a `MEDIA:` mark may name any file (a Makefile, say), since the gateway
+    /// sends those too. If the same file turns up twice, only one card is made.
     public static func files(in text: String) -> [MediaRef] {
         var found = Finds { isFilePath($0) && !MediaRef.isImage($0) }
         let reply = normalisedLineEnds(text)
-        mediaTokens(in: reply).forEach { found.take($0) }
+        mediaTokens(in: reply).forEach { found.take($0, accepting: { isNamedFile($0) && !MediaRef.isImage($0) }) }
         Shapes.angledLink.hits(in: reply).forEach { found.take($0[2]) }
         for hit in Shapes.plainLink.hits(in: reply) {
             found.take(hit[2].removingPercentEncoding ?? hit[2])
@@ -91,6 +97,17 @@ public enum MediaScan {
         guard !path.contains("://") else { return false }
         return path.range(of: #"^(?:/|~/)(?:.*/)?[^/]+\.[\p{L}\p{N}]{1,6}$"#, options: .regularExpression) != nil
     }
+
+    /// What a `MEDIA:` mark may name: an absolute or home path ending in a file name, with or without
+    /// an extension. A folder (a trailing slash) or a bare home is not a file.
+    static func isNamedFile(_ path: String) -> Bool {
+        guard !path.contains("://"), path.hasPrefix("/") || path.hasPrefix("~/"), !path.hasSuffix("/") else { return false }
+        let name = URL(fileURLWithPath: path, isDirectory: false).lastPathComponent
+        return !name.isEmpty && name != "~"
+    }
+
+    /// True when the text holds a `MEDIA:` mark, found or not, so its words need tidying.
+    public static func hasMediaMark(_ text: String) -> Bool { text.contains("MEDIA:") }
 
     /// The icon family a file card uses.
     public enum FileKind: String, Sendable {
@@ -187,14 +204,16 @@ public enum MediaScan {
 
         var refs: [MediaRef] { paths.map { MediaRef(path: $0) } }
 
-        mutating func take(_ raw: String) {
+        /// Keeps `raw` once, tidied, if it is wanted (by `accepting` when given, else by the scan's own rule).
+        mutating func take(_ raw: String, accepting rule: ((String) -> Bool)? = nil) {
             let path = MediaScan.clean(raw)
-            if !path.isEmpty, isWanted(path), !paths.contains(path) { paths.append(path) }
+            if !path.isEmpty, (rule ?? isWanted)(path), !paths.contains(path) { paths.append(path) }
         }
     }
 
+    /// The path in each `MEDIA:` mark: from backticks, double quotes, single quotes or bare, whichever matched.
     private static func mediaTokens(in text: String) -> [String] {
-        Shapes.mediaToken.hits(in: text).map { $0[1] }
+        Shapes.mediaToken.hits(in: text).compactMap { hit in hit.dropFirst().first { !$0.isEmpty } }
     }
 
     /// Lines that are only an absolute (or home) path with no spaces.
@@ -210,9 +229,10 @@ public enum MediaScan {
         text.utf8.contains(13) ? text.replacingOccurrences(of: "\r\n", with: "\n") : text
     }
 
-    /// Trims spaces, then closing punctuation off the end and opening punctuation off the front.
+    /// Trims spaces, then closing punctuation off the end and opening punctuation off the front. Bold
+    /// and italic marks count as punctuation here, as they do around a `MEDIA:` mark.
     static func clean(_ raw: String) -> String {
-        let closers = Set(".,;:)]}>\"'`"), openers = Set("\"'`<([")
+        let closers = Set(".,;:)]}>\"'`*_"), openers = Set("\"'`<([*")
         let trimmed = raw.trimmingCharacters(in: .whitespaces)
         guard let last = trimmed.lastIndex(where: { !closers.contains($0) }) else { return "" }
         let body = trimmed[...last]
@@ -262,8 +282,13 @@ public enum MediaScan {
         private static let pathBody = #"(?:~|/)[^\s"'`)<>]+"#
         private static let altText = #"\[([^\]]*)\]"#
 
-        static let mediaToken = Shape(#"MEDIA:(\S+)"#)
-        static let mediaWithSpace = Shape(#"\s*MEDIA:\S+"#)
+        /// Marks that may wrap a `MEDIA:` mark, and the path it names: in backticks or quotes, or bare.
+        /// After a space a bare path must start at the root or home, so prose such as "MEDIA: the
+        /// files" is left alone.
+        private static let mediaWrap = #"[`"'*_]{0,3}"#
+        private static let mediaPath = #"(?:[ \t]*(?:`([^`\n]+)`|"([^"\n]+)"|'([^'\n]+)'|([/~]\S*))|(\S+))"#
+        static let mediaToken = Shape(mediaWrap + "MEDIA:" + mediaPath)
+        static let mediaWithSpace = Shape(#"[ \t]*"# + mediaWrap + "MEDIA:" + mediaPath + mediaWrap)
         static let markdownImage = Shape(#"!"# + altText + #"\(([^)\s]+)\)"#)
 
         static let angledLink = Shape(#"(?:^|[^!])"# + altText + #"\(<([^>]+)>\)"#)
@@ -285,7 +310,7 @@ public enum MediaScan {
 /// Tries each path in turn and returns the first result that works; if none does, the last
 /// failure is thrown.
 private func firstSuccess<T>(of paths: [String], _ attempt: (String) async throws -> T) async throws -> T {
-    var failure: Error = HermesAPIError.transport("No path to try.")
+    var failure: Error = HermesAPIError.transport(String(localized: "No path to try.", table: "Core"))
     for path in paths {
         do { return try await attempt(path) } catch { failure = error }
     }
@@ -336,7 +361,7 @@ public struct GatewayMediaAPI: Sendable {
                 if case .http(let status, _) = failure, ![403, 404, 415].contains(status) { throw failure }
             }
         }
-        throw HermesAPIError.transport("No picture data came back from the gateway.")
+        throw HermesAPIError.transport(String(localized: "No picture data came back from the gateway.", table: "Core"))
     }
 }
 

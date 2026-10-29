@@ -43,12 +43,12 @@ public final class MaintenanceModel {
         let profile: String?
 
         static func updateHermes(profile: String?) -> Job {
-            Job(name: "hermes-update", label: "Updating Hermes", endpoint: "/api/hermes/update",
+            Job(name: "hermes-update", label: String(localized: "Updating Hermes", table: "Core"), endpoint: "/api/hermes/update",
                 patience: 15 * 60, profile: profile)
         }
 
         static func restartGateway(profile: String?) -> Job {
-            Job(name: "gateway-restart", label: "Restarting gateway", endpoint: "/api/gateway/restart",
+            Job(name: "gateway-restart", label: String(localized: "Restarting gateway", table: "Core"), endpoint: "/api/gateway/restart",
                 patience: 2 * 60, profile: profile)
         }
 
@@ -107,7 +107,7 @@ public final class MaintenanceModel {
             let reply: JSONValue = try await runtime.api.send("POST", job.endpoint, profile: job.profile, body: EmptyBody())
             guard reply["ok"]?.boolValue == false else { return nil }
             let words = [reply["message"], reply["error"]].compactMap { $0?.stringValue }.first
-            return words ?? "The gateway turned that action down."
+            return words ?? String(localized: "The gateway turned that action down.", table: "Core")
         } catch {
             return error.localizedDescription
         }
@@ -131,10 +131,12 @@ public final class MaintenanceModel {
         /// it go. Nil means it hasn't ended, or we can't tell yet.
         func verdict(seenRunning: Bool) -> String? {
             if isRunning { return nil }
-            if let outcome { return outcome == "success" ? "done" : outcome }
+            let done = String(localized: "done", table: "Core", comment: "An update or restart finished, as in: Updating Hermes: done")
+            if let outcome { return outcome == "success" ? done : outcome }
             if exitCode == nil && !seenRunning { return nil }
-            if exitCode == 0 { return "done" }
-            return "exited " + (exitCode.map(String.init) ?? "?")
+            if exitCode == 0 { return done }
+            let code = exitCode.map(String.init) ?? "?"
+            return String(localized: "exited \(code)", table: "Core", comment: "A program ended with this exit code, as in: Updating Hermes: exited 1")
         }
     }
 
@@ -155,24 +157,25 @@ public final class MaintenanceModel {
             try? await Task.sleep(for: .seconds(2))
 
             guard let report = await readReport(job, runtime: runtime) else {
-                phase = .running("\(job.label): dashboard restarting…")
+                phase = .running(String(localized: "\(job.label): dashboard restarting…", table: "Core", comment: "The value is an action, such as Updating Hermes"))
                 continue
             }
             actionLog = report.lines
             seenRunning = seenRunning || report.isRunning
 
             if let verdict = report.verdict(seenRunning: seenRunning) {
-                phase = .finished("\(job.label): \(verdict)", exitCode: report.exitCode)
+                phase = .finished(String(localized: "\(job.label): \(verdict)", table: "Core", comment: "An action, then how it ended: Updating Hermes: done"), exitCode: report.exitCode)
                 await runtime.reconnectNow()
                 return
             }
             // Still going, or the dashboard restarted before we saw the action run and
             // forgot it. Either way, keep waiting.
-            phase = .running(report.isRunning ? job.label : "\(job.label): waiting for the dashboard to come back")
+            phase = .running(report.isRunning ? job.label
+                : String(localized: "\(job.label): waiting for the dashboard to come back", table: "Core", comment: "The value is an action, such as Updating Hermes"))
         }
 
         if isBusy {
-            phase = .failed("\(job.label) never said it was done. Take a look at the gateway machine.")
+            phase = .failed(String(localized: "\(job.label) never said it was done. Take a look at the gateway machine.", table: "Core", comment: "The value is an action, such as Updating Hermes"))
         }
     }
 }

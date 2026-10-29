@@ -64,7 +64,7 @@ final class AppleDataModel {
             unavailable = true
         } catch {
             guard self.operation == operation, !Task.isCancelled else { return }
-            self.error = "Couldn't check these. Try again."
+            self.error = String(localized: "Couldn't check these. Try again.")
         }
     }
 
@@ -91,7 +91,7 @@ final class AppleDataModel {
             error = nil
         } catch {
             guard self.bot == bot else { return }
-            self.error = "Couldn't change that. Try again."
+            self.error = String(localized: "Couldn't change that. Try again.")
         }
     }
 

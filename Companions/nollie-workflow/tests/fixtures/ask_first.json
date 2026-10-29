@@ -2478,13 +2478,13 @@
    "kind": null
   },
   {
-   "name": "look-alike from review: mcp__puppeteer__drag_and_drop",
+   "name": "a drag with another server's tool asks: it can drop something on a bin",
    "tool": "mcp__puppeteer__drag_and_drop",
    "args": {
     "from": "#a",
     "to": "#b"
    },
-   "kind": null
+   "kind": "unsure"
   },
   {
    "name": "look-alike from review: git checkout -b feature",

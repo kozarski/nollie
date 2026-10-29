@@ -7,7 +7,19 @@ enum ProfileTab: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var title: String { self == .thisChat ? "This chat" : rawValue.capitalized }
+    var title: String {
+        switch self {
+        case .thisChat: String(localized: "This chat", comment: "A tab of a bot's settings")
+        case .look: String(localized: "Look", comment: "A tab of a bot's settings: how the bot looks; a noun")
+        case .instructions: String(localized: "Instructions", comment: "A tab of a bot's settings")
+        case .memory: String(localized: "Memory", comment: "A tab of a bot's settings")
+        case .model: String(localized: "Model", comment: "A tab of a bot's settings: the AI model it uses")
+        case .papertrail: String(localized: "Papertrail", comment: "A tab of a bot's settings; a product name")
+        case .apps: String(localized: "Apps", comment: "A tab of a bot's settings")
+        case .computer: String(localized: "Computer", comment: "A tab of a bot's settings")
+        case .display: String(localized: "Display", comment: "A tab of a bot's settings: what chats show; a noun")
+        }
+    }
 
     /// Tabs for a card. "This chat" needs a chat to be open, and a private bot has no Papertrail.
     /// Memory shows where the bot's memory may be read (never Moss's; see `HelperMemoryAccess`).

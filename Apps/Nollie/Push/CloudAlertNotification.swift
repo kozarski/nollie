@@ -64,21 +64,21 @@ struct CloudAlertPreviewDiagnostic: Codable, Equatable, Sendable {
 
         var message: String {
             switch self {
-            case .checking: "Checking saved reply details"
-            case .detailsReady: "Reply details verified"
-            case .detailsSupplied: "Reply details supplied to the system"
-            case .policyUnavailable: "Notification privacy settings were unavailable"
-            case .detailsHidden: "Hide notification details is on"
-            case .appLocked: "App Lock keeps details hidden"
-            case .alertsDisabled: "iCloud alerts were off"
-            case .accountUnavailable: "The saved iCloud account check was unavailable"
-            case .accountMismatch: "The iCloud account check did not match"
-            case .eventUnavailable: "The saved alert was unavailable"
-            case .detailsUnavailable: "This alert has no saved reply details"
-            case .invalidEvent: "The saved alert was invalid or expired"
-            case .privacyChanged: "Notification privacy changed during delivery"
-            case .iCloudUnavailable: "iCloud could not provide the saved reply"
-            case .timedOut: "The system ended the preview lookup"
+            case .checking: String(localized: "Checking saved reply details")
+            case .detailsReady: String(localized: "Reply details verified")
+            case .detailsSupplied: String(localized: "Reply details supplied to the system")
+            case .policyUnavailable: String(localized: "Notification privacy settings were unavailable")
+            case .detailsHidden: String(localized: "Hide notification details is on")
+            case .appLocked: String(localized: "App Lock keeps details hidden")
+            case .alertsDisabled: String(localized: "iCloud alerts were off")
+            case .accountUnavailable: String(localized: "The saved iCloud account check was unavailable")
+            case .accountMismatch: String(localized: "The iCloud account check did not match")
+            case .eventUnavailable: String(localized: "The saved alert was unavailable")
+            case .detailsUnavailable: String(localized: "This alert has no saved reply details")
+            case .invalidEvent: String(localized: "The saved alert was invalid or expired")
+            case .privacyChanged: String(localized: "Notification privacy changed during delivery")
+            case .iCloudUnavailable: String(localized: "iCloud could not provide the saved reply")
+            case .timedOut: String(localized: "The system ended the preview lookup")
             }
         }
     }

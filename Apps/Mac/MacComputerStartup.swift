@@ -12,6 +12,8 @@ enum MacComputerStartup {
         center.announceStart = announceToPhone
         if ComputerHelper.isBundled { ComputerBroker.shared.start() }
         LinkStopWatcher.shared.start()
+        // Away through iCloud: answers linked phones from the person's own iCloud.
+        AwayMacBridge.shared.start()
         // Live pictures: this Mac's own Watch screen plays its host in-process, and a linked
         // phone's go through Nollie Runtime.
         LiveHostCenter.install()

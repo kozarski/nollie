@@ -5,7 +5,11 @@ struct PageActionLabel: View {
     var title: String
     var symbol: String
 
-    init(_ title: String, symbol: String) {
+    init(_ title: LocalizedStringResource, symbol: String) {
+        self.init(verbatim: String(localized: title), symbol: symbol)
+    }
+
+    fileprivate init(verbatim title: String, symbol: String) {
         self.title = title
         self.symbol = symbol
     }

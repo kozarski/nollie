@@ -160,7 +160,7 @@ struct TranscriptRow: View, Equatable {
             InjectedNoteRow(note: note)
         case .botMessage(let message):
             // Another bot wrote to this one: a compact notice, words folded beneath.
-            BotMessageNotice(handle: message.key, label: message.sender, headline: "Message from \(message.sender)",
+            BotMessageNotice(handle: message.key, label: message.sender, headline: String(localized: "Message from \(message.sender)", comment: "A bot's name follows"),
                              body: message.body, pending: false, onOpen: onOpenBot)
         case .person(let text, let files):
             PersonBubble(text: text, files: files, bot: bot, look: look, tailed: botShown,
@@ -223,10 +223,11 @@ struct TranscriptRow: View, Equatable {
             let inFlight = activity.status == .running
             VStack(spacing: 4) {
                 BotMessageNotice(handle: sent.target, label: sent.target,
-                                 headline: inFlight ? "Messaging \(sent.target)…" : "Messaged \(sent.target)",
+                                 headline: inFlight ? String(localized: "Messaging \(sent.target)…", comment: "Sending a message to another bot, named after")
+                                                    : String(localized: "Messaged \(sent.target)", comment: "Sent a message to another bot, named after"),
                                  body: sent.message, pending: inFlight, onOpen: onOpenBot)
                 if let answer = activity.deliveryReply {
-                    BotMessageNotice(handle: sent.target, label: sent.target, headline: "Message from \(sent.target)",
+                    BotMessageNotice(handle: sent.target, label: sent.target, headline: String(localized: "Message from \(sent.target)", comment: "A bot's name follows"),
                                      body: answer, pending: false, onOpen: onOpenBot)
                 }
             }

@@ -50,7 +50,7 @@ final class VideoFetch {
     var title: String {
         let stem = (ref.name as NSString).deletingPathExtension.lowercased()
         let isScreen = stem == "recording" || stem.hasPrefix("screen")
-        return isScreen ? "Screen recording" : ref.name
+        return isScreen ? String(localized: "Screen recording") : ref.name
     }
 
     /// A file that is already here gets its frame and length now. Otherwise the Mac fetches it.
@@ -197,7 +197,7 @@ struct VideoCard: View {
 
     /// Name and length along the bottom edge, over a fade to black.
     private var footer: some View {
-        let label = video.failed ? "Couldn't load \(video.title.lowercased())" : video.title
+        let label = video.failed ? String(localized: "Couldn't load \(video.title.lowercased())", comment: "A video's name, or the words screen recording") : video.title
         return VStack(spacing: 0) {
             Spacer(minLength: 0)
             HStack(spacing: 6) {

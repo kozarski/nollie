@@ -51,7 +51,7 @@ struct LeaveDemoRow: View {
     var body: some View {
         GlassStack {
             Button(action: leave) {
-                GlassRowLabel(title: "Leave demo", symbol: "arrow.uturn.backward", chevron: false)
+                GlassRowLabel(title: String(localized: "Leave demo"), symbol: "arrow.uturn.backward", chevron: false)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("settings.leaveDemo")

@@ -23,7 +23,7 @@ final class NightShiftUITests: XCTestCase {
         app.launchArguments = ["-nollie-demo-gateway", address, "mock-token", "Studio",
                                "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES", "-bots.animate", "NO",
                                "-nollie.developerMode", "YES", "-nollie.newChatView", "YES",
-                               "-colorSchemePreference", dark ? "dark" : "light"]
+                               "-colorSchemePreference", dark ? "dark" : "light"] + DemoCase.weeklyCardPutAway
         app.launch()
     }
 

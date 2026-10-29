@@ -28,9 +28,9 @@ enum WatchPolicy {
 
         var text: String {
             switch self {
-            case .live: "Live"
-            case .paused: "Paused"
-            case .stopped: "Stopped"
+            case .live: String(localized: "Live", comment: "A badge on a computer's picture: it is live")
+            case .paused: String(localized: "Paused", comment: "A badge on a computer's picture: updates are paused")
+            case .stopped: String(localized: "Stopped", comment: "A badge on a computer's picture: the live picture ended")
             case .signIn: WatchPolicy.signInPausedLine
             case .lastSeen(let age): WatchPolicy.lastSeen(age)
             }
@@ -81,34 +81,38 @@ enum WatchPolicy {
         return .lastSeen(captured.map { max(0, now.timeIntervalSince($0)) })
     }
 
-    static let signInPausedLine = "Paused while a sign-in is typed"
+    static let signInPausedLine = String(localized: "Paused while a sign-in is typed", comment: "Safety: pictures of the screen pause while a saved sign-in is typed")
+    /// The same, as a sentence.
+    static let signInPausedSentence = String(localized: "Paused while a sign-in is typed.", comment: "Safety: pictures of the screen pause while a saved sign-in is typed")
 
     /// What VoiceOver says the picture is: live video only when the badge says Live, other video
     /// as the last picture, and a still by the time it was taken.
     static func pictureValue(showsVideo: Bool, badge: Badge?, capturedAt: Double?) -> String {
-        if showsVideo { return badge == .live ? "Live picture" : "Last picture" }
-        return capturedAt.map { Date(timeIntervalSince1970: $0).formatted(date: .omitted, time: .standard) } ?? "Last screen"
+        if showsVideo { return badge == .live ? String(localized: "Live picture") : String(localized: "Last picture") }
+        return capturedAt.map { Date(timeIntervalSince1970: $0).formatted(date: .omitted, time: .standard) } ?? String(localized: "Last screen")
     }
 
     /// Plain words under the badge while the connection can't keep up.
     static func linkLine(_ link: LiveWire.LinkState) -> String? {
         switch link {
         case .fine: nil
-        case .behind: "The connection is slow, so the picture is lighter."
-        case .stalled: "Waiting for the picture to catch up."
+        case .behind: String(localized: "The connection is slow, so the picture is lighter.")
+        case .stalled: String(localized: "Waiting for the picture to catch up.")
         }
     }
 
     /// Under the badge when the device got too warm for video and shows stills instead.
-    static func coolingLine(_ device: String) -> String { "Slowed down to keep your \(device) cool." }
+    static func coolingLine(_ device: String) -> String {
+        String(localized: "Slowed down to keep your \(device) cool.", comment: "The device follows your: iPhone, iPad or Mac")
+    }
 
     static func lastSeen(_ age: TimeInterval?) -> String {
-        guard let age else { return "Last screen" }
+        guard let age else { return String(localized: "Last screen") }
         let minutes = Int(age / 60)
-        if minutes < 1 { return "Last seen just now" }
-        if minutes < 60 { return "Last seen \(minutes) min ago" }
+        if minutes < 1 { return String(localized: "Last seen just now") }
+        if minutes < 60 { return String(localized: "Last seen \(minutes) min ago") }
         let hours = minutes / 60
-        return hours < 24 ? "Last seen \(hours) hr ago" : "Last seen over a day ago"
+        return hours < 24 ? String(localized: "Last seen \(hours) hr ago") : String(localized: "Last seen over a day ago")
     }
 
     /// The pointer's place as a fraction of the picture, or nil when it can't be placed honestly.
@@ -123,11 +127,13 @@ enum WatchPolicy {
     /// Never for a private bot: its computer is not watched from Nollie.
     static func showsWatch(active: Bool, held: Bool, isPrivate: Bool) -> Bool { !isPrivate && (active || held) }
 
-    static func heldLine(_ name: String) -> String { "You have the computer. \(name) is waiting." }
-    static let someoneLine = "Someone else has the computer right now."
-    static let takeOverFailed = "Couldn’t take over. Check the connection and try again."
-    static let handBackFailed = "Couldn’t hand back. Check the connection and try again."
-    static func authReason(_ name: String) -> String { "Take over \(name)’s computer" }
+    static func heldLine(_ name: String) -> String { String(localized: "You have the computer. \(name) is waiting.") }
+    static let someoneLine = String(localized: "Someone else has the computer right now.")
+    static let takeOverFailed = String(localized: "Couldn’t take over. Check the connection and try again.")
+    static let handBackFailed = String(localized: "Couldn’t hand back. Check the connection and try again.")
+    static func authReason(_ name: String) -> String {
+        String(localized: "Take over \(name)’s computer", comment: "Safety: the reason shown with Face ID or Touch ID before taking over a bot's computer")
+    }
 }
 
 /// The computers this device has taken over, so the chat keeps its Watch pill (and the way to

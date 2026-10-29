@@ -177,11 +177,11 @@ struct PushSetupView: View {
 
     static func statusText(_ status: UNAuthorizationStatus) -> String {
         switch status {
-        case .authorized: "Allowed"
-        case .denied: "Denied"
-        case .provisional: "Provisional"
-        case .ephemeral: "Ephemeral"
-        default: "Not asked"
+        case .authorized: String(localized: "Allowed", comment: "Notification permission")
+        case .denied: String(localized: "Denied", comment: "Notification permission")
+        case .provisional: String(localized: "Provisional", comment: "Notification permission")
+        case .ephemeral: String(localized: "Ephemeral", comment: "Notification permission")
+        default: String(localized: "Not asked", comment: "Notification permission")
         }
     }
 }
@@ -221,11 +221,15 @@ private struct SetupAlerts: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .modifier(Ask(isPresented: $confirmCancel, title: "Cancel setup?", yes: "Cancel setup", no: "Keep going",
-                          words: "This clears the address, the companion sign-in and your progress on \(DeviceWords.this). Nothing on the gateway changes. Next time you start from the first step.",
+            .modifier(Ask(isPresented: $confirmCancel, title: String(localized: "Cancel setup?"), yes: String(localized: "Cancel setup"),
+                          no: String(localized: "Keep going"),
+                          words: String(localized: "This clears the address, the companion sign-in and your progress on \(DeviceWords.this). Nothing on the gateway changes. Next time you start from the first step.",
+                                        comment: "%@ is this iPhone, this iPad or this Mac"),
                           go: cancelSetup))
-            .modifier(Ask(isPresented: $confirmStartOver, title: "Start over?", yes: "Start over", no: "Cancel",
-                          words: "This clears the address, the companion sign-in and the progress on \(DeviceWords.this). The gateway stays as it is until you install again.",
+            .modifier(Ask(isPresented: $confirmStartOver, title: String(localized: "Start over?"), yes: String(localized: "Start over"),
+                          no: String(localized: "Cancel"),
+                          words: String(localized: "This clears the address, the companion sign-in and the progress on \(DeviceWords.this). The gateway stays as it is until you install again.",
+                                        comment: "%@ is this iPhone, this iPad or this Mac"),
                           go: startOver))
     }
 

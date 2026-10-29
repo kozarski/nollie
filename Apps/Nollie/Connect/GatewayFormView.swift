@@ -17,7 +17,7 @@ struct GatewayFormView: View {
     @Environment(AppModel.self) private var model
 
     /// How this device is named in the help text.
-    static let thisDevice = DeviceWords.isMac ? "this Mac" : DeviceWords.this
+    static let thisDevice = DeviceWords.isMac ? String(localized: "this Mac", comment: "In the middle of a sentence") : DeviceWords.this
 
     /// Where the gateway lives from this device's point of view. It decides which help and fields
     /// appear; the connection itself is just the URL, the sign-in method and any Access headers.
@@ -38,21 +38,21 @@ struct GatewayFormView: View {
             switch self {
             case .local:
                 return Facts(
-                    title: "Local network", symbol: "wifi", example: "http://192.168.1.20:9119",
-                    help: "Same Wi\u{2011}Fi as the gateway machine. Use its LAN address and the port hermes serve prints (9119 by default). Plain http is fine here; it only works at home.")
+                    title: String(localized: "Local network"), symbol: "wifi", example: "http://192.168.1.20:9119",
+                    help: String(localized: "Same Wi\u{2011}Fi as the gateway machine. Use its LAN address and the port hermes serve prints (9119 by default). Plain http is fine here; it only works at home."))
             case .tailscale:
                 return Facts(
                     title: "Tailscale", symbol: "point.3.connected.trianglepath.dotted",
                     example: "http://studio.tail1234.ts.net:9119",
-                    help: "Use your tailnet to reach the gateway from anywhere. Put Tailscale on \(GatewayFormView.thisDevice) and on the gateway machine, then enter that machine's MagicDNS name or 100.x address. Nothing is opened to the internet, so plain http is fine.")
+                    help: String(localized: "Use your tailnet to reach the gateway from anywhere. Put Tailscale on \(GatewayFormView.thisDevice) and on the gateway machine, then enter that machine's MagicDNS name or 100.x address. Nothing is opened to the internet, so plain http is fine.", comment: "%@ is this Mac, this iPhone or this iPad"))
             case .cloudflare:
                 return Facts(
                     title: "Cloudflare Access", symbol: "cloud", example: secure,
-                    help: "A public hostname behind Cloudflare Access (a Cloudflare Tunnel on the gateway machine). Enter the service token below: the app cannot use a browser login for Access. Always https.")
+                    help: String(localized: "A public hostname behind Cloudflare Access (a Cloudflare Tunnel on the gateway machine). Enter the service token below: the app cannot use a browser login for Access. Always https."))
             case .other:
                 return Facts(
-                    title: "Other", symbol: "globe", example: secure,
-                    help: "Any https address that gets to the dashboard, such as a reverse proxy, a VPS or your own VPN. Add Access headers only when Cloudflare is in front.")
+                    title: String(localized: "Other", comment: "A kind of connection"), symbol: "globe", example: secure,
+                    help: String(localized: "Any https address that gets to the dashboard, such as a reverse proxy, a VPS or your own VPN. Add Access headers only when Cloudflare is in front."))
             }
         }
 
@@ -179,24 +179,26 @@ struct GatewayFormView: View {
 
     static func saveBlocker(named: Bool, urlOK: Bool, canTest: Bool, testPassed: Bool) -> String? {
         if named && testPassed { return nil }
-        // What stands in the way of a passing test comes first, then the name.
-        var missing: [String] = []
-        if !urlOK {
-            missing.append("enter the gateway's address")
-        } else if !canTest {
-            missing.append("fill in the sign-in")
-        } else if !testPassed {
-            missing.append("run Test Connection until it passes")
+        // What stands in the way of a passing test comes first, then the name. Each case is a whole sentence.
+        enum Missing { case address, signIn, test }
+        let first: Missing? = !urlOK ? .address : !canTest ? .signIn : !testPassed ? .test : nil
+        switch (first, named) {
+        case (.address?, true): return String(localized: "To save: enter the gateway's address.")
+        case (.address?, false): return String(localized: "To save: enter the gateway's address, and give the gateway a name.")
+        case (.signIn?, true): return String(localized: "To save: fill in the sign-in.")
+        case (.signIn?, false): return String(localized: "To save: fill in the sign-in, and give the gateway a name.")
+        case (.test?, true): return String(localized: "To save: run Test Connection until it passes.")
+        case (.test?, false): return String(localized: "To save: run Test Connection until it passes, and give the gateway a name.")
+        case (nil, _): return String(localized: "To save: give the gateway a name.")
         }
-        if !named { missing.append("give the gateway a name") }
-        return "To save: " + missing.joined(separator: ", and ") + "."
     }
 
     /// The line below the switch: what it does, or what it needs first.
     private var rememberFootnote: String {
         if remember { return RememberedSignInCopy.kept(guardName) }
-        let plain = "Your password is swapped for a session and never kept."
-        return canRemember ? plain : plain + " " + RememberedSignInCopy.needsPasscode
+        return canRemember ? String(localized: "Your password is swapped for a session and never kept.")
+            : String(localized: "Your password is swapped for a session and never kept. \(RememberedSignInCopy.needsPasscode)",
+                     comment: "%@ says what remembering a sign-in needs first")
     }
 
     // MARK: Body
@@ -282,9 +284,10 @@ struct GatewayFormView: View {
 
     private var addressSection: some View {
         Section(header: Text("Gateway"), footer: addressNotes) {
-            plainEntry("Name", text: $name, prompt: "Home", id: "gateway.name", field: .name, next: .url)
+            plainEntry(String(localized: "Name"), text: $name, prompt: String(localized: "Home", comment: "An example name for a gateway"),
+                       id: "gateway.name", field: .name, next: .url)
             urlField
-            plainEntry("Path prefix (optional)", text: $pathPrefix, prompt: "/hermes", field: .prefix, next: firstSecretField)
+            plainEntry(String(localized: "Path prefix (optional)"), text: $pathPrefix, prompt: "/hermes", field: .prefix, next: firstSecretField)
         }
     }
 
@@ -301,7 +304,7 @@ struct GatewayFormView: View {
             .testID("gateway.url")
     }
 
-    private static let addressIntro = "Use the address of your Hermes dashboard (`hermes serve`), not a chat web page or an SSH app. A path prefix behind a reverse proxy is fine."
+    private static let addressIntro = String(localized: "Use the address of your Hermes dashboard (`hermes serve`), not a chat web page or an SSH app. A path prefix behind a reverse proxy is fine.")
 
     private var addressNotes: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -324,8 +327,8 @@ struct GatewayFormView: View {
         Text("Will connect to \(url.description)").foregroundStyle(.secondary)
         if !urlText.contains("://") {
             let which = url.isTLS
-                ? "No scheme given, so we use https. Type http:// for a plain connection."
-                : "No scheme given, so we use plain http. Type https:// if your gateway has a certificate."
+                ? String(localized: "No scheme given, so we use https. Type http:// for a plain connection.")
+                : String(localized: "No scheme given, so we use plain http. Type https:// if your gateway has a certificate.")
             Text(which).foregroundStyle(.secondary)
         }
         ForEach(warnings(for: url, homeNetwork: homeNetwork), id: \.self) { warning in
@@ -345,16 +348,16 @@ struct GatewayFormView: View {
     private func warnings(for url: GatewayURL, homeNetwork: Bool) -> [String] {
         var found: [String] = []
         if !url.isTLS, !homeNetwork {
-            found.append("Plain HTTP to a public host sends your credentials without encryption.")
+            found.append(String(localized: "Plain HTTP to a public host sends your credentials without encryption."))
         }
         if kind == .tailscale, !url.isTailscaleHost {
-            found.append("That is not a Tailscale address (a *.ts.net name or 100.x.x.x).")
+            found.append(String(localized: "That is not a Tailscale address (a *.ts.net name or 100.x.x.x)."))
         }
         if kind == .local, !homeNetwork {
-            found.append("That is not a local address. Pick another connection type if the gateway is somewhere else.")
+            found.append(String(localized: "That is not a local address. Pick another connection type if the gateway is somewhere else."))
         }
         if kind == .cloudflare, !url.isTLS {
-            found.append("Cloudflare Access only works over https.")
+            found.append(String(localized: "Cloudflare Access only works over https."))
         }
         return found
     }
@@ -388,7 +391,7 @@ struct GatewayFormView: View {
             .textContentType(.password)
             .autocorrectionDisabled()
             .testID("gateway.sessionToken")
-        aside("Found in your Hermes dashboard settings. Only needed when it has no sign-in.")
+        aside(String(localized: "Found in your Hermes dashboard settings. Only needed when it has no sign-in."))
     }
 
     @ViewBuilder private var passwordFields: some View {
@@ -423,12 +426,12 @@ struct GatewayFormView: View {
             }
         }
         .disabled(isSigningIn || normalizedURL == nil)
-        aside("Opens your browser to sign in. Nollie keeps the sign-in in your Keychain.")
+        aside(String(localized: "Opens your browser to sign in. Nollie keeps the sign-in in your Keychain."))
     }
 
     @ViewBuilder private var providerPicker: some View {
         if providers.isEmpty {
-            plainEntry("Provider name", text: $providerName, prompt: authMode == .password ? "basic" : "nous")
+            plainEntry(String(localized: "Provider name"), text: $providerName, prompt: authMode == .password ? "basic" : "nous")
         } else {
             let offered = providers.filter { authMode != .password || ($0.supportsPassword ?? false) }
             Picker("Provider", selection: $providerName) {
@@ -578,11 +581,9 @@ struct GatewayFormView: View {
     /// Message for a gateway whose sign-in options all lack a username and password.
     static func noPasswordProviderMessage(_ providers: [AuthProvider]) -> String {
         let offered = providers.map { $0.name }.joined(separator: ", ")
-        return "This gateway has no username/password sign-in (it offers: " + offered + "). " + browserAdvice + " and try again."
+        return String(localized: "This gateway has no username/password sign-in (it offers: \(offered)). Choose Sign in with browser above, or enable a password provider on the gateway (HERMES_DASHBOARD_BASIC_AUTH_USER and HERMES_DASHBOARD_BASIC_AUTH_PASSWORD) and try again.",
+                      comment: "%@ lists the gateway's sign-in providers; keep the HERMES_ names as they are")
     }
-
-    /// What to do when the gateway has no password sign-in to use.
-    private static let browserAdvice = "Choose Sign in with browser above, or enable a password provider on the gateway (HERMES_DASHBOARD_BASIC_AUTH_USER and HERMES_DASHBOARD_BASIC_AUTH_PASSWORD)"
 
     // MARK: Signing in and testing
 
@@ -639,8 +640,8 @@ struct GatewayFormView: View {
             where failure.localizedDescription.localizedCaseInsensitiveContains("does not support password") {
             // Rephrases the gateway's message about a provider that only works in a browser as advice.
             if !providers.isEmpty { throw NativeAuthError.invalidResponse(Self.noPasswordProviderMessage(providers)) }
-            throw NativeAuthError.invalidResponse(
-                "The provider \u{201C}\(provider)\u{201D} on this gateway does not take a username and password. \(Self.browserAdvice).")
+            throw NativeAuthError.invalidResponse(String(localized: "The provider \u{201C}\(provider)\u{201D} on this gateway does not take a username and password. Choose Sign in with browser above, or enable a password provider on the gateway (HERMES_DASHBOARD_BASIC_AUTH_USER and HERMES_DASHBOARD_BASIC_AUTH_PASSWORD).",
+                                                         comment: "Keep the HERMES_ names as they are"))
         }
     }
 
@@ -678,7 +679,8 @@ struct GatewayFormView: View {
                     // The gateway is saved and signed in; only remembering failed. Turn the
                     // switch off so a second Save goes through without it.
                     remember = false
-                    errorMessage = "The gateway is saved, but \(Self.thisDevice) could not keep your sign-in (\(error.localizedDescription)). Save again to continue without it."
+                    errorMessage = String(localized: "The gateway is saved, but \(Self.thisDevice) could not keep your sign-in (\(error.localizedDescription)). Save again to continue without it.",
+                                                         comment: "The first %@ is this Mac, this iPhone or this iPad; the second is the reason")
                     return
                 }
                 if model.runtime?.connection.id == connection.id { await model.deactivate() }
@@ -686,7 +688,7 @@ struct GatewayFormView: View {
                 dismiss()
                 await model.activate(connection)
             } catch let failure as KeychainError {
-                errorMessage = "Saving to the Keychain failed (\(failure.localizedDescription)). On a simulator that usually means an unsigned build."
+                errorMessage = String(localized: "Saving to the Keychain failed (\(failure.localizedDescription)). On a simulator that usually means an unsigned build.")
             } catch {
                 errorMessage = error.localizedDescription
             }

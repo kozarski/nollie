@@ -14,14 +14,14 @@ final class MacHermesSetup {
     private(set) var dependencies = NativeSetupPlan.steps
     private(set) var importPreview: ScopedHermesImport.Preview?
     private(set) var importCompleted = false
-    private(set) var importDetail = "Only root instructions and an inactive configuration backup are copied. Configuration may include sensitive settings. Profiles, separate credential files, chats, schedules, Board and computer permissions stay in the original setup."
+    private(set) var importDetail = String(localized: "Only root instructions and an inactive configuration backup are copied. Configuration may include sensitive settings. Profiles, separate credential files, chats, schedules, Board and computer permissions stay in the original setup.")
     private(set) var isolatedHomePath: String?
     private var importSource: URL?
     private var installation: URL?
     let managedRuntime = ManagedRuntimeClient()
     static let selectedInstallationKey = "nollie.nativeSetup.installationID.v1"
-    private(set) var headline = "Native setup is being prepared"
-    private(set) var detail = "This build can connect to an existing setup. Installing a new local runtime needs Nollie's signed setup service."
+    private(set) var headline = String(localized: "Native setup is being prepared")
+    private(set) var detail = String(localized: "This build can connect to an existing setup. Installing a new local runtime needs Nollie's signed setup service.")
     private(set) var error: String?
     private(set) var isBusy = false
     private(set) var canConnect = false
@@ -29,7 +29,7 @@ final class MacHermesSetup {
     private(set) var connectionToken: String?
     private(set) var existingInstallationDetected: Bool?
     private(set) var backupCompleted = false
-    private(set) var backupDetail = "Copies root config.yaml, SOUL.md and AGENTS.md only. Configuration may include sensitive settings. Separate .env and auth files, profiles, chats, schedules and Board are not included."
+    private(set) var backupDetail = String(localized: "Copies root config.yaml, SOUL.md and AGENTS.md only. Configuration may include sensitive settings. Separate .env and auth files, profiles, chats, schedules and Board are not included.")
     private(set) var scriptURL: URL?
 
     var runtimePrepared: Bool {
@@ -38,7 +38,7 @@ final class MacHermesSetup {
         }
     }
     var backgroundActionTitle: String {
-        managedRuntime.state == .needsVerification ? "Check connection" : "Keep it running"
+        managedRuntime.state == .needsVerification ? String(localized: "Check connection") : String(localized: "Keep it running")
     }
 
     func inspect() async {
@@ -120,8 +120,8 @@ final class MacHermesSetup {
             await performDependency(id, preferences: preferences)
             if error != nil { return }
         }
-        headline = "Runtime files prepared"
-        detail = "Start the background service when you're ready. Your existing setup stays separate."
+        headline = String(localized: "Runtime files prepared")
+        detail = String(localized: "Start the background service when you're ready. Your existing setup stays separate.")
     }
 
     func installDependency(_ id: String, preferences: OnboardingPreferences) async {
@@ -142,11 +142,11 @@ final class MacHermesSetup {
             try await installer.install(id)
             dependencies = await installer.inspect()
             applyRuntimeState()
-            headline = "Preparation saved"
-            detail = "Verified files stay in Nollie's own folder. Your existing setup is unchanged."
+            headline = String(localized: "Preparation saved")
+            detail = String(localized: "Verified files stay in Nollie's own folder. Your existing setup is unchanged.")
         } catch {
             dependencies[index].state = .failed
-            self.error = safeMessage(error, fallback: "This preparation step could not finish. Existing files are unchanged.")
+            self.error = safeMessage(error, fallback: String(localized: "This preparation step could not finish. Existing files are unchanged."))
         }
     }
 
@@ -198,14 +198,17 @@ final class MacHermesSetup {
         case .off, .stopped, .needsVerification: dependencies[index].state = .needsInstall
         }
         if managedRuntime.state == .failed { error = managedRuntime.message }
-        if canConnect { headline = "Connection verified"; detail = "Continue with model and computer setup." }
+        if canConnect {
+            headline = String(localized: "Connection verified")
+            detail = String(localized: "Continue with model and computer setup.")
+        }
     }
 
     func previewImport() async {
         guard directInstallationAvailable, !isBusy else { if !directInstallationAvailable { unavailable() }; return }
         let picker = sourcePicker()
-        picker.title = "Choose the configuration to copy"
-        picker.prompt = "Preview copy"
+        picker.title = String(localized: "Choose the configuration to copy")
+        picker.prompt = String(localized: "Preview copy")
         guard picker.runModal() == .OK, let source = picker.url else { return }
         let access = source.startAccessingSecurityScopedResource()
         defer { if access { source.stopAccessingSecurityScopedResource() } }
@@ -221,7 +224,7 @@ final class MacHermesSetup {
             existingInstallationDetected = true
         } catch {
             importSource = nil
-            self.error = safeMessage(error, fallback: "This folder could not be previewed safely.")
+            self.error = safeMessage(error, fallback: String(localized: "This folder could not be previewed safely."))
         }
     }
 
@@ -242,12 +245,14 @@ final class MacHermesSetup {
             selectInstallation(result.directory, id: result.installationID)
             importCompleted = true
             backupCompleted = true
-            importDetail = "Copied the reviewed instructions and verified the configuration backup. config.yaml remains inactive and may include sensitive settings. No profiles, separate credential files, chats, schedules, Board or computer permissions were copied.\n" + result.directory.path
-            backupDetail = "Verified configuration backup: " + result.backup.path + "\nThese copies may contain sensitive settings."
-            headline = "Configuration copied"
+            importDetail = String(localized: "Copied the reviewed instructions and verified the configuration backup. config.yaml remains inactive and may include sensitive settings. No profiles, separate credential files, chats, schedules, Board or computer permissions were copied.")
+                + "\n" + result.directory.path
+            backupDetail = String(localized: "Verified configuration backup: \(result.backup.path)", comment: "%@ is a folder path")
+                + "\n" + String(localized: "These copies may contain sensitive settings.")
+            headline = String(localized: "Configuration copied")
             canConnect = false
             await inspectDependencies()
-        } catch { self.error = safeMessage(error, fallback: "The copy did not finish. Your original setup is unchanged.") }
+        } catch { self.error = safeMessage(error, fallback: String(localized: "The copy did not finish. Your original setup is unchanged.")) }
     }
 
     private var installationsRoot: URL { Self.installationsRootURL }
@@ -296,11 +301,12 @@ final class MacHermesSetup {
         do {
             let names = try ConfigurationBackup.availableFiles(in: source)
             existingInstallationDetected = !names.isEmpty
-            headline = names.isEmpty ? "No configuration found" : "Existing configuration found"
-            detail = names.isEmpty ? "Choose the root folder of your Hermes setup." : "Connecting preserves your bots, models, chats, schedules and Board."
+            headline = names.isEmpty ? String(localized: "No configuration found") : String(localized: "Existing configuration found")
+            detail = names.isEmpty ? String(localized: "Choose the root folder of your Hermes setup.")
+                : String(localized: "Connecting preserves your bots, models, chats, schedules and Board.")
             error = nil
         } catch {
-            self.error = (error as? ConfigurationBackup.Failure)?.message ?? "This folder could not be checked safely."
+            self.error = (error as? ConfigurationBackup.Failure)?.message ?? String(localized: "This folder could not be checked safely.")
         }
     }
 
@@ -311,9 +317,9 @@ final class MacHermesSetup {
         let sourceAccess = source.startAccessingSecurityScopedResource()
         defer { if sourceAccess { source.stopAccessingSecurityScopedResource() } }
         let destination = NSOpenPanel()
-        destination.title = "Choose where to save the configuration backup"
-        destination.message = "These copies may contain sensitive settings. A new private backup folder will be created here."
-        destination.prompt = "Save backup here"
+        destination.title = String(localized: "Choose where to save the configuration backup")
+        destination.message = String(localized: "These copies may contain sensitive settings. A new private backup folder will be created here.")
+        destination.prompt = String(localized: "Save backup here")
         destination.canChooseFiles = false
         destination.canChooseDirectories = true
         destination.canCreateDirectories = true
@@ -331,18 +337,20 @@ final class MacHermesSetup {
             }.value
             backupCompleted = true
             existingInstallationDetected = true
-            headline = "Backed up and checked"
-            backupDetail = "Copied \(result.files.count) configuration files and verified their checksums.\n\(result.directory.path)\nThese copies may contain sensitive settings. Separate .env/auth files, profiles, chats, schedules and Board are excluded."
+            headline = String(localized: "Backed up and checked")
+            backupDetail = String(localized: "Copied \(result.files.count) configuration files and verified their checksums.")
+                + "\n" + result.directory.path + "\n"
+                + String(localized: "These copies may contain sensitive settings. Separate .env/auth files, profiles, chats, schedules and Board are excluded.")
         } catch {
-            self.error = (error as? ConfigurationBackup.Failure)?.message ?? "Backup could not finish safely. Existing files are unchanged."
+            self.error = (error as? ConfigurationBackup.Failure)?.message ?? String(localized: "Backup could not finish safely. Existing files are unchanged.")
         }
     }
 
     private func sourcePicker() -> NSOpenPanel {
         let panel = NSOpenPanel()
-        panel.title = "Choose your Hermes folder"
-        panel.message = "Choose the root setup folder. Only config.yaml, SOUL.md and AGENTS.md will be checked. Profile folders are excluded."
-        panel.prompt = "Choose folder"
+        panel.title = String(localized: "Choose your Hermes folder")
+        panel.message = String(localized: "Choose the root setup folder. Only config.yaml, SOUL.md and AGENTS.md will be checked. Profile folders are excluded.")
+        panel.prompt = String(localized: "Choose folder")
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -351,7 +359,7 @@ final class MacHermesSetup {
     }
 
     private func unavailable() {
-        error = "Native installation is not included in this build yet. Your existing setup is unchanged."
+        error = String(localized: "Native installation is not included in this build yet. Your existing setup is unchanged.")
     }
 }
 #endif

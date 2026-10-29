@@ -15,7 +15,7 @@ final class ConversationLoader {
     /// Opens the chat `route` names, or a new one. Returns the session when it opened.
     func open(_ route: ChatRoute, model: AppModel) async -> ChatSession? {
         guard let runtime = model.runtime, route.connectionID.map({ $0 == runtime.connection.id }) ?? true else {
-            failure = "The connection for this conversation is no longer open."
+            failure = String(localized: "The connection for this conversation is no longer open.")
             return nil
         }
         // Viewing another bot's chat read-only passes that bot with each call and does not touch the
@@ -27,7 +27,7 @@ final class ConversationLoader {
         // Its bot stays attached for as long as the chat is open.
         if let stored = route.storedID, let bot = route.profile,
            let known = runtime.chatForStored(stored), known.profileName != bot {
-            failure = "This conversation belongs to a different bot. Open it from Chats."
+            failure = String(localized: "This conversation belongs to a different bot. Open it from Chats.")
             return nil
         }
         do {

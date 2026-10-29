@@ -1,3 +1,4 @@
+#if os(iOS)
 import ActivityKit
 import AppIntents
 import SwiftUI
@@ -130,8 +131,8 @@ private struct HelperAtWorkStatus: View {
             .foregroundStyle(.secondary)
         case .working:
             // "Last seen 2 min ago", kept current by the system, minutes and hours only.
-            (Text(HelperAtWorkWords.lastSeen) + Text(" ")
-                + Text(.currentDate, format: .reference(to: context.state.lastSeen, allowedFields: [.hour, .minute], maxFieldCount: 1)))
+            Text("Last seen \(Text(.currentDate, format: .reference(to: context.state.lastSeen, allowedFields: [.hour, .minute], maxFieldCount: 1)))",
+                 comment: "Then how long ago, kept current by the system")
                 .foregroundStyle(.secondary)
         case .stopping:
             Text(HelperAtWorkWords.stopping).foregroundStyle(.secondary)
@@ -203,3 +204,4 @@ private struct HelperAvatar: View {
             .accessibilityHidden(true)
     }
 }
+#endif

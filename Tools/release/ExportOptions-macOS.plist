@@ -13,21 +13,9 @@
 	<!-- We stamp the build number in testflight.sh, so Xcode must not rewrite it. -->
 	<key>manageAppVersionAndBuildNumber</key>
 	<false/>
-	<!-- Manual signing, as on iOS: an App Manager API key may not create cloud-managed
-	     certificates. The app and its two extensions each need a Mac App Store profile with
-	     these names, and the keychain needs the Mac installer certificate for the .pkg. -->
+	<!-- Automatic signing through Corey's signed-in Xcode account: Apple Distribution: Corey Kozarski, with
+	     profiles Xcode makes and keeps current. No API key ever signs (release_guard.py checks the names). -->
 	<key>signingStyle</key>
-	<string>manual</string>
-	<key>signingCertificate</key>
-	<string>Apple Distribution</string>
-	<key>installerSigningCertificate</key>
-	<string>3rd Party Mac Developer Installer</string>
-	<key>provisioningProfiles</key>
-	<dict>
-		<key>com.coreykozarski.nollie</key>
-		<string>Nollie Mac App Store</string>
-		<key>com.coreykozarski.nollie.notifications</key>
-		<string>Nollie Mac Notification Service App Store</string>
-	</dict>
+	<string>automatic</string>
 </dict>
 </plist>

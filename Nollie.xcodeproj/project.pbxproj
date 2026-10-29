@@ -21,6 +21,15 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		1A10C0DE0000000000000002 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A10C0DE0000000000000001 /* InfoPlist.xcstrings */; };
+		1A10C0DE0000000000000004 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A10C0DE0000000000000003 /* InfoPlist.xcstrings */; };
+		1A10C0DE0000000000000007 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1A10C0DE0000000000000006 /* InfoPlist.xcstrings */; };
+		F692F6CFA4FC48E6054B8ACA /* PapertrailFilterProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E280DC62FDE5BA2EFBA6DB58 /* PapertrailFilterProvider.swift */; };
+		ACA9DE3276E59F1C4454CE06 /* NetworkFilterPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1D1DD57C8A0EBBC7DCA8EC /* NetworkFilterPolicy.swift */; };
+		416068DD5D8EAF2FDB93868C /* NetworkFilterXPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3291D73462EDBC84D5DDD4A /* NetworkFilterXPC.swift */; };
+		98FF1ED2D18C3CA3636033ED /* PapertrailDoorBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FAECB8064EAB7104765649 /* PapertrailDoorBook.swift */; };
+		55E9D9D530FF2922770248E9 /* ExitRelayWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889B81D60373AF624F558E3A /* ExitRelayWire.swift */; };
+		9C77CE7E8D5386FEDF449C6E /* LinkDoorHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */; };
 		03A43A5EC025690E3CB85612 /* CloudAlertHelperState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FD584D48230B32C382F2E9 /* CloudAlertHelperState.swift */; };
 		0ACD3BF99A9B1B177397B17B /* NollieAlertHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66ABCB2D8244FA073C0FD75D /* NollieAlertHelper.swift */; };
 		18102E6D87981B5CB3E4BA38 /* NativeDependencyInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = E326383A643DF56F11A87482 /* NativeDependencyInstaller.swift */; };
@@ -71,12 +80,30 @@
 		EF0FA75B48F0A7748A52D617 /* ExitRelayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */; };
 		1C0C79082145CBC879F72805 /* ExitRelayWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889B81D60373AF624F558E3A /* ExitRelayWire.swift */; };
 		0E3D2AE48501B25482C67A0C /* ExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 367508B5D4564F9258B282A8 /* ExitRelay.swift */; };
+		F9C1AA0A1274E09ADC085686 /* RuntimeNetworkFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0857C17B71AF463A4EF4D15 /* RuntimeNetworkFilter.swift */; };
+		BA99A151372097F5A41824CE /* NetworkFilterXPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3291D73462EDBC84D5DDD4A /* NetworkFilterXPC.swift */; };
+		6DC8EE5EA93956EC2A7F5951 /* NetworkFilterXPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3291D73462EDBC84D5DDD4A /* NetworkFilterXPC.swift */; };
+		049EB21672AB98144020E7CA /* NetworkFilterPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1D1DD57C8A0EBBC7DCA8EC /* NetworkFilterPolicy.swift */; };
+		7F6BAC844125688BE844B8DB /* NetworkFilterPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1D1DD57C8A0EBBC7DCA8EC /* NetworkFilterPolicy.swift */; };
+		981AC75FCFF1902219772089 /* PapertrailDoorBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FAECB8064EAB7104765649 /* PapertrailDoorBook.swift */; };
+		351209E1358CC4ADE94437B7 /* PapertrailDoorBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FAECB8064EAB7104765649 /* PapertrailDoorBook.swift */; };
+		F920A210BC8E0E5577C650B6 /* PapertrailDoor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7D823A480D1B44D403000F /* PapertrailDoor.swift */; };
+		CB20CDED8AAB096F0E2DFDD7 /* PapertrailDoor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7D823A480D1B44D403000F /* PapertrailDoor.swift */; };
 		751B408A45B39444B72C7014 /* RuntimeExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */; };
+		556A61C51845BCA463BF70A5 /* RuntimeKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1830008CAB7E6D1922B9B5C8 /* RuntimeKeyStore.swift */; };
+		D9518A36BD4136D43709B8EC /* RuntimeKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1830008CAB7E6D1922B9B5C8 /* RuntimeKeyStore.swift */; };
+		ED23D15B3F797DE45A8DE39E /* RuntimeKeyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C65CF454D91D73C6E6992F3 /* RuntimeKeyMigration.swift */; };
 		E7FCDD3328BD0DC4C31111E8 /* ExitRelayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */; };
 		455138A18822DFB757E68A14 /* ExitRelayWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889B81D60373AF624F558E3A /* ExitRelayWire.swift */; };
 		8C6A0EB43E1B44A69D8A6058 /* ExitRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 367508B5D4564F9258B282A8 /* ExitRelay.swift */; };
 		B9F9C77C6EBA771563889EAC /* LinkDoorHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */; };
 		EE575C4EAF1C9AC63BFC11A5 /* LinkDoorHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */; };
+		7BD12ACCBA527E3312F7E8A5 /* LinkDoorFamily.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867CC73A89D0B17F327DBE47 /* LinkDoorFamily.swift */; };
+		2CCE8FEA28251440F0956D8F /* LinkDoorFamily.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867CC73A89D0B17F327DBE47 /* LinkDoorFamily.swift */; };
+		2F5C9B78C1D260A18BA662B5 /* LinkDoorFamilyHermes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 337BF9AB134426A181E3F18C /* LinkDoorFamilyHermes.swift */; };
+		EB576DD0F7D6AFB58BD34BCB /* LinkDoorFamilyHermes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 337BF9AB134426A181E3F18C /* LinkDoorFamilyHermes.swift */; };
+		DDEED0E40256BD2C5981FAF4 /* LinkDoorFamilyDoor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7A4AD78F5C465F7C1E1544 /* LinkDoorFamilyDoor.swift */; };
+		17ED125733E9DCCDD41941C4 /* LinkDoorFamilyDoor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB7A4AD78F5C465F7C1E1544 /* LinkDoorFamilyDoor.swift */; };
 		706E39E291585EB001EECCEC /* LinkDoorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */; };
 		B312589BDB9B24F9F3C87A06 /* LinkDoorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */; };
 		A30280DA4FC0AE856D769B82 /* LinkDoorDevices.swift in Sources */ = {isa = PBXBuildFile; fileRef = C458E817E144131FF84F5DE6 /* LinkDoorDevices.swift */; };
@@ -103,9 +130,17 @@
 		CC0471000000000000000002 /* NollieControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CC0471000000000000000001 /* NollieControls.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A11CE0000000000000000002 /* NollieWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000000001 /* NollieWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A11CE0000000000000001002 /* NollieWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A11CE0000000000000001001 /* NollieWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CC0472000000000000000002 /* NollieMacControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CC0472000000000000000001 /* NollieMacControls.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		B6D230FA51A69665621F6507 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E7891AB895BAF1BBEEA1B1FA;
+			remoteInfo = NollieNetworkFilter;
+		};
 		C0FFEE0A11D7A5E7C000000A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA00000000000000000001 /* Project object */;
@@ -190,6 +225,13 @@
 			remoteGlobalIDString = A11CE000000000000000100A;
 			remoteInfo = NollieWatchWidgets;
 		};
+		CC0472000000000000000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CC047200000000000000000A;
+			remoteInfo = NollieMacControls;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -213,6 +255,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				AA00000000000000000310 /* NollieMacNotificationService.appex in Embed Foundation Extensions */,
+				CC0472000000000000000002 /* NollieMacControls.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -242,6 +285,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1A10C0DE0000000000000001 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = Services/Runtime/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
+		1A10C0DE0000000000000003 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = Services/NetworkFilter/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
+		1A10C0DE0000000000000006 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = Services/Notifications/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
 		161184EAE5DA40AAD9CA6D03 /* ScopedHermesImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScopedHermesImport.swift; path = Apps/Nollie/Connect/ScopedHermesImport.swift; sourceTree = SOURCE_ROOT; };
 		66ABCB2D8244FA073C0FD75D /* NollieAlertHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NollieAlertHelper.swift; path = Services/Notifications/NollieAlertHelper.swift; sourceTree = SOURCE_ROOT; };
 		684992DBB3E7B0B225FDCE16 /* ConfigurationBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConfigurationBackup.swift; path = Apps/Nollie/Connect/ConfigurationBackup.swift; sourceTree = SOURCE_ROOT; };
@@ -275,9 +321,21 @@
 		FAAAF1FBB30980155DC7AAF0 /* Nollie Notifications.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Nollie Notifications.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelayPolicy.swift; path = Services/Runtime/ExitRelayPolicy.swift; sourceTree = SOURCE_ROOT; };
 		889B81D60373AF624F558E3A /* ExitRelayWire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelayWire.swift; path = Services/Runtime/ExitRelayWire.swift; sourceTree = SOURCE_ROOT; };
+		E280DC62FDE5BA2EFBA6DB58 /* PapertrailFilterProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PapertrailFilterProvider.swift; path = Services/NetworkFilter/PapertrailFilterProvider.swift; sourceTree = SOURCE_ROOT; };
+		96E9EB28E2B7227081AA7ECC /* com.coreykozarski.nollie.network-filter.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = com.coreykozarski.nollie.network-filter.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
 		367508B5D4564F9258B282A8 /* ExitRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExitRelay.swift; path = Services/Runtime/ExitRelay.swift; sourceTree = SOURCE_ROOT; };
+		B0857C17B71AF463A4EF4D15 /* RuntimeNetworkFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeNetworkFilter.swift; path = Services/Runtime/RuntimeNetworkFilter.swift; sourceTree = SOURCE_ROOT; };
+		D3291D73462EDBC84D5DDD4A /* NetworkFilterXPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NetworkFilterXPC.swift; path = Services/NetworkFilter/NetworkFilterXPC.swift; sourceTree = SOURCE_ROOT; };
+		AC1D1DD57C8A0EBBC7DCA8EC /* NetworkFilterPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NetworkFilterPolicy.swift; path = Services/NetworkFilter/NetworkFilterPolicy.swift; sourceTree = SOURCE_ROOT; };
+		A0FAECB8064EAB7104765649 /* PapertrailDoorBook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PapertrailDoorBook.swift; path = Services/Runtime/PapertrailDoorBook.swift; sourceTree = SOURCE_ROOT; };
+		CA7D823A480D1B44D403000F /* PapertrailDoor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PapertrailDoor.swift; path = Services/Runtime/PapertrailDoor.swift; sourceTree = SOURCE_ROOT; };
 		A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeExitRelay.swift; path = Services/Runtime/RuntimeExitRelay.swift; sourceTree = SOURCE_ROOT; };
+		1830008CAB7E6D1922B9B5C8 /* RuntimeKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeKeyStore.swift; path = Services/Runtime/RuntimeKeyStore.swift; sourceTree = SOURCE_ROOT; };
+		1C65CF454D91D73C6E6992F3 /* RuntimeKeyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeKeyMigration.swift; path = Services/Runtime/RuntimeKeyMigration.swift; sourceTree = SOURCE_ROOT; };
 		5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorHTTP.swift; path = Services/Runtime/LinkDoorHTTP.swift; sourceTree = SOURCE_ROOT; };
+		867CC73A89D0B17F327DBE47 /* LinkDoorFamily.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorFamily.swift; path = Services/Runtime/LinkDoorFamily.swift; sourceTree = SOURCE_ROOT; };
+		337BF9AB134426A181E3F18C /* LinkDoorFamilyHermes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorFamilyHermes.swift; path = Services/Runtime/LinkDoorFamilyHermes.swift; sourceTree = SOURCE_ROOT; };
+		FB7A4AD78F5C465F7C1E1544 /* LinkDoorFamilyDoor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorFamilyDoor.swift; path = Services/Runtime/LinkDoorFamilyDoor.swift; sourceTree = SOURCE_ROOT; };
 		38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorPolicy.swift; path = Services/Runtime/LinkDoorPolicy.swift; sourceTree = SOURCE_ROOT; };
 		C458E817E144131FF84F5DE6 /* LinkDoorDevices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorDevices.swift; path = Services/Runtime/LinkDoorDevices.swift; sourceTree = SOURCE_ROOT; };
 		9BD18F8AA46EBEC4E1F4BD9A /* LinkDoorIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LinkDoorIdentity.swift; path = Services/Runtime/LinkDoorIdentity.swift; sourceTree = SOURCE_ROOT; };
@@ -298,6 +356,7 @@
 		CC0471000000000000000001 /* NollieControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A11CE0000000000000000001 /* NollieWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NollieWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A11CE0000000000000001001 /* NollieWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC0472000000000000000001 /* NollieMacControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NollieMacControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -360,6 +419,7 @@
 				App/TabPageModifiers.swift,
 				App/RootView.swift,
 				Info.plist,
+				Resources/InfoPlist.xcstrings,
 			);
 			target = AA00000000000000000240 /* NollieMac */;
 		};
@@ -435,6 +495,21 @@
 			);
 			target = A11CE000000000000000100A /* NollieWatchWidgets */;
 		};
+		CC0472000000000000000006 /* Exceptions for "Controls" folder in "NollieMacControls" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CC047200000000000000000A /* NollieMacControls */;
+		};
+		CC0472000000000000000007 /* Exceptions for "Shared" folder in "NollieMacControls" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AskNollie.swift,
+				StopMac.swift,
+			);
+			target = CC047200000000000000000A /* NollieMacControls */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -481,6 +556,7 @@
 				AA00000000000000000130 /* Exceptions for "Shared" folder in "NollieNotificationContent" target */,
 				AA00000000000000000365 /* Exceptions for "Shared" folder in "NollieMacNotificationService" target */,
 				CC0471000000000000000007 /* Exceptions for "Shared" folder in "NollieControls" target */,
+				CC0472000000000000000007 /* Exceptions for "Shared" folder in "NollieMacControls" target */,
 				A11CE0000000000000000007 /* Exceptions for "Shared" folder in "NollieWatch" target */,
 				A11CE0000000000000001007 /* Exceptions for "Shared" folder in "NollieWatchWidgets" target */,
 			);
@@ -534,6 +610,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				CC0471000000000000000006 /* Exceptions for "Controls" folder in "NollieControls" target */,
+				CC0472000000000000000006 /* Exceptions for "Controls" folder in "NollieMacControls" target */,
 			);
 			name = Controls;
 			path = Extensions/Controls;
@@ -566,6 +643,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		9E19C0FD600913F5135F5613 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		89174DC5DB4A591CCC2479D8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -665,6 +749,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CC047200000000000000000C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -700,6 +791,7 @@
 			isa = PBXGroup;
 			children = (
 				66ABCB2D8244FA073C0FD75D /* NollieAlertHelper.swift */,
+				1A10C0DE0000000000000006 /* InfoPlist.xcstrings */,
 			);
 			name = Notifications;
 			sourceTree = "<group>";
@@ -732,12 +824,23 @@
 				E93A00DD2487995D90F16EAD /* LinkDoor.swift */,
 				9BD18F8AA46EBEC4E1F4BD9A /* LinkDoorIdentity.swift */,
 				C458E817E144131FF84F5DE6 /* LinkDoorDevices.swift */,
+				867CC73A89D0B17F327DBE47 /* LinkDoorFamily.swift */,
+				337BF9AB134426A181E3F18C /* LinkDoorFamilyHermes.swift */,
+				FB7A4AD78F5C465F7C1E1544 /* LinkDoorFamilyDoor.swift */,
 				38F8EBE344DFA9F7B2B4D129 /* LinkDoorPolicy.swift */,
 				5755B45D2E4A1B89B36496A6 /* LinkDoorHTTP.swift */,
 				51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */,
 				889B81D60373AF624F558E3A /* ExitRelayWire.swift */,
 				367508B5D4564F9258B282A8 /* ExitRelay.swift */,
+				E280DC62FDE5BA2EFBA6DB58 /* PapertrailFilterProvider.swift */,
+				B0857C17B71AF463A4EF4D15 /* RuntimeNetworkFilter.swift */,
+				D3291D73462EDBC84D5DDD4A /* NetworkFilterXPC.swift */,
+				AC1D1DD57C8A0EBBC7DCA8EC /* NetworkFilterPolicy.swift */,
+				A0FAECB8064EAB7104765649 /* PapertrailDoorBook.swift */,
+				CA7D823A480D1B44D403000F /* PapertrailDoor.swift */,
 				A2DBB90DDF59EE0FA9E926E3 /* RuntimeExitRelay.swift */,
+				1830008CAB7E6D1922B9B5C8 /* RuntimeKeyStore.swift */,
+				1C65CF454D91D73C6E6992F3 /* RuntimeKeyMigration.swift */,
 				D9FF74456F3EAE4C78244A85 /* RuntimeHelperMain.swift */,
 				FA022678FE0E4901BF5A9327 /* RuntimeService.swift */,
 				F2EA7B9E76774ED44587C3F4 /* RuntimeContract.swift */,
@@ -746,6 +849,8 @@
 				C8D18C250E624E61B9E1DD4D /* managed_addons.py */,
 				DF9EB215A6E13067308C5591 /* RuntimeSupervisor.swift */,
 				6D276FD283EF81B4AA946628 /* RuntimeIPC.swift */,
+				1A10C0DE0000000000000001 /* InfoPlist.xcstrings */,
+				1A10C0DE0000000000000003 /* InfoPlist.xcstrings */,
 			);
 			name = Runtime;
 			sourceTree = "<group>";
@@ -753,6 +858,7 @@
 		AA00000000000000000070 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				96E9EB28E2B7227081AA7ECC /* com.coreykozarski.nollie.network-filter.systemextension */,
 				FAAAF1FBB30980155DC7AAF0 /* Nollie Notifications.app */,
 				6C5F91D2ECCA45E6EC359DC9 /* Nollie Runtime.app */,
 				AA00000000000000000020 /* Nollie.app */,
@@ -763,6 +869,7 @@
 				A11CE0000000000000001001 /* NollieWatchWidgets.appex */,
 				AA00000000000000000220 /* Nollie.app */,
 				AA00000000000000000321 /* NollieMacNotificationService.appex */,
+				CC0472000000000000000001 /* NollieMacControls.appex */,
 				AA00000000000000000022 /* NollieTests.xctest */,
 				AA00000000000000000520 /* NollieMacTests.xctest */,
 				AA00000000000000000023 /* NollieUITests.xctest */,
@@ -821,6 +928,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		E7891AB895BAF1BBEEA1B1FA /* NollieNetworkFilter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 74D4AFDF2B20AA67AE04A6B4 /* Build configuration list for PBXNativeTarget "NollieNetworkFilter" */;
+			buildPhases = (
+				3B12A35A85D0B81842E55487 /* Sources */,
+				9E19C0FD600913F5135F5613 /* Frameworks */,
+				1A10C0DE0000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NollieNetworkFilter;
+			productName = NollieNetworkFilter;
+			productReference = 96E9EB28E2B7227081AA7ECC /* com.coreykozarski.nollie.network-filter.systemextension */;
+			productType = "com.apple.product-type.system-extension";
+		};
 		1DD31D14442C5500AFF04161 /* NollieRuntimeHelper */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3AA41437324808E3B432F199 /* Build configuration list for PBXNativeTarget "NollieRuntimeHelper" */;
@@ -844,6 +968,7 @@
 			buildPhases = (
 				52640ED27B1237A9B9E9370B /* Sources */,
 				89174DC5DB4A591CCC2479D8 /* Frameworks */,
+				1A10C0DE0000000000000008 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -994,6 +1119,7 @@
 				AA00000000000000000350 /* Embed Foundation Extensions */,
 				F99D35F1DBDC2746BD36513E /* ShellScript */,
 				97B911FBB5F4B2415C1B0812 /* ShellScript */,
+				206A04FA95C9E99323720F7A /* Embed Network Filter */,
 				C0FFEE0A11D7A5E7C0000008 /* Embed Nollie Computer */,
 				5A2C0DE1F0000000000000A2 /* Embed Sparkle */,
 				5E7A11C0DE5E7A11C0DE0003 /* Embed Setup Kit */,
@@ -1003,8 +1129,10 @@
 			dependencies = (
 				64ECF1EF78922A57DD922289 /* PBXTargetDependency */,
 				98B4DB15596270BD1A755F89 /* PBXTargetDependency */,
+				6F2BD6A9B37F37DC4DA264F3 /* PBXTargetDependency */,
 				C0FFEE0A11D7A5E7C0000009 /* PBXTargetDependency */,
 				AA00000000000000000311 /* PBXTargetDependency */,
+				CC0472000000000000000004 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				AA00000000000000000060 /* Nollie */,
@@ -1132,6 +1260,26 @@
 			productReference = A11CE0000000000000001001 /* NollieWatchWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		CC047200000000000000000A /* NollieMacControls */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CC047200000000000000000E /* Build configuration list for PBXNativeTarget "NollieMacControls" */;
+			buildPhases = (
+				CC047200000000000000000B /* Sources */,
+				CC047200000000000000000C /* Frameworks */,
+				CC047200000000000000000D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CC0471000000000000000005 /* Controls */,
+			);
+			name = NollieMacControls;
+			productName = NollieMacControls;
+			productReference = CC0472000000000000000001 /* NollieMacControls.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1180,7 +1328,9 @@
 				A11CE000000000000000000A /* NollieWatch */,
 				A11CE000000000000000100A /* NollieWatchWidgets */,
 				AA00000000000000000240 /* NollieMac */,
+				E7891AB895BAF1BBEEA1B1FA /* NollieNetworkFilter */,
 				AA00000000000000000340 /* NollieMacNotificationService */,
+				CC047200000000000000000A /* NollieMacControls */,
 				AA00000000000000000042 /* NollieTests */,
 				AA00000000000000000043 /* NollieUITests */,
 				AA00000000000000000540 /* NollieMacTests */,
@@ -1189,6 +1339,22 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		1A10C0DE0000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A10C0DE0000000000000004 /* InfoPlist.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1A10C0DE0000000000000008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A10C0DE0000000000000007 /* InfoPlist.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		15830ED126ABD8BD76E8BD27 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1197,6 +1363,7 @@
 				D4DCD8E95A8E4A8FBFD62C33 /* managed_addons.py in Resources */,
 				D8F239F6E15A4D2C9A42D004 /* nollie-starter.json in Resources */,
 				59FCCB956F2F766B20B75613 /* LICENSE in Resources */,
+				1A10C0DE0000000000000002 /* InfoPlist.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1282,9 +1449,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CC047200000000000000000D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		206A04FA95C9E99323720F7A /* Embed Network Filter */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Tools/network-filter/embed-network-filter.sh",
+				"$(SRCROOT)/Tools/runtime-helper/embedding-paths.sh",
+			);
+			name = "Embed Network Filter";
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Library/SystemExtensions",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"$SRCROOT/Tools/network-filter/embed-network-filter.sh\"\n";
+		};
 		C0FFEE0A11D7A5E7C0000007 /* Build Nollie Computer */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -1427,6 +1619,19 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		3B12A35A85D0B81842E55487 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F692F6CFA4FC48E6054B8ACA /* PapertrailFilterProvider.swift in Sources */,
+				ACA9DE3276E59F1C4454CE06 /* NetworkFilterPolicy.swift in Sources */,
+				416068DD5D8EAF2FDB93868C /* NetworkFilterXPC.swift in Sources */,
+				98FF1ED2D18C3CA3636033ED /* PapertrailDoorBook.swift in Sources */,
+				55E9D9D530FF2922770248E9 /* ExitRelayWire.swift in Sources */,
+				9C77CE7E8D5386FEDF449C6E /* LinkDoorHTTP.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		52640ED27B1237A9B9E9370B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1508,11 +1713,19 @@
 				672C528FA8BA3D8D6B7CB43B /* LinkDoor.swift in Sources */,
 				6B53B0521C10A7B3FC716678 /* LinkDoorIdentity.swift in Sources */,
 				E103AFED34EB03E3DDE9D478 /* LinkDoorDevices.swift in Sources */,
+				7BD12ACCBA527E3312F7E8A5 /* LinkDoorFamily.swift in Sources */,
+				2F5C9B78C1D260A18BA662B5 /* LinkDoorFamilyHermes.swift in Sources */,
+				DDEED0E40256BD2C5981FAF4 /* LinkDoorFamilyDoor.swift in Sources */,
 				B312589BDB9B24F9F3C87A06 /* LinkDoorPolicy.swift in Sources */,
 				EE575C4EAF1C9AC63BFC11A5 /* LinkDoorHTTP.swift in Sources */,
 				E7FCDD3328BD0DC4C31111E8 /* ExitRelayPolicy.swift in Sources */,
 				455138A18822DFB757E68A14 /* ExitRelayWire.swift in Sources */,
 				8C6A0EB43E1B44A69D8A6058 /* ExitRelay.swift in Sources */,
+				BA99A151372097F5A41824CE /* NetworkFilterXPC.swift in Sources */,
+				049EB21672AB98144020E7CA /* NetworkFilterPolicy.swift in Sources */,
+				981AC75FCFF1902219772089 /* PapertrailDoorBook.swift in Sources */,
+				F920A210BC8E0E5577C650B6 /* PapertrailDoor.swift in Sources */,
+				D9518A36BD4136D43709B8EC /* RuntimeKeyStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1534,12 +1747,22 @@
 				C1807AFB61CFA12CE919D728 /* LinkDoor.swift in Sources */,
 				35A8180D88664A1206247406 /* LinkDoorIdentity.swift in Sources */,
 				A30280DA4FC0AE856D769B82 /* LinkDoorDevices.swift in Sources */,
+				2CCE8FEA28251440F0956D8F /* LinkDoorFamily.swift in Sources */,
+				EB576DD0F7D6AFB58BD34BCB /* LinkDoorFamilyHermes.swift in Sources */,
+				17ED125733E9DCCDD41941C4 /* LinkDoorFamilyDoor.swift in Sources */,
 				706E39E291585EB001EECCEC /* LinkDoorPolicy.swift in Sources */,
 				B9F9C77C6EBA771563889EAC /* LinkDoorHTTP.swift in Sources */,
 				EF0FA75B48F0A7748A52D617 /* ExitRelayPolicy.swift in Sources */,
 				1C0C79082145CBC879F72805 /* ExitRelayWire.swift in Sources */,
 				0E3D2AE48501B25482C67A0C /* ExitRelay.swift in Sources */,
+				F9C1AA0A1274E09ADC085686 /* RuntimeNetworkFilter.swift in Sources */,
+				6DC8EE5EA93956EC2A7F5951 /* NetworkFilterXPC.swift in Sources */,
+				7F6BAC844125688BE844B8DB /* NetworkFilterPolicy.swift in Sources */,
+				351209E1358CC4ADE94437B7 /* PapertrailDoorBook.swift in Sources */,
+				CB20CDED8AAB096F0E2DFDD7 /* PapertrailDoor.swift in Sources */,
 				751B408A45B39444B72C7014 /* RuntimeExitRelay.swift in Sources */,
+				556A61C51845BCA463BF70A5 /* RuntimeKeyStore.swift in Sources */,
+				ED23D15B3F797DE45A8DE39E /* RuntimeKeyMigration.swift in Sources */,
 				1B5B06379A9478E456AD3B93 /* RuntimeContract.swift in Sources */,
 				747ECF64D9FCC821920892B4 /* RuntimeSupervisor.swift in Sources */,
 				EF99443C8E3E6C6260E8E4F7 /* NativeRuntimeBackend.swift in Sources */,
@@ -1577,9 +1800,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CC047200000000000000000B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		6F2BD6A9B37F37DC4DA264F3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E7891AB895BAF1BBEEA1B1FA /* NollieNetworkFilter */;
+			targetProxy = B6D230FA51A69665621F6507 /* PBXContainerItemProxy */;
+		};
 		C0FFEE0A11D7A5E7C0000009 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C0FFEE0A11D7A5E7C0000001 /* NollieComputer */;
@@ -1640,9 +1875,134 @@
 			target = A11CE000000000000000100A /* NollieWatchWidgets */;
 			targetProxy = A11CE0000000000000001003 /* PBXContainerItemProxy */;
 		};
+		CC0472000000000000000004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CC047200000000000000000A /* NollieMacControls */;
+			targetProxy = CC0472000000000000000003 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		12F45C46213ADC8AC2211A8C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/NetworkFilter/Info.plist;
+				OTHER_LDFLAGS = "-lbsm";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.network-filter";
+				PRODUCT_MODULE_NAME = NollieNetworkFilter;
+				PRODUCT_NAME = "com.coreykozarski.nollie.network-filter";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOLLIE_DIRECT NOLLIE_NETWORK_FILTER";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		0961FF5131ADB23CDC49E857 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/NetworkFilter/Info.plist;
+				OTHER_LDFLAGS = "-lbsm";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.network-filter";
+				PRODUCT_MODULE_NAME = NollieNetworkFilter;
+				PRODUCT_NAME = "com.coreykozarski.nollie.network-filter";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOLLIE_DIRECT NOLLIE_NETWORK_FILTER";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		4DABA28F12ECD13FCD0327D3 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "$(NOLLIE_FILTER_ENTITLEMENTS_$(NOLLIE_NETWORK_FILTER_READY))";
+				CODE_SIGN_IDENTITY = "$(NOLLIE_FILTER_IDENTITY_$(NOLLIE_NETWORK_FILTER_READY))";
+				CODE_SIGN_STYLE = "$(NOLLIE_FILTER_SIGN_STYLE_$(NOLLIE_NETWORK_FILTER_READY))";
+				NOLLIE_FILTER_ENTITLEMENTS_NO = "";
+				NOLLIE_FILTER_ENTITLEMENTS_YES = Services/NetworkFilter/NollieNetworkFilter.entitlements;
+				NOLLIE_FILTER_IDENTITY_NO = "-";
+				NOLLIE_FILTER_IDENTITY_YES = "Apple Development";
+				NOLLIE_FILTER_SIGN_STYLE_NO = Manual;
+				NOLLIE_FILTER_SIGN_STYLE_YES = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/NetworkFilter/Info.plist;
+				OTHER_LDFLAGS = "-lbsm";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.network-filter";
+				PRODUCT_MODULE_NAME = NollieNetworkFilter;
+				PRODUCT_NAME = "com.coreykozarski.nollie.network-filter";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOLLIE_DIRECT NOLLIE_NETWORK_FILTER";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+			};
+			name = DirectDebug;
+		};
+		22B267EDD6B96FBDFBCA5AF8 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "$(NOLLIE_FILTER_ENTITLEMENTS_$(NOLLIE_NETWORK_FILTER_READY))";
+				CODE_SIGN_IDENTITY = "$(NOLLIE_FILTER_IDENTITY_$(NOLLIE_NETWORK_FILTER_READY))";
+				CODE_SIGN_STYLE = "$(NOLLIE_FILTER_SIGN_STYLE_$(NOLLIE_NETWORK_FILTER_READY))";
+				NOLLIE_FILTER_ENTITLEMENTS_NO = "";
+				NOLLIE_FILTER_ENTITLEMENTS_YES = Services/NetworkFilter/NollieNetworkFilter.entitlements;
+				NOLLIE_FILTER_IDENTITY_NO = "-";
+				NOLLIE_FILTER_IDENTITY_YES = "Apple Development";
+				NOLLIE_FILTER_SIGN_STYLE_NO = Manual;
+				NOLLIE_FILTER_SIGN_STYLE_YES = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Services/NetworkFilter/Info.plist;
+				OTHER_LDFLAGS = "-lbsm";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.network-filter";
+				PRODUCT_MODULE_NAME = NollieNetworkFilter;
+				PRODUCT_NAME = "com.coreykozarski.nollie.network-filter";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOLLIE_DIRECT NOLLIE_NETWORK_FILTER";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+			};
+			name = DirectRelease;
+		};
 		C0FFEE0A11D7A5E7C0000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1694,6 +2054,7 @@
 		0601416EAF1954210385BE3B /* DirectRelease */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				NOLLIE_NETWORK_FILTER_READY = YES;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1750,6 +2111,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
+				XCSTRINGS_LANGUAGES_TO_COMPILE = en;
 			};
 			name = DirectRelease;
 		};
@@ -1758,10 +2120,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1778,7 +2140,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_PREVIEWS = YES;
@@ -1788,7 +2150,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1803,7 +2165,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1814,7 +2176,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
 				PRODUCT_NAME = "Nollie Notifications";
 				SDKROOT = macosx;
@@ -1830,7 +2192,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1840,7 +2202,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1853,6 +2215,7 @@
 		4307F40F05858B3AA2A03B31 /* DirectDebug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				NOLLIE_NETWORK_FILTER_READY = NO;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1917,6 +2280,7 @@
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
+				XCSTRINGS_LANGUAGES_TO_COMPILE = en;
 			};
 			name = DirectDebug;
 		};
@@ -1925,7 +2289,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/NotificationService/Info.plist;
@@ -1934,7 +2298,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1949,10 +2313,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Apps/Mac/NollieMacDirect.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Apps/Mac/$(NOLLIE_DIRECT_ENTITLEMENTS_$(NOLLIE_NETWORK_FILTER_READY))";
+				NOLLIE_DIRECT_ENTITLEMENTS_NO = NollieMacDirect.entitlements;
+				NOLLIE_DIRECT_ENTITLEMENTS_YES = NollieMacDirectFilter.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1969,7 +2335,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				NOLLIE_SPARKLE_VERSION = 2.10.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -1991,7 +2357,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2002,7 +2368,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
 				PRODUCT_NAME = "Nollie Notifications";
 				SDKROOT = macosx;
@@ -2018,14 +2384,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Services/Runtime/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
 				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
 				PRODUCT_NAME = "Nollie Runtime";
@@ -2042,14 +2408,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Services/Runtime/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
 				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
 				PRODUCT_NAME = "Nollie Runtime";
@@ -2069,7 +2435,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2078,7 +2444,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2093,7 +2459,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2104,7 +2470,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2118,11 +2484,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2137,7 +2503,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2148,7 +2514,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
 				PRODUCT_NAME = "Nollie Notifications";
 				SDKROOT = macosx;
@@ -2163,10 +2529,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2181,11 +2547,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2200,7 +2566,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/NotificationContent/Info.plist;
@@ -2209,7 +2575,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -2231,7 +2597,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2243,7 +2609,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2320,6 +2686,7 @@
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
+				XCSTRINGS_LANGUAGES_TO_COMPILE = en;
 			};
 			name = Debug;
 		};
@@ -2382,6 +2749,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
+				XCSTRINGS_LANGUAGES_TO_COMPILE = en;
 			};
 			name = Release;
 		};
@@ -2392,7 +2760,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_PREVIEWS = YES;
@@ -2402,7 +2770,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2419,7 +2787,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2428,7 +2796,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2443,11 +2811,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2462,10 +2830,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2479,11 +2847,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2497,10 +2865,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2515,7 +2883,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2525,7 +2893,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2540,7 +2908,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/NotificationService/Info.plist;
@@ -2549,7 +2917,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2564,7 +2932,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2574,7 +2942,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -2596,7 +2964,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/NotificationContent/Info.plist;
@@ -2605,7 +2973,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -2630,7 +2998,7 @@
 				CODE_SIGN_ENTITLEMENTS = Apps/Mac/NollieMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2642,7 +3010,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_MODULE_NAME = Nollie;
 				PRODUCT_NAME = Nollie;
@@ -2660,7 +3028,7 @@
 				CODE_SIGN_ENTITLEMENTS = Apps/Mac/NollieMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -2671,7 +3039,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_MODULE_NAME = Nollie;
 				PRODUCT_NAME = Nollie;
@@ -2686,7 +3054,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2698,7 +3066,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2713,7 +3081,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2724,7 +3092,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2739,12 +3107,12 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2759,12 +3127,12 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2779,7 +3147,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2788,7 +3156,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				NOLLIE_SPARKLE_VERSION = 2.10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2805,10 +3173,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Apps/Mac/NollieMacDirect.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Apps/Mac/$(NOLLIE_DIRECT_ENTITLEMENTS_$(NOLLIE_NETWORK_FILTER_READY))";
+				NOLLIE_DIRECT_ENTITLEMENTS_NO = NollieMacDirect.entitlements;
+				NOLLIE_DIRECT_ENTITLEMENTS_YES = NollieMacDirectFilter.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -2824,7 +3194,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				NOLLIE_SPARKLE_VERSION = 2.10.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -2846,14 +3216,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Services/Runtime/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
 				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
 				PRODUCT_NAME = "Nollie Runtime";
@@ -2871,14 +3241,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Services/Runtime/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
 				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
 				PRODUCT_NAME = "Nollie Runtime";
@@ -2895,7 +3265,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2904,7 +3274,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				NOLLIE_SPARKLE_VERSION = 2.10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2921,7 +3291,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2932,7 +3302,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
 				PRODUCT_NAME = "Nollie Notifications";
 				SDKROOT = macosx;
@@ -2948,7 +3318,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2958,7 +3328,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -2979,7 +3349,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2989,7 +3359,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3004,7 +3374,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3014,7 +3384,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3029,7 +3399,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/Controls/Info.plist;
@@ -3038,7 +3408,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3053,7 +3423,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/Controls/Info.plist;
@@ -3062,7 +3432,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3079,7 +3449,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_PREVIEWS = YES;
@@ -3089,7 +3459,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3107,7 +3477,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_PREVIEWS = YES;
@@ -3117,7 +3487,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3135,7 +3505,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3144,7 +3514,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3162,7 +3532,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3171,7 +3541,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3188,7 +3558,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3198,7 +3568,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3216,7 +3586,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3226,7 +3596,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3244,7 +3614,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Apps/Watch/Widgets/Info.plist;
@@ -3253,7 +3623,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3271,7 +3641,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Apps/Watch/Widgets/Info.plist;
@@ -3280,7 +3650,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3293,9 +3663,130 @@
 			};
 			name = DirectRelease;
 		};
+		CC0472000000000000000014 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		CC0472000000000000000015 /* DirectDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = DirectDebug;
+		};
+		CC0472000000000000000016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		CC0472000000000000000017 /* DirectRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEVELOPMENT_TEAM = 5985LRZFZS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extensions/Controls/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "NOLLIE_CONTROLS $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = DirectRelease;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		74D4AFDF2B20AA67AE04A6B4 /* Build configuration list for PBXNativeTarget "NollieNetworkFilter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				12F45C46213ADC8AC2211A8C /* Debug */,
+				0961FF5131ADB23CDC49E857 /* Release */,
+				4DABA28F12ECD13FCD0327D3 /* DirectDebug */,
+				22B267EDD6B96FBDFBCA5AF8 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		C0FFEE0A11D7A5E7C0000002 /* Build configuration list for PBXAggregateTarget "NollieComputer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -3457,6 +3948,17 @@
 				A11CE0000000000000001015 /* DirectDebug */,
 				A11CE0000000000000001016 /* Release */,
 				A11CE0000000000000001017 /* DirectRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CC047200000000000000000E /* Build configuration list for PBXNativeTarget "NollieMacControls" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CC0472000000000000000014 /* Debug */,
+				CC0472000000000000000015 /* DirectDebug */,
+				CC0472000000000000000016 /* Release */,
+				CC0472000000000000000017 /* DirectRelease */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

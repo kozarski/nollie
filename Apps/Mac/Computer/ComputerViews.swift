@@ -58,7 +58,8 @@ struct ComputerApprovalCard: View {
                 .font(Ink.pill)
                 .foregroundStyle(Ink.text3)
                 .fixedSize(horizontal: false, vertical: true)
-            ComputerAnswerRow(allowTitle: "Allow", stretch: true, answer: answer)
+            ComputerAnswerRow(allowTitle: String(localized: "Allow", comment: "Safety: approval button, after Touch ID; lets the bot use the listed apps"),
+                              stretch: true, answer: answer)
         }
         .padding(28)
         .frame(width: 400)
@@ -83,12 +84,36 @@ struct ComputerApprovalCard: View {
     private var apps: some View {
         VStack(spacing: 8) {
             ForEach(approval.apps, id: \.bundleID) { app in
-                ComputerAppRow(bundleID: app.bundleID, name: app.name, note: app.viewOnly ? "View only" : nil)
+                ComputerAppRow(bundleID: app.bundleID, name: app.name, note: app.viewOnly ? String(localized: "View only") : nil)
             }
             ForEach(approval.refused, id: \.self) { refused in
-                ComputerAppRow(bundleID: "", name: refused.name, note: "Not allowed", dimmed: true)
-                    .help(refused.reason)
+                ComputerAppRow(bundleID: "", name: refused.name,
+                               note: refused.reason == ComputerPickedApps.notPicked(refused.name)
+                                   ? String(localized: "Not picked", comment: "An app the person didn't pick for this Mac")
+                                   : String(localized: "Not allowed", comment: "An app a bot may never use"),
+                               dimmed: true)
+                    .help(refused.shownReason)
             }
+        }
+    }
+}
+
+extension ComputerApproval.Refused {
+    /// The reason in the person's language. `reason` itself is the English the bot's model gets.
+    var shownReason: String {
+        switch reason {
+        case ComputerAppRules.nollie: String(localized: "Nollie can't use itself.")
+        case ComputerAppRules.commands: String(localized: "Terminals and coding tools can run commands, so they stay with you.")
+        case ComputerAppRules.passwords: String(localized: "Password managers stay with you.")
+        case ComputerAppRules.settings: String(localized: "System Settings stays with you.")
+        case ComputerAppRules.money: String(localized: "Money and crypto apps stay with you.")
+        case ComputerAppRules.system: String(localized: "System tools and Finder can open or change anything, so they stay with you.")
+        case ComputerAppRules.notOffered: String(localized: "Nollie doesn't offer this app yet.")
+        case ComputerAppRules.notGenuine: String(localized: "This copy isn't signed by the app's maker, so it stays with you.")
+        case ComputerAppRules.unidentified: String(localized: "This app can't be identified.")
+        case ComputerCenter.notOnThisMac: String(localized: "Not on this Mac.")
+        case ComputerPickedApps.notPicked(name): String(localized: "\(name) isn't one of the apps you picked for this Mac.")
+        default: reason
         }
     }
 }
@@ -122,7 +147,8 @@ struct ComputerConfirmationCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             question
-            ComputerAnswerRow(allowTitle: "Allow Once", stop: stop, answer: answer)
+            ComputerAnswerRow(allowTitle: String(localized: "Allow Once", comment: "Safety: approval button, after Touch ID; allows this one step only"),
+                              stop: stop, answer: answer)
         }
         .padding(28)
         .frame(width: 420)
@@ -185,10 +211,12 @@ struct ComputerStopPanelView: View {
 
     private var status: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text("Using \(task.currentApp ?? "your Mac")")
-                .font(.system(size: 13.5, weight: .semibold))
-                .foregroundStyle(Ink.text)
-                .lineLimit(1)
+            Group {
+                if let current = task.currentApp { Text("Using \(current)") } else { Text("Using your Mac") }
+            }
+            .font(.system(size: 13.5, weight: .semibold))
+            .foregroundStyle(Ink.text)
+            .lineLimit(1)
             TimelineView(.periodic(from: .now, by: 30)) { tick in
                 Text("\(task.botName) · \(Self.minutesLeft(task, at: tick.date))")
                     .font(.system(size: 12))
@@ -217,7 +245,7 @@ struct ComputerStopPanelView: View {
 
     static func minutesLeft(_ task: ComputerTask, at date: Date) -> String {
         let minutes = Int((task.expiresAt.timeIntervalSince(date) / 60).rounded(.up))
-        return "\(max(0, minutes)) min"
+        return String(localized: "\(max(0, minutes)) min", comment: "Minutes left of a bot's use of the Mac")
     }
 }
 

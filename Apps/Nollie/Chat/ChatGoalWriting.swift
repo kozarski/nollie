@@ -79,6 +79,7 @@ extension ChatGoals {
         return "\(act.displayName): \(extra.prefix(120))"
     }
 
+    // Goes to the model, so it stays in English.
     nonisolated fileprivate static func fileWords(_ count: Int) -> String {
         count == 1 ? "a file" : "\(count) files"
     }
@@ -170,7 +171,7 @@ struct ChatGoalLine: View {
             .quiet(font, .tint)
             .contentTransition(.opacity)
             .animation(.snappy, value: shown)
-            .accessibilityLabel(goal.map { "Working on: \($0)" } ?? shown)
+            .accessibilityLabel(goal.map { String(localized: "Working on: \($0)") } ?? shown)
         }
     }
 }

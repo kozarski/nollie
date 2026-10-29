@@ -8,7 +8,9 @@ struct ResetView: View {
 
     private var buttonWords: String {
         let onDirectMac = RemovalPlaces.thisDevice().edition == .macDirect
-        return onDirectMac ? "Remove Nollie from this Mac…" : "Remove Nollie's data…"
+        return onDirectMac
+            ? String(localized: "Remove Nollie from this Mac…", comment: "Safety: opens the remove sheet; keep exact meaning")
+            : String(localized: "Remove Nollie's data…", comment: "Safety: opens the remove sheet; keep exact meaning")
     }
 
     var body: some View {
@@ -16,7 +18,7 @@ struct ResetView: View {
             PageHero(symbol: "trash.circle.fill", title: "Remove Nollie", line: "See what goes before anything happens.",
                      tint: .red, id: "reset.hero")
             Button(role: .destructive) { sheetOpen = true } label: {
-                PageActionLabel(buttonWords, symbol: "trash")
+                PageActionLabel(.verbatim(buttonWords), symbol: "trash")
             }
             .pageAction(tint: .red)
             .testID("settings.remove")

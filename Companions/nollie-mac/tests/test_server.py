@@ -64,7 +64,7 @@ class ServerTests(unittest.TestCase):
 
     def test_refuses_everything_without_the_plugin_stamp(self):
         mac, fake = self.mac([])
-        for name in ("mac_start", "mac_look", "mac_click", "mac_done"):
+        for name in ("mac_start", "mac_do", "mac_done"):
             with self.assertRaises(server.Refused) as caught:
                 mac.call(name, {"apps": ["Notes"], "task": "notes", "app": "Notes"})
             self.assertEqual(str(caught.exception), server.NO_STAMP)
@@ -76,12 +76,12 @@ class ServerTests(unittest.TestCase):
     def test_actions_need_an_approved_task_for_this_chat(self):
         mac, fake = self.mac([approved()])
         with self.assertRaises(server.Refused) as caught:
-            mac.call("mac_click", {"app": "Notes", "element": "s0000002a:1", "_nollie": dict(STAMP)})
+            mac.call("mac_do", {"app": "Notes", "step": "make a note", "_nollie": dict(STAMP)})
         self.assertEqual(str(caught.exception), server.NOT_STARTED)
         mac.call("mac_start", {"apps": ["Notes"], "task": "tidy notes", "_nollie": dict(STAMP)})
         other = dict(STAMP, session_id="20261019_200000_other", chat="agent:career:chat-8")
         with self.assertRaises(server.Refused):
-            mac.call("mac_look", {"app": "Notes", "_nollie": other})
+            mac.call("mac_do", {"app": "Notes", "step": "x", "_nollie": other})
         self.assertEqual([r["op"] for r in fake.requests], ["start"])
 
     def test_start_sends_the_chat_and_reports_view_only_apps(self):
@@ -103,26 +103,45 @@ class ServerTests(unittest.TestCase):
         self.assertIn("said no", str(caught.exception))
         self.assertEqual(mac.tasks, {})
 
-    def test_actions_carry_the_task_and_only_known_fields(self):
-        look = {"ok": True, "content": [{"type": "text", "text": "[1] AXButton \"New\""},
-                                         {"type": "image", "data": "iVBOR", "mimeType": "image/png"},
-                                         {"type": "resource", "uri": "file:///etc/passwd"}]}
-        mac, fake = self.mac([approved(), look, {"ok": True, "content": [{"type": "text", "text": "Done."}]}, {"ok": True}])
+    def test_a_step_carries_the_task_and_only_its_words(self):
+        mac, fake = self.mac([approved(), {"ok": True, "content": [{"type": "text", "text": "Done in Notes (2 actions): made it."}]},
+                              {"ok": True}])
         mac.call("mac_start", {"apps": ["Notes"], "task": "x", "_nollie": dict(STAMP)})
-        content = mac.call("mac_look", {"app": "Notes", "query": "New", "_nollie": dict(STAMP)})
-        self.assertEqual([c["type"] for c in content], ["text", "image"])
-        mac.call("mac_key", {"app": "Notes", "keys": ["cmd", "n"], "scope": "desktop", "pid": 1, "_nollie": dict(STAMP)})
-        act = fake.requests[2]
-        self.assertEqual(act, {"op": "act", "task": "t" * 64, "action": "key", "app": "Notes", "keys": ["cmd", "n"]})
+        content = mac.call("mac_do", {"app": "Notes", "step": "new note " * 100, "scope": "desktop", "pid": 1,
+                                      "element": "s1:1", "_nollie": dict(STAMP)})
+        self.assertEqual(content, [{"type": "text", "text": "Done in Notes (2 actions): made it."}])
+        step = fake.requests[1]
+        self.assertEqual(set(step), {"op", "task", "app", "step"})
+        self.assertEqual((step["op"], step["task"], step["app"], len(step["step"])), ("do", "t" * 64, "Notes", 500))
         mac.call("mac_done", {"_nollie": dict(STAMP)})
-        self.assertEqual(fake.requests[3], {"op": "end", "task": "t" * 64})
+        self.assertEqual(fake.requests[2], {"op": "end", "task": "t" * 64})
         self.assertEqual(mac.tasks, {})
+
+    def test_a_picture_or_screen_text_in_an_answer_never_reaches_the_bot(self):
+        # Even if Nollie sent one by mistake: words only, and only a short line of them.
+        answer = {"ok": True, "content": [{"type": "text", "text": "Done. " + "x" * 1000},
+                                          {"type": "image", "data": "iVBOR", "mimeType": "image/png"},
+                                          {"type": "resource", "uri": "file:///etc/passwd"}]}
+        mac, _ = self.mac([approved(), answer])
+        mac.call("mac_start", {"apps": ["Notes"], "task": "x", "_nollie": dict(STAMP)})
+        content = mac.call("mac_do", {"app": "Notes", "step": "look", "_nollie": dict(STAMP)})
+        self.assertEqual([c["type"] for c in content], ["text"])
+        self.assertLessEqual(len(content[0]["text"]), 300)
+        self.assertNotIn("iVBOR", json.dumps(content))
+
+    def test_the_old_single_actions_are_gone(self):
+        mac, fake = self.mac([approved()])
+        mac.call("mac_start", {"apps": ["Notes"], "task": "x", "_nollie": dict(STAMP)})
+        for name in ("mac_look", "mac_click", "mac_type", "mac_key", "mac_scroll"):
+            with self.assertRaises(server.Refused):
+                mac.call(name, {"app": "Notes", "_nollie": dict(STAMP)})
+        self.assertEqual([r["op"] for r in fake.requests], ["start"])
 
     def test_a_new_session_id_in_the_same_chat_keeps_its_task(self):
         # Hermes gives a compressed conversation a new session id; the chat key stays.
-        mac, fake = self.mac([approved(), {"ok": True, "content": [{"type": "text", "text": "tree"}]}])
+        mac, fake = self.mac([approved(), {"ok": True, "content": [{"type": "text", "text": "Done."}]}])
         mac.call("mac_start", {"apps": ["Notes"], "task": "x", "_nollie": dict(STAMP)})
-        mac.call("mac_look", {"app": "Notes", "_nollie": dict(STAMP, session_id="20261019_210000_def456")})
+        mac.call("mac_do", {"app": "Notes", "step": "x", "_nollie": dict(STAMP, session_id="20261019_210000_def456")})
         self.assertEqual(fake.requests[1]["task"], "t" * 64)
 
     def test_an_ended_task_is_forgotten(self):
@@ -130,7 +149,7 @@ class ServerTests(unittest.TestCase):
         mac, _ = self.mac([approved(), ended])
         mac.call("mac_start", {"apps": ["Notes"], "task": "x", "_nollie": dict(STAMP)})
         with self.assertRaises(server.Refused):
-            mac.call("mac_scroll", {"app": "Notes", "direction": "down", "_nollie": dict(STAMP)})
+            mac.call("mac_do", {"app": "Notes", "step": "scroll down", "_nollie": dict(STAMP)})
         self.assertEqual(mac.tasks, {})
 
     def test_nollie_not_running_is_a_plain_refusal(self):
@@ -145,7 +164,7 @@ class ServerTests(unittest.TestCase):
             {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18"}},
             {"jsonrpc": "2.0", "method": "notifications/initialized"},
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
-            {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "mac_look", "arguments": {"app": "Notes"}}},
+            {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "mac_do", "arguments": {"app": "Notes"}}},
             {"jsonrpc": "2.0", "id": 4, "method": "nope"},
         ]
         out = io.StringIO()
@@ -154,7 +173,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual([r["id"] for r in replies], [1, 2, 3, 4])
         self.assertEqual(replies[0]["result"]["serverInfo"]["name"], "nollie-mac")
         names = [t["name"] for t in replies[1]["result"]["tools"]]
-        self.assertEqual(names, ["mac_start", "mac_look", "mac_click", "mac_type", "mac_key", "mac_scroll", "mac_done"])
+        self.assertEqual(names, ["mac_start", "mac_do", "mac_done"])
         self.assertTrue(replies[2]["result"]["isError"])
         self.assertEqual(replies[3]["error"]["code"], -32601)
 

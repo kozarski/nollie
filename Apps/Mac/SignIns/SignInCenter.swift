@@ -105,22 +105,23 @@ final class SignInCenter {
     /// Returns a sentence when it didn't go through; nil when it did or the person cancelled.
     func allowHere(_ ask: SignInAsk, card: PendingCard, chat: ChatSession) async -> String? {
         let rt = chat.runtime
-        guard rt.gatewayIsOnThisMac else { return "This Mac doesn't run this bot's Hermes, so it can't fill in the sign-in." }
+        guard rt.gatewayIsOnThisMac else { return String(localized: "This Mac doesn't run this bot's Hermes, so it can't fill in the sign-in.") }
         guard !isPrivate(chat.profileName) else {
             await chat.respond(card: card, result: ["choice": "deny"])
-            return "Saved sign-ins aren't used for private bots."
+            return String(localized: "Saved sign-ins aren't used for private bots.")
         }
         store.reload()
         guard let item = store.signIn(for: ask.site) else {
             await chat.respond(card: card, result: ["choice": "deny"])
-            return "There's no saved sign-in for \(ask.site) on this Mac. Add one in Settings, Sign-ins."
+            return String(localized: "There's no saved sign-in for \(ask.site) on this Mac. Add one in Settings, Sign-ins.")
         }
         let bot = SignInAnswer.botName(chat)
-        guard let context = await store.confirmOwner(reason: "let \(bot) sign in to \(ask.site)") else { return nil }
+        let reason = String(localized: "let \(bot) sign in to \(ask.site)", comment: "Safety: Touch ID reason; finishes 'Nollie is trying to …'")
+        guard let context = await store.confirmOwner(reason: reason) else { return nil }
         let secret: SignInSecret
         do { secret = try store.secret(item, context: context) } catch { return error.localizedDescription }
         guard (try? await rt.claimSignIn(ask.requestID, approver: "mac")) != false else {
-            return "This one was already answered."
+            return String(localized: "This one was already answered.", comment: "A sign-in request someone already answered")
         }
         handling.insert(ask.requestID)
         await chat.respond(card: card, result: ["choice": "once"])
@@ -158,7 +159,8 @@ final class SignInCenter {
         let bot = rt.botName(request.bot)
         let secret: SignInSecret
         do {
-            secret = try await store.reveal(item, reason: "let \(bot) sign in to \(request.site)")
+            let reason = String(localized: "let \(bot) sign in to \(request.site)", comment: "Safety: Touch ID reason; finishes 'Nollie is trying to …'")
+            secret = try await store.reveal(item, reason: reason)
         } catch SavedSignInError.cancelled {
             try? await rt.reportSignIn(request.id, outcome: "cancelled")
             return

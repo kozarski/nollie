@@ -373,7 +373,7 @@ public final class ConversationEngine {
                 self.sortPosts()
             case .failure:
                 self.posts[index].pending = nil
-                self.posts[index].problem = "That didn't go through. Try again in a moment."
+                self.posts[index].problem = String(localized: "That didn't go through. Try again in a moment.", table: "Core")
             }
             self.compose()
             if case .failure = outcome { self.fetchPosts() }

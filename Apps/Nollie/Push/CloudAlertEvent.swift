@@ -6,6 +6,8 @@ enum CloudAlertKind: String, Sendable, Codable {
     case replyReady, needsAttention, test
     /// A helper started using the Mac (Nollie Computer). The iPhone shows it with a Stop button.
     case computerStarted
+    /// The weekly note, built on the Mac when it went out, with the week's counts.
+    case weeklyNote
 }
 
 struct CloudAlertTarget: Codable, Equatable, Sendable {
@@ -41,7 +43,7 @@ struct CloudAlertTarget: Codable, Equatable, Sendable {
 
 struct CloudAlertPreview: Codable, Equatable, Sendable {
     static let genericTitle = "Nollie"
-    static let genericBody = "There’s an update waiting for you in Nollie."
+    static let genericBody = String(localized: "There’s an update waiting for you in Nollie.")
     let title: String
     let body: String
 
@@ -127,10 +129,10 @@ struct CloudAlertTestStatus: Equatable, Sendable {
     var openedAt: Date?
 
     var message: String {
-        if openedAt != nil { return "Opened on another device." }
-        if receivedAt != nil { return "Received by Nollie on another device. Check that device for the alert." }
-        if stored { return "Saved to iCloud. Delivery to another device is not confirmed yet." }
-        return "This test is no longer in iCloud."
+        if openedAt != nil { return String(localized: "Opened on another device.") }
+        if receivedAt != nil { return String(localized: "Received by Nollie on another device. Check that device for the alert.") }
+        if stored { return String(localized: "Saved to iCloud. Delivery to another device is not confirmed yet.") }
+        return String(localized: "This test is no longer in iCloud.")
     }
 }
 
@@ -158,6 +160,7 @@ struct CloudAlertVisibleTest: Equatable, Sendable {
     }
 }
 
+// The raw values are fixed names for counting; CloudAlertWords says them for people.
 enum CloudAlertCallback: String, CaseIterable, Sendable {
     case remote = "Remote callback"
     case foreground = "Foreground callback"
@@ -200,14 +203,14 @@ enum CloudAlertState: Equatable, Sendable {
 
     var message: String {
         switch self {
-        case .off: "iCloud alerts are off."
-        case .checking: "Checking iCloud alerts…"
-        case .registering: "Waiting for Apple to register this device for alerts…"
-        case .ready: "iCloud alerts are on."
-        case .iCloudUnavailable: "Sign in to iCloud in System Settings to use alerts."
-        case .notificationsDenied: "Allow Nollie notifications in Settings to see alerts on this device."
-        case .accountChanged: "Your iCloud account changed. Turn alerts on again for this account."
-        case .failed: "iCloud alerts need attention."
+        case .off: String(localized: "iCloud alerts are off.")
+        case .checking: String(localized: "Checking iCloud alerts…")
+        case .registering: String(localized: "Waiting for Apple to register this device for alerts…")
+        case .ready: String(localized: "iCloud alerts are on.")
+        case .iCloudUnavailable: String(localized: "Sign in to iCloud in System Settings to use alerts.")
+        case .notificationsDenied: String(localized: "Allow Nollie notifications in Settings to see alerts on this device.")
+        case .accountChanged: String(localized: "Your iCloud account changed. Turn alerts on again for this account.")
+        case .failed: String(localized: "iCloud alerts need attention.")
         }
     }
 }

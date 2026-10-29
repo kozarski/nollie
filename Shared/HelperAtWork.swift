@@ -65,30 +65,31 @@ enum HelperAtWorkTiming {
 enum HelperAtWorkWords {
     static func title(name: String, place: HelperWorkPlace) -> String {
         switch place {
-        case .mac: "\(name) is using your Mac"
-        case .ownComputer: "\(name) is using its computer"
+        case .mac: String(localized: "\(name) is using your Mac")
+        case .ownComputer: String(localized: "\(name) is using its computer")
         }
     }
     /// The title once Stop is pressed, then once the Mac has taken it.
-    static func stoppingTitle(name: String) -> String { "Stopping \(name)" }
-    static func stoppedTitle(name: String) -> String { "\(name) stopped" }
-    static let stop = "Stop"
-    static let stopping = "Telling your Mac"
-    static let stopped = "The job has ended"
-    static let notReached = "Stop didn't reach your Mac"
+    static func stoppingTitle(name: String) -> String { String(localized: "Stopping \(name)", comment: "Safety: Stop was pressed for this helper") }
+    static func stoppedTitle(name: String) -> String { String(localized: "\(name) stopped", comment: "Safety: the Mac took the Stop") }
+    static let stop = String(localized: "Stop", comment: "Safety: stops the helper's work on the Mac")
+    static let stopping = String(localized: "Telling your Mac", comment: "Safety: a Stop on its way to the Mac")
+    static let stopped = String(localized: "The job has ended", comment: "Safety: the Mac took the Stop")
+    static let notReached = String(localized: "Stop didn't reach your Mac", comment: "Safety: the work may still be going")
     /// Before the time since the helper was last seen ("Last seen 2 min ago").
-    static let lastSeen = "Last seen"
-    static let setting = "Show Stop on the Lock Screen while a helper is working"
-    static let settingFooter = "Stop ends the job on your Mac, stops replies and pauses schedules. Your iPhone asks to be unlocked first."
+    static let lastSeen = String(localized: "Last seen")
+    static let setting = String(localized: "Show Stop on the Lock Screen while a helper is working")
+    static let settingFooter = String(localized: "Stop ends the job on your Mac, stops replies and pauses schedules. Your iPhone asks to be unlocked first.",
+                                      comment: "Safety: what Stop does")
 }
 
 /// The iCloud alert for a helper that started using the Mac, and its Stop button. The Mac sends
 /// it; the iPhone shows it with Stop, which asks for Face ID or the passcode on a locked phone.
 enum ComputerStartedWords {
-    static func body(botName: String) -> String { "\(botName) started using your Mac." }
+    static func body(botName: String) -> String { String(localized: "\(botName) started using your Mac.") }
     static let category = "NOLLIE_COMPUTER"
     static let stopAction = "NOLLIE_STOP_MAC"
-    static let stop = "Stop"
+    static let stop = String(localized: "Stop", comment: "Safety: notification button; stops the bot using the Mac")
 }
 
 /// Settings › Siri & Shortcuts › Show Stop on the Lock Screen while a helper is working: on unless

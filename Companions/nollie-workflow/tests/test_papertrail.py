@@ -315,7 +315,8 @@ class ReaderTests(unittest.TestCase):
             "provider": SUBSCRIPTION, "provider_name": None, "host": None, "model": "claude-sonnet-5-5",
             "calls": 4, "helpers": ["title_generation"], "services": ["exa"], "input_tokens": 18005,
             "output_tokens": 901, "cache_read_tokens": 52000, "reasoning_tokens": 0,
-            "searches": 1, "pages": 3, "images": 0, "payments": [], "local_reads": []})
+            "searches": 1, "pages": 3, "images": 0, "icloud_notes": 0, "weekly_notes": 0, "payments": [], "local_reads": [],
+            "connections": []})
         self.assertEqual((second["id"], second["route"], second["host"], second["provider"]),
                          ("t-1", "network", "http://192.168.1.9:8000", "custom"))
 
@@ -348,6 +349,49 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual((entry["route"], entry["provider"], entry["host"], entry["model"]),
                          ("online", None, None, None))
         self.assertEqual((entry["searches"], entry["input_tokens"]), (1, 500))
+
+    def test_notes_sealed_for_the_iphone_show_as_icloud_without_their_words(self):
+        self.clock.now = NOW - 100
+        self.assertTrue(self.recorder.icloud("card"))
+        self.clock.now = NOW - 50
+        self.assertTrue(self.recorder.icloud("reply"))
+        self.assertFalse(self.recorder.icloud("secret-reply"))
+        self.clock.now = NOW
+        self.recorder.flush()
+        lines = [json.loads(line) for line in next(self.home.glob("nollie-workflow/papertrail/*.jsonl")).read_text().splitlines()]
+        self.assertEqual([(l["route"], l["source"], l["tool"]) for l in lines], [("icloud", "away", "card"), ("icloud", "away", "reply")])
+        entry = self.read()["entries"][0]
+        self.assertEqual((entry["route"], entry["icloud_notes"], entry["calls"], entry["provider"]), ("icloud", 2, 2, None))
+        self.assertEqual(entry["why"]["origin"], "chat")
+        # A model call in the same window still names the entry by where the words went to be answered.
+        self.model(NOW - 40, "t-9", i=10)
+        self.assertEqual({e["route"] for e in self.read()["entries"]}, {"icloud", "online"})
+
+    def test_the_weekly_note_sent_through_icloud_alerts_is_kept_apart_from_away_notes(self):
+        self.clock.now = NOW - 100
+        self.assertTrue(self.recorder.icloud("weekly"))
+        self.clock.now = NOW
+        self.recorder.flush()
+        lines = [json.loads(line) for line in next(self.home.glob("nollie-workflow/papertrail/*.jsonl")).read_text().splitlines()]
+        self.assertEqual([(l["route"], l["source"], l["tool"], l.get("origin")) for l in lines],
+                         [("icloud", "alert", "weekly", None)])
+        entry = self.read()["entries"][0]
+        self.assertEqual((entry["route"], entry["icloud_notes"], entry["weekly_notes"], entry.get("why")), ("icloud", 0, 1, None))
+
+    def test_a_mac_session_keeps_the_apps_and_counts_only(self):
+        self.clock.now = NOW - 100
+        self.assertTrue(self.recorder.mac_session(["Notes", "Mail<script>", 7, "x" * 90], 3, looks=4, session="s-1"))
+        self.assertFalse(self.recorder.mac_session([], 1))
+        self.assertFalse(self.recorder.mac_session(["Notes"], True))
+        self.clock.now = NOW
+        self.recorder.flush()
+        line = json.loads(next(self.home.glob("nollie-workflow/papertrail/*.jsonl")).read_text().splitlines()[0])
+        self.assertEqual((line["route"], line["source"], line["tool"], line["apps"], line["actions"], line["looks"],
+                          line["screenshots_left"]), ("mac", "tool", "mac_session", ["Notes", "Mailscript", "x" * 60], 3, 4, 0))
+        answer = self.read()
+        self.assertEqual(answer["mac_sessions"], [{"at": int(NOW - 100), "apps": ["Notes", "Mailscript", "x" * 60],
+                                                   "actions": 3, "looks": 4, "screenshots_left": 0}])
+        self.assertEqual((answer["entries"], answer["stayed"]["today"]), ([], 1))
 
     def test_calls_without_a_turn_group_by_session_route_and_ten_minutes(self):
         start = TODAY + 3 * 3600
@@ -418,6 +462,87 @@ class ReaderTests(unittest.TestCase):
 
 
 @unittest.skipUnless(fastapi and TestClient, "FastAPI and its test client are available in the Hermes runtime")
+class DoorLineTests(unittest.TestCase):
+    """Lines Nollie Runtime's door writes beside the add-on's: one per connection."""
+
+    def setUp(self):
+        temp = TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.home = Path(temp.name)
+        self.clock = Clock()
+        self.recorder = papertrail.Recorder(self.home, clock=self.clock)
+        self.root = self.home / "nollie-workflow" / "papertrail"
+
+    def door(self, at, host, kind="hermes", port=443, route="online", **extra):
+        line = {"v": 1, "at": at, "route": route, "source": "door", "kind": kind, "host": host, "port": port, **extra}
+        day = datetime.fromtimestamp(at).date().isoformat()
+        with open(self.root / f"{day}.jsonl", "a") as handle:
+            handle.write(json.dumps(line) + "\n")
+
+    def model(self, at, turn, provider="ollama", base_url="http://127.0.0.1:11434"):
+        self.recorder.post_api_request(session_id="s-1", turn_id=turn, model="m", provider=provider,
+                                       base_url=base_url, ended_at=at, usage=usage(10, 2))
+        self.recorder.flush()
+
+    def read(self):
+        return papertrail.read(self.home, "career", 7, now=NOW, provider_name=lambda p: None)
+
+    def test_a_connection_joins_the_reply_it_happened_in(self):
+        self.model(NOW - 600, "t-1", provider=SUBSCRIPTION, base_url=f"process://{SUBSCRIPTION}")
+        self.model(NOW - 590, "t-1", provider=SUBSCRIPTION, base_url=f"process://{SUBSCRIPTION}")
+        self.door(NOW - 598, "api.anthropic.com", kind="model")
+        self.door(NOW - 596, "api.anthropic.com", kind="model")
+        self.door(NOW - 594, "pypi.org", kind="terminal")
+        answer = self.read()
+        self.assertEqual(answer["left"]["window"], 1)
+        entry = answer["entries"][0]
+        self.assertEqual(entry["id"], "t-1")
+        self.assertEqual(entry["calls"], 2, "connections are not model calls")
+        self.assertEqual(entry["connections"], [
+            {"host": "api.anthropic.com", "port": 443, "kind": "model", "route": "online", "count": 2},
+            {"host": "pypi.org", "port": 443, "kind": "terminal", "route": "online", "count": 1}])
+
+    def test_a_reply_on_this_mac_that_connected_out_is_listed(self):
+        self.model(NOW - 300, "t-2")
+        self.door(NOW - 299, "github.com", kind="terminal")
+        answer = self.read()
+        self.assertEqual(answer["stayed"]["window"], 0)
+        entry = answer["entries"][0]
+        self.assertEqual((entry["id"], entry["route"], entry["provider"]), ("t-2", "online", None))
+        self.assertEqual(entry["connections"][0]["host"], "github.com")
+
+    def test_connections_outside_a_reply_group_by_hour(self):
+        self.model(NOW - 7200, "t-3")
+        self.door(NOW - 3000, "models.example.com")
+        self.door(NOW - 2990, "models.example.com")
+        self.door(NOW - 2980, "192.168.1.20", kind="mcp", port=8080, route="network")
+        answer = self.read()
+        alone = [entry for entry in answer["entries"] if entry["id"].startswith("w-")]
+        self.assertEqual(len(alone), 1)
+        self.assertEqual(alone[0]["route"], "online")
+        self.assertEqual([(c["host"], c["count"]) for c in alone[0]["connections"]],
+                         [("models.example.com", 2), ("192.168.1.20", 1)])
+        self.assertNotIn("why", alone[0])
+        self.assertEqual(answer["stayed"]["window"], 1, "the reply itself stayed on this Mac")
+
+    def test_damaged_and_local_door_lines_are_skipped(self):
+        self.door(NOW - 100, "localhost", route="mac")
+        self.door(NOW - 99, "bad host!")
+        self.door(NOW - 98, "example.com", port=0)
+        self.door(NOW - 97, "example.com", port=True)
+        self.door(NOW - 96, "example.com", kind="whatever")
+        entries = self.read()["entries"]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["connections"],
+                         [{"host": "example.com", "port": 443, "kind": "program", "route": "online", "count": 1}])
+
+    def test_door_lines_keep_no_words(self):
+        self.door(NOW - 50, "example.com", path="/secret", query="q=private", body="hello")
+        entry = self.read()["entries"][0]
+        self.assertNotIn("secret", json.dumps(entry))
+        self.assertNotIn("private", json.dumps(entry))
+
+
 class WhyTests(unittest.TestCase):
     """Why each entry went: what started the work, how much of the chat went, the backup model and the
     person's answers. Ids and short names only, and nothing made up for lines kept before."""
@@ -620,7 +745,7 @@ class PapertrailRouteTests(unittest.TestCase):
         self.assertEqual((body["bot"], body["days"], body["left"]["window"]), ("career", 3, 1))
         self.assertEqual(body["entries"][0]["provider"], "anthropic")
         self.assertEqual(set(body), {"bot", "days", "now", "today_starts_at", "tomorrow_starts_at", "since", "recording_since",
-                                     "stayed", "left", "entries", "more"})
+                                     "stayed", "left", "entries", "more", "changes", "mac_sessions"})
         default = self.get()
         self.assertEqual((default.status_code, default.json()["bot"], default.json()["days"]), (200, "default", 7))
 
@@ -632,6 +757,36 @@ class PapertrailRouteTests(unittest.TestCase):
         private_bots.save(self.home, ["career"])
         self.assertEqual(self.get(bot="career").status_code, 403)
         self.assertEqual(self.get(bot="moss").status_code, 403, "the carried-over names always count")
+
+    def test_the_mac_app_records_a_note_it_sent_through_icloud(self):
+        path = self.PATH + "/icloud"
+        response = self.client.post(path, json={"bot": "career", "kind": "reply"})
+        self.assertEqual((response.status_code, response.json()), (200, {"recorded": True}))
+        self.assertEqual(response.headers.get("cache-control"), "no-store")
+        entries = self.get(bot="career").json()["entries"]
+        self.assertIn("icloud", {e["route"] for e in entries})
+        for body in ({"bot": "career", "kind": "shell"}, {"bot": "../x", "kind": "reply"}):
+            self.assertEqual(self.client.post(path, json=body).status_code, 422)
+        self.assertEqual(self.client.post(path, json={"bot": "moss", "kind": "reply"}).status_code, 403)
+        # A bot with Papertrail off: nothing is made for it.
+        response = self.client.post(path, json={"bot": "mason", "kind": "card"})
+        self.assertEqual(response.json(), {"recorded": False})
+        self.assertFalse((self.bots["mason"] / "nollie-workflow" / "papertrail").exists())
+
+    def test_the_mac_app_records_each_time_a_bot_used_this_mac(self):
+        path = self.PATH + "/mac-session"
+        response = self.client.post(path, json={"bot": "career", "apps": ["Notes", "Safari"], "actions": 4, "looks": 5})
+        self.assertEqual((response.status_code, response.json()), (200, {"recorded": True}))
+        body = self.get(bot="career").json()
+        self.assertEqual([(s["apps"], s["actions"], s["looks"], s["screenshots_left"]) for s in body["mac_sessions"]],
+                         [(["Notes", "Safari"], 4, 5, 0)])
+        self.assertNotIn("mac", {e["route"] for e in body["entries"]}, "it stayed on the Mac, so nothing is listed as left")
+        for bad in ({"bot": "career", "apps": [], "actions": 1}, {"bot": "../x", "apps": ["Notes"], "actions": 1},
+                    {"bot": "career", "apps": ["Notes"], "actions": "many"}):
+            self.assertEqual(self.client.post(path, json=bad).status_code, 422, bad)
+        self.assertEqual(self.client.post(path, json={"bot": "moss", "apps": ["Notes"], "actions": 1}).status_code, 403)
+        response = self.client.post(path, json={"bot": "mason", "apps": ["Notes"], "actions": 1})
+        self.assertEqual(response.json(), {"recorded": False})
 
     def test_unknown_bots_and_bots_without_papertrail_get_404(self):
         response = self.get(bot="scout")
@@ -672,14 +827,16 @@ class RegisterTests(unittest.TestCase):
                    "hermes_constants": SimpleNamespace(get_hermes_home=lambda: bot_home)}
         # The Night shift recorder and Ask first register beside Papertrail; test_night_plumbing covers them.
         with patch.dict("sys.modules", modules), patch.object(package, "_register_night_shift"), \
-                patch.object(package, "_register_ask_first"), \
+                patch.object(package, "_register_ask_first"), patch.object(package, "_register_mac_screen"), \
                 patch.object(service, "start") as start, patch.object(followup_tools, "register") as followups:
             package.register(ctx)
         return ctx.hooks, start.called, followups.called, (bot_home / "nollie-workflow" / "papertrail").is_dir()
 
     def test_every_bot_that_is_not_private_records_and_only_default_runs_the_board(self):
-        self.assertEqual(self.register("career"), (list(papertrail.HOOKS), False, False, True))
-        self.assertEqual(self.register("default"), (list(papertrail.HOOKS), True, True, True))
+        # The two log privacy hooks come first: they let Hermes's logs leave a quoted message out.
+        hooks = ["pre_llm_call", "post_llm_call", *papertrail.HOOKS]
+        self.assertEqual(self.register("career"), (hooks, False, False, True))
+        self.assertEqual(self.register("default"), (hooks, True, True, True))
 
     def test_private_bots_never_record(self):
         for profile in ("moss", "private", "moss-2"):

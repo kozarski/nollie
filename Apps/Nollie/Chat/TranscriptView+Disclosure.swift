@@ -84,8 +84,8 @@ extension TranscriptView {
         guard stillWanted() else { return }
         guard let target = focus.anchor(in: rows) else {
             messageNotice = chat.isResuming || chat.resumeError != nil
-                ? "That message couldn’t be loaded. Try opening the notification again when connected."
-                : "That message is no longer available. You’re in the right conversation."
+                ? String(localized: "That message couldn’t be loaded. Try opening the notification again when connected.")
+                : String(localized: "That message is no longer available. You’re in the right conversation.")
             return
         }
         highlightedMessage = target

@@ -93,7 +93,7 @@ final class CloudAlertTransport {
     }
 
     func enable() async {
-        guard !isDemo else { issue = "iCloud alerts are unavailable in the demo app."; return }
+        guard !isDemo else { issue = String(localized: "iCloud alerts are unavailable in the demo app."); return }
         if isWorking { await work?.value; return }
         epoch += 1
         let ticket = epoch
@@ -147,7 +147,7 @@ final class CloudAlertTransport {
                 try await self.store.removeSubscription()
             } catch {
                 if self.current(ticket) {
-                    self.issue = "Alerts are off here. Couldn’t turn them off on your other devices. Try again when iCloud is available."
+                    self.issue = String(localized: "Alerts are off here. Couldn’t turn them off on your other devices. Try again when iCloud is available.")
                 }
             }
         }
@@ -203,6 +203,7 @@ final class CloudAlertTransport {
         registrationStartedAt = nil
         guard isEnabled else { return }
         state = .failed
+        // CloudAlertWords.issue matches this English and shows its own line, so it stays in English.
         issue = "Notification registration didn’t finish. Check iCloud again to retry."
     }
 
@@ -237,7 +238,7 @@ final class CloudAlertTransport {
             if lastCleanup.map({ now().timeIntervalSince($0) >= 24 * 3600 }) ?? true {
                 lastCleanup = now()
                 do { try await store.cleanExpired(source: event.source, before: now()) }
-                catch { issue = "The alert was saved. Older alert cleanup will retry later." }
+                catch { issue = "The alert was saved. Older alert cleanup will retry later." } // Matched in English and never shown.
             }
             return event.id
         } catch {
@@ -294,6 +295,11 @@ final class CloudAlertTransport {
 
     /// Resolve only the referenced immutable event. A later reply cannot change a notification's destination.
     func openedTarget(eventID: String) async -> CloudAlertTarget? {
+        await openedEvent(eventID: eventID)?.target
+    }
+
+    /// The opened alert, with a valid target, marked as opened for the device that sent it.
+    func openedEvent(eventID: String) async -> CloudAlertEvent? {
         guard isEnabled, !isDemo, CloudAlertEvent.isValidID(eventID) else { return nil }
         let ticket = epoch
         do {
@@ -307,7 +313,7 @@ final class CloudAlertTransport {
                 try await store.acknowledge(event, opened: true, at: now())
             }
             guard current(ticket), isEnabled, let target = event.target, target.isValid else { return nil }
-            return target
+            return event
         } catch { if current(ticket) { fail(error) }; return nil }
     }
 
@@ -348,7 +354,7 @@ final class CloudAlertTransport {
             visibilityIsLimited = result.isLimited
         } catch {
             guard current(ticket), isEnabled else { return }
-            visibilityIssue = "Couldn’t check test records. Try Check iCloud again."
+            visibilityIssue = String(localized: "Couldn’t check test records. Try Check iCloud again.")
         }
     }
 
@@ -463,6 +469,8 @@ final class CloudAlertTransport {
         if error is CancellationError { return }
         if case CloudAlertFailure.accountChanged = error { state = .accountChanged; return }
         if case CloudAlertFailure.unavailable = error { state = .iCloudUnavailable; return }
+        // The two subscription issues are matched in English by CloudAlertWords.issue, which shows
+        // its own line, so they stay in English.
         if case CloudAlertFailure.subscriptionMissing = error {
             state = .failed; issue = "The iCloud alert subscription is missing. Turn iCloud alerts off and on to recreate it."; return
         }
@@ -473,14 +481,14 @@ final class CloudAlertTransport {
             switch cloud.code {
             case .notAuthenticated, .accountTemporarilyUnavailable: state = .iCloudUnavailable
             case .quotaExceeded:
-                state = .failed; issue = "Your iCloud storage is full. Free some space, then try again."
+                state = .failed; issue = String(localized: "Your iCloud storage is full. Free some space, then try again.")
             case .networkUnavailable, .networkFailure, .serviceUnavailable, .requestRateLimited:
-                state = .failed; issue = "iCloud couldn’t be reached. Try again shortly."
+                state = .failed; issue = String(localized: "iCloud couldn’t be reached. Try again shortly.")
             default:
-                state = .failed; issue = "iCloud alerts aren’t available in this build or account."
+                state = .failed; issue = String(localized: "iCloud alerts aren’t available in this build or account.")
             }
         } else {
-            state = .failed; issue = "Couldn’t update iCloud alerts. Try again."
+            state = .failed; issue = String(localized: "Couldn’t update iCloud alerts. Try again.")
         }
     }
 }

@@ -34,11 +34,11 @@ struct MacSidebarFooter: View {
     }
 
     private var gatewayName: String {
-        model.runtime?.connection.name ?? model.store.active?.name ?? "No gateway"
+        model.runtime?.connection.name ?? model.store.active?.name ?? String(localized: "No gateway")
     }
 
     private var connectionNote: String {
-        guard let runtime = model.runtime else { return model.activationError ?? "Connecting…" }
+        guard let runtime = model.runtime else { return model.activationError ?? String(localized: "Connecting…") }
         return runtime.socketState.label
     }
 

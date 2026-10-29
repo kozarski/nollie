@@ -179,18 +179,18 @@ private final class PairingCaptureSession: NSObject, AVCaptureMetadataOutputObje
         defer { session.commitConfiguration() }
         guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
               let input = try? AVCaptureDeviceInput(device: camera), session.canAddInput(input) else {
-            fail("This device's camera could not open. You can still connect manually.")
+            fail(String(localized: "This device's camera could not open. You can still connect manually."))
             return false
         }
         let output = AVCaptureMetadataOutput()
         guard session.canAddOutput(output) else {
-            fail("This camera cannot scan codes. You can still connect manually.")
+            fail(String(localized: "This camera cannot scan codes. You can still connect manually."))
             return false
         }
         session.addInput(input)
         session.addOutput(output)
         guard output.availableMetadataObjectTypes.contains(.qr) else {
-            fail("This camera cannot scan codes. You can still connect manually.")
+            fail(String(localized: "This camera cannot scan codes. You can still connect manually."))
             return false
         }
         output.setMetadataObjectsDelegate(self, queue: queue)

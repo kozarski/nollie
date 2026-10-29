@@ -11,36 +11,36 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .notifications: "Notifications"
-        case .localNetwork: "Local Network"
-        case .camera: "Camera"
-        case .microphone: "Microphone"
-        case .photos: "Photos"
-        case .liveActivities: "Live Activities"
-        case .accessibility: "Accessibility"
-        case .screenRecording: "Screen Recording"
-        case .calendar: "Calendar"
-        case .reminders: "Reminders"
-        case .contacts: "Contacts"
+        case .notifications: String(localized: "Notifications")
+        case .localNetwork: String(localized: "Local Network")
+        case .camera: String(localized: "Camera")
+        case .microphone: String(localized: "Microphone")
+        case .photos: String(localized: "Photos")
+        case .liveActivities: String(localized: "Live Activities")
+        case .accessibility: String(localized: "Accessibility")
+        case .screenRecording: String(localized: "Screen Recording")
+        case .calendar: String(localized: "Calendar")
+        case .reminders: String(localized: "Reminders")
+        case .contacts: String(localized: "Contacts")
         }
     }
 
     /// One plain line on why Nollie asks. Shown beside the Allow button, before the system prompt.
     var reason: String {
         switch self {
-        case .notifications: "Know when a reply is ready or a task needs you."
+        case .notifications: String(localized: "Know when a reply is ready or a task needs you.")
         case .localNetwork:
-            DeviceWords.isMac ? "Lets your iPhone find this Mac on your Wi-Fi."
-                              : "Lets Nollie find your Mac on your Wi-Fi."
-        case .camera: "Reads the code on your Mac, and takes photos for a chat."
-        case .microphone: "Lets you talk with your bots, dictate and record voice memos."
-        case .photos: "Saves a picture from a chat to your Photos."
-        case .liveActivities: "Shows on the Lock Screen while a helper uses your Mac."
-        case .accessibility: "Lets Nollie click and type in the apps you approve."
-        case .screenRecording: "Lets Nollie see those apps, so it knows where to click."
-        case .calendar: "Helpers you choose can see your calendar. Changes wait for your yes."
-        case .reminders: "Helpers you choose can see your reminders. Changes wait for your yes."
-        case .contacts: "Helpers you choose can find your contacts. Changes wait for your yes."
+            DeviceWords.isMac ? String(localized: "Lets your iPhone find this Mac on your Wi-Fi.")
+                              : String(localized: "Lets Nollie find your Mac on your Wi-Fi.")
+        case .camera: String(localized: "Reads the code on your Mac, and takes photos for a chat.")
+        case .microphone: String(localized: "Lets you talk with your bots, dictate and record voice memos.")
+        case .photos: String(localized: "Saves a picture from a chat to your Photos.")
+        case .liveActivities: String(localized: "Shows on the Lock Screen while a helper uses your Mac.")
+        case .accessibility: String(localized: "Lets Nollie click and type in the apps you approve.")
+        case .screenRecording: String(localized: "Lets Nollie see those apps, so it knows where to click.")
+        case .calendar: String(localized: "Helpers you choose can see your calendar. Changes wait for your yes.")
+        case .reminders: String(localized: "Helpers you choose can see your reminders. Changes wait for your yes.")
+        case .contacts: String(localized: "Helpers you choose can find your contacts. Changes wait for your yes.")
         }
     }
 

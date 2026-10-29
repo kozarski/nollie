@@ -7,6 +7,10 @@ replies, queries, URLs or arguments. Stdlib only here; Hermes is imported lazily
 Each line also says why it went, in ids and short names only: what started the work (a chat, a schedule,
 a Board task, a schedule's helper), on which chat app, how many messages went, whether the bot's backup
 model answered, and the person's approval answers in the same turn.
+
+Nollie Runtime's door writes "door" lines into the same files: one per connection Hermes or a program it
+started made, with the host, port, time and kind of program (``hermes``, ``terminal``, ``code``, ``mcp``,
+``model``, ``reader``, ``program``). The reader puts each with the reply it happened in, by time.
 """
 from __future__ import annotations
 
@@ -39,9 +43,34 @@ LOCK_WAIT_SECONDS = 2.0
 MAX_WAITING = 5000
 HOOKS = ("post_api_request", "api_request_error", "post_auxiliary_call", "post_tool_call",
          "post_approval_response")
-ROUTES = frozenset({"mac", "network", "online"})
+# "icloud": a note Nollie on the Mac sealed for the person's own linked iPhone and put in their iCloud.
+ROUTES = frozenset({"mac", "network", "online", "icloud"})
 # An "approval" line is a person's answer, kept for the turn's Why. Older readers skip it by its source.
-SOURCES = frozenset({"model", "helper", "tool", "approval"})
+# A "change" line is something the person did to a bot from Nollie (removed a connected app): it stays on this Mac,
+# is never a reply, and is listed apart. Older readers skip it by its source.
+# An "alert" line is the weekly note the Mac sent through the person's own iCloud alerts: its counts, never its words.
+SOURCES = frozenset({"model", "helper", "tool", "approval", "away", "door", "change", "alert"})
+CHANGES = frozenset({"app_removed"})
+CHANGE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}\Z")
+MAX_CHANGES = 50
+# What kind of program made a connection through the door.
+# "direct": a connection the network filter saw going around the door.
+DOOR_KINDS = frozenset({"hermes", "terminal", "code", "mcp", "model", "reader", "program", "direct"})
+# A connection this close to a reply's own calls belongs to that reply; otherwise it stands alone,
+# with the others of its bot in the same hour.
+DOOR_SLACK = 5
+DOOR_WINDOW = 3600
+DOOR_HOST = re.compile(r"[A-Za-z0-9._:-]{1,255}\Z")
+# What the Mac app may say it sent through iCloud: kinds of note only, never their words.
+AWAY_KINDS = frozenset({"reply", "card", "helpers", "stopped"})
+# What the Mac's iCloud alerts helper may say it sent: the weekly note, with the week's counts.
+ALERT_KINDS = frozenset({"weekly"})
+# A bot used apps on this Mac through Nollie Computer: the apps' names and the counts, never the screen. The model
+# that looked runs on the Mac, so no picture of the screen left (Hermes's own computer_use is refused).
+MAC_SESSION = "mac_session"
+MAX_MAC_APPS = 8
+MAX_MAC_SESSIONS = 50
+APP_NAME = re.compile(r"[^\w .&+'-]")
 ORIGINS = frozenset({"chat", "schedule", "board", "helper"})
 CHOICES = frozenset({"once", "session", "always", "deny"})
 ASK_KINDS = frozenset({"send", "buy", "post", "delete", "unsure"})
@@ -316,6 +345,42 @@ class Recorder:
                                session_key="", **_):
         self._safely(self._approval, choice, pattern_key, pattern_keys, turn_id, session_id or session_key)
 
+    # Away from home through iCloud. Not a Hermes hook: the Mac app reports it through the add-on.
+
+    def icloud(self, kind, session=""):
+        """One note sealed for the person's linked iPhone and put in their own iCloud, or the weekly note the Mac sent
+        through their iCloud alerts. False for an unknown kind."""
+        if kind in ALERT_KINDS:
+            self._safely(lambda: self._line(route="icloud", source="alert", tool=kind))
+            return True
+        if kind not in AWAY_KINDS:
+            return False
+        self._safely(lambda: self._line(route="icloud", source="away", tool=kind, session=_id(session), origin="chat"))
+        return True
+
+    # Using this Mac. Not a Hermes hook: the Mac app reports it through the add-on when a task ends.
+
+    def mac_session(self, apps, actions, looks=0, session=""):
+        """One time a bot used apps on this Mac: their names, how many actions and looks. False when unreadable."""
+        if not isinstance(apps, list) or not apps or isinstance(actions, bool) or not isinstance(actions, int):
+            return False
+        names = [APP_NAME.sub("", str(app))[:60].strip() for app in apps[:MAX_MAC_APPS] if isinstance(app, str)]
+        names = [name for name in names if name]
+        if not names:
+            return False
+        self._safely(lambda: self._line(route="mac", source="tool", tool=MAC_SESSION, session=_id(session),
+                                        apps=names, actions=_count(actions), looks=_count(looks), screenshots_left=0))
+        return True
+
+    # Changes the person made from Nollie. Not a Hermes hook: the add-on records it as it makes the change.
+
+    def change(self, kind, name):
+        """One change the person made to this bot from Nollie (a connected app removed). False when unknown."""
+        if kind not in CHANGES or not isinstance(name, str) or not CHANGE_NAME.match(name):
+            return False
+        self._safely(lambda: self._line(route="mac", source="change", change=kind, name=name))
+        return True
+
     # Lines.
 
     def _line(self, **fields):
@@ -571,7 +636,14 @@ def _calls(path, since):
                 continue
             call = {key: line.get(key) if isinstance(line.get(key), str) else ""
                     for key in ("provider", "model", "task", "tool", "turn", "session", "job", "board", "platform",
-                                "choice", "ask")}
+                                "choice", "ask", "change", "name")}
+            if line["source"] == "door":
+                host_, port = line.get("host"), line.get("port")
+                if (not isinstance(host_, str) or not DOOR_HOST.match(host_) or isinstance(port, bool)
+                        or not isinstance(port, int) or not 0 < port < 65536 or line["route"] == "mac"):
+                    continue
+                call.update(kind=line.get("kind") if line.get("kind") in DOOR_KINDS else "program", port=port,
+                            turn="", session="")
             call.update({key: _count(line.get(key))
                          for key in ("in", "out", "cache", "think", "searches", "pages", "images", "messages")})
             call.update(at=float(at), route=line["route"], source=line["source"],
@@ -580,9 +652,16 @@ def _calls(path, since):
                         backup=line.get("backup") is True)
             if call["source"] == "approval" and (call["choice"] not in CHOICES or not call["turn"]):
                 continue
+            if call["source"] == "change" and (call["change"] not in CHANGES or not CHANGE_NAME.match(call["name"])
+                                               or line["route"] != "mac"):
+                continue
             card = line.get("card")
             call.update(paid=_count(line.get("paid")),
                         card=card if isinstance(card, str) and re.fullmatch(r"[0-9]{4}", card) else "")
+            if call["tool"] == MAC_SESSION:
+                apps = line.get("apps")
+                call.update(apps=[app[:60] for app in apps[:MAX_MAC_APPS] if isinstance(app, str)] if isinstance(apps, list) else [],
+                            actions=_count(line.get("actions")), looks=_count(line.get("looks")))
             yield call
 
 
@@ -635,7 +714,7 @@ def _entry(key, group, provider_name, titles=None):
         return None
     routes = {}
     for call in left:
-        if call["source"] != "tool":
+        if call["source"] not in ("tool", "door"):
             totals = routes.setdefault((call["route"], call["provider"], call["host"], call["model"]), [0, 0])
             totals[0] += _tokens(call)
             totals[1] += 1
@@ -650,12 +729,12 @@ def _entry(key, group, provider_name, titles=None):
         "id": key[1] if key[0] == "turn" else "w-" + hashlib.sha256(json.dumps(key).encode()).hexdigest()[:16],
         "at": int(max(call["at"] for call in group)),
         "started_at": int(min(call["at"] for call in group)),
-        "route": "online" if went_online else "network",
+        "route": "online" if went_online else "network" if any(call["route"] == "network" for call in left) else "icloud",
         "provider": provider,
         "provider_name": provider_name(provider) if provider else None,
         "host": host_,
         "model": model or None,
-        "calls": len(left),
+        "calls": sum(call["source"] != "door" for call in left),
         "helpers": sorted({call["task"] for call in left if call["source"] == "helper" and call["task"]}),
         "services": sorted({call["provider"] for call in left
                             if call["source"] == "tool" and call["searches"] and call["provider"]}),
@@ -666,12 +745,18 @@ def _entry(key, group, provider_name, titles=None):
         "searches": sum(call["searches"] for call in left),
         "pages": sum(call["pages"] for call in left),
         "images": sum(call["images"] for call in left),
+        # Notes sealed for the person's own iPhone and put in their iCloud, while they were away.
+        "icloud_notes": sum(call["route"] == "icloud" and call["source"] == "away" for call in left),
+        # The weekly note, sent through the person's own iCloud alerts with the week's counts.
+        "weekly_notes": sum(call["route"] == "icloud" and call["source"] == "alert" for call in left),
         # Cards filled in and sent to a site: the site and the card's last four digits only.
         "payments": [{"site": call["host"], "card": call["card"] or None} for call in left
                      if call["source"] == "tool" and call["paid"] and call["host"]],
         # What the turn read on this Mac before its words went out: "calendar", "reminders", "contacts".
         "local_reads": sorted({LOCAL_READS[call["tool"]] for call in group
                                if call["source"] == "tool" and call["tool"] in LOCAL_READS}),
+        # Every connection the door saw in it: where to, by which kind of program, how many times.
+        "connections": _connections(left),
     }
     why = _why(group, left, titles)
     if why is not None:
@@ -679,10 +764,36 @@ def _entry(key, group, provider_name, titles=None):
     return entry
 
 
-def read(home, bot, days, *, now=None, provider_name=None, titles=None):
+def _connections(calls):
+    found = {}
+    for call in calls:
+        if call["source"] == "door":
+            key = (call["host"], call["port"], call["kind"])
+            found.setdefault(key, {"host": call["host"], "port": call["port"], "kind": call["kind"],
+                                   "route": call["route"], "count": 0})["count"] += 1
+    return sorted(found.values(), key=lambda item: (-item["count"], item["host"], item["port"], item["kind"]))
+
+
+def _place_doors(groups, doors):
+    """Each door connection into the reply it happened in (the group whose own calls span its time, with a
+    few seconds either side; the latest-starting when several do), else into its hour."""
+    spans = []
+    for key, group in groups.items():
+        if all(call["source"] == "approval" for call in group):
+            continue
+        times = [call["at"] for call in group]
+        spans.append((min(times) - DOOR_SLACK, max(times) + DOOR_SLACK, key))
+    spans.sort(key=lambda span: span[0])
+    for call in doors:
+        inside = [span for span in spans if span[0] <= call["at"] <= span[1]]
+        key = max(inside, key=lambda span: span[0])[2] if inside else ("door", int(call["at"] // DOOR_WINDOW))
+        groups.setdefault(key, []).append(call)
+
+
+def read(home, bot, days, *, now=None, provider_name=None, titles=None, limit=MAX_ENTRIES):
     """The Papertrail answer for one bot home over ``days`` local days ending today. ``titles`` maps
     ``("schedule", job id)`` and ``("board", task id)`` to the names the person gave them, read now, never
-    kept in the record."""
+    kept in the record. ``limit`` caps the entries listed (None lists them all, for the weekly note's counts)."""
     root = Path(home) / "nollie-workflow" / "papertrail"
     now = time.time() if now is None else now
     today = _local_day(now)
@@ -702,11 +813,18 @@ def read(home, bot, days, *, now=None, provider_name=None, titles=None):
             if first <= day <= today:
                 calls.extend(_calls(path, since))
     groups = {}
+    # The person's own changes, newest first: never a reply, so kept out of the entries and the counts.
+    changes = sorted(({"at": int(call["at"]), "kind": call["change"], "name": call["name"]}
+                      for call in calls if call["source"] == "change"), key=lambda change: change["at"], reverse=True)
+    calls = [call for call in calls if call["source"] != "change"]
+    doors = [call for call in calls if call["source"] == "door"]
+    calls = [call for call in calls if call["source"] != "door"]
     for call in calls:
         # One entry per turn. Calls outside a turn group by session, route and a 10 minute window.
         key = (("turn", call["turn"]) if call["turn"]
                else ("window", call["session"], call["route"], int(call["at"] // WINDOW_SECONDS)))
         groups.setdefault(key, []).append(call)
+    _place_doors(groups, doors)
     names = {}
 
     def cached_name(provider):
@@ -714,6 +832,11 @@ def read(home, bot, days, *, now=None, provider_name=None, titles=None):
             names[provider] = (provider_name or _hermes_provider_name)(provider)
         return names[provider]
 
+    # Each time the bot used this Mac, newest first: it all stayed here, so it is listed apart from what left.
+    mac_sessions = sorted(({"at": int(call["at"]), "apps": call["apps"], "actions": call["actions"],
+                            "looks": call["looks"], "screenshots_left": 0}
+                           for call in calls if call["source"] == "tool" and call["tool"] == MAC_SESSION
+                           and call["route"] == "mac"), key=lambda session: session["at"], reverse=True)
     stayed = {"today": 0, "window": 0}
     entries = []
     for key, group in groups.items():
@@ -737,6 +860,8 @@ def read(home, bot, days, *, now=None, provider_name=None, titles=None):
         "recording_since": _midnight(oldest) if oldest else None,
         "stayed": stayed,
         "left": {"today": left_today, "window": len(entries)},
-        "entries": entries[:MAX_ENTRIES],
-        "more": max(0, len(entries) - MAX_ENTRIES),
+        "entries": entries if limit is None else entries[:limit],
+        "more": 0 if limit is None else max(0, len(entries) - limit),
+        "mac_sessions": mac_sessions[:MAX_MAC_SESSIONS],
+        "changes": changes[:MAX_CHANGES],
     }

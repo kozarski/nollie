@@ -35,13 +35,15 @@ chats work like Messages. Branch `main` is the product.
   `NollieMacApp.swift`, `Computer/` for Nollie Computer: a bot using approved apps on this Mac, `Live/` for the
   live picture of a helper's computer: [The live picture](Docs/live-picture.md)).
   `Update/` is Sparkle's automatic updates (Direct edition only, compiled out of the store build): [Releasing](Docs/releasing.md#automatic-updates-direct-mac).
-- `Apps/Watch/`: Nollie on Apple Watch (approvals, the crew at work, Stop), embedded in the iPhone app. `App/` the watch app,
+- `Apps/Watch/`: Nollie on Apple Watch (approvals, the crew at work, Stop, the last Night shift note), embedded in the iPhone app. `App/` the watch app,
   `Widgets/` its Smart Stack widget and Stop control, `Shared/WatchWire.swift` what phone and Watch say over WatchConnectivity;
   the phone's side is `Apps/Nollie/Watch/` (`WatchLink`, and `WatchCards` for which approvals the wrist may allow).
 - `Shared/`: bot drawing, appearance policy, app icon and types used by apps and extensions.
-- `Extensions/`: notification presentation on the iPhone and the Mac; `Controls/` has the iPhone's Ask
-  Nollie control and the Lock Screen Stop (a Live Activity, started by `App/HelperAtWorkActivities.swift`;
-  intents in `Shared/AskNollie.swift` and `Shared/StopMac.swift`).
+- `Extensions/`: notification presentation on the iPhone and the Mac; `Controls/` has the Ask Nollie and
+  Stop all helpers controls (built twice: `NollieControls` for iPhone, `NollieMacControls` for the Mac) and
+  the iPhone's Lock Screen Stop (a Live Activity, started by `App/HelperAtWorkActivities.swift`; intents in
+  `Shared/AskNollie.swift` and `Shared/StopMac.swift`). Siri's Ask Nollie, which reads the reply, is
+  `Apps/Nollie/App/SiriAskHelper.swift`; the Mac's own Stop is `Apps/Mac/MacStop.swift`.
 - `Services/Runtime/` and `Services/Notifications/`: the owned Mac runtime and notification helpers.
 - `Companions/`: the gateway-side pairing, computer, nollie-mac, workflow, crew, web reader and legacy push integrations.
 - `Tests/Unit/` and `Tests/UI/`: app tests: `NollieTests`, `NollieMacTests` and `NollieUITests`.

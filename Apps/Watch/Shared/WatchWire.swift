@@ -25,6 +25,12 @@ enum WatchWire {
         var canStop: Bool
         /// The phone could reach its gateway when it made this.
         var connected: Bool
+        /// The newest Night shift card of the last day and a half, worded on the phone. Nil when there is none,
+        /// and from a phone that does not send one yet.
+        var night: NightNote? = nil
+        /// The weekly note, worded on the phone from the records alone. Nil when the note is off, for a member of
+        /// someone's household, and from a phone that does not send one yet.
+        var week: WeekNote? = nil
 
         static func empty(at made: Date = Date(), connected: Bool = false) -> Snapshot {
             Snapshot(made: made, approvals: [], helpers: [], canStop: false, connected: connected)
@@ -62,6 +68,41 @@ enum WatchWire {
         var asksAgain: Bool
         /// The safety check flagged it.
         var flagged: Bool
+    }
+
+    /// What the crew did overnight, as the Night shift card in Settings says it, in a few lines for the wrist.
+    struct NightNote: Codable, Equatable, Sendable {
+        /// When the card's window ended.
+        var at: Date
+        /// "Since 7:02 yesterday".
+        var since: String?
+        /// "2 runs · 5 actions · 1 held", or the quiet night's line.
+        var counts: String
+        /// The first few runs: the schedule or task, and "Scout · Done · 3:10".
+        var runs: [Line]
+        /// Runs past the ones listed.
+        var more: Int
+        /// Something was held or stopped, so the page wears the warning tint.
+        var needsLook: Bool
+
+        struct Line: Codable, Equatable, Sendable {
+            var title: String
+            var detail: String
+        }
+    }
+
+    /// The weekly note in a few lines for the wrist: the week, its one line, and each helper's counts.
+    struct WeekNote: Codable, Equatable, Sendable {
+        /// "19 to 25 Oct".
+        var range: String
+        /// "3 helpers busy. 2 new things."
+        var headline: String
+        /// Each helper: its name, and "7 runs · asked twice · online 31 times · 1 new".
+        var helpers: [NightNote.Line]
+        /// Helpers past the ones listed.
+        var more: Int
+        /// Something is new this week, so the page wears the note's tint more strongly.
+        var hasNews: Bool
     }
 
     enum Answers: String, Codable, Equatable, Sendable {
@@ -202,32 +243,44 @@ enum WatchNotificationNames {
 
 /// The words the Watch shows. Few, short and shared, so the tests can hold them to the copy rules.
 enum WatchWords {
-    static let allowOnce = "Allow once"
-    static let deny = "Deny"
-    static let allowAgain = "Allow once?"
-    static let approveOnPhone = "Approve on your iPhone"
-    static let stop = "Stop"
-    static let working = "Working"
-    static let allQuiet = "All quiet"
-    static let nobodyWorking = "No helpers working"
-    static let openPhone = "Open Nollie on your iPhone"
-    static let phoneAway = "Can't reach your iPhone"
-    static let allowed = "Allowed"
-    static let denied = "Denied"
-    static let gone = "Already answered"
-    static let flagged = "The safety check flagged this one."
-    static let lastSeen = "Last seen"
+    static let allowOnce = String(localized: "Allow once", comment: "Safety: approval button; allows this one time")
+    static let deny = String(localized: "Deny", comment: "Safety: approval button; refuses")
+    static let allowAgain = String(localized: "Allow once?", comment: "Safety: asks again before a risky yes goes")
+    static let approveOnPhone = String(localized: "Approve on your iPhone", comment: "Safety: this yes needs the iPhone")
+    static let stop = String(localized: "Stop", comment: "Safety: stops a bot using the Mac")
+    static let working = String(localized: "Working", comment: "A helper is working")
+    static let allQuiet = String(localized: "All quiet")
+    static let nobodyWorking = String(localized: "No helpers working")
+    static let openPhone = String(localized: "Open Nollie on your iPhone")
+    static let phoneAway = String(localized: "Can't reach your iPhone")
+    static let allowed = String(localized: "Allowed", comment: "An approval was allowed")
+    static let denied = String(localized: "Denied", comment: "An approval was denied")
+    static let gone = String(localized: "Already answered")
+    static let flagged = String(localized: "The safety check flagged this one.", comment: "Safety: on an approval")
+    static let lastSeen = String(localized: "Last seen")
+    static let nightShift = String(localized: "Night shift")
+    static let yourWeek = String(localized: "Your week")
+    static let fullNote = String(localized: "The whole note, with its taps, is in Nollie on your iPhone.")
+
+    /// "Last seen 9:41", when the phone last sent a picture.
+    static func seenAt(_ time: String) -> String { String(localized: "Last seen \(time)") }
+
+    /// "2 more", under the runs a busy night's note leaves out.
+    static func more(_ n: Int) -> String { String(localized: "\(n) more", comment: "More runs past the ones listed") }
 
     /// "2 helpers working", "1 helper working".
     static func count(_ n: Int) -> String {
-        n == 0 ? nobodyWorking : "\(n) \(n == 1 ? "helper" : "helpers") working"
+        n == 0 ? nobodyWorking : String(localized: "\(n) helpers working")
     }
+
+    /// "1 waiting for you": approvals that need a yes or no.
+    static func waiting(_ n: Int) -> String { String(localized: "\(n) waiting for you", comment: "Approvals waiting for a yes or no") }
 
     /// What a helper is doing, under its name.
     static func doing(_ place: HelperWorkPlace?) -> String {
         switch place {
-        case .mac: "Using your Mac"
-        case .ownComputer: "Using its computer"
+        case .mac: String(localized: "Using your Mac")
+        case .ownComputer: String(localized: "Using its computer")
         case nil: working
         }
     }

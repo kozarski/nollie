@@ -81,6 +81,10 @@ private enum AlertArrivals {
 
     /// A silent push from the cloud relay. True when it brought something new.
     static func silentPush(_ info: [AnyHashable: Any]) async -> Bool {
+        if CloudKitAwayCloud.isAwayPush(info) {
+            await AwayPhone.shared.collect()
+            return true
+        }
         let seen = CloudAlertTransport.inspectPayload(info)
         CloudAlertTransport.shared.recordCallback(.remote, result: seen.result)
         guard let eventID = seen.eventID else { return false }
@@ -90,6 +94,11 @@ private enum AlertArrivals {
     // MARK: Arriving while the app is open
 
     static func presentation(for info: [AnyHashable: Any]) async -> UNNotificationPresentationOptions {
+        // Away through iCloud, with Nollie open: the reply or card goes straight into its chat.
+        if CloudKitAwayCloud.isAwayPush(info) {
+            await AwayPhone.shared.collect()
+            return [.list]
+        }
         let seen = CloudAlertTransport.inspectPayload(info)
         CloudAlertTransport.shared.recordCallback(.foreground, result: seen.result)
 
@@ -102,6 +111,7 @@ private enum AlertArrivals {
         }
         // The outcome of Stop from an alert has no screen of its own, so it shows even in the app.
         if info["nollie"] as? String == "stopResult" { return [.banner, .list] }
+        if WeeklyNoteReminder.isWeekly(info) { return [.banner, .list] }
 
         // The push setup test looks for these: that any push arrived, and that one carrying a nonce
         // was also decrypted.
@@ -125,7 +135,10 @@ private enum AlertArrivals {
         if button == ComputerStartedWords.stopAction {
             await stopFromAlert(center: center)
         } else if let eventID = seen.eventID {
+            // The Mac's weekly note too: it opens over the main chat.
             model?.openCloudAlert(eventID: eventID)
+        } else if WeeklyNoteReminder.isWeekly(info) {
+            model?.weeklyRequest = UUID()
         } else {
             let typed = (response as? UNTextInputNotificationResponse)?.userText
             let action = button == UNNotificationDefaultActionIdentifier ? nil : button

@@ -44,8 +44,9 @@ struct ComputerAction: Equatable, Sendable {
 /// What happens to an action: it runs, the person confirms it first, or it never runs.
 enum ComputerDecision: Equatable, Sendable {
     case allow
-    /// Ask the person: the sentence for the card, after "<Bot> wants to".
+    /// Ask the person: the sentence for the card, after "<Bot> wants to", in the person's language.
     case confirm(String)
+    /// Why not, for the bot's model: in English.
     case refuse(String)
 }
 
@@ -54,6 +55,8 @@ enum ComputerDecision: Equatable, Sendable {
 /// confirmed by the person, every time. The words are read from the element Nollie saw itself,
 /// never from the bot's description of it. When in doubt, it asks.
 enum ComputerActionRules {
+    // The refusals go back to the bot's model, so they stay in English. The confirm sentences are
+    // the person's card and are localized.
     static let viewOnly = "Browsers are view-only on your Mac. A bot can use web pages on its own computer."
     static let secret = "Passwords and codes stay with you. Nollie never types into a password field."
 
@@ -73,7 +76,8 @@ enum ComputerActionRules {
                 return .refuse("That text has control characters in it. Type plain text only.")
             }
             if text.contains(where: \.isNewline) {
-                return .confirm("type a line break in \(app.name), which can send or submit")
+                return .confirm(String(localized: "type a line break in \(app.name), which can send or submit",
+                                       comment: "Safety: confirm card; finishes '<Bot> wants to …'; keep exact meaning"))
             }
             return .allow
         case .click:
@@ -86,10 +90,11 @@ enum ComputerActionRules {
             if target.isLink { return linkDecision(target, app: app) }
             // Words that look like an address (a link preview that doesn't say it is a link): the person decides.
             if !textRoles.contains(target.role ?? ""), looksLikeAddress(target.label ?? "") {
-                return .confirm("click \(quoted(target.label ?? "")) in \(app.name), which may open a link")
+                return .confirm(String(localized: "click \(quoted(target.label ?? "")) in \(app.name), which may open a link",
+                                       comment: "Safety: confirm card; finishes '<Bot> wants to …'; keep exact meaning"))
             }
             if let risk = risk(in: target.label ?? "") {
-                return .confirm("\(risk.verb) in \(app.name): click \(quoted(target.label ?? ""))")
+                return .confirm(clickSentence(risk.verb, app: app.name, label: quoted(target.label ?? "")))
             }
             return .allow
         case .key:
@@ -118,7 +123,8 @@ enum ComputerActionRules {
         guard !place.isEmpty, place.unicodeScalars.allSatisfy({ $0.isASCII && $0.value > 0x20 && $0 != "%" }) else { return .refuse(unknownLink) }
         guard !place.lowercased().split(separator: ".").contains(where: { $0.hasPrefix("xn--") }) else { return .refuse(lookalike) }
         let shown = url.count > 200 ? String(url.prefix(200)) + "\u{2026}" : url
-        return .confirm("open a link to \(place) in \(app.name): \u{201C}\(shown)\u{201D}")
+        return .confirm(String(localized: "open a link to \(place) in \(app.name): \u{201C}\(shown)\u{201D}",
+                               comment: "Safety: confirm card; finishes '<Bot> wants to …'; the site, the app, then the whole address"))
     }
 
     /// Words that hold a web address or a site's name, like "example.com", "bit.ly/x" or "https://…",
@@ -142,7 +148,75 @@ enum ComputerActionRules {
 
     struct Risk: Equatable { var verb: String }
 
-    /// The risky words, matched as whole words or phrases of the element's label.
+    /// A confirmed click on a risky button, for the card: "send something in Mail: click “Send”".
+    /// `verb` is one of the keys of `risks`.
+    static func clickSentence(_ verb: String, app: String, label: String) -> String {
+        switch verb {
+        case "send something":
+            return String(localized: "send something in \(app): click \(label)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the button's words")
+        case "buy something":
+            return String(localized: "buy something in \(app): click \(label)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the button's words")
+        case "delete something":
+            return String(localized: "delete something in \(app): click \(label)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the button's words")
+        case "upload something":
+            return String(localized: "upload something in \(app): click \(label)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the button's words")
+        case "accept terms":
+            return String(localized: "accept terms in \(app): click \(label)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the button's words")
+        case "install something":
+            return String(localized: "install something in \(app): click \(label)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the button's words")
+        case "open something":
+            return String(localized: "open something in \(app): click \(label)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the button's words")
+        case "sign in":
+            return String(localized: "sign in in \(app): click \(label)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the button's words")
+        default:
+            return String(localized: "click \(label) in \(app)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the button's words")
+        }
+    }
+
+    /// A confirmed shortcut that runs a risky menu command: "delete something in Mail: “Delete”".
+    static func commandSentence(_ verb: String, app: String, title: String) -> String {
+        switch verb {
+        case "send something":
+            return String(localized: "send something in \(app): \(title)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the menu command a shortcut runs")
+        case "buy something":
+            return String(localized: "buy something in \(app): \(title)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the menu command a shortcut runs")
+        case "delete something":
+            return String(localized: "delete something in \(app): \(title)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the menu command a shortcut runs")
+        case "upload something":
+            return String(localized: "upload something in \(app): \(title)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the menu command a shortcut runs")
+        case "accept terms":
+            return String(localized: "accept terms in \(app): \(title)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the menu command a shortcut runs")
+        case "install something":
+            return String(localized: "install something in \(app): \(title)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the menu command a shortcut runs")
+        case "open something":
+            return String(localized: "open something in \(app): \(title)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the menu command a shortcut runs")
+        case "sign in":
+            return String(localized: "sign in in \(app): \(title)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the menu command a shortcut runs")
+        default:
+            return String(localized: "use \(title) in \(app)",
+                          comment: "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the menu command a shortcut runs")
+        }
+    }
+
+    /// The risky words, matched as whole words or phrases of the element's label. The verbs are
+    /// keys (`checkedVerbs`, the sentences above), never shown as they are.
     static let risks: [(verb: String, words: [String])] = [
         ("send something", ["send", "send now", "reply", "reply all", "forward", "post", "publish", "share", "submit",
                             "tweet", "comment", "invite"]),
@@ -169,7 +243,8 @@ enum ComputerActionRules {
         let label = (target.label ?? "").split(whereSeparator: \.isWhitespace).joined(separator: " ")
         guard !label.isEmpty, textRoles.contains(target.role ?? "") || !looksLikeAddress(label),
               let risk = risk(in: label), checkedVerbs.contains(risk.verb) else { return nil }
-        return "You're about to press \u{201C}\(label.prefix(60))\u{201D}."
+        return String(localized: "You're about to press \u{201C}\(String(label.prefix(60)))\u{201D}.",
+                      comment: "Safety: second line of a confirm card for a button that sends, pays, posts or deletes")
     }
 
     static func risk(in label: String) -> Risk? {
@@ -262,22 +337,30 @@ enum ComputerActionRules {
         if key == "return" || key == "space", let target, target.isLink {
             return linkDecision(target, app: app)
         }
-        if key == "return" { return .confirm("press Return in \(app.name), which can send or submit") }
+        if key == "return" {
+            return .confirm(String(localized: "press Return in \(app.name), which can send or submit",
+                                   comment: "Safety: confirm card; finishes '<Bot> wants to …'; keep exact meaning"))
+        }
         if held.contains("cmd") || held.contains("ctrl") || held.contains("option") {
             // A web page gets the key before the menus do, so the menu item says nothing about it.
             if target?.inWebContent == true { return .refuse(webShortcut) }
             guard let shortcut else { return .refuse(unknownShortcut) }
             if shortcut.inAppleMenu { return .refuse("That shortcut belongs to the Apple menu, which stays with you.") }
             let title = shortcut.title.trimmingCharacters(in: .whitespaces)
-            if title.localizedCaseInsensitiveContains("paste") { return .confirm("paste what you last copied into \(app.name)") }
-            if let risk = risk(in: title) { return .confirm("\(risk.verb) in \(app.name): \(quoted(title))") }
+            if title.localizedCaseInsensitiveContains("paste") {
+                return .confirm(String(localized: "paste what you last copied into \(app.name)",
+                                       comment: "Safety: confirm card; finishes '<Bot> wants to …'; keep exact meaning"))
+            }
+            if let risk = risk(in: title) { return .confirm(commandSentence(risk.verb, app: app.name, title: quoted(title))) }
             let lower = title.lowercased()
             if safeCommands.contains(where: { lower == $0 || lower.hasPrefix($0 + " ") || lower.hasPrefix($0 + "\u{2026}") }) { return .allow }
-            return .confirm("use \(quoted(title)) in \(app.name)")
+            return .confirm(String(localized: "use \(quoted(title)) in \(app.name)",
+                                   comment: "Safety: confirm card; finishes '<Bot> wants to …'; a menu command a shortcut runs"))
         }
         if key == "delete" || key == "forward_delete" {
             if let role = target?.role, textRoles.contains(role) { return .allow }
-            return .confirm("press Delete in \(app.name), which can delete what's selected")
+            return .confirm(String(localized: "press Delete in \(app.name), which can delete what's selected",
+                                   comment: "Safety: confirm card; finishes '<Bot> wants to …'; keep exact meaning"))
         }
         if navigationKeys.contains(key) { return .allow }
         // A character or Space: the same as typing it.

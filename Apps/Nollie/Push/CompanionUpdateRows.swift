@@ -64,9 +64,9 @@ private struct UpdateSummary: View {
             Text("Sends replies as notifications and brings approval cards to \(DeviceWords.your) as soon as a bot needs a yes.")
                 .note()
             if setup.runningCanSelfReload {
-                StatusNote("Updates without restarting the gateway.", symbol: "checkmark.circle")
+                StatusNote(String(localized: "Updates without restarting the gateway."), symbol: "checkmark.circle")
             } else {
-                StatusNote("Needs a gateway restart to finish. Running turns pause for a few seconds.",
+                StatusNote(String(localized: "Needs a gateway restart to finish. Running turns pause for a few seconds."),
                            symbol: "arrow.clockwise", tone: .warning)
             }
         }
@@ -97,7 +97,7 @@ private struct UpdateProgress: View {
     }
 
     private var rightHandText: String {
-        setup.updateRemaining ?? (setup.updateProgress >= 1 ? "100%" : "")
+        setup.updateRemaining ?? (setup.updateProgress >= 1 ? 1.0.formatted(.percent) : "")
     }
 
     var body: some View {
@@ -182,7 +182,7 @@ private struct UpdateAction: View {
     }
 
     private var installButton: some View {
-        let words = setup.updateOutcome == nil ? "Install Now" : "Try Again"
+        let words = setup.updateOutcome == nil ? String(localized: "Install Now") : String(localized: "Try Again")
         return Button(action: install) {
             Text(words)
                 .frame(maxWidth: .infinity)
@@ -261,7 +261,7 @@ struct RestartCountdownRows: View {
 
     private var waiting: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SpinnerLabel("Restarting the gateway…")
+            SpinnerLabel(String(localized: "Restarting the gateway…"))
             if let began = setup.restartBegan {
                 TimelineView(.periodic(from: .now, by: 1)) { tick in
                     waitingDetail(seconds: Int(tick.date.timeIntervalSince(began)))
@@ -272,15 +272,15 @@ struct RestartCountdownRows: View {
     }
 
     private func waitingDetail(seconds: Int) -> some View {
-        let stage = setup.restartStage.isEmpty ? "Working" : setup.restartStage
+        let stage = setup.restartStage.isEmpty ? String(localized: "Working", comment: "A restart is under way") : setup.restartStage
         return VStack(alignment: .leading, spacing: 6) {
             Text("\(stage) · " + String(format: "%d:%02d", seconds / 60, seconds % 60)).note()
             if seconds >= 60 {
                 Text("Still waiting. A gateway is usually back within a minute, and this gives it up to three. You can check now or finish later, and the files stay installed either way.")
                     .note(.warning)
                 ButtonPair(choices: [
-                    .init(title: "Check now", action: recheck),
-                    .init(title: "Finish later") { withAnimation(.snappy) { setup.stopWaitingForRestart() } },
+                    .init(title: String(localized: "Check now"), action: recheck),
+                    .init(title: String(localized: "Finish later")) { withAnimation(.snappy) { setup.stopWaitingForRestart() } },
                 ])
             }
         }
@@ -294,8 +294,8 @@ struct RestartCountdownRows: View {
             ProgressView(timerInterval: span(to: end, from: .now), countsDown: true, label: { EmptyView() }, currentValueLabel: { EmptyView() })
                 .tint(.orange)
             ButtonPair(choices: [
-                .init(title: "Restart now", prominent: true, action: restart),
-                .init(title: "Later") { withAnimation(.snappy) { setup.restartLater() } },
+                .init(title: String(localized: "Restart now"), prominent: true, action: restart),
+                .init(title: String(localized: "Later", comment: "Restart the gateway later")) { withAnimation(.snappy) { setup.restartLater() } },
             ])
             Text("Turns in progress pause for a few seconds, and the companion does nothing until the gateway restarts.").note()
         }
@@ -330,15 +330,15 @@ struct RestartCountdownRows: View {
     }
 
     @ViewBuilder private var reminder: some View {
-        let headline = setup.restartError.map { "The restart failed: \($0)" }
-            ?? "A restart is needed. The files are on the gateway, but nothing works until it restarts."
+        let headline = setup.restartError.map { String(localized: "The restart failed: \($0)") }
+            ?? String(localized: "A restart is needed. The files are on the gateway, but nothing works until it restarts.")
         StatusNote(headline, symbol: "exclamationmark.triangle.fill", tone: .warning)
-        ActionRow("Restart gateway now", symbol: "arrow.clockwise", action: restart)
-        ActionRow("Check now", symbol: "waveform.path.ecg", action: recheck)
+        ActionRow(String(localized: "Restart gateway now"), symbol: "arrow.clockwise", action: restart)
+        ActionRow(String(localized: "Check now"), symbol: "waveform.path.ecg", action: recheck)
         if signInAgainNeeded {
-            let hint = "If the gateway has already come back, Settings, Advanced, Companion will show it running. Sign in again and no restart is needed."
+            let hint = String(localized: "If the gateway has already come back, Settings, Advanced, Companion will show it running. Sign in again and no restart is needed.")
             NavigationLink(destination: { GatewayFormView(existing: runtime.connection) },
-                           label: { ActionLabel(title: "Sign in again", symbol: "person.badge.key") })
+                           label: { ActionLabel(title: String(localized: "Sign in again"), symbol: "person.badge.key") })
             Text(hint).note()
         }
     }

@@ -2,25 +2,26 @@ import Foundation
 
 /// The small set of top-level settings. Search also finds the controls grouped inside each page.
 enum SettingsCategory: String, CaseIterable, Identifiable {
-    case bots, appearance, speech, notifications, privacy = "icloud", signIns = "signins", cards, siri = "voice",
+    case bots, appearance, speech, notifications, weekly, privacy = "icloud", signIns = "signins", cards, siri = "voice",
          connection = "gateways", away, keepAwake = "awake", about, advanced
 
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .bots: "Bots"
-        case .appearance: "Appearance"
-        case .speech: "Voice"
-        case .notifications: "Notifications"
-        case .privacy: "Privacy"
-        case .signIns: "Sign-ins"
-        case .cards: "Cards"
-        case .siri: "Siri & Shortcuts"
-        case .connection: "Connection"
-        case .away: "Away from home"
-        case .keepAwake: "Keep awake"
-        case .about: "About"
-        case .advanced: "Advanced"
+        case .bots: String(localized: "Bots", comment: "A Settings page name")
+        case .appearance: String(localized: "Appearance", comment: "A Settings page name")
+        case .speech: String(localized: "Voice", comment: "A Settings page name")
+        case .notifications: String(localized: "Notifications", comment: "A Settings page name")
+        case .weekly: String(localized: "Your week", comment: "A Settings page name")
+        case .privacy: String(localized: "Privacy", comment: "A Settings page name")
+        case .signIns: String(localized: "Sign-ins", comment: "A Settings page name")
+        case .cards: String(localized: "Cards", comment: "A Settings page name")
+        case .siri: String(localized: "Siri & Shortcuts", comment: "A Settings page name")
+        case .connection: String(localized: "Connection", comment: "A Settings page name")
+        case .away: String(localized: "Away from home", comment: "A Settings page name")
+        case .keepAwake: String(localized: "Keep awake", comment: "A Settings page name")
+        case .about: String(localized: "About", comment: "A Settings page name")
+        case .advanced: String(localized: "Advanced", comment: "A Settings page name")
         }
     }
     var symbol: String {
@@ -29,6 +30,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .appearance: "circle.lefthalf.filled"
         case .speech: "speaker.wave.2.fill"
         case .notifications: "bell.badge"
+        case .weekly: "calendar"
         case .privacy: "hand.raised.fill"
         case .signIns: "key.fill"
         case .cards: "creditcard.fill"
@@ -40,21 +42,25 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .advanced: "slider.horizontal.3"
         }
     }
+    /// Search words: localized so a search in the person's language finds the page.
     private var keywords: String {
         switch self {
-        case .bots: "bot avatar character face colour color look name default motion tilt"
-        case .appearance: "theme dark light text font reading transcript glass summaries titles previews"
-        case .speech: "speak speech read aloud talk talking listen hands-free"
-        case .notifications: "alert permission sound haptics background"
-        case .privacy: "security lock face id touch id approvals permissions camera microphone photos local network notifications accessibility screen recording"
-        case .signIns: "password passwords login log in username website site keychain one-time code"
-        case .cards: "card cards credit debit pay payment buy buying checkout shop money visa mastercard"
-        case .siri: DeviceWords.isMac ? "shortcuts spotlight siri" : "shortcuts spotlight siri stop lock screen live activity"
-        case .connection: "setup set up connect gateway sign in models local cloud import"
-        case .away: "tailscale remote outside travel anywhere network wifi cellular exit node"
-        case .keepAwake: "sleep awake power battery plugged night schedules overnight lid energy"
-        case .about: "version help reset remove uninstall delete developer mode acknowledgements licence license"
-        case .advanced: "developer hermes dashboard status troubleshooting companion"
+        case .bots: String(localized: "bot avatar character face colour color look name default motion tilt", comment: "Settings search words, not shown")
+        case .appearance: String(localized: "theme dark light text font reading transcript glass summaries titles previews", comment: "Settings search words, not shown")
+        case .speech: String(localized: "speak speech read aloud talk talking listen hands-free", comment: "Settings search words, not shown")
+        case .notifications: String(localized: "alert permission sound haptics background", comment: "Settings search words, not shown")
+        case .weekly: String(localized: "weekly note week summary sunday helpers papertrail left undo mute pause", comment: "Settings search words, not shown")
+        case .privacy: String(localized: "security lock face id touch id approvals permissions camera microphone photos local network notifications accessibility screen recording", comment: "Settings search words, not shown")
+        case .signIns: String(localized: "password passwords login log in username website site keychain one-time code", comment: "Settings search words, not shown")
+        case .cards: String(localized: "card cards credit debit pay payment buy buying checkout shop money visa mastercard", comment: "Settings search words, not shown")
+        case .siri: DeviceWords.isMac
+            ? String(localized: "shortcuts spotlight siri", comment: "Settings search words, not shown")
+            : String(localized: "shortcuts spotlight siri stop lock screen live activity", comment: "Settings search words, not shown")
+        case .connection: String(localized: "setup set up connect gateway sign in models local cloud import", comment: "Settings search words, not shown")
+        case .away: String(localized: "tailscale remote outside travel anywhere network wifi cellular exit node", comment: "Settings search words, not shown")
+        case .keepAwake: String(localized: "sleep awake power battery plugged night schedules overnight lid energy", comment: "Settings search words, not shown")
+        case .about: String(localized: "version help reset remove uninstall delete developer mode acknowledgements licence license", comment: "Settings search words, not shown")
+        case .advanced: String(localized: "developer hermes dashboard status troubleshooting companion", comment: "Settings search words, not shown")
         }
     }
     /// Saved sign-ins live on the Mac only: the iPhone never holds a password. Keep awake is the Mac's own sleep.
@@ -67,10 +73,12 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     #endif
 
     /// `away`: Away from home shows on a Mac that runs its own assistant and on a phone linked to one.
-    static func visible(developerMode: Bool, away: Bool = false, matching search: String = "") -> [Self] {
+    /// `weekly`: the weekly note is the owner's, so a member of someone's household never sees it.
+    static func visible(developerMode: Bool, away: Bool = false, weekly: Bool = true, matching search: String = "") -> [Self] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         return allCases.filter { category in
             (developerMode || category != .advanced) && (category != .signIns || hasSignIns) && (category != .away || away) &&
+            (category != .weekly || weekly) &&
             (category != .keepAwake || hasKeepAwake) &&
             (query.isEmpty || (category.title + " " + category.keywords).localizedCaseInsensitiveContains(query))
         }

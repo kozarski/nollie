@@ -14,6 +14,12 @@ from night_support import NAME, load
 
 # The Mac's calendar, reminders and contacts, registered in this order for every bot that is not private.
 APPLE_TOOLS = list(load("apple_data").TOOLS)
+# The rule that keeps this Mac's screen on this Mac: in every bot that is not private, before Ask first.
+MAC_SCREEN_HOOKS = ["pre_tool_call", "transform_tool_result"]
+# Ask first's hooks, in every bot: the picture pause (and its result and recordings), the rule, its memory of the
+# screen, and the start of each turn.
+ASK_FIRST_HOOKS = ["pre_tool_call", "transform_tool_result", "post_tool_call", "pre_tool_call", "post_tool_call",
+                   "pre_llm_call"]
 PAYMENT_TOOLS = ["request_payment", "payment_cards"]
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -107,34 +113,27 @@ class RecorderInstallTests(unittest.TestCase):
             package._register_papertrail(ctx, profile, self.hermes)
         return hooks
 
-    def test_the_recorder_alone_leaves_papertrail_off(self):
+    def test_every_recorder_copy_keeps_a_papertrail(self):
         _, said = self.run_installer("--recorder", "--papertrail-bots", "career")
-        self.assertIn("Recorder only, Papertrail off: nowhere.", said)
-        self.assertIn("Recorder and Papertrail: career.", said)
+        self.assertIn("Recorder and Papertrail: career, nowhere.", said)
         self.run_installer("--apply", "--recorder")
         for profile in ("career", "nowhere"):
-            marker = self.hermes / "profiles" / profile / "plugins/nollie-workflow/recorder-only"
-            self.assertTrue(marker.is_file(), profile)
-            self.assertEqual(marker.stat().st_mode & 0o777, 0o600)
-        self.assertFalse((self.hermes / "plugins/nollie-workflow/recorder-only").exists())
-        self.assertEqual(self.papertrail_hooks("career", 1), [])
-        # Named for Papertrail too: the copy replaces the folder and the marker goes.
-        _, said = self.run_installer("--apply", "--recorder", "--papertrail-bots", "career")
-        self.assertFalse((self.hermes / "profiles/career/plugins/nollie-workflow/recorder-only").exists())
-        self.assertTrue((self.hermes / "profiles/nowhere/plugins/nollie-workflow/recorder-only").exists())
-        self.assertEqual(self.papertrail_hooks("career", 2), list(load("papertrail").HOOKS))
-        # An upgrade with --recorder alone keeps Papertrail where it was on.
-        _, said = self.run_installer("--apply", "--recorder")
-        self.assertIn("Recorder and Papertrail: career.", said)
-        self.assertFalse((self.hermes / "profiles/career/plugins/nollie-workflow/recorder-only").exists())
-        self.assertTrue((self.hermes / "profiles/nowhere/plugins/nollie-workflow/recorder-only").exists())
+            self.assertFalse((self.hermes / "profiles" / profile / "plugins/nollie-workflow/recorder-only").exists())
+        self.assertEqual(self.papertrail_hooks("career", 1), list(load("papertrail").HOOKS))
+        # A marker an older installer left no longer turns Papertrail off.
+        marker = self.hermes / "profiles/nowhere/plugins/nollie-workflow/recorder-only"
+        marker.write_text("Papertrail is off in this bot.\n")
+        self.assertEqual(self.papertrail_hooks("nowhere", 2), list(load("papertrail").HOOKS))
+        # An upgrade replaces the copy, and the old marker goes with it.
+        self.run_installer("--apply", "--recorder")
+        self.assertFalse(marker.exists())
 
     def test_upgrade_backs_up_a_previous_recorder(self):
         self.run_installer("--apply", "--recorder")
         self.run_installer("--apply", "--recorder")
         self.assertTrue(list((self.hermes / "profiles/career/plugin-backups").glob("nollie-workflow-*")))
 
-    def test_recorder_only_copies_still_hold_sending(self):
+    def test_recorder_copies_still_hold_sending(self):
         self.run_installer("--apply", "--recorder")
         for profile in ("career", "nowhere"):
             (self.hermes / "profiles" / profile / "config.yaml").write_text(
@@ -151,7 +150,6 @@ class RecorderInstallTests(unittest.TestCase):
                 package._register_ask_first(ctx, profile, self.hermes)
                 decisions = [fn(tool_name="send_message", args={"message": "Hello"})
                              for hook, fn in hooks if hook == "pre_tool_call"]
-            self.assertTrue((copy / "recorder-only").is_file())
             self.assertEqual(len(decisions), 2)
             self.assertIsNone(decisions[0])
             self.assertEqual(decisions[1]["action"], "block")
@@ -195,17 +193,17 @@ class RegisterTests(unittest.TestCase):
         hooks, tools, started = self.register("default")
         self.assertEqual((tools, started),
                          (["nollie_followup", "request_sign_in", *APPLE_TOOLS, *PAYMENT_TOOLS], [self.home.resolve()]))
-        # The picture pause and Ask first, then the recorder's guard and its record of the call.
-        self.assertEqual(hooks.count("pre_tool_call"), 4)
+        # The Mac screen rule, the picture pause and Ask first, then the recorder's guard and its record of the call.
+        self.assertEqual(hooks.count("pre_tool_call"), 5)
 
     def test_other_profiles_get_papertrail_and_the_recorder_but_not_the_board(self):
         hooks, tools, started = self.register("career")
         self.assertEqual((tools, started), (["request_sign_in", *APPLE_TOOLS, *PAYMENT_TOOLS], []))
-        self.assertEqual(hooks.count("pre_tool_call"), 4)
+        self.assertEqual(hooks.count("pre_tool_call"), 5)
         # The recordings Ask first's pause keeps track of, its memory of the latest screen, Papertrail, and the
         # recorder.
         self.assertEqual(hooks.count("post_tool_call"), 4)
-        self.assertEqual(hooks.count("transform_tool_result"), 1)
+        self.assertEqual(hooks.count("transform_tool_result"), 2)
         self.assertTrue(set(load("papertrail").HOOKS) <= set(hooks))
         self.assertTrue((self.home / "nollie-workflow/recorders/career.json").exists())
         self.assertTrue((self.home / "profiles/career/nollie-workflow/papertrail").is_dir())
@@ -214,7 +212,7 @@ class RegisterTests(unittest.TestCase):
         with patch.object(load("papertrail"), "Recorder", side_effect=RuntimeError("broken")), \
                 self.assertLogs("nollie-workflow", "WARNING") as logged:
             hooks, _, _ = self.register("career")
-        self.assertEqual((hooks.count("pre_tool_call"), hooks.count("post_tool_call")), (4, 3))
+        self.assertEqual((hooks.count("pre_tool_call"), hooks.count("post_tool_call")), (5, 3))
         self.assertNotIn("post_api_request", hooks)
         self.assertIn("Papertrail did not start: RuntimeError", logged.output[0])
 
@@ -222,22 +220,23 @@ class RegisterTests(unittest.TestCase):
         with patch.object(load("recorder"), "register", side_effect=RuntimeError("broken")), \
                 self.assertLogs("nollie-workflow", "WARNING") as logged:
             hooks, _, _ = self.register("career")
-        self.assertEqual(hooks, ["pre_tool_call", "transform_tool_result", "post_tool_call", "pre_tool_call",
-                                 "post_tool_call"] + list(load("papertrail").HOOKS))
+        self.assertEqual(hooks, MAC_SCREEN_HOOKS + ASK_FIRST_HOOKS + ["pre_llm_call", "post_llm_call"] + list(load("papertrail").HOOKS))
         self.assertIn("The Night shift recorder did not start: RuntimeError", logged.output[0])
 
-    def test_private_profiles_get_nothing(self):
+    def test_private_profiles_get_ask_first_and_nothing_else(self):
         for profile in ("private", "moss"):
-            self.assertEqual(self.register(profile), ([], [], []))
+            self.assertEqual(self.register(profile), (ASK_FIRST_HOOKS, [], []))
         load("private_bots").save(self.home, ["career"])
-        self.assertEqual(self.register("career"), ([], [], []))
-        self.assertEqual(self.register("private"), ([], [], []))
+        self.assertEqual(self.register("career"), (ASK_FIRST_HOOKS, [], []))
+        self.assertEqual(self.register("private"), (ASK_FIRST_HOOKS, [], []))
+        self.assertFalse((self.home / "nollie-workflow/recorders/career.json").exists())
+        self.assertFalse((self.home / "profiles/career/nollie-workflow/papertrail").exists())
         (self.home / "nollie-private-bots.json").write_text("{")
-        # A damaged list: only the stand-in that refuses risky calls, and nothing at all for the bots that are
-        # always private.
-        self.assertEqual(self.register("nowhere"), (["pre_tool_call"], [], []))
+        # A damaged list: Ask first doesn't need it, so every bot keeps it, and the Mac screen rule stays on for
+        # every bot but the ones that are always private. Nothing else loads.
+        self.assertEqual(self.register("nowhere"), (MAC_SCREEN_HOOKS + ASK_FIRST_HOOKS, [], []))
         for profile in ("private", "moss"):
-            self.assertEqual(self.register(profile), ([], [], []), profile)
+            self.assertEqual(self.register(profile), (ASK_FIRST_HOOKS, [], []), profile)
 
     def test_private_main_bot_never_starts_board_follow_through(self):
         root = self.home / "nollie-workflow"
@@ -245,7 +244,7 @@ class RegisterTests(unittest.TestCase):
         load("workflow_core").atomic_write(root / "state.json", load("workflow_core").initial_state())
         load("private_bots").save(self.home, ["default"])
         before = {path.relative_to(self.home): path.read_bytes() for path in self.home.rglob("*") if path.is_file()}
-        self.assertEqual(self.register("default"), ([], [], []))
+        self.assertEqual(self.register("default"), (ASK_FIRST_HOOKS, [], []))
         self.assertEqual({path.relative_to(self.home): path.read_bytes() for path in self.home.rglob("*") if path.is_file()}, before)
 
     def test_damaged_private_list_never_starts_board_follow_through(self):
@@ -253,7 +252,7 @@ class RegisterTests(unittest.TestCase):
         root.mkdir()
         load("workflow_core").atomic_write(root / "state.json", load("workflow_core").initial_state())
         (self.home / "nollie-private-bots.json").write_text("{")
-        self.assertEqual(self.register("default"), (["pre_tool_call"], [], []))
+        self.assertEqual(self.register("default"), (MAC_SCREEN_HOOKS + ASK_FIRST_HOOKS, [], []))
 
 
 class AskFirstRegistrationTests(unittest.TestCase):
@@ -289,8 +288,7 @@ class AskFirstRegistrationTests(unittest.TestCase):
     def test_the_pause_first_then_ask_first_then_the_screen_memory(self):
         hooks = self.register()
         sign_ins = load("sign_ins")
-        self.assertEqual([name for name, _ in hooks], ["pre_tool_call", "transform_tool_result", "post_tool_call",
-                                                       "pre_tool_call", "post_tool_call"])
+        self.assertEqual([name for name, _ in hooks], ASK_FIRST_HOOKS)
         pause = hooks[0][1].__self__
         self.assertIsInstance(pause, sign_ins.PicturePause)
         self.assertEqual(hooks[0][1], pause.hook)
@@ -298,16 +296,18 @@ class AskFirstRegistrationTests(unittest.TestCase):
         self.assertEqual(hooks[2][1], sign_ins.RECORDINGS.post_tool_call)
         self.assertIsInstance(inspect.unwrap(hooks[3][1]).__self__, load("ask_first").AskFirst)
         self.assertIsInstance(hooks[4][1].__self__, load("screen_text").Memory)
-        # Ask first reads the screen through the same memory the post hook fills.
+        # Ask first reads the screen through the same memory the post hook fills, and forgets the files the bot
+        # made when a new turn starts.
         self.assertIs(self.ask_first(hooks).screen.memory, hooks[4][1].__self__)
+        self.assertEqual(hooks[5][1], self.ask_first(hooks).files.new_turn)
 
-    def test_private_bots_get_neither(self):
+    def test_private_bots_get_both(self):
         for profile in ("private", "moss", ""):
-            self.assertEqual(self.register(profile), [], profile)
+            self.assertEqual([name for name, _ in self.register(profile)], ASK_FIRST_HOOKS, profile)
         load("private_bots").save(self.home, ["career"])
-        self.assertEqual(self.register("career"), [])
+        self.assertEqual([name for name, _ in self.register("career")], ASK_FIRST_HOOKS)
         (self.home / "nollie-private-bots.json").write_text("{")
-        self.assertEqual(self.register("nowhere"), [("pre_tool_call", self.package._refuse_unguarded)])
+        self.assertEqual([name for name, _ in self.register("nowhere")], ASK_FIRST_HOOKS)
 
     def test_a_running_bot_follows_its_ask_first_choice(self):
         bot_home = self.home / "profiles" / "career"
@@ -337,11 +337,18 @@ class AskFirstRegistrationTests(unittest.TestCase):
         config.unlink()
         self.assertEqual(hook(tool_name="send_message", args={})["action"], "block")
 
-    def test_a_bot_made_private_is_not_read_by_its_old_hook(self):
+    def test_a_bot_made_private_still_asks(self):
+        bot_home = self.home / "profiles" / "career"
+        bot_home.mkdir(parents=True)
+        (bot_home / "config.yaml").write_text(json.dumps({"plugins": {"enabled": ["nollie-workflow"]}}))
         hook = self.register()[3][1]
         load("private_bots").save(self.home, ["career"])
-        # There is no config to read. An attempt would fail closed instead of skipping this bot.
-        self.assertIsNone(hook(tool_name="send_message", args={}))
+        answer = hook(tool_name="send_message", args={"message": "Hello"})
+        self.assertEqual(answer["action"], "block")
+        self.assertIn("Held for the person's yes", answer["message"])
+        # Nothing about the call is kept anywhere.
+        self.assertEqual(sorted(p.name for p in self.home.rglob("*") if p.is_file()),
+                         ["config.yaml", "nollie-private-bots.json", "nollie-private-bots.lock"])
 
     def test_a_failed_rule_also_respects_an_explicit_off_choice(self):
         bot_home = self.home / "profiles" / "career"
@@ -368,17 +375,15 @@ class AskFirstRegistrationTests(unittest.TestCase):
                     self.assertTrue(answer["rule_key"].startswith(f"nollie-ask-first:{kind}:"), (profile, tool))
                 self.assertIsNone(hook(tool_name="web_search", args={"query": "notebooks"}))
 
-    def test_a_damaged_private_list_refuses_risky_calls_but_never_touches_the_always_private(self):
+    def test_a_damaged_private_list_still_asks_everywhere(self):
         (self.home / "nollie-private-bots.json").write_text("{")
-        for profile in ("private", "moss", ""):
-            self.assertEqual(self.register(profile), [], profile)
-        for profile in ("career", "nowhere", "default"):
-            self.assertEqual(self.register(profile), [("pre_tool_call", self.package._refuse_unguarded)], profile)
-        refuse = self.register("nowhere")[0][1]
-        answer = refuse(tool_name="terminal", args={"command": "rm -rf build"})
+        for profile in ("private", "moss", "", "career", "nowhere", "default"):
+            self.assertEqual([name for name, _ in self.register(profile)], ASK_FIRST_HOOKS, profile)
+        rule = self.ask_first(self.register("nowhere"))
+        answer = rule.hook(tool_name="terminal", args={"command": "rm -rf build"})
         self.assertEqual(answer["action"], "block")
-        self.assertIn("safety check didn't start", answer["message"])
-        self.assertIsNone(refuse(tool_name="web_search", args={"query": "ssd prices"}))
+        self.assertIn("Held for the person's yes", answer["message"])
+        self.assertIsNone(rule.hook(tool_name="web_search", args={"query": "ssd prices"}))
 
     def assert_refuses_what_it_would_check(self, hooks):
         # The picture pause may already be in; Ask first and its memory are not, and the stand-in is last.

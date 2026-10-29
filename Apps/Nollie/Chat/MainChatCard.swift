@@ -75,7 +75,8 @@ struct MainChatCard: View {
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(label), main chat")
-            .accessibilityValue([presenceText, next.map { "next, \($0.name)" }].compactMap { $0 }.joined(separator: ", "))
+            .accessibilityValue([presenceText, next.map { String(localized: "next, \($0.name)", comment: "The bot's next scheduled job, read by VoiceOver") }]
+                .compactMap { $0 }.joined(separator: ", "))
             .accessibilityHint("Opens your conversation with \(label).")
             .accessibilityIdentifier("chats.mainChat")
         }
@@ -113,9 +114,9 @@ struct MainChatCard: View {
             Label("Needs you", systemImage: "exclamationmark.bubble.fill")
                 .font(.subheadline.weight(.semibold)).foregroundStyle(.red).lineLimit(1)
         } else if working, let storedID {
-            ChatGoalLine(storedID: storedID, step: chat?.statusLine ?? (thinking ? "Thinking…" : "Replying…"))
+            ChatGoalLine(storedID: storedID, step: chat?.statusWords ?? (thinking ? String(localized: "Thinking…") : String(localized: "Replying…")))
         } else if cardsRunning > 0 {
-            Label(cardsRunning == 1 ? "Working on a card" : "Working on \(cardsRunning) cards", systemImage: "square.stack.3d.up.fill")
+            Label(String(localized: "Working on \(cardsRunning) cards"), systemImage: "square.stack.3d.up.fill")
                 .font(.subheadline).foregroundStyle(tint).lineLimit(1)
         } else {
             Label("All caught up", systemImage: "checkmark.circle")
@@ -124,10 +125,10 @@ struct MainChatCard: View {
     }
 
     private var presenceText: String {
-        if needsYou { return "Needs you" }
-        if working { return chat?.statusLine ?? "Working" }
-        if cardsRunning > 0 { return cardsRunning == 1 ? "Working on a card" : "Working on \(cardsRunning) cards" }
-        return "All caught up"
+        if needsYou { return String(localized: "Needs you") }
+        if working { return chat?.statusWords ?? String(localized: "Working", comment: "A bot's state") }
+        if cardsRunning > 0 { return String(localized: "Working on \(cardsRunning) cards") }
+        return String(localized: "All caught up")
     }
 
     /// A light that runs round the edge while the bot works; red when it needs Corey.
@@ -185,7 +186,7 @@ struct MainChatCard: View {
     static func jobName(_ raw: String?) -> String {
         var name = (raw ?? "").trimmingCharacters(in: .whitespaces)
         if name.hasPrefix("[bot:"), let end = name.firstIndex(of: "]") { name = String(name[name.index(after: end)...]).trimmingCharacters(in: .whitespaces) }
-        return name.isEmpty ? "Scheduled job" : name
+        return name.isEmpty ? String(localized: "Scheduled job") : name
     }
 
     /// A bot's Bot Chat, the session Hermes keeps as its main chat: titled "Bot Chat", or
@@ -198,7 +199,7 @@ struct MainChatCard: View {
     }
 
     /// What a main chat is called on screen.
-    static func shownTitle(_ title: String) -> String { isMainTitle(title) ? "Main chat" : title }
+    static func shownTitle(_ title: String) -> String { isMainTitle(title) ? String(localized: "Main chat") : title }
 
     /// The last thing the bot said in its main chat: fresh from the gateway, else what this
     /// device kept of the thread.

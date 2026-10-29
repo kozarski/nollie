@@ -6,7 +6,7 @@ import NollieCore
 /// will do. No state of its own: a tap in flight and a problem come in with the post.
 struct RehearsalCard: View {
     /// Under an action Ask first holds: it asks each time, rehearsal or not.
-    static let everyTime = "Needs your yes each time"
+    static let everyTime = String(localized: "Needs your yes each time", comment: "Safety: Ask first asks every time; keep exact meaning")
 
     let card: ConversationPost.Rehearsal
     let pending: ConversationPostAction?
@@ -20,7 +20,7 @@ struct RehearsalCard: View {
             Text(card.check == nil ? "Rehearsal" : "New schedule")
                 .font(Ink.cardTitle).foregroundStyle(Ink.text)
                 .accessibilityAddTraits(.isHeader)
-            PostBotLine(bot: card.bot, title: card.title.isEmpty ? "A new schedule" : card.title,
+            PostBotLine(bot: card.bot, title: card.title.isEmpty ? String(localized: "A new schedule") : card.title,
                         detail: card.botName.isEmpty ? ProfileInfo.shownName(of: card.bot) : card.botName)
             if let check = card.check {
                 CheckDetails(check: check)
@@ -43,7 +43,7 @@ struct RehearsalCard: View {
         if card.outcome == .failed || card.outcome == .stopped {
             Text("The rehearsal did not finish.").font(Ink.cardBody).foregroundStyle(Ink.warnText)
         }
-        Section(title: "Would have") {
+        Section(title: String(localized: "Would have", comment: "Heading over what a rehearsal would have done")) {
             if card.held.isEmpty {
                 Text("Nothing that changes anything.").font(Ink.cardBody).foregroundStyle(Ink.cardText)
             }
@@ -53,8 +53,8 @@ struct RehearsalCard: View {
                 if NightShiftWords.heldByAskFirst(action), !action.target.isEmpty {
                     // Ask first: its words carry their own verb, and turning the schedule on doesn't change it.
                     PostActionLine(verb: "", target: action.target, receipt: RehearsalCard.everyTime,
-                                   label: NightShiftWords.sentence(verb: "Would have:", target: action.target,
-                                                                   receipt: RehearsalCard.everyTime),
+                                   label: NightShiftWords.sentence(verb: String(localized: "Would have:", comment: "Before what a rehearsal would have done"),
+                                                                   target: action.target, receipt: RehearsalCard.everyTime),
                                    why: why, whyOpen: expanded.contains(key), whyID: "post.rehearsal.why.held.\(index)") {
                         tap(.why(key))
                     }
@@ -63,8 +63,8 @@ struct RehearsalCard: View {
                     // Stopped outright (the Mac, the add-on's own files): it could not have run for real either.
                     let stopped = action.receipt?.kind == .blocked ? NightShiftWords.stopped(action.receipt?.detail) : nil
                     PostActionLine(verb: verb, target: action.target, receipt: stopped, warn: stopped != nil,
-                                   label: NightShiftWords.sentence(verb: "Would have: " + verb.lowercased(), target: action.target,
-                                                                   receipt: stopped ?? "Held for you"),
+                                   label: NightShiftWords.sentence(verb: NightShiftWords.wouldHave(action.tool, target: action.target),
+                                                                   target: action.target, receipt: stopped ?? NightShiftWords.heldForYou),
                                    why: why, whyOpen: expanded.contains(key), whyID: "post.rehearsal.why.held.\(index)") {
                         tap(.why(key))
                     }
@@ -72,12 +72,12 @@ struct RehearsalCard: View {
             }
         }
         if !card.looked.isEmpty {
-            Section(title: "Looked at") {
+            Section(title: String(localized: "Looked at", comment: "Heading over what a rehearsal looked at")) {
                 ForEach(Array(card.looked.enumerated()), id: \.offset) { index, action in
                     let verb = NightShiftWords.verbs(action.tool, target: action.target).0
                     let key = NightShiftWhy.key(run: "looked", index: index)
                     // Under "Looked at", a look needs no verb of its own.
-                    PostActionLine(verb: verb == "Looked at" ? "" : verb, target: action.target, receipt: nil,
+                    PostActionLine(verb: verb == NightShiftWords.lookedAt ? "" : verb, target: action.target, receipt: nil,
                                    label: NightShiftWords.sentence(verb: verb, target: action.target, receipt: nil),
                                    why: NightShiftWhy.explain(action, rehearsal: card, looked: true),
                                    whyOpen: expanded.contains(key), whyID: "post.rehearsal.why.looked.\(index)") {
@@ -87,7 +87,7 @@ struct RehearsalCard: View {
             }
         }
         if !card.reply.isEmpty {
-            Section(title: "It would have said") {
+            Section(title: String(localized: "It would have said", comment: "Heading over a rehearsal's reply")) {
                 Text(card.reply)
                     .font(Ink.cardBody)
                     .foregroundStyle(Ink.cardText)
@@ -102,11 +102,11 @@ struct RehearsalCard: View {
     @ViewBuilder private var answer: some View {
         switch card.state {
         case .on:
-            Done(words: "On. It runs for real from now on.")
+            Done(words: String(localized: "On. It runs for real from now on."))
         case .changed:
-            Done(words: "It changed since. It will rehearse again.")
+            Done(words: String(localized: "It changed since. It will rehearse again."))
         case .keptOff:
-            Done(words: "Kept off.")
+            Done(words: String(localized: "Kept off."))
             Button(pending == .turnOn ? "Turning on" : "Turn on") { tap(.turnOn) }
                 .buttonStyle(OutlinePillStyle())
                 .disabled(pending != nil)
@@ -176,11 +176,11 @@ private struct CheckDetails: View {
 
     static func why(_ reason: ConversationPost.Check.Reason?) -> String {
         switch reason {
-        case .script: "This runs a script before Nollie can watch."
-        case .once: "This runs once."
-        case .repeat: "This runs only a set number of times."
-        case .unwatched: "Nollie can't watch this bot yet."
-        case nil: "Nollie can't rehearse this one."
+        case .script: String(localized: "This runs a script before Nollie can watch.")
+        case .once: String(localized: "This runs once.")
+        case .repeat: String(localized: "This runs only a set number of times.")
+        case .unwatched: String(localized: "Nollie can't watch this bot yet.")
+        case nil: String(localized: "Nollie can't rehearse this one.")
         }
     }
 }

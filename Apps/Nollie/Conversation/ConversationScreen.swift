@@ -91,10 +91,10 @@ extension ConversationActivity {
     var shownWords: String? {
         switch self {
         case .idle, .writing: nil
-        case .sending: "Sending"
-        case .thinking: "Thinking"
-        case .runningTool, .preparingTool: "Working"
-        case .summarizing: "Summarizing"
+        case .sending: String(localized: "Sending", comment: "What the bot is doing now")
+        case .thinking: String(localized: "Thinking", comment: "What the bot is doing now")
+        case .runningTool, .preparingTool: String(localized: "Working", comment: "What the bot is doing now")
+        case .summarizing: String(localized: "Summarizing", comment: "What the bot is doing now")
         case .status(let words): words
         }
     }

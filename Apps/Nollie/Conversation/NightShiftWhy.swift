@@ -5,7 +5,7 @@ import NollieCore
 /// rule that let it happen or what stopped it, and for a stop or a hold what the person can do. Only what the add-on
 /// recorded: a receipt from before 1.1 has no rule's words, and an action with no receipt says so.
 enum NightShiftWhy {
-    static let notKept = "Nollie didn't keep the reason for this one."
+    static let notKept = String(localized: "Nollie didn't keep the reason for this one.")
 
     /// The screen's key for an entry whose Why is open: one per run and action, or per rehearsal list and action.
     static func key(run: String, index: Int) -> String { "why:\(run)#\(index)" }
@@ -24,7 +24,7 @@ enum NightShiftWhy {
         guard let receipt else { return (lines + [notKept]).joined(separator: " ") }
         lines += rule(receipt, in: run, moment: moment)
         if action.status == .failed, receipt.kind != .blocked, receipt.kind != .held {
-            lines.append("It ran, but it didn't work.")
+            lines.append(String(localized: "It ran, but it didn't work."))
         }
         return lines.joined(separator: " ")
     }
@@ -35,24 +35,41 @@ enum NightShiftWhy {
         let run = ConversationPost.Run(id: "rehearsal", kind: "rehearsal", bot: card.bot, botName: card.botName,
                                        title: card.title, outcome: .rehearsal)
         guard looked else { return explain(action, in: run, moment: moment) }
-        var text = explain(action, in: run, moment: moment)
-        text += " A rehearsal lets a schedule look things up, never change anything."
-        return text
+        return [explain(action, in: run, moment: moment),
+                String(localized: "A rehearsal lets a schedule look things up, never change anything.")].joined(separator: " ")
     }
 
     /// "Scout did this during your schedule “Morning prices”."
     static func who(_ run: ConversationPost.Run, tried: Bool) -> String {
         let bot = run.botName.isEmpty ? ProfileInfo.shownName(of: run.bot) : run.botName
-        let did = tried ? "tried this" : "did this"
         let title = run.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let named = title.isEmpty ? nil : "\u{201C}\(title)\u{201D}"
+        let named = title.isEmpty ? nil : title
         if run.kind == "rehearsal" || run.outcome == .rehearsal {
-            return named.map { "\(bot) \(did) in the rehearsal of \($0)." } ?? "\(bot) \(did) in a rehearsal."
+            switch (named, tried) {
+            case (let named?, false): return String(localized: "\(bot) did this in the rehearsal of \u{201C}\(named)\u{201D}.")
+            case (let named?, true): return String(localized: "\(bot) tried this in the rehearsal of \u{201C}\(named)\u{201D}.")
+            case (nil, false): return String(localized: "\(bot) did this in a rehearsal.")
+            case (nil, true): return String(localized: "\(bot) tried this in a rehearsal.")
+            }
         }
         switch run.kind {
-        case "board": return named.map { "\(bot) \(did) for the Board task \($0)." } ?? "\(bot) \(did) for a Board task."
-        case "helper": return "A helper \(did) while \(bot) ran a schedule."
-        default: return named.map { "\(bot) \(did) during your schedule \($0)." } ?? "\(bot) \(did) during one of your schedules."
+        case "board":
+            switch (named, tried) {
+            case (let named?, false): return String(localized: "\(bot) did this for the Board task \u{201C}\(named)\u{201D}.")
+            case (let named?, true): return String(localized: "\(bot) tried this for the Board task \u{201C}\(named)\u{201D}.")
+            case (nil, false): return String(localized: "\(bot) did this for a Board task.")
+            case (nil, true): return String(localized: "\(bot) tried this for a Board task.")
+            }
+        case "helper":
+            return tried ? String(localized: "A helper tried this while \(bot) ran a schedule.")
+                         : String(localized: "A helper did this while \(bot) ran a schedule.")
+        default:
+            switch (named, tried) {
+            case (let named?, false): return String(localized: "\(bot) did this during your schedule \u{201C}\(named)\u{201D}.")
+            case (let named?, true): return String(localized: "\(bot) tried this during your schedule \u{201C}\(named)\u{201D}.")
+            case (nil, false): return String(localized: "\(bot) did this during one of your schedules.")
+            case (nil, true): return String(localized: "\(bot) tried this during one of your schedules.")
+            }
         }
     }
 
@@ -63,62 +80,83 @@ enum NightShiftWhy {
         let rule = receipt.rule.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
         switch receipt.kind {
         case .tool:
-            let work = run.kind == "board" ? "task" : "schedule"
-            return ["It's one of the tools this \(work) can use, and it doesn't need your yes."]
+            return [run.kind == "board"
+                    ? String(localized: "It's one of the tools this task can use, and it doesn't need your yes.")
+                    : String(localized: "It's one of the tools this schedule can use, and it doesn't need your yes.")]
         case .safe:
-            return ["The safety check found nothing risky in the command, so it didn't need your yes."]
+            return [String(localized: "The safety check found nothing risky in the command, so it didn't need your yes.")]
         case .allowlist:
-            if let entry = receipt.detail { return ["It matches \u{201C}\(entry)\u{201D} on your allowed list, so it runs without asking."] }
-            return ["It's on your allowed list, so it runs without asking."]
+            if let entry = receipt.detail {
+                return [String(localized: "It matches \u{201C}\(entry)\u{201D} on your allowed list, so it runs without asking.")]
+            }
+            return [String(localized: "It's on your allowed list, so it runs without asking.")]
         case .always:
-            let what = receipt.detail.map { " for \u{201C}\($0)\u{201D}" } ?? " for this"
-            if let at = receipt.grantedAt { return ["You chose Always\(what) on \(moment(at)), so it runs without asking."] }
-            return ["You chose Always\(what) earlier, so it runs without asking. Nollie didn't see when."]
+            switch (receipt.detail, receipt.grantedAt) {
+            case (let what?, let at?):
+                return [String(localized: "You chose Always for \u{201C}\(what)\u{201D} on \(moment(at)), so it runs without asking.")]
+            case (nil, let at?):
+                return [String(localized: "You chose Always for this on \(moment(at)), so it runs without asking.")]
+            case (let what?, nil):
+                return [String(localized: "You chose Always for \u{201C}\(what)\u{201D} earlier, so it runs without asking. Nollie didn't see when.")]
+            case (nil, nil):
+                return [String(localized: "You chose Always for this earlier, so it runs without asking. Nollie didn't see when.")]
+            }
         case .held:
             if receipt.detail == "ask_first" {
-                return [askFirst(receipt.ask), "Ask \(bot) in a chat if you still want it."]
+                return [askFirst(receipt.ask), String(localized: "Ask \(bot) in a chat if you still want it.")]
             }
-            return ["This was a rehearsal, so Nollie wrote it down instead of doing it.",
-                    "It runs for real once you turn the schedule on."]
+            return [String(localized: "This was a rehearsal, so Nollie wrote it down instead of doing it."),
+                    String(localized: "It runs for real once you turn the schedule on.")]
         case .blocked:
             return stopped(receipt.detail, rule: rule, bot: bot)
         case .unknown:
-            return ["It was allowed, but Nollie couldn't tell which rule let it through."]
+            return [String(localized: "It was allowed, but Nollie couldn't tell which rule let it through.")]
         }
     }
 
     /// Ask first's hold: what needs a yes, and why nobody gave one.
     static func askFirst(_ ask: String?) -> String {
-        let tail = "always waits for your yes, and nobody could answer then, so it wasn't done."
         switch ask {
-        case "send": return "Sending " + tail
-        case "buy": return "Buying " + tail
-        case "post": return "Posting " + tail
-        case "delete": return "Deleting " + tail
-        case "unsure": return "Nollie couldn't tell what this would do, so it waited for your yes. Nobody could answer then, so it wasn't done."
-        default: return "Anything that sends, buys, posts or deletes " + tail
+        case "send":
+            return String(localized: "Sending always waits for your yes, and nobody could answer then, so it wasn't done.",
+                          comment: "Safety: Ask first held a send; keep exact meaning")
+        case "buy":
+            return String(localized: "Buying always waits for your yes, and nobody could answer then, so it wasn't done.",
+                          comment: "Safety: Ask first held a payment; keep exact meaning")
+        case "post":
+            return String(localized: "Posting always waits for your yes, and nobody could answer then, so it wasn't done.",
+                          comment: "Safety: Ask first held a post; keep exact meaning")
+        case "delete":
+            return String(localized: "Deleting always waits for your yes, and nobody could answer then, so it wasn't done.",
+                          comment: "Safety: Ask first held a delete; keep exact meaning")
+        case "unsure":
+            return String(localized: "Nollie couldn't tell what this would do, so it waited for your yes. Nobody could answer then, so it wasn't done.",
+                          comment: "Safety: Ask first held an unclear action; keep exact meaning")
+        default:
+            return String(localized: "Anything that sends, buys, posts or deletes always waits for your yes, and nobody could answer then, so it wasn't done.",
+                          comment: "Safety: Ask first held an action; keep exact meaning")
         }
     }
 
     static func stopped(_ detail: String?, rule: String?, bot: String) -> [String] {
+        let askInChat = String(localized: "Ask \(bot) in a chat if you want it done.")
         switch detail ?? "" {
         case "mac":
-            return ["Schedules and Board tasks never use your Mac's screen or apps, so it was stopped.",
-                    "Ask \(bot) in a chat if you want it done."]
+            return [String(localized: "Schedules and Board tasks never use your Mac's screen or apps, so it was stopped."), askInChat]
         case "risky":
-            let what = rule.map { " (\($0))" } ?? ""
-            return ["The command looked risky\(what), and nobody was there to say yes, so it was stopped.",
-                    "Ask \(bot) in a chat if you want it done."]
+            let first = rule.map { String(localized: "The command looked risky (\($0)), and nobody was there to say yes, so it was stopped.") }
+                ?? String(localized: "The command looked risky, and nobody was there to say yes, so it was stopped.")
+            return [first, askInChat]
         case "deny_rule":
-            if let rule { return ["It matches \u{201C}\(rule)\u{201D}, one of your rules that says no, so it was stopped."] }
-            return ["One of your rules says no to this, so it was stopped."]
+            if let rule { return [String(localized: "It matches \u{201C}\(rule)\u{201D}, one of your rules that says no, so it was stopped.")] }
+            return [String(localized: "One of your rules says no to this, so it was stopped.")]
         case "hardline":
-            let what = rule.map { " (\($0))" } ?? ""
-            return ["This is never allowed, even when you're there\(what), so it was stopped."]
+            return [rule.map { String(localized: "This is never allowed, even when you're there (\($0)), so it was stopped.") }
+                    ?? String(localized: "This is never allowed, even when you're there, so it was stopped.")]
         case "plugin":
-            return ["Work nobody watches never changes Nollie's own files, so it was stopped."]
+            return [String(localized: "Work nobody watches never changes Nollie's own files, so it was stopped.")]
         default:
-            return ["The safety check stopped it, and didn't say which rule."]
+            return [String(localized: "The safety check stopped it, and didn't say which rule.")]
         }
     }
 }

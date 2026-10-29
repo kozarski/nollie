@@ -127,7 +127,7 @@ struct ChatListView: View {
             ContentUnavailableView {
                 Label("Make yourself at home", systemImage: "bubble.left.and.bubble.right")
             } description: {
-                Text(model.activationError ?? "Connect Hermes when you're ready to start chatting.")
+                Text(model.activationError ?? String(localized: "Connect Hermes when you're ready to start chatting."))
             } actions: {
                 Button("Set up Nollie", action: restartSetup)
                 Button("Open Settings") { model.selectedTab = .settings }
@@ -142,18 +142,21 @@ struct ChatListView: View {
     }
 
     var listTitle: String {
-        guard !selecting else { return selection.isEmpty ? "Select Chats" : "\(selection.count) Selected" }
-        return showingBots ? "Chats" : historyTitle
+        guard !selecting else {
+            return selection.isEmpty ? String(localized: "Select Chats") : String(localized: "\(selection.count) Selected", comment: "How many chats are ticked")
+        }
+        return showingBots ? String(localized: "Chats") : historyTitle
     }
 
     private var historyTitle: String {
-        if allBots { return "All Chats" }
+        if allBots { return String(localized: "All Chats") }
         #if os(macOS)
-        guard let bot = runtime?.selectedProfile, let runtime else { return "History" }
-        return "Chats with " + (runtime.profiles.first { $0.name == bot }?.shownName ?? bot)
+        guard let bot = runtime?.selectedProfile, let runtime else { return String(localized: "History") }
+        let name = runtime.profiles.first { $0.name == bot }?.shownName ?? bot
+        return String(localized: "Chats with \(name)")
         #else
         // The phone's bar is crowded here already, so the bot's face in it tells whose history this is.
-        return "History"
+        return String(localized: "History")
         #endif
     }
 
@@ -373,8 +376,8 @@ private struct DeleteAlerts: ViewModifier {
         let count = list.selection.count
         content
             .modifier(AskBeforeDelete(
-                title: count == 1 ? "Delete 1 chat?" : "Delete \(count) chats?",
-                detail: "The gateway will lose these chats and everything said in them.",
+                title: String(localized: "Delete \(count) chats?", comment: "Safety: asks before deleting chats"),
+                detail: String(localized: "The gateway will lose these chats and everything said in them.", comment: "Safety: what deleting chats does"),
                 isPresented: list.$pendingDeleteMany
             ) {
                 let doomed = list.picked
@@ -382,8 +385,8 @@ private struct DeleteAlerts: ViewModifier {
                 Task { await list.delete(doomed) }
             })
             .modifier(AskBeforeDelete(
-                title: "Delete chat?",
-                detail: "The gateway will lose this chat and everything said in it.",
+                title: String(localized: "Delete chat?", comment: "Safety: asks before deleting a chat"),
+                detail: String(localized: "The gateway will lose this chat and everything said in it.", comment: "Safety: what deleting a chat does"),
                 isPresented: singleAsked
             ) {
                 guard let doomed = list.pendingDelete else { return }

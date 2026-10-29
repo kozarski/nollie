@@ -371,6 +371,51 @@ def private_bots_rest(method: str, base: str, query: dict, payload) -> tuple[int
     return ok(dict(profiles=PRIVATE_BOTS["profiles"], saved=True))
 
 
+# Each bot's look, as nollie-workflow serves it (GET /api/plugins/nollie-workflow/bot-looks and PUT
+# …/bot-looks/<profile>), kept in memory: what one device picks, the others draw. A private bot's
+# look is neither kept nor shown. POST /api/_mock/bot-looks forgets them all.
+BOT_LOOKS: dict = dict(bots={}, saved=False)
+LOOK_ID = re.compile(r"[a-z][a-z0-9_-]{0,31}\Z")
+LOOK_COLOUR = re.compile(r"#[0-9A-F]{6}\Z")
+
+
+def bot_looks_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    if base == "/api/_mock/bot-looks" and method == "POST":
+        BOT_LOOKS.update(bots={}, saved=False)
+        return ok(dict(bots={}, saved=False))
+    root = "/api/plugins/nollie-workflow/bot-looks"
+    if base != root and not base.startswith(root + "/"):
+        return None
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+
+    def shown():
+        return {name: look for name, look in BOT_LOOKS["bots"].items() if not private_identity(name)}
+
+    if base == root:
+        return ok(dict(bots=shown(), saved=BOT_LOOKS["saved"])) if method == "GET" else refuse(405, "Method Not Allowed")
+    if method != "PUT":
+        return refuse(405, "Method Not Allowed")
+    profile = unquote(base[len(root) + 1:]).strip().lower()
+    if not PRIVATE_PROFILE_NAME.match(profile):
+        return refuse(422, "The bot must be a Hermes profile name.")
+    if private_identity(profile):
+        return refuse(403, "A private bot's look stays on its device.")
+    fields = payload if isinstance(payload, dict) else {}
+    look, colour = fields.get("look"), fields.get("colour")
+    colour = colour.upper() if isinstance(colour, str) else colour
+    if (look is not None and not (isinstance(look, str) and LOOK_ID.match(look))) or (
+            colour is not None and not (isinstance(colour, str) and LOOK_COLOUR.match(colour))):
+        return refuse(422, "Send a character id and a #RRGGBB colour.")
+    entry = {key: value for key, value in (("look", look), ("colour", colour)) if value is not None}
+    if entry:
+        BOT_LOOKS["bots"][profile] = entry
+    else:
+        BOT_LOOKS["bots"].pop(profile, None)
+    BOT_LOOKS["saved"] = True
+    return ok(dict(bots=shown(), saved=True))
+
+
 # Papertrail, as nollie-workflow serves it (GET /api/plugins/nollie-workflow/papertrail?bot=&days=):
 # what left the Mac for each bot, one entry per reply or job, with the replies that stayed only
 # counted. Seeded for "default" (a busy week) and "work" (a lighter one), placed relative to now so
@@ -382,9 +427,10 @@ PAPERTRAIL_STATES = ("busy", "empty", "off")
 
 def _papertrail_seed(entry_id, day, when, took, route="online", provider=None, name=None, model=None,
                      host=None, calls=1, helpers=(), services=(), tokens=(0, 0, 0, 0), searches=0,
-                     pages=0, images=0, why=None) -> dict:
+                     pages=0, images=0, why=None, connections=()) -> dict:
     """One seeded entry: `when` is minutes ago for today (day 0), else an (hour, minute) on that day.
-    `why` is what the add-on kept about why it went (see _papertrail_why); None for one kept before 1.1."""
+    `why` is what the add-on kept about why it went (see _papertrail_why); None for one kept before 1.1.
+    `connections` are (host, kind, count) the door saw in it, as nollie-workflow serves them."""
     seed = dict(id=entry_id, day=day, when=when, took=took, route=route, provider=provider,
             provider_name=name, host=host, model=model, calls=calls, helpers=list(helpers),
             services=list(services), input_tokens=tokens[0], output_tokens=tokens[1],
@@ -392,6 +438,10 @@ def _papertrail_seed(entry_id, day, when, took, route="online", provider=None, n
             pages=pages, images=images)
     if why is not None:
         seed["why"] = why
+    if connections:
+        seed["connections"] = [dict(host=host, port=443, kind=kind, count=count,
+                                    route="network" if host.startswith("192.168.") else "online")
+                               for host, kind, count in connections]
     return seed
 
 
@@ -409,10 +459,14 @@ PAPERTRAIL_SEED = dict(
     default=dict(recording_days=12, stayed={0: 12, 1: 9, 2: 7, 3: 5, 5: 4, 6: 3, 9: 6, 11: 2}, entries=[
         _papertrail_seed("t-d1", 0, 12, 95, **_PT_DIRECT, calls=6, helpers=["title_generation"],
                          services=["exa"], tokens=(18000, 900, 52000, 0), searches=2, pages=3,
-                         why=_papertrail_why(messages=24, approvals=[(40, "once", "send")])),
+                         why=_papertrail_why(messages=24, approvals=[(40, "once", "send")]),
+                         connections=[("api.example.com", "hermes", 6), ("search.example.net", "hermes", 2),
+                                      ("news.example.org", "reader", 3)]),
         _papertrail_seed("t-d2", 0, 70, 40, **_PT_RELAY, calls=3, tokens=(6400, 1200, 0, 0),
                          why=_papertrail_why("schedule", "Morning brief", messages=6, backup=True)),
-        _papertrail_seed("t-d3", 0, 150, 6, services=["exa"], searches=1, why=_papertrail_why()),
+        _papertrail_seed("t-d3", 0, 150, 6, services=["exa"], searches=1, why=_papertrail_why(),
+                         connections=[("search.example.net", "hermes", 1)]),
+        _papertrail_seed("w-door1", 0, 190, 4, calls=0, connections=[("code.example.com", "terminal", 2)]),
         _papertrail_seed("t-d4", 0, 230, 55, route="network", provider="custom", model="assistant-open-32b",
                          host="http://192.168.1.40:8080", calls=2, tokens=(3100, 420, 0, 0),
                          why=_papertrail_why(messages=8)),
@@ -507,6 +561,210 @@ def papertrail_rest(method: str, base: str, query: dict, payload) -> tuple[int, 
     if bot not in PAPERTRAIL_SEED or bot == "default" and PAPERTRAIL["state"] == "off":
         return refuse(404, "Papertrail is not on for this bot.")
     return ok(papertrail_view(bot, int(days)))
+
+
+# The weekly note's records, as nollie-workflow serves them (GET /api/plugins/nollie-workflow/week?bot=): what each
+# bot did and what left the Mac over the last 7 days, as counts and names. Seeded for "default" (a busy week with a
+# new connected app, more questions than usual and a filter that is off) and "work" (a new, paused schedule). Each
+# schedule reads its paused state from the schedules themselves, so Pause in the note shows up here.
+# PUT /api/plugins/nollie-workflow/week/switch turns a seeded app or the web tools off and on again.
+# POST .../week/remove-app takes a seeded app out for good and keeps it as a change the person made.
+# GET .../mutes and PUT .../mutes/<bot> keep each helper's mute for every device; GET/PUT .../weekly-note the note's
+# switch and day; POST .../weekly-note/live is the Mac saying it sends the note itself.
+# POST /api/_mock/week {"state": "busy"|"quiet"} empties every bot's week; "reset" restores the switches, the removed
+# apps, the mutes and the note's settings.
+WEEK = dict(state="busy")
+WEEK_SWITCHES: dict = {}
+WEEK_REMOVED: list = []
+WEEK_MUTED: set = set()
+WEEK_NOTE = dict(on=True, weekday=1, live_at=None, saved=False)
+WEEK_SEED = dict(
+    default=dict(
+        replies=dict(stayed=40, left=11, online=10),
+        places=[dict(kind="model", provider="anthropic", label="Anthropic", count=31, first_day=20),
+                dict(kind="search", service="exa", count=6, first_day=18),
+                dict(kind="pages", count=9, first_day=18),
+                dict(kind="mcp", host="mcp.notes.example.com", count=4, first_day=2),
+                dict(kind="terminal", host="code.example.com", count=3, first_day=15),
+                dict(kind="model", provider="custom", host="http://192.168.1.40:8080", count=2, first_day=12),
+                dict(kind="pictures", count=1, first_day=16)],
+        answers=dict(once=3, session=1, always=0, deny=1), asks=dict(send=3, delete=2), earlier_answers=[1, 2, 1],
+        schedules=[dict(id="morning-brief", created_day=40, runs=dict(done=5, failed=0, unfinished=0))],
+        board=dict(done=3, stopped=0, failed=0),
+        apps=[dict(name="notes", on=True, host="mcp.notes.example.com")]),
+    work=dict(
+        replies=dict(stayed=9, left=3, online=3),
+        places=[dict(kind="model", provider="nous", label="Nous Portal", count=5, first_day=19),
+                dict(kind="search", service="exa", count=2, first_day=19),
+                dict(kind="code", host="files.example.org", count=2, first_day=1)],
+        answers=dict(once=1, session=0, always=0, deny=0), asks=dict(send=1), earlier_answers=[1, 0, 2],
+        schedules=[dict(id="dep-audit", created_day=2, runs=dict(done=0, failed=0, unfinished=0))],
+        board=dict(done=0, stopped=0, failed=0), apps=[]),
+)
+
+
+def week_view(bot: str, now: float | None = None) -> dict:
+    """The week route's answer for a seeded bot, with every time worked out from `now` (the Mac's local days)."""
+    now = time.time() if now is None else now
+    today = datetime.date.fromtimestamp(now)
+
+    def midnight(day: int) -> int:
+        return int(datetime.datetime.combine(today - datetime.timedelta(days=day), datetime.time()).timestamp())
+
+    seed = WEEK_SEED[bot]
+    quiet = WEEK["state"] == "quiet"
+    places = [] if quiet else [
+        dict({k: v for k, v in place.items() if k != "first_day"}, first_at=midnight(place["first_day"]) + 10 * 3600)
+        for place in seed["places"]]
+    schedules = []
+    for seeded in seed["schedules"]:
+        job = _cron_job(seeded["id"])
+        if job is None:
+            continue
+        runs = dict(done=0, failed=0, unfinished=0) if quiet else seeded["runs"]
+        schedules.append(dict(id=seeded["id"], name=job.get("name") or None,
+                              created_at=midnight(seeded["created_day"]) + 9 * 3600,
+                              paused=job.get("enabled") is False or job.get("state") == "paused", finished=False,
+                              runs=runs))
+    removed = {change["name"] for change in WEEK_REMOVED if change["bot"] == bot}
+    apps = [dict(app, on=WEEK_SWITCHES.get((bot, "app", app["name"]), app["on"])) for app in seed["apps"]
+            if app["name"] not in removed]
+    changes = [dict(at=change["at"], kind="app_removed", name=change["name"])
+               for change in reversed(WEEK_REMOVED) if change["bot"] == bot]
+    return dict(bot=bot, days=7, now=int(now), since=midnight(6), recording_since=midnight(30), papertrail=True,
+                replies=dict(stayed=0, left=0, online=0) if quiet else seed["replies"], places=places,
+                places_more=0, answers=dict(once=0, session=0, always=0, deny=0) if quiet else seed["answers"],
+                asks={} if quiet else seed["asks"], earlier_answers=seed["earlier_answers"], schedules=schedules,
+                runs_kept=True, schedules_kept=True,
+                board=dict(done=0, stopped=0, failed=0) if quiet else seed["board"], apps=apps,
+                web=dict(on=WEEK_SWITCHES.get((bot, "web", None), True), service="exa"), filter="off", changes=changes)
+
+
+def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    if base == "/api/_mock/week" and method == "POST":
+        state = payload.get("state", "busy") if isinstance(payload, dict) else None
+        if state == "reset":
+            WEEK_SWITCHES.clear()
+            WEEK_REMOVED.clear()
+            WEEK_MUTED.clear()
+            WEEK_NOTE.update(on=True, weekday=1, live_at=None, saved=False)
+            WEEK["state"] = "busy"
+        elif state in ("busy", "quiet"):
+            WEEK["state"] = state
+        else:
+            return refuse(422, "Send a state: busy, quiet or reset.")
+        return ok(dict(state=WEEK["state"]))
+    settings = weekly_settings_rest(method, base, query, payload)
+    if settings is not None:
+        return settings
+    if base == "/api/plugins/nollie-workflow/week/remove-app":
+        return week_remove_app(method, query, payload)
+    if base not in ("/api/plugins/nollie-workflow/week", "/api/plugins/nollie-workflow/week/switch"):
+        return None
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+    switching = base.endswith("/switch")
+    if method != ("PUT" if switching else "GET"):
+        return refuse(405, "Method Not Allowed")
+    fields = payload if isinstance(payload, dict) else {}
+    bot = fields.get("bot") if switching else unquote(query.get("bot", "default"))
+    if not isinstance(bot, str) or not PRIVATE_PROFILE_NAME.match(bot):
+        return refuse(422, "Send a bot's Hermes profile name.")
+    if private_identity(bot) or set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names():
+        return refuse(403, "The weekly note leaves private bots out.")
+    if bot not in PROFILES and bot not in CREATED_PROFILES:
+        return refuse(404, "No such bot.")
+    seed = WEEK_SEED.get(bot)
+    if not switching:
+        if seed is None:
+            return ok(dict(bot=bot, days=7, now=int(time.time()), since=0, recording_since=None, papertrail=False,
+                           replies=dict(stayed=0, left=0, online=0), places=[], places_more=0,
+                           answers=dict(once=0, session=0, always=0, deny=0), asks={}, earlier_answers=[], schedules=[],
+                           runs_kept=True, schedules_kept=True, board=dict(done=0, stopped=0, failed=0), apps=[],
+                           web=dict(on=True, service=None), filter="off", changes=[]))
+        return ok(week_view(bot))
+    kind, name, on = fields.get("kind"), fields.get("name"), fields.get("on")
+    if kind not in ("app", "web") or not isinstance(on, bool) or (kind == "app" and not isinstance(name, str)):
+        return refuse(422, "Send an app's name, or web.")
+    if kind == "app" and not any(app["name"] == name for app in (seed or {}).get("apps", [])):
+        return refuse(404, "This bot has no such app.")
+    WEEK_SWITCHES[(bot, kind, name if kind == "app" else None)] = on
+    return ok(dict(bot=bot, kind=kind, name=name if kind == "app" else None, on=on))
+
+
+def _week_bot(bot):
+    """None for a bot the weekly routes may name, else the refusal."""
+    if not isinstance(bot, str) or not PRIVATE_PROFILE_NAME.match(bot):
+        return refuse(422, "Send a bot's Hermes profile name.")
+    if private_identity(bot) or set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names():
+        return refuse(403, "The weekly note leaves private bots out.")
+    if bot not in PROFILES and bot not in CREATED_PROFILES:
+        return refuse(404, "No such bot.")
+    return None
+
+
+def week_remove_app(method, query, payload):
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+    if method != "POST":
+        return refuse(405, "Method Not Allowed")
+    fields = payload if isinstance(payload, dict) else {}
+    bot, name = fields.get("bot"), fields.get("name")
+    refused = _week_bot(bot)
+    if refused:
+        return refused
+    if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}", name):
+        return refuse(422, "Send an app's name.")
+    removed = {change["name"] for change in WEEK_REMOVED if change["bot"] == bot}
+    if name in removed or not any(app["name"] == name for app in WEEK_SEED.get(bot, {}).get("apps", [])):
+        return refuse(404, "This bot has no such app.")
+    WEEK_REMOVED.append(dict(bot=bot, name=name, at=int(time.time())))
+    return ok(dict(bot=bot, name=name, removed=True))
+
+
+def _visible_mutes():
+    return sorted(bot for bot in WEEK_MUTED if not private_identity(bot)
+                  and not set(re.split(r"[^a-z0-9]+", bot)) & carried_over_private_names())
+
+
+def weekly_settings_rest(method, base, query, payload):
+    prefix = "/api/plugins/nollie-workflow/"
+    if not base.startswith(prefix):
+        return None
+    rest = base[len(prefix):]
+    if rest != "mutes" and not rest.startswith("mutes/") and rest not in ("weekly-note", "weekly-note/live"):
+        return None
+    if query.get("profile", "default") != "default":
+        return refuse(403, "Board follow-through belongs to Nollie.")
+    fields = payload if isinstance(payload, dict) else {}
+    if rest == "mutes":
+        if method != "GET":
+            return refuse(405, "Method Not Allowed")
+        return ok(dict(muted=_visible_mutes(), saved=bool(WEEK_MUTED)))
+    if rest.startswith("mutes/"):
+        if method != "PUT":
+            return refuse(405, "Method Not Allowed")
+        bot = unquote(rest[len("mutes/"):]).strip().lower()
+        refused = _week_bot(bot)
+        if refused:
+            return refused
+        if set(fields) != {"muted"} or type(fields["muted"]) is not bool:
+            return refuse(422, "Send muted true or false.")
+        (WEEK_MUTED.add if fields["muted"] else WEEK_MUTED.discard)(bot)
+        return ok(dict(muted=_visible_mutes(), saved=True))
+    if rest == "weekly-note/live":
+        if method != "POST":
+            return refuse(405, "Method Not Allowed")
+        WEEK_NOTE.update(live_at=int(time.time()), saved=True)
+        return ok(dict(live_at=WEEK_NOTE["live_at"]))
+    if method == "PUT":
+        on, weekday = fields.get("on"), fields.get("weekday")
+        if type(on) is not bool or type(weekday) is not int or not 1 <= weekday <= 7:
+            return refuse(422, "Send on true or false and a weekday from 1 to 7.")
+        WEEK_NOTE.update(on=on, weekday=weekday, saved=True)
+    elif method != "GET":
+        return refuse(405, "Method Not Allowed")
+    return ok(dict(WEEK_NOTE))
 
 
 # Ask first starts on for every demo bot. POST /api/_mock/ask-first resets the choices.
@@ -828,6 +1086,130 @@ def link_rest(method: str, base: str, payload) -> tuple[int, object] | None:
         LINK_AWAY["log"].append("on" if LINK_AWAY["away"] else "off")
         return ok(link_view())
     return None
+
+
+# Sharing a helper at home: the door's /nollie/family routes, for the demo copy as the owner's phone
+# (`-nollie-demo-family owner`) or as the phone of someone a helper was shared with
+# (`-nollie-demo-family member`). A real door answers these itself and enforces them; here they are
+# a fixture. POST /api/_mock/family {"role": "owner"|"member", "asks": bool, "reset": true} sets it.
+# As a member the mock also lists only the shared helper and that person's own chats, as the door does.
+FAMILY_SEND_RULE = "plugin_rule:nollie-ask-first:send:" + "0" * 24 + "5a11c0de"
+# What a household copy may never use, as the door writes it into the copy's agent.disabled_toolsets.
+FAMILY_DROPPED = ("terminal", "code_execution", "file", "browser", "computer_use", "debugging", "coding",
+                  "session_search", "skills", "delegation", "cronjob", "kanban", "vision", "video",
+                  "desktop_ui", "project", "catalog", "onboarding", "nollie_calendar", "nollie_reminders",
+                  "nollie_contacts", "nollie_payments", "nollie_sign_in", "nollie_crew", "mcp-cua", "mcp-cua-recorder",
+                  "bot_room", "connections", "x_search", "discord", "discord_admin", "yuanbao", "feishu_doc", "feishu_drive")
+
+
+def family_fresh() -> dict:
+    now = time.time()
+    return dict(
+        role="owner", owner="Corey",
+        members=[dict(id="6f9619ff-8b86-d011-b42d-00c04fc964ff", person="Sam", device="Sam's iPhone", helpers=["work-sam"],
+                      small=False, linkedAt=now - 86_400 * 3, lastActive=now - 600),
+                 dict(id="1d2c3b4a-5e6f-4071-8293-a4b5c6d7e8f9", person="Mum", device="Mum's iPhone", helpers=["work-mum"],
+                      small=False, linkedAt=now - 86_400 * 9, lastActive=now - 7_200)],
+        asks=[dict(id="srq-0123456789ab", person="Sam", helper="work-sam", chat="20261026_090000_5a11c0", small=False,
+                   at=now - 45, request=dict(
+                       request_id="req-5a11c0de", tool_name="mcp__gmail__send_email",
+                       command="<mcp__gmail__send_email> (plugin approval rule)",
+                       description="Send with gmail: send email\nto: grandma@example.com\nsubject: Sunday lunch\nbody: Can we bring a cake?",
+                       pattern_key=FAMILY_SEND_RULE, pattern_keys=[FAMILY_SEND_RULE], choices=["once", "deny"]))],
+        log=[])
+
+
+FAMILY: dict = family_fresh()
+FAMILY_MEMBER_CHATS = [
+    dict(id="20261026_090000_5a11c0", title="Sunday lunch with Grandma", started_at=time.time() - 3_600,
+         last_active=time.time() - 60, message_count=4, profile="work-sam"),
+    dict(id="20261024_181500_5a11c1", title="Maths homework: fractions", started_at=time.time() - 86_400 * 2,
+         last_active=time.time() - 86_400 * 2 + 900, message_count=12, profile="work-sam"),
+]
+
+
+def family_overview() -> dict:
+    return dict(members=FAMILY["members"], asks=FAMILY["asks"])
+
+
+def family_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    body = payload if isinstance(payload, dict) else {}
+    member = FAMILY["role"] == "member"
+    if base == "/api/_mock/family":
+        if method == "POST":
+            if body.get("reset"):
+                FAMILY.clear()
+                FAMILY.update(family_fresh())
+            if body.get("role") in ("owner", "member"):
+                FAMILY["role"] = body["role"]
+            if body.get("asks") is False:
+                FAMILY["asks"] = []
+        return ok(dict(family_overview(), role=FAMILY["role"], log=FAMILY["log"]))
+    if member and method == "GET" and base == "/api/profiles":
+        return ok(dict(profiles=[dict(name="work-sam", display_name="Work", is_default=False, model=MODEL, provider=PROVIDER,
+                                      description="For Sam")]))
+    if member and method == "GET" and base == "/api/sessions":
+        if query.get("profile") != "work-sam":
+            return refuse(403, "Ask the person who shared this.")
+        return ok(dict(sessions=FAMILY_MEMBER_CHATS, total=len(FAMILY_MEMBER_CHATS), limit=20, offset=0, storage={}))
+    if not base.startswith("/nollie/family"):
+        return None
+    if base == "/nollie/family/me":
+        if method != "GET":
+            return refuse(404, "The request was refused.")
+        if member:
+            return ok(dict(role="member", owner=FAMILY["owner"], person="Sam", helpers=["work-sam"], small=False))
+        return ok(dict(role="owner"))
+    if member:
+        return refuse(403, "Ask the person who shared this.")
+    if base == "/nollie/family" and method == "GET":
+        return ok(family_overview())
+    if base == "/nollie/family/invite" and method == "POST":
+        person, helpers = body.get("person"), body.get("helpers")
+        if not isinstance(person, str) or not person.strip() or not isinstance(helpers, list) or not helpers:
+            return refuse(400, "That can't be shared.")
+        if any(private_identity(h) for h in helpers if isinstance(h, str)):
+            return refuse(403, "Private helpers stay yours.")
+        # The door makes the person's own copy of each helper and locks its tools down.
+        slug = re.sub(r"[^a-z0-9]", "", person.lower())[:16] or "home"
+        copies = [f"{h}-{slug}" for h in helpers]
+        for helper, copy_name in zip(helpers, copies):
+            CREATED_PROFILES.setdefault(copy_name, dict(
+                name=copy_name, path=f"/home/hermes/.hermes/profiles/{copy_name}", is_default=False,
+                description=f"For {person}", provider=PROVIDER, model=MODEL, clone_from=helper,
+                disabled_toolsets=list(FAMILY_DROPPED)))
+        FAMILY["log"].append(dict(operation="invite", person=person, helpers=helpers, copies=copies))
+        b64 = lambda raw: base64.urlsafe_b64encode(raw).decode().rstrip("=")
+        shown = [h.capitalize() for h in helpers]
+        return ok(dict(macName="Studio", pin=b64(os.urandom(32)), port=52345, hosts=["192.168.1.20", "studio.local"],
+                       tag="0123456789abcdef", secret=b64(os.urandom(32)), expiresAt=time.time() + 120,
+                       owner=FAMILY["owner"], helpers=shown))
+    parts = base.split("/")
+    if len(parts) == 5 and parts[3] == "members":
+        found = next((m for m in FAMILY["members"] if m["id"] == parts[4]), None)
+        if found is None:
+            return refuse(404, "That isn't here any more.")
+        if method == "DELETE":
+            FAMILY["members"].remove(found)
+            FAMILY["asks"] = [a for a in FAMILY["asks"] if a["person"] != found["person"]]
+            FAMILY["log"].append(dict(operation="remove", person=found["person"]))
+            return ok(family_overview())
+        if method == "PUT":
+            if isinstance(body.get("small"), bool):
+                found["small"] = body["small"]
+            if isinstance(body.get("helpers"), list):
+                found["helpers"] = body["helpers"]
+            return ok(family_overview())
+    if len(parts) == 5 and parts[3] == "asks" and method == "POST":
+        if body.get("choice") not in ("once", "deny"):
+            return refuse(400, "That can't be shared.")
+        found = next((a for a in FAMILY["asks"] if a["id"] == parts[4]), None)
+        if found is None:
+            return refuse(404, "That isn't here any more.")
+        FAMILY["asks"].remove(found)
+        FAMILY["log"].append(dict(operation="answer", ask=found["id"], choice=body["choice"]))
+        return ok(family_overview())
+    return refuse(404, "The request was refused.")
 
 
 def own_computer_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
@@ -1548,6 +1930,7 @@ async def computer_preview_control(method, payload):
         COMPUTER_PREVIEW["state"] = state
         if payload.get("reset_log"):
             COMPUTER_PREVIEW["requests"] = []
+            COMPUTER_PREVIEW["writes"] = 0
             COMPUTER_PREVIEW["control_writes"] = 0
             # `live_open` is the sockets open right now, so it is never reset.
             COMPUTER_PREVIEW.update(live_connections=0, live_frames=0, live_keyframes=0, last_report=None)
@@ -1557,8 +1940,15 @@ async def computer_preview_control(method, payload):
             active = bool(payload["active"])
             COMPUTER_PREVIEW["active"] = active
             for session in list(LIVE.values()):
-                if session.stored == COMPUTER_SESSION and session.members:
+                if session.stored != COMPUTER_SESSION:
+                    continue
+                if session.members:
                     await computer_demo_event(next(iter(session.members)), session, active)
+                elif not active:
+                    # No one is attached to hear it end, but the turn ends all the same: the next
+                    # resume must not find the helper still using the computer.
+                    session.running = False
+                    session.inflight = None
     return ok(dict(COMPUTER_PREVIEW))
 
 
@@ -1869,7 +2259,9 @@ def seeded_messages(row: dict) -> tuple[str, list[dict]]:
 CONFIG = dict(
     model=MODEL,
     approvals=dict(mode="smart", timeout=300, cron_mode="deny"),
-    agent=dict(reasoning_effort="medium", max_iterations=40),
+    # Nollie's setup switches Hermes's own computer_use off in every bot it sets up (This Mac starts
+    # off), so the app finds it off and never has to write it.
+    agent=dict(reasoning_effort="medium", max_iterations=40, disabled_toolsets=["computer_use"]),
     display=dict(streaming=True, show_reasoning=True, timestamps=False),
     logging=dict(level="INFO"),
     terminal=dict(backend="local"),
@@ -1958,7 +2350,7 @@ def _once_schedule(stamp: str):
 
 
 def _cron_create(profile: str, payload):
-    if profile not in PROFILES:
+    if profile not in PROFILES and profile not in CREATED_PROFILES:
         return refuse(400, "Choose a bot for the task.")
     fields = payload if isinstance(payload, dict) else {}
     texts = {key: fields.get(key) for key in ("prompt", "schedule")}
@@ -2172,6 +2564,47 @@ def _media_route(route: str, query: dict) -> tuple[int, object]:
         return ok(dict(data_url=picture))
     return ok(dict(name=path.rsplit("/", 1)[-1], path=path, size=1234,
                  mime_type="image/png", data_url=picture))
+
+
+# Files written with POST /api/files/upload are kept and read back with GET /api/fs/read-text, as
+# Hermes keeps them on disk (hermes_cli/web_routers/files.py): an upload over an existing file
+# without "overwrite" is refused with 409, and reading a file that isn't there answers 404. Each demo
+# bot starts with the desktop lease Nollie's setup gives it: a person's, so This Mac starts off.
+MANAGED_FILES: dict[str, bytes] = {}
+DEMO_BOT_HOMES = ("/home/hermes/.hermes", "/home/hermes/.hermes-work")
+
+
+def seed_managed_files() -> None:
+    MANAGED_FILES.clear()
+    for home in DEMO_BOT_HOMES:
+        lease = dict(holder="human", epoch=1, since=time.time() - 86400, viewer_id="nollie-app",
+                     reason="System control is off in the Nollie app")
+        MANAGED_FILES[home + "/bot-desktop/lease.json"] = json.dumps(lease, sort_keys=True).encode()
+
+
+seed_managed_files()
+
+
+def managed_files_rest(method: str, base: str, query: dict, body) -> tuple[int, object] | None:
+    if base == "/api/fs/read-text" and method == "GET":
+        path = unquote(query.get("path", ""))
+        data = MANAGED_FILES.get(path)
+        if data is None:
+            return refuse(404, "File not found")
+        return ok(dict(binary=False, byteSize=len(data), language="json" if path.endswith(".json") else "text",
+                       mimeType="application/json" if path.endswith(".json") else "text/plain",
+                       path=path, text=data.decode("utf-8", errors="replace"), truncated=False))
+    if base != "/api/files/upload" or method != "POST" or not isinstance(body, dict) or not body.get("path"):
+        return None
+    path, data_url = str(body["path"]), str(body.get("data_url", ""))
+    if path in MANAGED_FILES and not body.get("overwrite"):
+        return refuse(409, "File already exists")
+    _, _, encoded = data_url.partition(";base64,")
+    try:
+        MANAGED_FILES[path] = base64.b64decode(encoded) if encoded else data_url.partition(",")[2].encode()
+    except ValueError:
+        return refuse(400, "Invalid data URL")
+    return ok(dict(ok=True, path=path))
 
 
 def _status_route(query: dict) -> tuple[int, object]:
@@ -3216,14 +3649,18 @@ def process_request(connection, request):
     # once with no-store; the others fall through to the config-write bookkeeping below.
     modules = [
         ("normal", lambda: auth_rest(method, base, query, fields, request.headers)),
+        ("quiet", lambda: family_rest(method, base, query, body)),
         ("normal", lambda: profile_creation(method, base, fields)),
         ("normal", lambda: private_bots_rest(method, base, query, body)),
+        ("quiet", lambda: bot_looks_rest(method, base, query, body)),
         ("normal", lambda: backup_rest(method, base, query, body)),
         ("quiet", lambda: sign_ins_rest(method, base, query, body)),
         ("normal", lambda: crew_rest(method, base, body)),
         ("quiet", lambda: papertrail_rest(method, base, query, body)),
+        ("quiet", lambda: week_rest(method, base, query, body)),
         ("quiet", lambda: night_shift_rest(method, base, query, body)),
         ("normal", lambda: computer_control_rest(method, base, query)),
+        ("normal", lambda: managed_files_rest(method, base, query, body)),
         ("quiet", lambda: own_computer_rest(method, base, query, body)),
         ("quiet", lambda: ask_first_rest(method, base, query, body)),
         ("quiet", lambda: apple_data_rest(method, base, query, body)),
@@ -4089,6 +4526,18 @@ class Gateway:
         await self.stream_words(s, text)
         await self.settle(s, prompt, [text], text)
 
+    async def _media_marks_turn(self, s, prompt):
+        """MEDIA marks written the ways Hermes itself accepts them: in bold, in code, after a space,
+        and quoted round a name with spaces. Each is a picture or a file, never words."""
+        await self.begin_message(s)
+        text = ("Here is the chart and the report.\n\n**MEDIA:/home/hermes/.hermes/images/disk-week.png**\n"
+                "`MEDIA:/home/hermes/.hermes/images/disk-today.png`\n"
+                "MEDIA: /home/hermes/out/report.pdf\n"
+                'MEDIA:"/home/hermes/out/raw numbers.csv"\n\n'
+                "Both files are from this morning's run.\n")
+        await self.stream_words(s, text)
+        await self.settle(s, prompt, [text], text)
+
     async def _fail_turn(self, s, prompt):
         """The bot's provider requires a CLI that the gateway lacks (a tester's Claude subscription
         plugin), so the gateway can't start the turn."""
@@ -4187,6 +4636,7 @@ class Gateway:
         ("starts", "chart", "_card_turn"),
         ("starts", "marathon", "_marathon_turn"),
         ("starts", "files", "_files_turn"),
+        ("starts", "media marks", "_media_marks_turn"),
         ("starts", "fail", "_fail_turn"),
         ("starts", "backup", "_backup_turn"),
         ("starts", "plan back", "_plan_back_turn"),

@@ -229,7 +229,7 @@ actor RuntimeService {
         .init(snapshot: .init(phase: .init(rawValue: snapshot.phase.rawValue) ?? .failed,
                              installationID: snapshot.installationID, endpoint: snapshot.endpoint,
                              restartCount: snapshot.restartCount, failure: snapshot.failure?.rawValue,
-                             enabledInstallationID: enabledInstallationID), error: error)
+                             enabledInstallationID: enabledInstallationID, keysLeftInFiles: snapshot.keysLeftInFiles), error: error)
     }
 }
 
@@ -272,7 +272,12 @@ final class RuntimeIPCExport: NSObject, NollieRuntimeIPC {
     func linkAway(request: Data, withReply reply: @escaping @Sendable (Data) -> Void) {
         guard let link else { reply(NollieLinkIPCResponse(error: .unavailable).encoded()); return }
         guard let asked = NollieLinkIPCAwayRequest.decode(request) else { reply(NollieLinkIPCResponse(error: .invalidRequest).encoded()); return }
-        Task { reply(await link.away(on: asked.on, host: asked.host).encoded()) }
+        Task { reply(await link.away(on: asked.on, host: asked.host, sealKey: asked.sealKey).encoded()) }
+    }
+    func linkFamily(request: Data, withReply reply: @escaping @Sendable (Data) -> Void) {
+        guard let link else { reply(NollieLinkIPCResponse(error: .unavailable).encoded()); return }
+        guard let asked = NollieLinkIPCFamilyRequest.decode(request) else { reply(NollieLinkIPCResponse(error: .invalidRequest).encoded()); return }
+        Task { reply(await link.family(asked).encoded()) }
     }
     func cuaSetupStart(withReply reply: @escaping @Sendable (Data) -> Void) {
         guard let cua else { reply(NollieCuaSetupResponse(phase: .unavailable).encoded()); return }
@@ -297,7 +302,9 @@ final class RuntimeIPCExport: NSObject, NollieRuntimeIPC {
             await relay?.close()
             let cuaStopped = await cua?.stopDaemon() ?? true
             #if NOLLIE_DIRECT
-            let cleared = RuntimeKeychainCredentials.forgetAll()
+            let tokensCleared = RuntimeKeychainCredentials.forgetAll()
+            let keysCleared = RuntimeKeychainKeys.forgetAll()
+            let cleared = tokensCleared && keysCleared
             LinkDoorIdentity.remove(name: "com.coreykozarski.nollie.link.identity")
             #else
             let cleared = true

@@ -6,6 +6,13 @@ import XCTest
 final class ChatNavigationUITests: XCTestCase {
     private var app: XCUIApplication!
 
+    /// One mock gateway serves every flow in a run, so a case that stops early still leaves no helper
+    /// using the computer for the flows after it.
+    override func tearDownWithError() throws {
+        DemoCase.resetMock("api/_mock/computer-preview", ["state": "idle", "active": false, "held": false])
+        try super.tearDownWithError()
+    }
+
     private func launch(_ extra: [String] = []) throws {
         let env = ProcessInfo.processInfo.environment
         guard let address = env["HERMES_E2E_URL"],
@@ -26,7 +33,7 @@ final class ChatNavigationUITests: XCTestCase {
             "-nollie-demo-gateway", address, "mock-token", "Studio",
             "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES",
             "-bots.animate", "NO",
-        ] + extra
+        ] + DemoCase.weeklyCardPutAway + extra
         app.launch()
         _ = try visible("bots.list", timeout: 30)
         _ = try visible("bots.row.work", timeout: 30)

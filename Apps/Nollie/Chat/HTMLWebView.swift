@@ -12,15 +12,18 @@ struct HTMLWebView {
     @Binding var height: CGFloat
     /// Set when the card's network rules couldn't be built. The page is then not loaded at all.
     @Binding var failed: Bool
+    /// A square at the top trailing corner the page leaves alone, for the card's own button over it.
+    let clearCorner: CGFloat
 
     init(document: String, scrolls: Bool, height: Binding<CGFloat>, loaded: Binding<Bool>,
-         failed: Binding<Bool> = .constant(false), actions: HTMLCard.Actions? = nil) {
+         failed: Binding<Bool> = .constant(false), actions: HTMLCard.Actions? = nil, clearCorner: CGFloat = 0) {
         self.document = document
         self.scrolls = scrolls
         self._height = height
         self._loaded = loaded
         self._failed = failed
         self.actions = actions
+        self.clearCorner = clearCorner
     }
 
     @MainActor static func dismantle(_ web: WKWebView, _ coordinator: Coordinator) {
@@ -53,7 +56,7 @@ struct HTMLWebView {
     @MainActor private static func blankView() -> WKWebView {
         let config = HTMLCard.configuration()
         #if os(iOS)
-        let web = WKWebView(frame: .zero, configuration: config)
+        let web = CardWebView(frame: .zero, configuration: config)
         web.isOpaque = false
         for layer in [web as UIView, web.scrollView] { layer.backgroundColor = .clear }
         return web
@@ -68,6 +71,7 @@ struct HTMLWebView {
         #if os(iOS)
         web.scrollView.bounces = scrolls
         web.scrollView.isScrollEnabled = scrolls
+        (web as? CardWebView)?.clearCorner = clearCorner
         #else
         guard let card = web as? CardWebView else { return }
         (card.scrolls, card.actions) = (scrolls, actions)
@@ -89,9 +93,9 @@ final class CardWebView: WKWebView {
 
     override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
         guard let actions else { return super.willOpenMenu(menu, with: event) }
-        var entries: [(title: String, action: Selector)] = [("Open Full Screen", #selector(chooseFull))]
-        if actions.showSource != nil { entries.append(("Show Source", #selector(chooseSource))) }
-        entries.append(("Copy HTML", #selector(chooseCopy)))
+        var entries: [(title: String, action: Selector)] = [(String(localized: "Open Full Screen"), #selector(chooseFull))]
+        if actions.showSource != nil { entries.append((String(localized: "Show Source"), #selector(chooseSource))) }
+        entries.append((String(localized: "Copy HTML"), #selector(chooseCopy)))
         menu.removeAllItems()
         for entry in entries {
             menu.addItem(withTitle: entry.title, action: entry.action, keyEquivalent: "").target = self
@@ -122,6 +126,19 @@ extension HTMLWebView: NSViewRepresentable {
     }
 }
 #else
+/// The web view for cards on the iPhone and iPad. A web view takes every touch inside its frame
+/// except where SwiftUI has drawn on top, so a tap just off the card's small round button went to
+/// the page. The corner the button's fingertip square covers is left to the button.
+final class CardWebView: WKWebView {
+    var clearCorner: CGFloat = 0
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let corner = CGRect(x: bounds.maxX - clearCorner, y: bounds.minY, width: clearCorner, height: clearCorner)
+        if clearCorner > 0, corner.contains(point) { return nil }
+        return super.hitTest(point, with: event)
+    }
+}
+
 extension HTMLWebView: UIViewRepresentable {
     static func dismantleUIView(_ web: WKWebView, coordinator: Coordinator) { dismantle(web, coordinator) }
 

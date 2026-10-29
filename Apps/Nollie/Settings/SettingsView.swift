@@ -5,7 +5,7 @@ import UserNotifications
 /// The rows in a few groups, with air between them instead of lines.
 private let settingsGroups: [[SettingsCategory]] = [
     [.bots, .appearance, .speech],
-    [.notifications, .privacy, .signIns, .cards, .siri],
+    [.notifications, .weekly, .privacy, .signIns, .cards, .siri],
     [.connection, .away, .keepAwake],
     [.about, .advanced],
 ]
@@ -65,7 +65,8 @@ struct SettingsView: View {
     }
 
     @ViewBuilder private var categoryRows: some View {
-        let visible = SettingsCategory.visible(developerMode: developerMode, away: showsAway, matching: search)
+        let visible = SettingsCategory.visible(developerMode: developerMode, away: showsAway,
+                                               weekly: !model.family.isMember(model), matching: search)
         ForEach(settingsGroups.indices, id: \.self) { index in
             let members = settingsGroups[index].filter(visible.contains)
             if !members.isEmpty {
@@ -90,7 +91,7 @@ struct SettingsView: View {
         #if os(macOS)
         DemoMode.isOn || NollieLinkMacClient.isAvailable(for: model.runtime?.connection)
         #else
-        model.linkReach != nil
+        AwayFromHomeView.shows(reach: model.linkReach, isMember: model.family.isMember(model))
         #endif
     }
 
@@ -98,16 +99,17 @@ struct SettingsView: View {
     private func word(for category: SettingsCategory) -> String? {
         guard category == .connection, let socket = model.runtime?.socketState else { return nil }
         switch socket {
-        case .open: return "Connected"
-        case .connecting, .reconnecting: return "Connecting"
-        case .authRejected: return "Sign in again"
-        case .failed, .idle: return "Offline"
+        case .open: return String(localized: "Connected", comment: "The connection's state beside its Settings row")
+        case .connecting, .reconnecting: return String(localized: "Connecting", comment: "The connection's state beside its Settings row")
+        case .authRejected: return String(localized: "Sign in again", comment: "The connection's state beside its Settings row")
+        case .failed, .idle: return String(localized: "Offline", comment: "The connection's state beside its Settings row")
         }
     }
 
     #if DEBUG
     /// For pictures: `-nollie-demo-settings <page>` opens that page (its raw name),
-    /// `left` or `night` the summary pages, and `bot-<tab>` the default bot's settings.
+    /// `left` or `night` the summary pages, `models-advanced` Models › Advanced, and `bot-<tab>`
+    /// the default bot's settings.
     private func openDemoPage() async {
         let words = ProcessInfo.processInfo.arguments
         guard let flag = words.firstIndex(of: "-nollie-demo-settings"), flag + 1 < words.count, path.isEmpty else { return }
@@ -129,6 +131,7 @@ private struct SettingsDestination: View {
         case .appearance: AppearanceView().untitledPage()
         case .speech: VoiceSettingsView().untitledPage()
         case .notifications: NotificationsView().untitledPage()
+        case .weekly: WeeklyNoteSettingsView()
         case .privacy: PrivacyView().untitledPage()
         case .signIns: signIns
         case .cards: cards
@@ -179,6 +182,8 @@ private struct DemoSettingsPage: View {
             NightShiftPage(summary: summary)
         } else if name == "permissions" {
             PermissionsSettingsView().untitledPage()
+        } else if name == "models-advanced" {
+            DemoModelsAdvanced()
         } else if name.hasPrefix("bot-") {
             ProfileCardView(
                 profileName: model.runtime?.defaultProfile ?? "default",
@@ -186,6 +191,19 @@ private struct DemoSettingsPage: View {
         } else {
             LeftYourMacPage(summary: summary)
         }
+    }
+}
+
+/// Models › Advanced on its own, checked against the demo gateway as the Models page would.
+private struct DemoModelsAdvanced: View {
+    @Environment(AppModel.self) private var model
+    @State private var check = ModelCheck()
+    @State private var download = LocalModelDownload()
+
+    var body: some View {
+        ModelsAdvancedView(check: check, download: download, refresh: {})
+            .untitledPage()
+            .task { await check.refresh(model, identity: { "demo" }) }
     }
 }
 #endif

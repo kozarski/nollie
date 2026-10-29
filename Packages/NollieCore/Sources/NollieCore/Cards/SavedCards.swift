@@ -10,6 +10,7 @@ import Security
 public enum CardBrand: String, Codable, CaseIterable, Sendable {
     case visa, mastercard, amex, discover, diners, jcb, unionpay, maestro, card
 
+    /// The brand's own name, in English: it is part of the label the add-on and the helper read.
     public var name: String {
         switch self {
         case .visa: "Visa"
@@ -22,6 +23,16 @@ public enum CardBrand: String, Codable, CaseIterable, Sendable {
         case .maestro: "Maestro"
         case .card: "Card"
         }
+    }
+
+    /// The name on screen: the brands' own names, and a plain card in the person's language.
+    public var shownName: String {
+        self == .card ? String(localized: "Card", table: "Core", comment: "A payment card of no known brand") : name
+    }
+
+    /// "Visa ending 4242" on screen, in the person's language.
+    public func shownLabel(last4: String) -> String {
+        String(localized: "\(shownName) ending \(last4)", table: "Core", comment: "Safety: a payment card and its last four digits: Visa ending 4242")
     }
 
     /// Digits in the security code on the back (on the front for American Express).
@@ -136,8 +147,10 @@ public struct SavedCard: Codable, Equatable, Hashable, Sendable, Identifiable {
         self.createdAt = createdAt
     }
 
-    /// "Visa ending 4242": all a helper, a card on screen, a log or Papertrail ever says about a card.
+    /// "Visa ending 4242": all a helper, a card on screen, a log or Papertrail ever says about a card. Always in
+    /// English: the add-on and the helper read it. `shownLabel` is the same on screen in the person's language.
     public var label: String { "\(brand.name) ending \(last4)" }
+    public var shownLabel: String { brand.shownLabel(last4: last4) }
 }
 
 /// The half that stays locked until the person proves it is them. The security code is not here: the
@@ -283,15 +296,15 @@ public enum SavedCardError: LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .badNumber: return "Check the card number."
-        case .badExpiry: return "Enter the expiry date like 12/28."
-        case .expired: return "This card has run out."
-        case .noName: return "Enter the name on the card."
-        case .duplicate(let label): return "\(label) is already saved."
-        case .cancelled: return "Nothing was changed."
-        case .gone: return "This card isn't saved any more."
-        case .unreadable: return "Nollie couldn't read the Keychain. Unlock your Mac and try again."
-        case .notDeleted: return "Nollie couldn't remove it. Unlock your Mac and try again."
+        case .badNumber: return String(localized: "Check the card number.", table: "Core")
+        case .badExpiry: return String(localized: "Enter the expiry date like 12/28.", table: "Core")
+        case .expired: return String(localized: "This card has run out.", table: "Core")
+        case .noName: return String(localized: "Enter the name on the card.", table: "Core")
+        case .duplicate(let label): return String(localized: "\(label) is already saved.", table: "Core", comment: "The value is a card: Visa ending 4242")
+        case .cancelled: return String(localized: "Nothing was changed.", table: "Core")
+        case .gone: return String(localized: "This card isn't saved any more.", table: "Core")
+        case .unreadable: return String(localized: "Nollie couldn't read the Keychain. Unlock your Mac and try again.", table: "Core")
+        case .notDeleted: return String(localized: "Nollie couldn't remove it. Unlock your Mac and try again.", table: "Core")
         }
     }
 }

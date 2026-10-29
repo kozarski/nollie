@@ -26,6 +26,11 @@ final class WatchLink: NSObject {
     private static let checkEvery: Duration = .seconds(3)
     /// Sent again this often even when nothing changed, so the Watch knows the picture is current.
     private static let refreshEvery: TimeInterval = HelperAtWorkTiming.refreshEvery
+    /// The last Night shift card read for the Watch, the gateway it came from and when.
+    private var night: (gateway: UUID, read: Date, card: ConversationPost.NightShift?)?
+    private var readingNight = false
+    /// The card comes once a morning, so it is read again only this often.
+    private static let nightEvery: TimeInterval = 15 * 60
 
     private func begin() {
         guard !started, WCSession.isSupported() else { return }
@@ -64,7 +69,8 @@ final class WatchLink: NSObject {
         let session = WCSession.default
         guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else { return }
         let now = Date()
-        let snapshot = Self.snapshot(runtime: AppModel.shared.runtime, now: now)
+        readNightIfDue(force: force)
+        let snapshot = Self.snapshot(runtime: AppModel.shared.runtime, now: now, night: nightCard)
         let old = lastSent.map { now.timeIntervalSince($0.made) >= Self.refreshEvery } ?? true
         guard force || old || !snapshot.sameAs(lastSent) else { return }
         let countChanged = snapshot.helpers.count != lastSent?.helpers.count
@@ -76,6 +82,33 @@ final class WatchLink: NSObject {
         }
     }
 
+    /// The card read for the gateway the phone is on now.
+    private var nightCard: ConversationPost.NightShift? {
+        guard let night, night.gateway == AppModel.shared.runtime?.connection.id else { return nil }
+        return night.card
+    }
+
+    /// Reads the newest Night shift card in the background when the last read is old or was for another
+    /// gateway, then sends the picture again.
+    private func readNightIfDue(force: Bool = false) {
+        guard !readingNight, let runtime = AppModel.shared.runtime else { return }
+        let gateway = runtime.connection.id
+        if let night, night.gateway == gateway, Date().timeIntervalSince(night.read) < (force ? 60 : Self.nightEvery) { return }
+        readingNight = true
+        Task { [weak self] in
+            await self?.readNight(runtime)
+            self?.push()
+        }
+    }
+
+    private func readNight(_ runtime: GatewayRuntime) async {
+        readingNight = true
+        defer { readingNight = false }
+        let card = await CrewSummaryModel.latestNight(runtime)
+        guard runtime.connection.id == AppModel.shared.runtime?.connection.id else { return }
+        night = (runtime.connection.id, Date(), card)
+    }
+
     // MARK: Answering the Watch
 
     func handle(_ request: WatchWire.Request?) async -> WatchWire.Reply {
@@ -85,6 +118,9 @@ final class WatchLink: NSObject {
         switch request {
         case .refresh:
             let runtime = try? await SiriAsk.readyRuntime()
+            if let runtime, night?.gateway != runtime.connection.id || night.map({ Date().timeIntervalSince($0.read) >= Self.nightEvery }) == true {
+                await readNight(runtime)
+            }
             return reply(done: runtime != nil, line: runtime == nil ? WatchWords.openPhone : nil)
         case .answer(let answer):
             let line = await self.answer(answer)
@@ -104,7 +140,7 @@ final class WatchLink: NSObject {
     }
 
     private func reply(done: Bool, line: String?) -> WatchWire.Reply {
-        let snapshot = Self.snapshot(runtime: AppModel.shared.runtime, now: Date())
+        let snapshot = Self.snapshot(runtime: AppModel.shared.runtime, now: Date(), night: nightCard)
         lastSent = snapshot
         return WatchWire.Reply(done: done, line: line, snapshot: snapshot)
     }
@@ -162,14 +198,14 @@ final class WatchLink: NSObject {
     }
 
     #if os(iOS)
-    /// What the Watch shows: every approval waiting in the open chats, and the helpers at work.
-    /// Private bots' work stays off the wrist; their approvals show only that something waits.
-    static func snapshot(runtime: GatewayRuntime?, now: Date) -> WatchWire.Snapshot {
+    /// What the Watch shows: every approval waiting in the open chats, the helpers at work, and the
+    /// last Night shift card as a note. Private bots' work stays off the wrist; their approvals show
+    /// only that something waits, and the add-on never puts them on the card.
+    static func snapshot(runtime: GatewayRuntime?, now: Date, night: ConversationPost.NightShift? = nil) -> WatchWire.Snapshot {
         guard let runtime else { return .empty(at: now) }
         let connection = runtime.connection
         var approvals: [WatchWire.Approval] = []
         var seenCards: Set<String> = []
-        var helpers: [String: WatchWire.Helper] = [:]
         for chat in runtime.chats {
             let profile = chat.profileName
             let bot = runtime.profiles.first { $0.name == profile }
@@ -182,30 +218,16 @@ final class WatchLink: NSObject {
                     card: card, request: request, chatID: chat.storedID, profile: profile, connectionID: connection.id,
                     botName: name, avatar: avatar, privateBot: privateBot, asksAgain: ApprovalConfirm.shouldAsk(for: request)))
             }
-            guard chat.isRunning, !privateBot else { continue }
-            let work = BotComputerActivity.workPlace(in: chat.items, isRunning: true)
-            let since = work?.since ?? chat.items.last(where: \.isPrompt)?.timestamp ?? now
-            let helper = WatchWire.Helper(profile: profile, name: name, avatar: avatar, place: work?.place, since: since)
-            // One row a bot: the chat where it uses a computer wins, then the one that began first.
-            if let earlier = helpers[profile] {
-                let keep = (earlier.place == nil) == (helper.place == nil) ? earlier.since <= helper.since : earlier.place != nil
-                if keep { continue }
-            }
-            helpers[profile] = helper
         }
         return WatchWire.Snapshot(made: now, approvals: approvals,
-                                  helpers: helpers.values.sorted { $0.since < $1.since },
-                                  canStop: connection.linkedMac != nil, connected: runtime.socketState.isOpen)
+                                  helpers: CrewAtWork.members(in: runtime, now: now).map(\.helper),
+                                  canStop: connection.linkedMac != nil, connected: runtime.socketState.isOpen,
+                                  night: WatchNight.note(night, now: now), week: WatchNight.week(WeeklyNoteModel.shared.note,
+                                                                                                shown: WeeklyNoteModel.shows(AppModel.shared)))
     }
     #endif
 }
 
-private extension TranscriptItem {
-    var isPrompt: Bool {
-        if case .user = kind { return true }
-        return false
-    }
-}
 
 #if os(iOS)
 // MARK: - WatchConnectivity

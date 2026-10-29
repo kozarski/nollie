@@ -47,12 +47,27 @@ enum DemoMode {
     /// `-nollie-demo-exit-relay on|idle|off|failed`: the exit relay as the Mac's helper reports it.
     static let exitRelay: String? = word(after: "-nollie-demo-exit-relay")
 
+    /// `-nollie-demo-keys keychain|files`: where the Mac's helper says the API keys are.
+    static let keys: String? = word(after: "-nollie-demo-keys")
+
     /// `-nollie-demo-permissions fresh|mixed|allowed`: the permission rows against made-up answers,
     /// so a picture never shows a system prompt or the machine's real answers.
     static let permissions: String? = word(after: "-nollie-demo-permissions")
 
     /// `-nollie-demo-alerts`: iCloud alerts count as on, for the away line's picture.
     static let alertsOn = isOn && ProcessInfo.processInfo.arguments.contains("-nollie-demo-alerts")
+
+    /// `-nollie-demo-icloud ready|off|link|signin|later`: away through iCloud, for the away page's pictures.
+    static let iCloud: AwayICloudState? = {
+        switch word(after: "-nollie-demo-icloud") {
+        case "ready": .ready
+        case "off": .off
+        case "link": .needsLink
+        case "signin": .needsICloud
+        case "later": .notAvailableYet
+        default: nil
+        }
+    }()
 
     /// Called first at launch, ahead of any Keychain read.
     static func prepare() {
@@ -77,7 +92,9 @@ enum DemoMode {
     static let reach: NollieLinkReach? = nil
     static let tailscale: String? = nil
     static let exitRelay: String? = nil
+    static let keys: String? = nil
     static let alertsOn = false
+    static let iCloud: AwayICloudState? = nil
     static let permissions: String? = nil
 }
 #endif

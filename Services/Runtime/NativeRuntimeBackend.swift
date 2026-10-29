@@ -6,15 +6,24 @@ import Foundation
 /// command, saved-PID adoption or process-name scan enters this implementation.
 actor NativeRuntimeBackend: NollieRuntimeBackend {
     typealias Contract = NollieRuntimeContract
-    static let entrypointDigest = "37b75fcb6df97cafc3b30e574fdd4b777cb84898242536079cd37fe1ce9198d8"
-    static let addonsDigest = "6b64789b4f296fb41b3d34d10be9391da40b2e55413dd21250421c992ade276c"
+    static let entrypointDigest = "6a10009c138c42fa02854c5ad9ddb5bff754e249083df939257fd43491a81ec0"
+    static let addonsDigest = "f30da3b9b00012436099457d5e3d845ebd848dfff749647d8ca4ec7133ad5aba"
     private let installations: URL
     private let entrypoint: URL
+    private let keys: any RuntimeKeyStoring
+    /// This start's keys, as each child reads them from its key pipe. Only in memory.
+    private var keyHandoff = Data()
     private var lease: Int32 = -1
     private var preparation = UUID()
     private var activePlan: Contract.Plan?
     private var children: [UUID: ChildProcess] = [:]
     private let session: URLSession
+    /// Papertrail's door: open while Hermes runs, so every connection it makes is noted.
+    private var door: PapertrailDoor?
+    /// Papertrail's network filter link, while Hermes runs and the switch is on.
+    private var filter: RuntimeNetworkFilter?
+    /// Rereads the filter's switch while Hermes runs, so turning it on or off needs no restart.
+    private var switchWatch: Task<Void, Never>?
 
     private struct ChildProcess {
         let handle: Contract.Child
@@ -25,9 +34,10 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         var port: Int?
         var exitCode: Int32?
     }
-    init(installations: URL, entrypoint: URL) {
+    init(installations: URL, entrypoint: URL, keys: any RuntimeKeyStoring = RuntimeKeychainKeys()) {
         self.installations = installations
         self.entrypoint = entrypoint
+        self.keys = keys
         let config = URLSessionConfiguration.ephemeral
         config.httpCookieStorage = nil
         config.urlCredentialStorage = nil
@@ -68,10 +78,32 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         }
         guard flock(lock, LOCK_EX | LOCK_NB) == 0 else { close(lock); throw Contract.Failure.alreadyRunning }
         lease = lock
-        let plan = Contract.Plan(installationID: installationID, installation: root,
+        var plan = Contract.Plan(installationID: installationID, installation: root,
                                  executable: root.appendingPathComponent("environment/bin/python"), entrypoint: entrypoint)
+        do {
+            plan.keysLeftInFiles = try moveKeys(installationID: installationID, home: plan.home)
+        } catch {
+            flock(lock, LOCK_UN); close(lock); lease = -1
+            throw Contract.Failure.keysUnavailable
+        }
+        // No door, no start: nothing Hermes sends may go out unnoted.
+        guard let door = await openDoor(home: plan.home) else {
+            flock(lock, LOCK_UN); close(lock); lease = -1
+            keyHandoff = Data()
+            throw Contract.Failure.launchFailed
+        }
+        plan.door = door
         activePlan = plan
         return plan
+    }
+
+    /// Before every start, restarts included: keys Hermes wrote to a `.env` since the last one
+    /// move into the Keychain, then the Keychain's keys are what this start hands over.
+    private func moveKeys(installationID: UUID, home: URL) throws -> Int {
+        let outcome = try RuntimeKeyMigration(installationID: installationID, home: home, store: keys).run()
+        _ = try? keys.forgetRemovedInstallations(in: installations, keeping: installationID)
+        keyHandoff = RuntimeKeyHandoff.payload(try keys.keys(for: installationID))
+        return outcome.left
     }
 
     static func validateOwnership(_ root: URL, installationID: UUID) throws {
@@ -98,14 +130,19 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         }
         var output: [Int32] = [-1, -1]
         var owner: [Int32] = [-1, -1]
+        var handoff: [Int32] = [-1, -1]
         guard pipe(&output) == 0 else { throw Contract.Failure.launchFailed }
         guard pipe(&owner) == 0 else { close(output[0]); close(output[1]); throw Contract.Failure.launchFailed }
+        guard pipe(&handoff) == 0 else {
+            (output + owner).forEach { close($0) }
+            throw Contract.Failure.launchFailed
+        }
         var succeeded = false
         defer {
-            close(output[1]); close(owner[0])
-            if !succeeded { close(output[0]); close(owner[1]) }
+            close(output[1]); close(owner[0]); close(handoff[0])
+            if !succeeded { close(output[0]); close(owner[1]); close(handoff[1]) }
         }
-        for fd in output + owner { _ = fcntl(fd, F_SETFD, FD_CLOEXEC) }
+        for fd in output + owner + handoff { _ = fcntl(fd, F_SETFD, FD_CLOEXEC) }
         _ = fcntl(output[0], F_SETFL, O_NONBLOCK)
         var actions: posix_spawn_file_actions_t?
         var attributes: posix_spawnattr_t?
@@ -117,7 +154,8 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
             posix_spawn_file_actions_addopen(&actions, STDIN_FILENO, "/dev/null", O_RDONLY, 0),
             posix_spawn_file_actions_adddup2(&actions, output[1], STDOUT_FILENO),
             posix_spawn_file_actions_addopen(&actions, STDERR_FILENO, "/dev/null", O_WRONLY, 0),
-            posix_spawn_file_actions_adddup2(&actions, owner[0], 3),
+            posix_spawn_file_actions_adddup2(&actions, owner[0], Contract.ownerDescriptor),
+            posix_spawn_file_actions_adddup2(&actions, handoff[0], Contract.keysDescriptor),
             posix_spawn_file_actions_addchdir(&actions, plan.source.path),
             posix_spawnattr_setflags(&attributes, Int16(POSIX_SPAWN_CLOEXEC_DEFAULT))
         ]
@@ -132,7 +170,25 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         let handle = Contract.Child(id: UUID(), pid: pid, role: role)
         children[handle.id] = ChildProcess(handle: handle, output: output[0], owner: owner[1], launched: Date())
         succeeded = true
+        Self.handOver(keyHandoff, to: handoff[1])
         return handle
+    }
+
+    /// Writes the keys into the child's pipe and closes it, off the actor: a pipe holds less than
+    /// a large set of keys, and the child reads them as it starts. A child that exits before
+    /// reading must not take the helper down with SIGPIPE.
+    static func handOver(_ payload: Data, to descriptor: Int32) {
+        _ = fcntl(descriptor, F_SETNOSIGPIPE, 1)
+        DispatchQueue.global(qos: .userInitiated).async {
+            payload.withUnsafeBytes { raw in
+                var offset = 0
+                while offset < raw.count {
+                    let count = write(descriptor, raw.baseAddress! + offset, raw.count - offset)
+                    if count > 0 { offset += count } else if count < 0 && errno == EINTR { continue } else { break }
+                }
+            }
+            close(descriptor)
+        }
     }
 
     /// waitpid is the only reaper. Until it reaps this child, its PID cannot be
@@ -228,8 +284,55 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         preparation = UUID()
         for child in children.values.map(\.handle) { await stop(child) }
         guard children.isEmpty else { return }
+        switchWatch?.cancel()
+        switchWatch = nil
+        filter?.stop()
+        filter = nil
+        door?.stop()
+        door = nil
         if lease >= 0 { flock(lease, LOCK_UN); close(lease); lease = -1 }
         activePlan = nil
+        keyHandoff = Data()
+    }
+
+    /// A fresh door with a fresh secret for each run.
+    private func openDoor(home: URL) async -> Contract.Door? {
+        filter?.stop()
+        filter = nil
+        door?.stop()
+        let book = PapertrailDoorBook(home: home)
+        let state = RuntimeNetworkFilter.readSwitch(directory: NolliePaths.current.runtimeService)
+        var configuration = PapertrailDoor.Configuration()
+        configuration.refuseUnplaced = state.refuse
+        let made = PapertrailDoor(configuration: configuration, book: book)
+        guard let port = try? await made.start() else { made.stop(); door = nil; return nil }
+        door = made
+        apply(state, book: book)
+        switchWatch?.cancel()
+        switchWatch = Task { [weak self] in
+            var seen = state
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                let now = RuntimeNetworkFilter.readSwitch(directory: NolliePaths.current.runtimeService)
+                if now != seen, !Task.isCancelled { seen = now; await self?.apply(now, book: book) }
+            }
+        }
+        return Contract.Door(port: port, secret: made.secret)
+    }
+
+    /// The filter's switch as it is now: the door refuses unplaced programs when Refuse is on, and the
+    /// filter link runs while On is.
+    private func apply(_ state: NetworkFilterPolicy.Switch, book: PapertrailDoorBook) {
+        door?.setRefuseUnplaced(state.refuse)
+        if filter?.state != state {
+            filter?.stop()
+            filter = nil
+            if state.on {
+                let link = RuntimeNetworkFilter(book: book, switch: state)
+                link.start()
+                filter = link
+            }
+        }
     }
 }
 

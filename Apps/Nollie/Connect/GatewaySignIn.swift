@@ -158,14 +158,14 @@ struct GatewaySignInSheet: View {
                 ForEach(options(route, connection)) { optionButton($0) }
                 skipButton
             }
-            note("You can reconnect later from Chats or Settings \u{203A} Connections.", .footnote)
+            note(String(localized: "You can reconnect later from Chats or Settings \u{203A} Connections."), .footnote)
         }
     }
 
     /// What the card is about, and which of the gateways in line this is.
     private func heading(for connection: GatewayConnection, repairing: Bool) -> some View {
         VStack(spacing: 16) {
-            Text((repairing ? "Reconnect to " : "Sign in to ") + connection.name)
+            Text(repairing ? String(localized: "Reconnect to \(connection.name)") : String(localized: "Sign in to \(connection.name)"))
                 .multilineTextAlignment(.center)
                 .font(.title3.weight(.semibold))
             if connections.count > 1 {
@@ -184,11 +184,11 @@ struct GatewaySignInSheet: View {
     }
 
     private func options(_ route: SignInRoute, _ connection: GatewayConnection) -> [SignInOption] {
-        let typeIt = SignInOption(id: "signin.form", title: "Enter Sign-In…", prominent: route == .typed) { following = .form }
+        let typeIt = SignInOption(id: "signin.form", title: String(localized: "Enter Sign-In…"), prominent: route == .typed) { following = .form }
         switch route {
         case .pairAgain:
             #if os(iOS)
-            return [SignInOption(id: "signin.pair", title: "Scan a new code", symbol: "qrcode.viewfinder") {
+            return [SignInOption(id: "signin.pair", title: String(localized: "Scan a new code"), symbol: "qrcode.viewfinder") {
                 pairingDone = false
                 following = .pairing
             }]
@@ -197,11 +197,11 @@ struct GatewaySignInSheet: View {
             #endif
         case .browser:
             return [SignInOption(
-                id: "signin.browser", title: isBusy ? "Waiting for the browser…" : "Sign In with Browser",
+                id: "signin.browser", title: isBusy ? String(localized: "Waiting for the browser…") : String(localized: "Sign In with Browser"),
                 spinning: isBusy) { signInWithBrowser(connection) }]
         case .remembered:
             return [SignInOption(
-                id: "signin.remembered", title: "Sign In with \(guardName)", symbol: Self.symbol(for: guardName),
+                id: "signin.remembered", title: String(localized: "Sign In with \(RememberedSignInCopy.shownMethod(guardName))", comment: "%@ is Face ID, Touch ID, Optic ID or Passcode"), symbol: Self.symbol(for: guardName),
                 spinning: isBusy) { signInWithRemembered(connection) }, typeIt]
         case .typed:
             return [typeIt]
@@ -244,17 +244,22 @@ struct GatewaySignInSheet: View {
         switch route {
         case .pairAgain:
             #if os(iOS)
-            return "Make a new code in Nollie on your Mac, then scan it here. Your saved chats and drafts stay with this connection."
+            return String(localized: "Make a new code in Nollie on your Mac, then scan it here. Your saved chats and drafts stay with this connection.")
             #else
-            return "This connection was paired on an iPhone. Pair it again there, or add a separate connection to your assistant on this Mac."
+            return String(localized: "This connection was paired on an iPhone. Pair it again there, or add a separate connection to your assistant on this Mac.")
             #endif
         case .browser:
-            return "Each device signs in for itself, so \(DeviceWords.this) does it once. Your browser opens the gateway's sign-in page, then brings you back here."
+            return String(localized: "Each device signs in for itself, so \(DeviceWords.this) does it once. Your browser opens the gateway's sign-in page, then brings you back here.",
+                          comment: "%@ is this Mac, this iPhone or this iPad")
         case .remembered:
-            return "\(DeviceWords.This) keeps this gateway's sign-in safe, so \(RememberedSignInCopy.guardedBy(guardName)) can sign you back in."
+            return String(localized: "\(DeviceWords.This) keeps this gateway's sign-in safe, so \(RememberedSignInCopy.guardedBy(guardName)) can sign you back in.",
+                          comment: "The first %@ is This Mac, This iPhone or This iPad; the second names the lock, such as Face ID or the passcode")
         case .typed:
-            let needed = connection.authMode == .password ? "username and password" : "session token"
-            return "Each device signs in for itself, so \(DeviceWords.this) needs this gateway's \(needed) once."
+            return connection.authMode == .password
+                ? String(localized: "Each device signs in for itself, so \(DeviceWords.this) needs this gateway's username and password once.",
+                         comment: "%@ is this Mac, this iPhone or this iPad")
+                : String(localized: "Each device signs in for itself, so \(DeviceWords.this) needs this gateway's session token once.",
+                         comment: "%@ is this Mac, this iPhone or this iPad")
         }
     }
 
@@ -326,9 +331,10 @@ struct GatewaySignInBanner: View {
 
     private var words: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text((needsPairing ? "Reconnect to " : "Sign in to ") + connection.name)
+            Text(needsPairing ? String(localized: "Reconnect to \(connection.name)") : String(localized: "Sign in to \(connection.name)"))
                 .font(.subheadline.weight(.semibold))
-            Text(needsPairing ? "A fresh pairing code is needed." : DeviceWords.This + " is not signed in to this gateway.")
+            Text(needsPairing ? String(localized: "A fresh pairing code is needed.")
+                 : String(localized: "\(DeviceWords.This) is not signed in to this gateway.", comment: "%@ is This Mac, This iPhone or This iPad"))
                 .small()
         }
     }

@@ -5,17 +5,20 @@ import NollieCore
 /// Turning System control on didn't work.
 struct SystemControlFailure: Error {}
 
-/// System control: whether a bot may use this Mac's apps and screen (Hermes's computer_use), as one
-/// switch per bot.
+/// System control: whether a bot may ask to use this Mac's apps, as one switch per bot.
 ///
-/// On: the bot may use the screen, and its desktop lease is the agent's. Each screen action is
-/// allowed for the chat it asks in, never always, so a scheduled or unattended run (with no one to
-/// answer) can't drive the Mac. Nothing goes on the bot's always-allowed list.
+/// On: the bot's desktop lease is the agent's, and it may ask Nollie Computer for the apps the
+/// person picked, where a model on this Mac does the clicking. Hermes's own computer_use stays
+/// switched off for every bot either way (it sends whole screenshots to the bot's own model), and
+/// Nollie's add-on refuses it too, so screenshots never leave the Mac.
 /// Off: the bot's desktop lease is a person's (`<home>/bot-desktop/lease.json`, holder "human").
 /// Hermes reads that file before every screen action, captures included, in every process and chat,
 /// and refuses the action before any approval card (tools/bot_desktop/lease.py,
 /// tools/computer_use/tool.py). Changing the epoch also discards a result returned after control
 /// changed. It cannot undo input already sent to an app.
+/// Hermes reads no lease file as the bot's, so a bot that has none is given a person's the first time
+/// its switch is read: off until the person turns it on. A private bot is left alone here; Nollie's own
+/// setup writes its lease.
 @MainActor
 @Observable
 final class SystemControl {
@@ -121,10 +124,31 @@ final class SystemControl {
         // An answer that comes back after the connection moved or a write began is dropped.
         guard rt.connection.gateway == gateway, writeGeneration[key] == generation else { return }
         spaces[key] = cfg.spaces
-        guard let lease = try? await readLease(rt, home) else { return }
+        guard var lease = try? await readLease(rt, home) else { return }
         guard !busy.contains(key), writeGeneration[key] == generation, rt.connection.gateway == gateway else { return }
-        states[key] = lease.explicitAgent && !cfg.disabled.contains("computer_use")
+        if lease.missing, !Self.isPrivate(profile, connection: rt.connection.id) {
+            // Never written over: one that appeared since the read is the bot's or the person's own.
+            guard (try? await writeLease(rt.api, home, holder: "human", epoch: 1, overwrite: false)) != nil else { return }
+            guard !busy.contains(key), writeGeneration[key] == generation, rt.connection.gateway == gateway else { return }
+            lease = Lease(holder: "human", epoch: 1, confirmedHuman: true)
+        }
+        states[key] = lease.explicitAgent
         source[key] = gateway
+        // Older versions switched Hermes's own computer_use on: it goes off again, once, never for a
+        // private bot (whose settings Nollie doesn't touch). This only ever takes a tool away.
+        if !cfg.disabled.contains("computer_use"), !keptOff.contains(key), !Self.isPrivate(profile, connection: rt.connection.id) {
+            keptOff.insert(key)
+            let body: [String: JSONValue] = ["agent": .object(["disabled_toolsets": .array((cfg.disabled + ["computer_use"]).map { .string($0) })])]
+            let _: JSONValue? = try? await rt.api.send("PUT", "/api/config", profile: profile, json: ["config": .object(body)])
+        }
+    }
+
+    /// Bots whose computer_use was switched off this run, so it is asked for once at most.
+    private var keptOff: Set<Key> = []
+
+    /// A bot Nollie never reads: on the Private list for this gateway, or one of the always-private names.
+    static func isPrivate(_ profile: String, connection: UUID) -> Bool {
+        PrivateBots.isPrivate(profile, connection: connection) || AskFirstModel.isPrivateBot(profile) { _ in false }
     }
 
     /// Whether Hermes's own computer_use could act on this Mac for a bot now, by Hermes's own
@@ -151,15 +175,16 @@ final class SystemControl {
 
     // MARK: Writing
 
-    /// Turns a bot's System control on or off. On: the lease goes to the agent, and computer_use comes
-    /// out of its switched-off tools. Off: the lease goes to a person, which stops the bot's next
-    /// screen action. Either way, screen rules an older version left on the always-allowed list go.
+    /// Turns a bot's System control on or off. On: the lease goes to the agent, so it may ask Nollie
+    /// Computer. Off: the lease goes to a person, which stops the bot's next screen action. Either
+    /// way computer_use stays among its switched-off tools, and screen rules an older version left
+    /// on the always-allowed list go.
     @discardableResult
     func set(_ on: Bool, profile: String, rt: GatewayRuntime) async -> Bool {
         let key = Self.key(profile, rt)
         guard !busy.contains(key) else { return false }
         guard let home = home(rt, profile) else {
-            lastError = "The gateway didn't say where this bot lives."
+            lastError = String(localized: "The gateway didn't say where this bot lives.")
             return false
         }
         let gateway = rt.connection.gateway
@@ -176,12 +201,17 @@ final class SystemControl {
             var body: [String: JSONValue] = [:]
             let kept = Self.withoutScreenRules(cfg.allow)
             if kept.count != cfg.allow.count { body["command_allowlist"] = .array(kept.map { .string($0) }) }
-            if on, cfg.disabled.contains("computer_use") {
-                body["agent"] = .object(["disabled_toolsets": .array(cfg.disabled.filter { $0 != "computer_use" }.map { .string($0) })])
+            if !cfg.disabled.contains("computer_use") {
+                body["agent"] = .object(["disabled_toolsets": .array((cfg.disabled + ["computer_use"]).map { .string($0) })])
             }
             if !body.isEmpty {
                 let _: JSONValue = try await rt.api.send("PUT", "/api/config", profile: profile, json: ["config": .object(body)])
             }
+            keptOff.insert(key)
+            #if os(macOS)
+            // Nollie's own setup: the add-on that asks Nollie Computer comes and goes with the switch.
+            await ComputerManagedAddOn.apply(on, profile: profile, home: home, rt: rt)
+            #endif
             lastError = nil
             readAt[key] = Date()
             return true
@@ -199,7 +229,7 @@ final class SystemControl {
     func stopMacControl(profile: String, rt: GatewayRuntime,
                         allowed: @escaping @MainActor () -> Bool) async -> Bool {
         guard let home = home(rt, profile) else {
-            lastError = "The gateway didn't say where this bot lives."
+            lastError = String(localized: "The gateway didn't say where this bot lives.")
             return false
         }
         return await stopMacControl(key: Self.key(profile, rt), home: home, api: rt.api, allowed: allowed)
@@ -238,7 +268,8 @@ final class SystemControl {
                 source.removeValue(forKey: key)
                 readAt.removeValue(forKey: key)
             }
-            lastError = "Couldn't confirm Mac control is off. Check the connection and try again."
+            lastError = String(localized: "Couldn't confirm Mac control is off. Check the connection and try again.",
+                                    comment: "Safety: Mac control may still be on; keep exact meaning")
             return false
         }
     }
@@ -265,6 +296,8 @@ final class SystemControl {
         var confirmedHuman = false
         /// The file exists and names the agent. A missing file is Hermes's default, not the switch.
         var explicitAgent = false
+        /// There is no lease file: Hermes would let the bot act.
+        var missing = false
     }
 
     private func home(_ rt: GatewayRuntime, _ profile: String) -> String? {
@@ -294,7 +327,7 @@ final class SystemControl {
                          confirmedHuman: holder == "human" && obj["epoch"] is NSNumber,
                          explicitAgent: holder == "agent")
         } catch HermesAPIError.http(let status, _) where status == 404 {
-            return Lease(holder: "agent", epoch: 0)
+            return Lease(holder: "agent", epoch: 0, missing: true)
         }
     }
 
@@ -302,14 +335,15 @@ final class SystemControl {
         try await writeLease(rt.api, home, holder: holder, epoch: epoch)
     }
 
-    private func writeLease(_ api: HermesAPI, _ home: String, holder: String, epoch: Int) async throws {
+    private func writeLease(_ api: HermesAPI, _ home: String, holder: String, epoch: Int, overwrite: Bool = true) async throws {
         var lease: [String: Any] = ["holder": holder, "since": Date().timeIntervalSince1970, "epoch": epoch]
         lease["viewer_id"] = holder == "human" ? "nollie-app" : NSNull()
+        // The lease is read by the gateway, so its reason stays in English.
         lease["reason"] = holder == "human" ? "System control is off in the Nollie app" : ""
         let data = try JSONSerialization.data(withJSONObject: lease, options: [.sortedKeys])
         let body: JSONValue = ["path": .string(Self.leasePath(home)),
                                "data_url": .string("data:application/json;base64," + data.base64EncodedString()),
-                               "overwrite": true]
+                               "overwrite": .bool(overwrite)]
         let result: ManagedUploadResult = try await api.send("POST", "/api/files/upload", json: body)
         guard result.ok != false, result.path == Self.leasePath(home) else { throw StopFailure.unconfirmed }
     }

@@ -126,47 +126,69 @@ public enum BackupSwitch: Equatable, Sendable {
     /// Where a local model runs, in a sentence, on this device.
     public static var here: String {
         #if os(macOS)
-        "on this Mac"
+        String(localized: "on this Mac", table: "Core", comment: "Where a model runs, as in: Llama on this Mac")
         #else
-        "on your Mac"
+        String(localized: "on your Mac", table: "Core", comment: "Where a model runs, as in: Llama on your Mac")
         #endif
     }
 
-    /// The chat's line. `here` is where a local model runs, in a sentence: "on this Mac" or "on your Mac".
+    /// The chat's line. `here` is where a local model runs, in a sentence: "on this Mac" or "on your Mac". One whole
+    /// sentence for each reason, with and without a time; the models fill its places.
     public func line(here: String, clock: SleepNote.Clock = SleepNote.clock) -> String {
         switch self {
         case let .switched(from, to, reason, retryAt):
-            let until = retryAt.map { "until \(clock($0))" } ?? "for this reply"
-            return "\(Self.owner(from)) \(Self.verb(reason)), so Nollie is using \(Self.place(to, here: here)) \(until)."
+            let main = Self.owner(from), backup = Self.place(to, here: here)
+            if let retryAt {
+                let time = clock(retryAt)
+                return switch reason {
+                case .limit: String(localized: "\(main) hit its limit, so Nollie is using \(backup) until \(time).", table: "Core")
+                case .busy: String(localized: "\(main) is busy, so Nollie is using \(backup) until \(time).", table: "Core")
+                case .signIn: String(localized: "\(main) needs signing in again, so Nollie is using \(backup) until \(time).", table: "Core")
+                case .other: String(localized: "\(main) isn't answering, so Nollie is using \(backup) until \(time).", table: "Core")
+                }
+            }
+            return switch reason {
+            case .limit: String(localized: "\(main) hit its limit, so Nollie is using \(backup) for this reply.", table: "Core")
+            case .busy: String(localized: "\(main) is busy, so Nollie is using \(backup) for this reply.", table: "Core")
+            case .signIn: String(localized: "\(main) needs signing in again, so Nollie is using \(backup) for this reply.", table: "Core")
+            case .other: String(localized: "\(main) isn't answering, so Nollie is using \(backup) for this reply.", table: "Core")
+            }
         case .restored(let main):
-            return "Back on \(Self.owner(main).prefix(1).lowercased() + Self.owner(main).dropFirst())."
+            let owner = Self.owner(main, inSentence: true)
+            return String(localized: "Back on \(owner).", table: "Core", comment: "The person's main model is answering again: Back on your Claude plan.")
         }
     }
 
     // MARK: Words
 
     /// "Your Claude plan", "Your OpenRouter account", "Your model on this Mac", "Your main model".
-    static func owner(_ route: BackupRoute) -> String {
-        if let plan = Papertrail.providerLabel(route.provider), BackupRoute.isPlan(route.provider) { return "Your \(plan)" }
-        if route.isLocal { return "Your \(BackupRoute.shortName(route.model)) model" }
-        if let label = Papertrail.providerLabel(route.provider) { return "Your \(label) account" }
-        return "Your main model"
-    }
-
-    static func verb(_ reason: Reason) -> String {
-        switch reason {
-        case .limit: "hit its limit"
-        case .busy: "is busy"
-        case .signIn: "needs signing in again"
-        case .other: "isn't answering"
+    /// The same inside a sentence: "your Claude plan".
+    static func owner(_ route: BackupRoute, inSentence: Bool = false) -> String {
+        if let plan = Papertrail.providerLabel(route.provider), BackupRoute.isPlan(route.provider) {
+            return inSentence ? String(localized: "your \(plan)", table: "Core", comment: "A model plan inside a sentence: your Claude plan")
+                : String(localized: "Your \(plan)", table: "Core", comment: "A model plan at the start of a sentence: Your Claude plan")
         }
+        if route.isLocal {
+            let name = BackupRoute.shortName(route.model)
+            return inSentence ? String(localized: "your \(name) model", table: "Core", comment: "Inside a sentence: your Llama model")
+                : String(localized: "Your \(name) model", table: "Core", comment: "At the start of a sentence: Your Llama model")
+        }
+        if let label = Papertrail.providerLabel(route.provider) {
+            return inSentence ? String(localized: "your \(label) account", table: "Core", comment: "Inside a sentence: your OpenRouter account")
+                : String(localized: "Your \(label) account", table: "Core", comment: "At the start of a sentence: Your OpenRouter account")
+        }
+        return inSentence ? String(localized: "your main model", table: "Core", comment: "Inside a sentence")
+            : String(localized: "Your main model", table: "Core", comment: "At the start of a sentence")
     }
 
     /// "Llama on your Mac", "your ChatGPT plan", "OpenRouter".
     static func place(_ route: BackupRoute, here: String) -> String {
-        if route.isLocal { return "\(BackupRoute.shortName(route.model)) \(here)" }
+        if route.isLocal {
+            let name = BackupRoute.shortName(route.model)
+            return String(localized: "\(name) \(here)", table: "Core", comment: "A model's name, then where it runs: Llama on your Mac")
+        }
         if let label = Papertrail.providerLabel(route.provider) {
-            return BackupRoute.isPlan(route.provider) ? "your \(label)" : label
+            return BackupRoute.isPlan(route.provider) ? String(localized: "your \(label)", table: "Core", comment: "A model plan inside a sentence: your Claude plan") : label
         }
         return BackupRoute.shortName(route.model)
     }

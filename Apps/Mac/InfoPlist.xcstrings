@@ -1,0 +1,258 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSCalendarsFullAccessUsageDescription" : {
+      "comment" : "Info.plist NSCalendarsFullAccessUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Nollie lets the helpers you choose see your calendar. Nothing changes without your yes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie lässt die Helfer, die du auswählst, deinen Kalender sehen. Ohne dein Ja ändert sich nichts."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie permet aux assistants que vous choisissez de voir votre calendrier. Rien ne change sans votre accord."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie permite a los ayudantes que elijas ver tu calendario. Nada cambia sin tu sí."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieは、あなたが選んだヘルパーにカレンダーを見せます。あなたの許可なしに変更されることはありません。"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "comment" : "Info.plist NSCameraUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Take a photo to attach to a chat with your Hermes agent."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nimm ein Foto auf, um es an einen Chat mit deinem Hermes-Agenten anzuhängen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Prenez une photo à joindre à une discussion avec votre agent Hermes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Haz una foto para adjuntarla a un chat con tu agente de Hermes."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermesエージェントとのチャットに添付する写真を撮ります。"
+          }
+        }
+      }
+    },
+    "NSContactsUsageDescription" : {
+      "comment" : "Info.plist NSContactsUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Nollie lets the helpers you choose find people in your contacts. Nothing changes without your yes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie lässt die Helfer, die du auswählst, Personen in deinen Kontakten finden. Ohne dein Ja ändert sich nichts."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie permet aux assistants que vous choisissez de trouver des personnes dans vos contacts. Rien ne change sans votre accord."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie permite a los ayudantes que elijas buscar personas en tus contactos. Nada cambia sin tu sí."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieは、あなたが選んだヘルパーが連絡先から人を探せるようにします。あなたの許可なしに変更されることはありません。"
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Info.plist NSLocalNetworkUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Let your iPhone find this Mac on your Wi-Fi, and connect to a Hermes dashboard on your local network."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Damit dein iPhone diesen Mac in deinem WLAN findet und eine Verbindung zu einem Hermes-Dashboard in deinem lokalen Netzwerk herstellt."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Permet à votre iPhone de trouver ce Mac sur votre Wi-Fi et de se connecter à un tableau de bord Hermes sur votre réseau local."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Permite que tu iPhone encuentre este Mac en tu red Wi-Fi y que se conecte a un panel de Hermes en tu red local."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhoneがWi-Fi上でこのMacを見つけたり、ローカルネットワーク上のHermesダッシュボードに接続したりできるようにします。"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Info.plist NSMicrophoneUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Talk with your bots, dictate a message, or record a voice memo to attach."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sprich mit deinen Bots, diktiere eine Nachricht oder nimm ein Sprachmemo zum Anhängen auf."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Parlez avec vos bots, dictez un message ou enregistrez un mémo vocal à joindre."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Habla con tus bots, dicta un mensaje o graba una nota de voz para adjuntarla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ボットと話したり、メッセージを音声入力したり、添付するボイスメモを録音したりします。"
+          }
+        }
+      }
+    },
+    "NSRemindersFullAccessUsageDescription" : {
+      "comment" : "Info.plist NSRemindersFullAccessUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Nollie lets the helpers you choose see your reminders. Nothing changes without your yes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie lässt die Helfer, die du auswählst, deine Erinnerungen sehen. Ohne dein Ja ändert sich nichts."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie permet aux assistants que vous choisissez de voir vos rappels. Rien ne change sans votre accord."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie permite a los ayudantes que elijas ver tus recordatorios. Nada cambia sin tu sí."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieは、あなたが選んだヘルパーにリマインダーを見せます。あなたの許可なしに変更されることはありません。"
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription" : {
+      "comment" : "Info.plist NSSpeechRecognitionUsageDescription: shown by the system when it asks for this permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn what you say into words, on this Mac."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macht aus dem, was du sagst, Text, auf diesem Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Transforme ce que vous dites en texte, sur ce Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Convierte lo que dices en texto, en este Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMac上で、話した言葉を文字にします。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

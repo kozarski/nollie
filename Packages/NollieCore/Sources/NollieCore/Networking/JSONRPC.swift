@@ -79,7 +79,7 @@ extension InboundFrame {
 
     private static func failure(from body: JSONValue) -> RPCError {
         RPCError(code: body["code"]?.intValue ?? -32000,
-                 message: body["message"]?.stringValue ?? "Unknown error",
+                 message: body["message"]?.stringValue ?? String(localized: "Unknown error", table: "Core"),
                  data: body["data"])
     }
 

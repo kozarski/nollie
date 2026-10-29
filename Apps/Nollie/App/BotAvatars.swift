@@ -9,8 +9,9 @@ import AppKit
 
 /// What stands for each bot: one of the character looks, or a photo the person picked. Choices
 /// are kept per profile in UserDefaults under `botAvatars` as "look:<id>" or "photo"; photos are
-/// files in the app's BotAvatars folder. Both stay on this device. A bot with nothing saved
-/// shows its profile's default look.
+/// files in the app's BotAvatars folder. A photo stays on this device; a picked look is shared
+/// with the person's other devices through the gateway (`BotLookSharing`). A bot with nothing
+/// saved shows its profile's default look.
 enum BotAvatarStore {
     static let storageKey = "botAvatars"
 
@@ -199,7 +200,7 @@ struct CharacterLookPicker: View {
             photoProblem = nil
             choice = .photo
         } catch {
-            photoProblem = "That photo didn't load."
+            photoProblem = String(localized: "That photo didn't load.")
         }
     }
 }

@@ -134,8 +134,12 @@ final class AppModel {
     /// What left the Mac today and what the crew did overnight. Settings' top tiles and the Mac
     /// sidebar's Papertrail button both read it, so they always agree.
     let crewSummary = CrewSummaryModel()
+    /// Sharing a helper with someone at home: who this device is, and for the owner, who has what.
+    let family = FamilyModel()
     /// Set to open Settings, What left your Mac (the Mac sidebar's Papertrail button).
     var papertrailRequest: UUID?
+    /// Set to open the weekly note: its card at the top of the main chat, or its notification.
+    var weeklyRequest: UUID?
 
     /// Set when something that needs the Mac live was tapped while the phone cannot reach it.
     var awayPrompt = false
@@ -424,13 +428,13 @@ final class AppModel {
                         installationID: reply.snapshot.installationID,
                         enabledInstallationID: reply.snapshot.enabledInstallationID)
                 else {
-                    throw HermesAPIError.transport("Nollie's background service is not ready. The connection will retry.")
+                    throw HermesAPIError.transport(String(localized: "Nollie's background service is not ready. The connection will retry."))
                 }
                 runtime.lastError = nil
                 return updated.gateway
             } catch {
                 guard self.runtime === runtime, !Task.isCancelled else { throw SocketError.cancelled }
-                let waiting = "Waiting for Nollie's background service. The connection will retry."
+                let waiting = String(localized: "Waiting for Nollie's background service. The connection will retry.")
                 runtime.lastError = waiting
                 throw HermesAPIError.transport(waiting)
             }

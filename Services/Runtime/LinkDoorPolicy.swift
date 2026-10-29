@@ -57,11 +57,14 @@ enum LinkDoorPolicy {
         case hosts
         case awayOn
         case awayOff
+        /// Away through iCloud: the phone's away key in, the Mac's out. Answered by the door itself.
+        case seal
     }
 
     static let claimPath = "/nollie/link/claim"
     static let stopPath = "/nollie/stop"
     static let livePath = "/nollie/live"
+    static let sealPath = "/nollie/link/seal"
 
     /// One allowed route: methods and a path pattern, where `*` is one segment that is not a
     /// reserved word and `**` is any further segments (kanban only). Sockets list no methods.
@@ -108,6 +111,19 @@ enum LinkDoorPolicy {
         Rule(["GET", "POST", "PATCH", "DELETE"], "/api/plugins/kanban/**"), Rule([], "/api/plugins/kanban/events", socket: true),
         Rule(["GET"], "/api/plugins/nollie-workflow/private-bots"), Rule(["GET"], "/api/plugins/nollie-workflow/attention"),
         Rule(["GET"], "/api/plugins/nollie-workflow/papertrail"),
+        // The weekly note: one bot's week as counts and names, and one tap to turn a connected app or the web tools
+        // off or on again. The add-on refuses private bots and never removes anything; the door allows nothing but
+        // `?bot=` on the read (see `allowsQuery`).
+        Rule(["GET"], "/api/plugins/nollie-workflow/week"), Rule(["PUT"], "/api/plugins/nollie-workflow/week/switch"),
+        // Remove asks first on the phone; the add-on removes through Hermes's own config code and records it.
+        Rule(["POST"], "/api/plugins/nollie-workflow/week/remove-app"),
+        // Each helper's mute and the note's day, the same on every device. Only the Mac's own alert helper says
+        // it sends the note itself (`weekly-note/live`), so a phone never reaches that.
+        Rule(["GET"], "/api/plugins/nollie-workflow/mutes"), Rule(["PUT"], "/api/plugins/nollie-workflow/mutes/*"),
+        Rule(["GET", "PUT"], "/api/plugins/nollie-workflow/weekly-note"),
+        // Each bot's character and colour, so a look picked on the phone is the Mac's too. The add-on
+        // refuses a private bot's.
+        Rule(["GET"], "/api/plugins/nollie-workflow/bot-looks"), Rule(["PUT"], "/api/plugins/nollie-workflow/bot-looks/*"),
         // The main chat's cards: read them, and Turn on or Keep off a rehearsed schedule, as resuming one is.
         Rule(["GET"], "/api/plugins/nollie-workflow/posts"),
         Rule(["POST"], "/api/plugins/nollie-workflow/rehearsals/*/turn-on"),
@@ -134,6 +150,13 @@ enum LinkDoorPolicy {
         Rule(["GET"], "/api/plugins/nollie-workflow/memory"),
         Rule(["POST", "PUT", "DELETE"], "/api/plugins/nollie-workflow/memory/notes"),
         Rule(["PUT"], "/api/plugins/nollie-workflow/memory/switch"),
+        // Ready-made helpers: the gallery's roster, its Add and the Undo that takes one back. The crew add-on
+        // keeps an added helper on the local model, with no schedule and only tools of Nollie's own that need no
+        // further yes, archives rather than deletes on Undo, and only answers for Nollie's profile. A suggestion's
+        // Add can bring a schedule, so `suggestions/*` stays on the Mac.
+        Rule(["GET"], "/api/plugins/nollie-crew/crew"),
+        Rule(["POST"], "/api/plugins/nollie-crew/members"),
+        Rule(["POST"], "/api/plugins/nollie-crew/undo"),
     ]
 
     private static func matches(_ pattern: [Substring], _ path: [Substring]) -> Bool {
@@ -150,6 +173,7 @@ enum LinkDoorPolicy {
         if path == claimPath { return method == "POST" && !websocket ? .claim : .refused }
         if path == stopPath { return method == "POST" && !websocket ? .stop : .refused }
         if path == livePath { return method == "GET" && websocket ? .live : .refused }
+        if path == sealPath { return method == "POST" && !websocket ? .seal : .refused }
         if let own = awayRoutes[path] { return method == (own == .hosts ? "GET" : "POST") && !websocket ? own : .refused }
         let segments = path.split(separator: "/", omittingEmptySubsequences: false).dropFirst().map { $0 }
         guard !segments.contains(where: \.isEmpty) else { return .refused }
@@ -176,7 +200,7 @@ enum LinkDoorPolicy {
     /// Paths whose query is held to one `bot` and nothing else: a helper's memory. So a phone can't say
     /// `on_this_mac`, which only Nollie on the Mac that runs Hermes sends for a private bot.
     static let botOnlyPaths: Set<String> = ["/api/plugins/nollie-workflow/memory", "/api/plugins/nollie-workflow/memory/notes",
-                                           "/api/plugins/nollie-workflow/memory/switch"]
+                                           "/api/plugins/nollie-workflow/memory/switch", "/api/plugins/nollie-workflow/week"]
 
     /// Every other path passes its query on as before; these take exactly one profile name.
     static func allowsQuery(path: String, query: String?) -> Bool {

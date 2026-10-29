@@ -68,7 +68,7 @@ struct ImageViewerSheet: View {
 
     private func fetchPicture() async {
         guard let runtime = AppModel.shared.runtime else {
-            loadProblem = "Connect a gateway first."
+            loadProblem = String(localized: "Connect a gateway first.")
             return
         }
         let source = GatewayMediaAPI(api: runtime.api, profile: profile)
@@ -76,9 +76,9 @@ struct ImageViewerSheet: View {
             let local = try await MediaStore.shared.localURL(for: ref, gateway: runtime.connection.id.uuidString, api: source)
             file = local
             picture = await AttachmentThumbs.imageAsync(at: local, side: 2400)
-            if picture == nil { loadProblem = "This file is not a picture this device can show." }
+            if picture == nil { loadProblem = String(localized: "This file is not a picture this device can show.") }
         } catch {
-            loadProblem = "The gateway could not send this file: \(error.localizedDescription)"
+            loadProblem = String(localized: "The gateway could not send this file: \(error.localizedDescription)")
         }
     }
 
@@ -135,9 +135,9 @@ struct ImageViewerSheet: View {
 
         var title: String {
             switch self {
-            case .idle: "Save to Photos"
-            case .saving: "Saving…"
-            case .saved: "Saved"
+            case .idle: String(localized: "Save to Photos")
+            case .saving: String(localized: "Saving…")
+            case .saved: String(localized: "Saved", comment: "A picture was saved to Photos")
             }
         }
         var symbol: String { self == .saved ? "checkmark" : "square.and.arrow.down" }
@@ -238,7 +238,7 @@ private struct ZoomableImage: View {
 /// What the viewer tells the person when Save to Photos fails. When the cause is Photos access
 /// being off (refused at the prompt, or switched off later) it says so and offers Settings.
 struct PhotoSaveFailure: Equatable {
-    static let accessOffMessage = "Nollie is not allowed to add to Photos. Switch that on in Settings, then try again."
+    static let accessOffMessage = String(localized: "Nollie is not allowed to add to Photos. Switch that on in Settings, then try again.")
 
     var message: String
     /// True when Photos permission is switched off, or the device restricts it.
@@ -251,7 +251,7 @@ struct PhotoSaveFailure: Equatable {
         let refusedHere = [PHPhotosError.Code.accessUserDenied, .accessRestricted].contains { $0 == code }
         let refusedOverall = [PHAuthorizationStatus.denied, .restricted].contains(addOnly)
         let off = refusedHere || refusedOverall
-        self.init(message: off ? Self.accessOffMessage : "Photos could not keep it: \(error.localizedDescription)", accessOff: off)
+        self.init(message: off ? Self.accessOffMessage : String(localized: "Photos could not keep it: \(error.localizedDescription)"), accessOff: off)
     }
 
     init(message: String, accessOff: Bool) {
@@ -263,7 +263,7 @@ struct PhotoSaveFailure: Equatable {
 
 /// An alert that is up while `failure` holds a value. Clearing the value dismisses it.
 private struct FailureAlert<Failure, Extra: View>: ViewModifier {
-    var title: String
+    var title: LocalizedStringKey
     @Binding var failure: Failure?
     @ViewBuilder var extra: (Failure) -> Extra
     var text: (Failure) -> String

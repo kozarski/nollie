@@ -32,7 +32,8 @@ struct StartFailureCard: View {
 
     private var explanation: String {
         guard let provider = failure.provider else { return failure.reason }
-        return "This bot uses \(provider), which needs its own command-line tool set up on the gateway computer. Nollie can't do that part from here."
+        return String(localized: "This bot uses \(provider), which needs its own command-line tool set up on the gateway computer. Nollie can't do that part from here.",
+                      comment: "A model provider's name follows uses")
     }
 
     var body: some View {
@@ -51,7 +52,8 @@ struct StartFailureCard: View {
         .background(.red.opacity(0.10), in: .rect(cornerRadius: 16, style: .continuous))
     }
 
-    private static let nextStep = "Run hermes setup on the gateway, or pick another model for this bot in the Hermes dashboard."
+    private static let nextStep = String(localized: "Run hermes setup on the gateway, or pick another model for this bot in the Hermes dashboard.",
+                                         comment: "hermes setup is a command; keep it as it is")
 
     private var heading: some View {
         Label("This bot's model did not start", systemImage: "exclamationmark.triangle.fill")
@@ -77,23 +79,22 @@ struct InjectedNoteRow: View {
 
     @State private var open = false
 
-    /// Icon picked from how the note's title starts or reads.
+    /// Icon picked from what the note is.
     private var symbol: String {
-        let t = note.title
-        if t.contains("failed") { return "exclamationmark.circle" }
-        if t.hasPrefix("Scheduled") { return "clock" }
-        if t.hasPrefix("Subagent") { return "person.2" }
-        return "gearshape.2"
+        switch note.kind {
+        case .backgroundFailed, .subagentFailed: "exclamationmark.circle"
+        case .scheduledRun: "clock"
+        case .subagent: "person.2"
+        case .backgroundFinished, .gateway: "gearshape.2"
+        }
     }
 
-    private var heading: String {
-        note.title.replacingOccurrences(of: "Scheduled run: ", with: "Scheduled run · ")
-    }
+    private var heading: String { note.title }
 
     var body: some View {
         VStack(spacing: 6) {
             PlainButton { withAnimation(.snappy) { open.toggle() } } label: { pillLabel }
-                .accessibilityLabel("\(note.title). \(open ? "Hides" : "Shows") the details")
+                .accessibilityLabel(open ? String(localized: "\(note.title). Hides the details") : String(localized: "\(note.title). Shows the details"))
             if open { details }
         }
         .frame(maxWidth: .infinity)
@@ -115,7 +116,7 @@ struct InjectedNoteRow: View {
     }
 
     private var details: some View {
-        Text(note.body)
+        Text(TranscriptMedia.words(of: note.body, naming: 0))
             .font(.caption.monospaced())
             .textSelection(.enabled)
             .spread()
@@ -146,20 +147,21 @@ struct BotMessageNotice: View {
         self.onOpen = onOpen
     }
 
-    /// The text, unless it is missing or only blank space.
+    /// The text without any `MEDIA:` mark, unless that leaves nothing or only blank space.
     private var message: String? {
-        guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-        return text
+        guard let text else { return nil }
+        let words = TranscriptMedia.words(of: text, naming: 0)
+        return words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : words
     }
 
     private var stateWord: String {
-        guard message != nil else { return pending ? "Sending" : "No message text" }
-        return open ? "Expanded" : "Collapsed"
+        guard message != nil else { return pending ? String(localized: "Sending", comment: "A message is being sent") : String(localized: "No message text") }
+        return open ? String(localized: "Expanded") : String(localized: "Collapsed")
     }
 
     private var hint: String {
         guard message != nil else { return "" }
-        return open ? "Hides the message" : "Shows the message"
+        return open ? String(localized: "Hides the message") : String(localized: "Shows the message")
     }
 
     var body: some View {

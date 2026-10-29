@@ -29,7 +29,7 @@ final class CrewSummaryModel {
         let key = runtime.connection.id.uuidString
         if self.key != key { bots = nil; night = nil; loaded = false; self.key = key }
         async let days = Self.days(runtime)
-        async let card = Self.night(runtime)
+        async let card = Self.latestNight(runtime)
         let (read, latest) = await (days, card)
         guard !Task.isCancelled, self.key == key else { return }
         bots = read
@@ -46,7 +46,8 @@ final class CrewSummaryModel {
         return found.isEmpty ? nil : found
     }
 
-    private static func night(_ runtime: GatewayRuntime) async -> ConversationPost.NightShift? {
+    /// The newest Night shift card of the last day and a half, or nil. The Watch's note reads it too.
+    static func latestNight(_ runtime: GatewayRuntime) async -> ConversationPost.NightShift? {
         let posts = try? await HermesConversationPosts(api: runtime.api).posts(since: Date().addingTimeInterval(-36 * 3600))
         return posts?.filter { $0.nightShift != nil }.max { $0.at < $1.at }?.nightShift
     }
@@ -57,26 +58,26 @@ final class CrewSummaryModel {
 enum CrewSummaryWords {
     /// The tile's few words.
     static func left(_ summary: CrewSummaryModel) -> String {
-        guard let left = summary.leftToday else { return "Not kept yet" }
-        if left == 0 { return "Nothing today" }
+        guard let left = summary.leftToday else { return String(localized: "Not kept yet", comment: "Papertrail has no record yet") }
+        if left == 0 { return String(localized: "Nothing today", comment: "Safety: Papertrail; keep exact meaning") }
         let online = summary.onlineToday ?? 0
-        if online == 0 { return "Stayed on your network" }
-        return online == 1 ? "Went online once" : "Went online \(online) times"
+        if online == 0 { return String(localized: "Your network only", comment: "Safety: Papertrail; keep exact meaning") }
+        return String(localized: "Went online \(online) times", comment: "Safety: Papertrail; keep exact meaning")
     }
 
     /// The page's answer.
     static func leftHero(_ summary: CrewSummaryModel) -> String {
-        guard let left = summary.leftToday else { return "Not kept yet" }
-        if left == 0 { return "Nothing left your Mac today" }
+        guard let left = summary.leftToday else { return String(localized: "Not kept yet", comment: "Papertrail has no record yet") }
+        if left == 0 { return String(localized: "Nothing seen leaving today", comment: "Safety: Papertrail; keep exact meaning") }
         let online = summary.onlineToday ?? 0
-        return online == 0 ? "Stayed on your network today" : PapertrailToday.wentOnline(online)
+        return online == 0 ? String(localized: "Nothing seen going online today", comment: "Safety: Papertrail; keep exact meaning") : PapertrailToday.wentOnline(online)
     }
 
     /// One bot's row.
     static func bot(_ today: PapertrailToday) -> String {
-        if today.left == 0 { return "Nothing" }
-        if today.online == 0 { return "Your network" }
-        return today.online == 1 ? "Online once" : "Online \(today.online) times"
+        if today.left == 0 { return String(localized: "Nothing", comment: "Safety: Papertrail, nothing left the device today") }
+        if today.online == 0 { return String(localized: "Your network", comment: "Safety: Papertrail; keep exact meaning") }
+        return String(localized: "Online \(today.online) times", comment: "Safety: Papertrail; keep exact meaning")
     }
 
     static func symbol(_ summary: CrewSummaryModel) -> String {
@@ -92,9 +93,9 @@ enum CrewSummaryWords {
     }
 
     static func night(_ card: ConversationPost.NightShift?) -> String {
-        guard let card, card.counts.runs > 0 else { return "A quiet night" }
-        if card.counts.held > 0 { return card.counts.held == 1 ? "1 thing waits for you" : "\(card.counts.held) things wait for you" }
-        return card.counts.runs == 1 ? "1 job overnight" : "\(card.counts.runs) jobs overnight"
+        guard let card, card.counts.runs > 0 else { return String(localized: "A quiet night") }
+        if card.counts.held > 0 { return String(localized: "\(card.counts.held) things wait for you") }
+        return String(localized: "\(card.counts.runs) jobs overnight")
     }
 }
 
@@ -109,12 +110,12 @@ struct CrewSummaryTiles: View {
         let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 14)) : AnyLayout(HStackLayout(alignment: .top, spacing: 14))
         layout {
             NavigationLink { LeftYourMacPage(summary: summary) } label: {
-                tile(title: "What left your Mac", symbol: CrewSummaryWords.symbol(summary),
+                tile(title: String(localized: "What left your Mac"), symbol: CrewSummaryWords.symbol(summary),
                      tint: CrewSummaryWords.tint(summary), word: CrewSummaryWords.left(summary))
             }
             .accessibilityIdentifier("settings.summary.left")
             NavigationLink { NightShiftPage(summary: summary) } label: {
-                tile(title: "Night shift", symbol: "moon.stars.fill",
+                tile(title: String(localized: "Night shift"), symbol: "moon.stars.fill",
                      tint: (summary.night?.counts.held ?? 0) > 0 ? .orange : .indigo, word: CrewSummaryWords.night(summary.night))
             }
             .accessibilityIdentifier("settings.summary.night")
@@ -154,8 +155,9 @@ struct LeftYourMacPage: View {
     var body: some View {
         SettingsPage("left.page") {
             PageHero(symbol: CrewSummaryWords.symbol(summary),
-                     title: CrewSummaryWords.leftHero(summary),
-                     line: summary.bots == nil ? "Papertrail starts with your next chat." : "Only when, and where to. Never your words.",
+                     title: .verbatim(CrewSummaryWords.leftHero(summary)),
+                     line: .verbatim(summary.bots == nil ? String(localized: "Papertrail starts with your next chat.")
+                         : String(localized: "Only when, and where to. Never your words.", comment: "Safety: Papertrail; keep exact meaning")),
                      tint: CrewSummaryWords.tint(summary), id: "left.hero")
             if let bots = summary.bots {
                 GlassStack {
@@ -180,6 +182,10 @@ struct LeftYourMacPage: View {
                     }
                 }
             }
+            #if os(macOS) && NOLLIE_DIRECT
+            // Papertrail's network filter: on, nothing leaves around Nollie's door.
+            PapertrailFilterToggle()
+            #endif
         }
         .untitledPage()
     }
@@ -193,8 +199,8 @@ struct NightShiftPage: View {
 
     var body: some View {
         SettingsPage("night.page") {
-            PageHero(symbol: "moon.stars.fill", title: CrewSummaryWords.night(summary.night),
-                     line: summary.night == nil ? "Each morning your crew's work shows here and in Nollie's chat." : nil,
+            PageHero(symbol: "moon.stars.fill", title: .verbatim(CrewSummaryWords.night(summary.night)),
+                     line: .verbatim(summary.night == nil ? String(localized: "Each morning your crew's work shows here and in Nollie's chat.") : nil),
                      tint: (summary.night?.counts.held ?? 0) > 0 ? .orange : .indigo, id: "night.hero")
             if let card = summary.night {
                 NightShiftCard(card: card, expanded: expanded) { tap in

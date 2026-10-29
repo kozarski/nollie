@@ -2,13 +2,14 @@ import SwiftUI
 
 /// A row in the + panel.
 struct AttachItem: Identifiable {
-    var title: String
-    var id: String { title }
+    /// Shown in the person's language; its English key names the row for `id` and `testID`.
+    var title: LocalizedStringResource
+    var id: String { title.key }
     var symbol: String
 
     /// Identifier UI tests use, such as "attach.message-history".
     var testID: String {
-        let slug = title.lowercased().split(separator: " ").joined(separator: "-")
+        let slug = title.key.lowercased().split(separator: " ").joined(separator: "-")
         return "attach.\(slug)"
     }
 

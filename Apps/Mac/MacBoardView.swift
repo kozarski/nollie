@@ -124,11 +124,11 @@ struct MacBoardView: View {
 
     private var toolbarOptions: [BoardToolbar.BoardOption] {
         [
-            .init(title: "About the Board badge", symbol: "info.circle") {
-                dialog.notice = "The blue badge counts tasks that need your help. The agents handle routine reviews."
+            .init(title: String(localized: "About the Board badge"), symbol: "info.circle") {
+                dialog.notice = String(localized: "The blue badge counts tasks that need your help. The agents handle routine reviews.")
             },
-            .init(title: "Refresh", symbol: "arrow.clockwise") { Task { await store?.refresh() } },
-            .init(title: "Check for tasks", symbol: "play.circle") { Task { await store?.nudge() } },
+            .init(title: String(localized: "Refresh"), symbol: "arrow.clockwise") { Task { await store?.refresh() } },
+            .init(title: String(localized: "Check for tasks"), symbol: "play.circle") { Task { await store?.nudge() } },
         ]
     }
 
@@ -211,7 +211,7 @@ struct MacBoardView: View {
               context.board == store?.selectedBoard, let board = store?.board else { return }
         model.boardTaskToReveal = nil
         if board.task(id: context.taskID) == nil {
-            dialog.notice = "This task is no longer on the board."
+            dialog.notice = String(localized: "This task is no longer on the board.")
         } else {
             chosen = context.taskID
         }

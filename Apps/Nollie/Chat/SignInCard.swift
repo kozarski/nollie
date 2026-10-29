@@ -12,7 +12,7 @@ struct SignInCardBody: View {
     @State private var working = false
     @State private var problem: String?
 
-    private var who: String { botName.isEmpty ? "Your bot" : botName }
+    private var who: String { botName.isEmpty ? String(localized: "Your bot", comment: "Stands in for a bot's name when it has none") : botName }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -84,17 +84,19 @@ enum SignInAnswer {
         }
         if PrivateBots.isPrivate(chat.profileName, connection: chat.runtime.connection.id) || chat.profileName.lowercased() == "private" {
             await chat.respond(card: card, result: ["choice": "deny"])
-            return "Saved sign-ins aren't used for private bots."
+            return String(localized: "Saved sign-ins aren't used for private bots.", comment: "Safety: why a sign-in was refused")
         }
         #if os(macOS)
         return await SignInCenter.shared.allowHere(ask, card: card, chat: chat)
         #else
         let bot = botName(chat)
         guard await RememberedSignInCoordinator.defaultAuthenticator()
-            .authenticate(reason: "Let \(bot) sign in to \(ask.site)") != nil else { return nil }
+            .authenticate(reason: String(localized: "Let \(bot) sign in to \(ask.site)",
+                                         comment: "Safety: the reason shown with Face ID before a bot signs in; a bot's name, then a website")) != nil
+        else { return nil }
         // Who answered, for the history. Only a label: the Mac still asks for Touch ID before it types.
         if (try? await chat.runtime.claimSignIn(ask.requestID, approver: "iphone")) == false {
-            return "This one was already answered."
+            return String(localized: "This one was already answered.")
         }
         await chat.respond(card: card, result: ["choice": "once"])
         return nil

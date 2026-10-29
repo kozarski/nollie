@@ -19,7 +19,13 @@ private struct MenuLine: Identifiable {
 private struct MenuSheet {
     private(set) var lines: [MenuLine] = []
 
-    mutating func add(_ title: String, _ key: KeyEquivalent? = nil, _ modifiers: EventModifiers = .command,
+    mutating func add(_ title: LocalizedStringResource, _ key: KeyEquivalent? = nil, _ modifiers: EventModifiers = .command,
+                      enabled: Bool = true, run: @escaping () -> Void) {
+        add(verbatim: String(localized: title), key, modifiers, enabled: enabled, run: run)
+    }
+
+    /// For a title that is already in the person's language.
+    fileprivate mutating func add(verbatim title: String, _ key: KeyEquivalent? = nil, _ modifiers: EventModifiers = .command,
                       enabled: Bool = true, run: @escaping () -> Void) {
         lines.append(MenuLine(id: lines.count, title: title, key: key, modifiers: modifiers, enabled: enabled, run: run))
     }
@@ -118,12 +124,12 @@ struct MacChatCommands: Commands {
         }
         sheet.gap()
         // Stop the open chat's turn, or answer the approval it is waiting on.
-        sheet.add("Stop", ".", enabled: model.visibleChat?.isRunning == true) {
+        sheet.add(LocalizedStringResource("Stop", comment: "Safety: menu command that stops the open chat's turn"), ".", enabled: model.visibleChat?.isRunning == true) {
             guard let chat = model.visibleChat else { return }
             Task { await chat.stop() }
         }
-        sheet.add("Approve Once", "y", [.command, .shift], enabled: here.approval != nil) { here.answerApproval("once") }
-        sheet.add("Deny", "d", [.command, .shift], enabled: here.approval != nil) { here.answerApproval("deny") }
+        sheet.add(LocalizedStringResource("Approve Once", comment: "Safety: menu command; allows the waiting approval this one time"), "y", [.command, .shift], enabled: here.approval != nil) { here.answerApproval("once") }
+        sheet.add(LocalizedStringResource("Deny", comment: "Safety: menu command; refuses the waiting approval"), "d", [.command, .shift], enabled: here.approval != nil) { here.answerApproval("deny") }
         sheet.gap()
         // The newest reply as markdown; the keyboard and VoiceOver reach the hover Copy button this way.
         sheet.add("Copy Last Reply", "c", [.command, .shift], enabled: here.lastReply != nil) {
@@ -147,7 +153,7 @@ struct MacGoCommands: Commands {
         for (place, tab) in MacPages.order.enumerated() {
             // Only the first nine pages get a number key.
             let digit = place < 9 ? KeyEquivalent(Character(String(place + 1))) : nil
-            sheet.add(MacPages.title(tab), digit, enabled: !model.hiddenTabs.contains(tab)) { model.selectedTab = tab }
+            sheet.add(.verbatim(MacPages.title(tab)), digit, enabled: !model.hiddenTabs.contains(tab)) { model.selectedTab = tab }
         }
         return sheet
     }

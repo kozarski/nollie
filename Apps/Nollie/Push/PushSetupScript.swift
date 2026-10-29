@@ -16,8 +16,8 @@ extension PushSetupView {
         var previous: SetupStep? { Self(rawValue: rawValue - 1) }
 
         private static let headings = [
-            "Apple push", "Gateway address", "Companion sign-in",
-            "Put it on the gateway", "Start the companion", "Overview and test",
+            String(localized: "Apple push"), String(localized: "Gateway address"), String(localized: "Companion sign-in"),
+            String(localized: "Put it on the gateway"), String(localized: "Start the companion"), String(localized: "Overview and test"),
         ]
 
         var title: String { Self.headings[rawValue] }
@@ -45,9 +45,10 @@ extension PushSetupView.SetupStep {
 
     /// What the bot says above the cards that never change their tune.
     private static let fixedLines: [Self: String] = [
-        .apple: "Turn on notifications, then \(DeviceWords.tap) Register.",
-        .address: "Where the companion finds Hermes. Usually \(DeviceWords.this)'s address.",
-        .signIn: "Its own sign-in, with the same account as the dashboard.",
+        .apple: String(localized: "Turn on notifications, then \(DeviceWords.tap) Register.", comment: "%@ is tap or click"),
+        .address: String(localized: "Where the companion finds Hermes. Usually \(DeviceWords.this)'s address.",
+                         comment: "%@ is this iPhone, this iPad or this Mac"),
+        .signIn: String(localized: "Its own sign-in, with the same account as the dashboard."),
     ]
 
     /// What the bot says above this card, given how far along things are.
@@ -55,21 +56,21 @@ extension PushSetupView.SetupStep {
     func guideLine(setup: PushSetupModel, done: Bool, locked: Bool) -> String {
         if done {
             return self == .overview
-                ? "That's it! \(DeviceWords.CompanionBrings) are all yours."
-                : "That's done. \(DeviceWords.Tap) Continue."
+                ? String(localized: "That's it! \(DeviceWords.CompanionBrings) are all yours.", comment: "%@ is Notifications and approvals")
+                : String(localized: "That's done. \(DeviceWords.Tap) Continue.", comment: "%@ is Tap or Click")
         }
         if let line = Self.fixedLines[self] { return line }
         if self == .install {
             return setup.installedOnGateway
-                ? "Installed. It restarts when the timer runs out, or \(DeviceWords.tap) Restart now."
-                : "One \(DeviceWords.tap) puts everything on the gateway."
+                ? String(localized: "Installed. It restarts when the timer runs out, or \(DeviceWords.tap) Restart now.", comment: "%@ is tap or click")
+                : String(localized: "One \(DeviceWords.tap) puts everything on the gateway.", comment: "%@ is tap or click, as a noun")
         }
         if self == .start {
-            if setup.companionSignInRejected { return "The companion needs a new sign-in." }
-            return locked ? "Hold on, the gateway is restarting…" : setup.startAdvice
+            if setup.companionSignInRejected { return String(localized: "The companion needs a new sign-in.") }
+            return locked ? String(localized: "Hold on, the gateway is restarting…") : setup.startAdvice
         }
         return setup.companionHealthy
-            ? "All set. Send a test to check it works from end to end."
-            : "The companion isn't reporting in. Go back a step."
+            ? String(localized: "All set. Send a test to check it works from end to end.")
+            : String(localized: "The companion isn't reporting in. Go back a step.")
     }
 }

@@ -46,10 +46,10 @@ enum Intake {
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         let name = url.lastPathComponent
         guard let data = try? Data(contentsOf: url) else {
-            return .refused("Nollie couldn't open \(name).")
+            return .refused(String(localized: "Nollie couldn't open \(name)."))
         }
         if data.count > sizeLimit {
-            return .refused("\(name) is over 200 MB, which is too big to attach.")
+            return .refused(String(localized: "\(name) is over 200 MB, which is too big to attach."))
         }
         let type = UTType(filenameExtension: url.pathExtension) ?? .data
         return .read(data, name: name, type: type)
@@ -95,7 +95,7 @@ final class AttachSources {
         return rows
     }
 
-    private func row(_ title: String, _ symbol: String, _ color: Color, disabled: Bool = false,
+    private func row(_ title: LocalizedStringResource, _ symbol: String, _ color: Color, disabled: Bool = false,
                      open: @escaping (AttachSources) -> Void) -> AttachItem {
         AttachItem(title: title, symbol: symbol, color: color, disabled: disabled) { [self] in open(self) }
     }

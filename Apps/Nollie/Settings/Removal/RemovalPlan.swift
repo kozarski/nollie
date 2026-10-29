@@ -97,7 +97,8 @@ struct RemovalPlan: Equatable, Sendable {
         let direct = places.edition == .macDirect
         let rootUsable = Disk.isPlainFolder(layout.root) && Disk.unlinked(layout.root.deletingLastPathComponent(), below: places.home)
         if Disk.exists(layout.root), !rootUsable {
-            kept.append("Nollie's folder is a link, so Nollie left it and what it points to alone.")
+            kept.append(String(localized: "Nollie's folder is a link, so Nollie left it and what it points to alone.",
+                               comment: "Safety: Remove Nollie, what stays; keep exact meaning"))
         }
         let setups = rootUsable ? ownedSetups(layout) : (owned: [], unknown: [])
 
@@ -113,20 +114,23 @@ struct RemovalPlan: Equatable, Sendable {
                 if let python = hermesPython(places) {
                     homes.append(.init(home: places.home, python: python, managed: false))
                 } else {
-                    kept.append("Nollie couldn't find your Hermes's Python, so your helpers' own computers stay on. Turn each one off in Bot settings, then remove Nollie.")
+                    kept.append(String(localized: "Nollie couldn't find your Hermes's Python, so your helpers' own computers stay on. Turn each one off in Bot settings, then remove Nollie.",
+                                       comment: "Safety: Remove Nollie, what stays; keep exact meaning"))
                 }
             }
             if !homes.isEmpty {
-                parts.append(.init(kind: .computers, title: "Turn off your helpers' own computers and delete them",
+                parts.append(.init(kind: .computers,
+                                   title: String(localized: "Turn off your helpers' own computers and delete them", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
                                    detail: nil, steps: homes.map { .releaseComputers($0) }))
             }
-            parts.append(.init(kind: .background, title: "Stop Nollie Runtime and Nollie Notifications",
-                               detail: "Your assistant on this Mac stops first.",
+            parts.append(.init(kind: .background, title: String(localized: "Stop Nollie Runtime and Nollie Notifications", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                               detail: String(localized: "Your assistant on this Mac stops first.", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
                                steps: [.stopRuntime, .unregisterRuntime, .unregisterNotifications]))
             let hermes = hermesItems(places, kept: &kept)
             if !hermes.isEmpty {
-                parts.append(.init(kind: .hermes, title: "Take Nollie's add-ons out of your Hermes",
-                                   detail: "Your bots, chats and memory stay. The add-ons go to the Trash.", steps: hermes))
+                parts.append(.init(kind: .hermes, title: String(localized: "Take Nollie's add-ons out of your Hermes", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                                   detail: String(localized: "Your bots, chats and memory stay. The add-ons go to the Trash.", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                                   steps: hermes))
             }
             #if os(macOS)
             parts += cuaPart(places, kept: &kept)
@@ -134,11 +138,12 @@ struct RemovalPlan: Equatable, Sendable {
         }
 
         if !setups.owned.isEmpty {
-            parts.append(.init(kind: .setup, title: "Delete the assistant Nollie set up on this Mac",
-                               detail: "With its chats, memory and settings.", steps: setups.owned.map { .delete($0) }))
+            parts.append(.init(kind: .setup, title: String(localized: "Delete the assistant Nollie set up on this Mac", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                               detail: String(localized: "With its chats, memory and settings.", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                               steps: setups.owned.map { .delete($0) }))
         }
         if !setups.unknown.isEmpty {
-            kept.append("A folder in Nollie's setups that Nollie didn't make stays where it is.")
+            kept.append(String(localized: "A folder in Nollie's setups that Nollie didn't make stays where it is.", comment: "Safety: Remove Nollie, what stays; keep exact meaning"))
         }
 
         var files: [RemovalStep] = []
@@ -148,10 +153,10 @@ struct RemovalPlan: Equatable, Sendable {
                 let item = layout.root.appendingPathComponent(name)
                 if name == "Setups" || (name == "Cua" && parts.contains { $0.kind == .cua }) { continue }
                 if NolliePaths.Layout.knownChildren.contains(name) {
-                    if Disk.isLink(item) { kept.append("\(name) in Nollie's folder is a link, so Nollie left it alone.") }
+                    if Disk.isLink(item) { kept.append(String(localized: "\(name) in Nollie's folder is a link, so Nollie left it alone.", comment: "Safety: Remove Nollie, what stays; the placeholder is a file or folder name; keep exact meaning")) }
                     else { files.append(.delete(item)) }
                 } else {
-                    kept.append("\(name) in Nollie's folder isn't something Nollie made, so it stays.")
+                    kept.append(String(localized: "\(name) in Nollie's folder isn't something Nollie made, so it stays.", comment: "Safety: Remove Nollie, what stays; the placeholder is a file or folder name; keep exact meaning"))
                 }
             }
             files.append(.deleteIfEmpty(layout.setups))
@@ -166,16 +171,21 @@ struct RemovalPlan: Equatable, Sendable {
         }
         files.append(.clearSettings)
         parts.append(.init(kind: .files,
-                           title: direct ? "Delete Nollie's folder and settings on this Mac" : "Delete Nollie's chats, pictures and settings here",
-                           detail: direct ? "Its caches, logs and records, in ~/Library/Application Support/Nollie." : nil, steps: files))
+                           title: direct ? String(localized: "Delete Nollie's folder and settings on this Mac", comment: "Safety: Remove Nollie, what goes; keep exact meaning")
+                               : String(localized: "Delete Nollie's chats, pictures and settings here", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                           detail: direct ? String(localized: "Its caches, logs and records, in ~/Library/Application Support/Nollie.", comment: "Safety: Remove Nollie, what goes; keep exact meaning") : nil,
+                           steps: files))
 
-        parts.append(.init(kind: .keychain, title: "Delete Nollie's connections and saved sign-ins from the keychain", detail: nil,
+        parts.append(.init(kind: .keychain, title: String(localized: "Delete Nollie's connections and saved sign-ins from the keychain", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                           detail: nil,
                            steps: keychainServices.map { .forgetKeychain(Keychain.baseBundleID + $0) }))
         if options.includeCloud {
-            parts.append(.init(kind: .cloud, title: "Delete Nollie's alerts in iCloud", detail: nil, steps: [.deleteCloudData]))
+            parts.append(.init(kind: .cloud, title: String(localized: "Delete Nollie's alerts in iCloud", comment: "Safety: Remove Nollie, what goes; keep exact meaning"), detail: nil,
+                               steps: [.deleteCloudData]))
         }
         if direct, !options.keepApp, let app = places.app {
-            parts.append(.init(kind: .app, title: "Move Nollie to the Trash and quit", detail: nil, steps: [.trashApp(app)]))
+            parts.append(.init(kind: .app, title: String(localized: "Move Nollie to the Trash and quit", comment: "Safety: Remove Nollie, what goes; keep exact meaning"), detail: nil,
+                               steps: [.trashApp(app)]))
         }
         return RemovalPlan(parts: parts, kept: kept)
     }
@@ -217,7 +227,8 @@ struct RemovalPlan: Equatable, Sendable {
     private static func hermesItems(_ places: RemovalPlaces, kept: inout [String]) -> [RemovalStep] {
         let hermes = places.hermes
         if Disk.isLink(hermes) {
-            kept.append("Your Hermes folder is a link, so Nollie left its add-ons there. You can remove them in Hermes.")
+            kept.append(String(localized: "Your Hermes folder is a link, so Nollie left its add-ons there. You can remove them in Hermes.",
+                               comment: "Safety: Remove Nollie, what stays; keep exact meaning"))
             return []
         }
         guard Disk.isPlainFolder(hermes) else { return [] }
@@ -256,7 +267,7 @@ struct RemovalPlan: Equatable, Sendable {
             }
         }
         if Disk.isRegularFile(places.pushAgent) { steps.insert(.stopPushService(places.pushAgent), at: 0) }
-        if linked { kept.append("Some of Nollie's add-ons in your Hermes are links, so Nollie left them alone.") }
+        if linked { kept.append(String(localized: "Some of Nollie's add-ons in your Hermes are links, so Nollie left them alone.", comment: "Safety: Remove Nollie, what stays; keep exact meaning")) }
         return steps
     }
 
@@ -274,14 +285,14 @@ struct RemovalPlan: Equatable, Sendable {
             if Disk.isPlainFolder(places.nollie.cua) { steps.append(.delete(places.nollie.cua)) }
             if receipt.madeCuaHome, Disk.isPlainFolder(places.cuaHome) { steps.append(.delete(places.cuaHome)) }
             if !steps.isEmpty {
-                parts.append(.init(kind: .cua, title: "Remove Cua, which Nollie set up",
-                                   detail: "With your helpers' computers and Cua's settings.", steps: steps))
+                parts.append(.init(kind: .cua, title: String(localized: "Remove Cua, which Nollie set up", comment: "Safety: Remove Nollie, what goes; keep exact meaning"),
+                                   detail: String(localized: "With your helpers' computers and Cua's settings.", comment: "Safety: Remove Nollie, what goes; keep exact meaning"), steps: steps))
             }
         }
         let theirs = NollieCuaPlaces.folders(home: places.home, own: places.nollie.cua).dropLast()
             .map { $0.appendingPathComponent(cuaApp) }.filter(Disk.exists)
         if !theirs.isEmpty {
-            kept.append("Cua stays in Applications, because you installed it yourself.")
+            kept.append(String(localized: "Cua stays in Applications, because you installed it yourself.", comment: "Safety: Remove Nollie, what stays; keep exact meaning"))
         }
         return parts
     }

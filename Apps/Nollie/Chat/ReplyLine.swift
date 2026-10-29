@@ -91,7 +91,7 @@ struct ReplyLine: View {
         let files = TranscriptMedia.files(in: text)
         let videos = files.filter { MediaRef.isVideo($0.name) }
         let others = files.filter { !MediaRef.isVideo($0.name) }
-        let words = (pictures.isEmpty && files.isEmpty) ? text : MediaScan.textWithoutMedia(text)
+        let words = TranscriptMedia.words(of: text, naming: pictures.count + files.count)
         let pad = look.plain ? (h: CGFloat(4), v: CGFloat(4)) : (h: Ink.bubblePadH, v: Ink.bubblePadV)
         let shape = MessageBubbleShape(side: .leading, tailed: botShown && look.tailed, radius: Ink.bubbleRadius)
         return VStack(alignment: .leading, spacing: 6) {

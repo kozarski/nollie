@@ -27,7 +27,7 @@ struct SignInsSettingsView: View {
         SettingsPage("signIns.page") {
             SignInsHero(count: store.items.count, elsewhere: elsewhere)
             if let problem {
-                PageNote(problem, symbol: "exclamationmark.triangle.fill", tint: .orange, id: "signIns.problem")
+                PageNote(.verbatim(problem), symbol: "exclamationmark.triangle.fill", tint: .orange, id: "signIns.problem")
             }
             VStack(spacing: 12) {
                 ForEach(store.items) { item in
@@ -71,7 +71,7 @@ struct SignInsSettingsView: View {
         .sheet(item: $editing) { target in
             SignInEditor(target: target, store: store) { editing = nil }.withAppModel()
         }
-        .confirmationDialog(removing.map { "Remove the sign-in for \($0.site)?" } ?? "", isPresented: Binding(
+        .confirmationDialog(removing.map { String(localized: "Remove the sign-in for \($0.site)?", comment: "Safety: deleting a saved sign-in") } ?? "", isPresented: Binding(
             get: { removing != nil }, set: { if !$0 { removing = nil } })) {
             Button("Remove", role: .destructive) {
                 if let item = removing {
@@ -91,20 +91,20 @@ struct SignInsSettingsView: View {
     /// What happened, in a few words.
     static func line(_ entry: SignInHistoryEntry, bot: String) -> String {
         switch entry.outcome {
-        case "signed_in": return "\(bot) signed in to \(entry.site)"
-        case "declined": return "You said no to \(bot) on \(entry.site)"
-        case "cancelled": return "You stopped \(bot) on \(entry.site)"
-        case "no_answer": return "No answer for \(bot) on \(entry.site)"
-        case "not_saved": return "\(bot) asked for \(entry.site), not saved"
-        default: return "\(bot) couldn't sign in to \(entry.site)"
+        case "signed_in": return String(localized: "\(bot) signed in to \(entry.site)")
+        case "declined": return String(localized: "You said no to \(bot) on \(entry.site)")
+        case "cancelled": return String(localized: "You stopped \(bot) on \(entry.site)")
+        case "no_answer": return String(localized: "No answer for \(bot) on \(entry.site)")
+        case "not_saved": return String(localized: "\(bot) asked for \(entry.site), not saved")
+        default: return String(localized: "\(bot) couldn't sign in to \(entry.site)")
         }
     }
 
     /// Who said yes, when someone did.
     static func detail(_ entry: SignInHistoryEntry) -> String? {
         switch entry.approver {
-        case "mac": return "Allowed on this Mac"
-        case "iphone": return "Allowed on your iPhone"
+        case "mac": return String(localized: "Allowed on this Mac", comment: "Who said yes to a sign-in")
+        case "iphone": return String(localized: "Allowed on your iPhone", comment: "Who said yes to a sign-in")
         default: return nil
         }
     }
@@ -132,7 +132,9 @@ struct SignInsHero: View {
                      line: "Your assistant runs on another computer, so helpers can't use these.",
                      tint: .orange, id: "signIns.hero")
         } else {
-            PageHero(symbol: "key.fill", title: Self.title(count), line: "Nollie types it in. Helpers are never told the password.",
+            PageHero(symbol: "key.fill", title: .verbatim(Self.title(count)),
+                     line: LocalizedStringResource("Nollie types it in. Helpers are never told the password.",
+                                  comment: "Safety: what a helper learns of a saved password"),
                      tint: count == 0 ? .blue : .green, id: "signIns.hero")
         }
     }
@@ -140,9 +142,8 @@ struct SignInsHero: View {
     /// "No sign-ins yet", "1 sign-in", "3 sign-ins".
     static func title(_ count: Int) -> String {
         switch count {
-        case 0: "No sign-ins yet"
-        case 1: "1 sign-in"
-        default: "\(count) sign-ins"
+        case 0: String(localized: "No sign-ins yet")
+        default: String(localized: "\(count) sign-ins")
         }
     }
 }
@@ -202,7 +203,7 @@ struct SignInEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(existing == nil ? "Add sign-in" : existing!.site).font(.title2.weight(.semibold))
+            Text(existing?.site ?? String(localized: "Add sign-in")).font(.title2.weight(.semibold))
             if existing != nil && !unlocked {
                 Text("Touch ID shows this sign-in so you can change it.")
                     .foregroundStyle(.secondary)
@@ -250,7 +251,9 @@ struct SignInEditor: View {
         guard let existing else { return }
         Task {
             do {
-                let secret = try await store.reveal(existing, reason: "show the sign-in for \(existing.site)")
+                let reason = String(localized: "show the sign-in for \(existing.site)",
+                                    comment: "Safety: Touch ID reason; finishes 'Nollie is trying to …'")
+                let secret = try await store.reveal(existing, reason: reason)
                 password = secret.password
                 note = secret.note ?? ""
                 unlocked = true

@@ -1,18 +1,34 @@
 import SwiftUI
 import NollieCore
 
+/// The update's stages as shown. The stage is also matched below, always against these same words.
+enum CompanionUpdateStage {
+    static var preparing: String { String(localized: "Preparing Update…") }
+    static var installing: String { String(localized: "Installing…") }
+    static var reloading: String { String(localized: "Reloading…") }
+    static var verifying: String { String(localized: "Verifying…") }
+    static var stillVerifying: String { String(localized: "Still verifying…") }
+    static var restartToFinish: String { String(localized: "Restart to finish") }
+    static var restartingGateway: String { String(localized: "Restarting Gateway…") }
+    static var notVerified: String { String(localized: "Not verified") }
+    static var complete: String { String(localized: "Update Complete") }
+}
+
 /// Updating the companion on the gateway to the version this build ships.
 extension PushSetupModel {
     /// An approximate "time remaining" for the card, based on the current stage.
     var updateRemaining: String? {
         switch updateStage {
-        case "Preparing Update…", "Installing…", "Restarting Gateway…": "About 1 minute remaining"
-        case "Restart to finish": "Waiting for the restart"
-        case "Verifying…": "Up to 2 minutes"
-        case "Still verifying…": "Giving it another minute"
+        case CompanionUpdateStage.preparing, CompanionUpdateStage.installing, CompanionUpdateStage.restartingGateway:
+            String(localized: "About 1 minute remaining")
+        case CompanionUpdateStage.restartToFinish: String(localized: "Waiting for the restart")
+        case CompanionUpdateStage.verifying: String(localized: "Up to 2 minutes")
+        case CompanionUpdateStage.stillVerifying: String(localized: "Giving it another minute")
         default: nil
         }
     }
+
+    // The console lines (`say`) are a log of what ran, so they stay in English.
 
     // MARK: Helpers
 
@@ -36,9 +52,9 @@ extension PushSetupModel {
     /// Fills the bar, announces success, and clears the card a few seconds later.
     private func conclude(_ version: String) async {
         moveBar(to: 1)
-        updateStage = "Update Complete"
+        updateStage = CompanionUpdateStage.complete
         say("companion v\(version) is up and connected")
-        updateOutcome = (true, "Now on v\(version). The companion is up and connected.")
+        updateOutcome = (true, String(localized: "Now on v\(version). The companion is up and connected."))
         try? await Task.sleep(nanoseconds: 4_000_000_000)
         withAnimation(.smooth(duration: 0.7)) {
             update.consoleOpen = false
@@ -57,32 +73,32 @@ extension PushSetupModel {
         guard !updating else { return }
         (updating, updateProgress, updateConsole, updateOutcome, showUpdateConsole) = (true, 0, [], nil, true)
         defer { updating = false }
-        guard await backUpCompanion(runtime: rt) else { return fail(error ?? "The companion backup failed.") }
-        guard let home = rt.profileHome else { return fail("The gateway did not say where its home folder is.") }
-        guard let files = CompanionBundle.pluginFiles else { return fail("This build is missing the plugin files.") }
+        guard await backUpCompanion(runtime: rt) else { return fail(error ?? String(localized: "The companion backup failed.")) }
+        guard let home = rt.profileHome else { return fail(String(localized: "The gateway did not say where its home folder is.")) }
+        guard let files = CompanionBundle.pluginFiles else { return fail(String(localized: "This build is missing the plugin files.")) }
 
         let target = Self.bundledPluginVersion
         let folder = "\(home)/plugins/\(Self.pluginID)"
         let steps = Double(files.count + 3) // the files, enabling, restarting, the first heartbeat
-        updateStage = "Preparing Update…"
+        updateStage = CompanionUpdateStage.preparing
         say("Updating companion \(installedVersion.map { "v\($0)" } ?? "?") to v\(target)")
 
         for (index, file) in files.enumerated() {
             do {
                 try await writeFile(rt, path: "\(folder)/\(file.name)", data: file.data, mime: file.mime)
             } catch {
-                return fail("Could not write \(file.name): \(error.localizedDescription)", logged: "\(file.name): \(error.localizedDescription)")
+                return fail(String(localized: "Could not write \(file.name): \(error.localizedDescription)"), logged: "\(file.name): \(error.localizedDescription)")
             }
             say("wrote \(folder)/\(file.name) (\(file.data.count) bytes)")
             moveBar(to: Double(index + 1) / steps)
         }
-        updateStage = "Installing…"
+        updateStage = CompanionUpdateStage.installing
         if let refusal = await enable(rt) { return fail(refusal, logged: "enable: \(refusal)") }
         say("Nollie companion enabled")
         moveBar(to: Double(files.count + 1) / steps)
 
         // From 1.0.12 the companion swaps in new code on its own, so wait up to thirty seconds for that.
-        updateStage = "Reloading…"
+        updateStage = CompanionUpdateStage.reloading
         say("files are in place; waiting for the companion to reload itself")
         let reloaded = await poll(times: 10) {
             await checkCompanion(runtime: rt)
@@ -91,13 +107,13 @@ extension PushSetupModel {
         if reloaded {
             say("companion v\(target) reloaded in place, no restart needed")
             moveBar(to: 5 / steps)
-            updateStage = "Verifying…"
+            updateStage = CompanionUpdateStage.verifying
             if await poll(times: 10, until: { await checkCompanion(runtime: rt); return companionHealthy }) || companionHealthy {
                 return await conclude(target)
             }
         }
         updateNeedsRestart = true
-        updateStage = "Restart to finish"
+        updateStage = CompanionUpdateStage.restartToFinish
         say("the running companion did not pick the files up; restarting the \(heartbeat?.profile ?? "default") gateway will")
         scheduleRestartCountdown(runtime: rt)
     }
@@ -106,7 +122,7 @@ extension PushSetupModel {
     private func enable(_ rt: GatewayRuntime) async -> String? {
         do {
             let reply = try await enableCompanion(runtime: rt)
-            return reply["ok"]?.boolValue == false ? (reply["error"]?.stringValue ?? "Hermes would not enable the plugin.") : nil
+            return reply["ok"]?.boolValue == false ? (reply["error"]?.stringValue ?? String(localized: "Hermes would not enable the plugin.")) : nil
         } catch {
             return error.localizedDescription
         }
@@ -120,7 +136,7 @@ extension PushSetupModel {
         let steps = 6.0
         (updating, showUpdateConsole) = (true, true)
         defer { updating = false }
-        updateStage = "Restarting Gateway…"
+        updateStage = CompanionUpdateStage.restartingGateway
         let profile = heartbeat?.profile
         say("restarting the gateway (profile \(profile ?? "default"))")
         // Show the gateway's own restart output in the console as it arrives.
@@ -135,12 +151,12 @@ extension PushSetupModel {
         }
         await rt.maintenance.restartGateway(runtime: rt, profile: profile == "default" ? nil : profile)
         mirror.cancel()
-        if case .failed(let why) = rt.maintenance.phase { return fail("Restart failed: \(why)", logged: "restart: \(why)") }
+        if case .failed(let why) = rt.maintenance.phase { return fail(String(localized: "Restart failed: \(why)"), logged: "restart: \(why)") }
         say("gateway restart finished")
         (restartPending, updateNeedsRestart) = (false, false)
         moveBar(to: 5 / steps)
 
-        updateStage = "Verifying…"
+        updateStage = CompanionUpdateStage.verifying
         let began = Date()
         var lastLine = ""
         let verified = await poll(times: 40) {
@@ -152,16 +168,20 @@ extension PushSetupModel {
             if companionHealthy && installedVersion == target { return true }
             let elapsed = -began.timeIntervalSinceNow
             moveBar(to: (5 + min(0.9, elapsed / 120)) / steps)
-            if elapsed > 60 && updateStage == "Verifying…" {
-                updateStage = "Still verifying…"
+            if elapsed > 60 && updateStage == CompanionUpdateStage.verifying {
+                updateStage = CompanionUpdateStage.stillVerifying
                 say("no new heartbeat after a minute; waiting a little longer")
             }
             return elapsed >= 120
         }
         guard verified, companionHealthy, installedVersion == target else {
-            updateStage = "Not verified"
-            let last = heartbeat.map { "The last heartbeat is from v\($0.version), \($0.connected == true ? "connected" : "not connected")." } ?? "No heartbeat has been read."
-            return fail("The files are on the gateway, but the new companion did not report in within two minutes. \(last) Restart the gateway once more (Settings, Gateway), then check again here. If it still does not report, open the Companion page and run the test.")
+            updateStage = CompanionUpdateStage.notVerified
+            let last = heartbeat.map {
+                $0.connected == true ? String(localized: "The last heartbeat is from v\($0.version), connected.")
+                                     : String(localized: "The last heartbeat is from v\($0.version), not connected.")
+            } ?? String(localized: "No heartbeat has been read.")
+            return fail(String(localized: "The files are on the gateway, but the new companion did not report in within two minutes. \(last) Restart the gateway once more (Settings, Gateway), then check again here. If it still does not report, open the Companion page and run the test.",
+                               comment: "%@ is a sentence about the last heartbeat"))
         }
         await conclude(target)
     }
