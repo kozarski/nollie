@@ -127,3 +127,79 @@ import Testing
         #expect(CrewSummaryWords.night(.init(counts: .init(runs: 3, actions: 7, held: 2))) == "2 things wait for you")
     }
 }
+
+/// Night shift's switch in Settings › Night shift: the owner's alone, shown at once, put back with a word when the Mac
+/// says no.
+@MainActor @Suite struct NightShiftSwitchTests {
+    private func runtime() throws -> GatewayRuntime {
+        let connection = GatewayConnection(name: "Switch tests", gateway: try GatewayURL.normalize("http://127.0.0.1:9", pathPrefix: nil),
+                                           authMode: .sessionToken)
+        return GatewayRuntime(connection: connection, store: ConnectionStore())
+    }
+
+    private final class Mac {
+        var on: Bool? = false
+        var refuses = false
+        var reads = 0
+        var saves: [Bool] = []
+    }
+
+    private func summary(_ mac: Mac) -> CrewSummaryModel {
+        let summary = CrewSummaryModel(defaults: UserDefaults(suiteName: "nollie.tests.night-switch." + UUID().uuidString)!)
+        summary.nightSwitch = NightSwitchSource(
+            load: { _ in mac.reads += 1; return mac.on },
+            save: { on, _ in
+                mac.saves.append(on)
+                if mac.refuses { return nil }
+                mac.on = on
+                return on
+            })
+        return summary
+    }
+
+    @Test func theOwnerReadsAndTurnsItOn() async throws {
+        let mac = Mac(), rt = try runtime()
+        let summary = summary(mac)
+        await summary.load(rt)
+        #expect(summary.nightOn == false)
+        #expect(CrewSummaryWords.night(summary.night, off: summary.nightOn == false) == "Off", "Settings says plainly it's off")
+        await summary.setNight(true, runtime: rt)
+        #expect(summary.nightOn == true)
+        #expect(mac.saves == [true])
+        #expect(summary.nightProblem == nil)
+        #expect(CrewSummaryWords.night(summary.night, off: summary.nightOn == false) == "A quiet night")
+    }
+
+    @Test func aSharedMemberNeverReadsTheSwitch() async throws {
+        let mac = Mac(), rt = try runtime()
+        let summary = summary(mac)
+        await summary.load(rt, owner: false)
+        await summary.loadNightSwitch(rt, owner: false)
+        #expect(summary.nightOn == nil, "no switch to show")
+        #expect(mac.reads == 0)
+    }
+
+    @Test func aRefusedChangeGoesBackWithAWord() async throws {
+        let mac = Mac(), rt = try runtime()
+        let summary = summary(mac)
+        await summary.loadNightSwitch(rt, owner: true)
+        mac.refuses = true
+        await summary.setNight(true, runtime: rt)
+        #expect(summary.nightOn == false, "back as the Mac has it")
+        #expect(summary.nightProblem == "That didn't go through. Try again in a moment.")
+        #expect(!summary.nightSwitching)
+        mac.refuses = false
+        await summary.setNight(true, runtime: rt)
+        #expect(summary.nightOn == true)
+        #expect(summary.nightProblem == nil)
+    }
+
+    @Test func anOlderAddOnShowsNoSwitch() async throws {
+        let mac = Mac(), rt = try runtime()
+        mac.on = nil
+        let summary = summary(mac)
+        await summary.loadNightSwitch(rt, owner: true)
+        #expect(summary.nightOn == nil)
+        #expect(CrewSummaryWords.night(nil, off: summary.nightOn == false) == "A quiet night")
+    }
+}

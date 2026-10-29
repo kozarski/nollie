@@ -1310,7 +1310,8 @@ def backup_rest(method: str, base: str, query: dict, payload) -> tuple[int, obje
 # The fixture is one morning card with two runs and a rehearsal waiting for Turn on.
 # POST /api/_mock/night-shift resets both and stamps them just after the main chat's newest row;
 # with {"changed": true} the rehearsal's schedule was edited since, so Turn on answers 409 as the add-on does.
-NIGHT_SHIFT: dict = dict(posts=[], changed=set())
+# GET/PUT .../night-shift is the owner's switch, on here as the fixture's cards suppose; the reset turns it on again.
+NIGHT_SHIFT: dict = dict(posts=[], changed=set(), on=True)
 NIGHT_SHIFT_DAY = 24 * 3600
 
 
@@ -1430,6 +1431,7 @@ def reset_night_shift(changed: bool = False) -> list:
     newest = main_chat_newest()
     NIGHT_SHIFT["posts"] = night_shift_fixture(int(max(newest or 0, time.time())))
     NIGHT_SHIFT["changed"] = {p["id"] for p in NIGHT_SHIFT["posts"] if changed and p["kind"] == "rehearsal"}
+    NIGHT_SHIFT["on"] = True
     return NIGHT_SHIFT["posts"]
 
 
@@ -1451,6 +1453,18 @@ def night_shift_rest(method: str, base: str, query: dict, payload) -> tuple[int,
         changed = isinstance(payload, dict) and payload.get("changed") is True
         return ok(dict(posts=[p for p in map(shown_post, reset_night_shift(changed)) if p]))
     rehearsal = re.fullmatch(r"/api/plugins/nollie-workflow/rehearsals/([^/]+)/(turn-on|keep-off)", base)
+    if base == "/api/plugins/nollie-workflow/night-shift":
+        if query.get("profile", "default") != "default":
+            return refuse(403, "Board follow-through belongs to Nollie.")
+        if method == "PUT":
+            fields = payload if isinstance(payload, dict) else {}
+            if set(fields) != {"on"} or type(fields["on"]) is not bool:
+                return refuse(422, "Send on true or false.")
+            NIGHT_SHIFT["on"] = fields["on"]
+            return ok(dict(on=NIGHT_SHIFT["on"], damaged=False, saved=True))
+        if method != "GET":
+            return refuse(405, "Method Not Allowed")
+        return ok(dict(on=NIGHT_SHIFT["on"], damaged=False))
     if base == "/api/plugins/nollie-workflow/sleep":
         if query.get("profile", "default") != "default":
             return refuse(403, "Night shift belongs to Nollie.")

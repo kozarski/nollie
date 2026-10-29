@@ -55780,7 +55780,7 @@
       }
     },
     "Off" : {
-      "comment" : "A Status row's state word\nA switch state\nThe weekly note is switched off\nUsing this Mac is switched off",
+      "comment" : "A Status row's state word\nA switch state\nNight shift is switched off\nThe weekly note is switched off\nUsing this Mac is switched off",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -91286,6 +91286,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "先に%@でオンにしてください。"
+          }
+        }
+      }
+    },
+    "Turn it on to see each morning what your helpers did overnight, and why." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Schalte es ein, um jeden Morgen zu sehen, was deine Helfer über Nacht getan haben, und warum."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Actívalo para ver cada mañana lo que tus ayudantes hicieron durante la noche, y por qué."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Active-le pour voir chaque matin ce que tes assistants ont fait pendant la nuit, et pourquoi."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "オンにすると、ヘルパーが夜のあいだに何をしたか、その理由とともに毎朝わかります。"
           }
         }
       }

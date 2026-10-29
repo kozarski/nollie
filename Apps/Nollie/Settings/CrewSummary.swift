@@ -28,6 +28,16 @@ final class CrewSummaryModel {
     private(set) var nightPutAway: Date?
     private let defaults: UserDefaults
 
+    /// Night shift's switch on the Mac. Nil until read, from an add-on without one, and for a shared member,
+    /// whose phone never reaches it.
+    private(set) var nightOn: Bool?
+    /// A change of the switch on its way to the Mac.
+    private(set) var nightSwitching = false
+    /// Why the last change didn't go through.
+    private(set) var nightProblem: String?
+    /// Reads and saves the switch; tests put their own in.
+    var nightSwitch = NightSwitchSource.gateway
+
     static let nightPutAwayKey = "nollie.nightShift.putAway"
     /// How often the main chat reads the card again while it stays open.
     static let nightEvery: TimeInterval = 15 * 60
@@ -41,15 +51,45 @@ final class CrewSummaryModel {
         nightPutAway = defaults.object(forKey: Self.nightPutAwayKey) as? Date
     }
 
-    func load(_ runtime: GatewayRuntime) async {
+    /// `owner`: false for a shared member, whose phone never reads Night shift's switch.
+    func load(_ runtime: GatewayRuntime, owner: Bool = true) async {
         let key = switchTo(runtime)
         async let days = Self.days(runtime)
         async let posts = Self.nightPosts(runtime)
-        let (read, answered) = await (days, posts)
+        async let switched = owner ? nightSwitch.load(runtime) : nil
+        let (read, answered, on) = await (days, posts, switched)
         guard !Task.isCancelled, self.key == key else { return }
         bots = read
         if let answered { keep(Self.newestNight(answered)) }
+        if !nightSwitching { nightOn = owner ? on : nil }
         loaded = true
+    }
+
+    /// Reads only Night shift's switch, for its page opened from the chat. Never for a shared member.
+    func loadNightSwitch(_ runtime: GatewayRuntime, owner: Bool) async {
+        let key = switchTo(runtime)
+        guard owner else { nightOn = nil; return }
+        let on = await nightSwitch.load(runtime)
+        guard !Task.isCancelled, self.key == key, !nightSwitching else { return }
+        nightOn = on
+    }
+
+    /// Turns Night shift on or off on the Mac. It shows at once, and goes back with a word if the Mac says no.
+    func setNight(_ on: Bool, runtime: GatewayRuntime) async {
+        let key = switchTo(runtime)
+        let before = nightOn
+        nightOn = on
+        nightSwitching = true
+        nightProblem = nil
+        let saved = await nightSwitch.save(on, runtime)
+        guard self.key == key else { return }
+        nightSwitching = false
+        if let saved {
+            nightOn = saved
+        } else {
+            nightOn = before
+            nightProblem = String(localized: "That didn't go through. Try again in a moment.")
+        }
     }
 
     /// Reads only the Night shift card, at most every `nightEvery` unless `force`: the main chat's capsule.
@@ -76,7 +116,10 @@ final class CrewSummaryModel {
     /// Forgets what was read from another gateway; answers this one's key.
     private func switchTo(_ runtime: GatewayRuntime) -> String {
         let key = runtime.connection.id.uuidString
-        if self.key != key { bots = nil; night = nil; nightAt = nil; nightReadAt = nil; loaded = false; self.key = key }
+        if self.key != key {
+            bots = nil; night = nil; nightAt = nil; nightReadAt = nil; nightOn = nil; nightProblem = nil; loaded = false
+            self.key = key
+        }
         return key
     }
 
@@ -114,6 +157,16 @@ final class CrewSummaryModel {
     static func newestNight(_ posts: [ConversationPost]) -> ConversationPost? {
         posts.filter { $0.nightShift != nil }.max { $0.at < $1.at }
     }
+}
+
+/// Where Night shift's switch is read and saved: the gateway, or a test's stand-in. Each answers nil when it couldn't.
+struct NightSwitchSource {
+    var load: @MainActor (GatewayRuntime) async -> Bool?
+    var save: @MainActor (Bool, GatewayRuntime) async -> Bool?
+
+    static let gateway = NightSwitchSource(
+        load: { runtime in (try? await NightShiftSwitch.load(api: runtime.api)).flatMap { $0?.on } },
+        save: { on, runtime in (try? await NightShiftSwitch.save(on, api: runtime.api))?.on })
 }
 
 /// What the summary says, in the person's words, as each bot's own Papertrail says it.
@@ -155,7 +208,17 @@ enum CrewSummaryWords {
         return (summary.onlineToday ?? 0) > 0 ? .blue : .teal
     }
 
-    static func night(_ card: ConversationPost.NightShift?) -> String {
+    static func nightSymbol(_ summary: CrewSummaryModel) -> String {
+        summary.nightOn == false ? "moon.zzz" : "moon.stars.fill"
+    }
+
+    static func nightTint(_ summary: CrewSummaryModel) -> Color {
+        if summary.nightOn == false { return Ink.text2 }
+        return (summary.night?.counts.held ?? 0) > 0 ? .orange : .indigo
+    }
+
+    static func night(_ card: ConversationPost.NightShift?, off: Bool = false) -> String {
+        if off { return String(localized: "Off", comment: "Night shift is switched off") }
         guard let card, card.counts.runs > 0 else { return String(localized: "A quiet night") }
         if card.counts.held > 0 { return String(localized: "\(card.counts.held) things wait for you") }
         return String(localized: "\(card.counts.runs) jobs overnight")
@@ -178,8 +241,9 @@ struct CrewSummaryTiles: View {
             }
             .accessibilityIdentifier("settings.summary.left")
             NavigationLink { NightShiftPage(summary: summary) } label: {
-                tile(title: String(localized: "Night shift"), symbol: "moon.stars.fill",
-                     tint: (summary.night?.counts.held ?? 0) > 0 ? .orange : .indigo, word: CrewSummaryWords.night(summary.night))
+                tile(title: String(localized: "Night shift"), symbol: CrewSummaryWords.nightSymbol(summary),
+                     tint: CrewSummaryWords.nightTint(summary),
+                     word: CrewSummaryWords.night(summary.night, off: summary.nightOn == false))
             }
             .accessibilityIdentifier("settings.summary.night")
         }
@@ -254,17 +318,33 @@ struct LeftYourMacPage: View {
     }
 }
 
-/// Settings › Night shift: what the crew did overnight, the morning card itself.
+/// Settings › Night shift: its switch, what the crew did overnight, and the morning card itself. Only the owner sees
+/// the switch; while it is off the page says so first.
 struct NightShiftPage: View {
     var summary: CrewSummaryModel
+    @Environment(AppModel.self) private var model
     @State private var expanded: Set<String> = []
     @State private var sharing: ConversationPost?
 
+    private var owner: Bool { !model.family.isMember(model) }
+    private var off: Bool { summary.nightOn == false }
+
     var body: some View {
         SettingsPage("night.page") {
-            PageHero(symbol: "moon.stars.fill", title: .verbatim(CrewSummaryWords.night(summary.night)),
-                     line: .verbatim(summary.night == nil ? String(localized: "Each morning your crew's work shows here and in Nollie's chat.") : nil),
-                     tint: (summary.night?.counts.held ?? 0) > 0 ? .orange : .indigo, id: "night.hero")
+            PageHero(symbol: CrewSummaryWords.nightSymbol(summary),
+                     title: .verbatim(CrewSummaryWords.night(summary.night, off: off)),
+                     line: .verbatim(heroLine), tint: CrewSummaryWords.nightTint(summary), id: "night.hero")
+            if owner, let on = summary.nightOn {
+                VStack(alignment: .leading, spacing: 10) {
+                    GlassSwitch("Night shift", isOn: Binding(get: { on }, set: { turn($0) }), id: "night.switch")
+                        .disabled(summary.nightSwitching)
+                    if let problem = summary.nightProblem {
+                        Text(problem).font(.footnote).foregroundStyle(Ink.warnText)
+                            .padding(.horizontal, 22)
+                            .testID("night.switch.problem")
+                    }
+                }
+            }
             if let card = summary.night {
                 NightShiftCard(card: card, expanded: expanded) { tap in
                     switch tap {
@@ -278,8 +358,23 @@ struct NightShiftPage: View {
                 }
             }
         }
+        .animation(.snappy, value: summary.nightOn)
         .untitledPage()
+        .task(id: model.runtime?.connection.id) {
+            if let runtime = model.runtime { await summary.loadNightSwitch(runtime, owner: owner) }
+        }
         .sheet(item: $sharing) { post in NightShiftShareSheet(post: post).sheetFrame().withAppModel() }
+    }
+
+    /// Off says what turning it on gives; on with no card yet says where the work will show.
+    private var heroLine: String? {
+        if off { return String(localized: "Turn it on to see each morning what your helpers did overnight, and why.") }
+        return summary.night == nil ? String(localized: "Each morning your crew's work shows here and in Nollie's chat.") : nil
+    }
+
+    private func turn(_ on: Bool) {
+        guard let runtime = model.runtime else { return }
+        Task { await summary.setNight(on, runtime: runtime) }
     }
 }
 
@@ -321,7 +416,7 @@ struct PapertrailSearchButton: View {
         .accessibilityIdentifier("chats.papertrail")
         // Read again when the gateway or its bots change.
         .task(id: "\(model.runtime?.connection.id.uuidString ?? "")/\(model.runtime?.profiles.count ?? 0)") {
-            if let rt = model.runtime { await summary.load(rt) }
+            if let rt = model.runtime { await summary.load(rt, owner: !model.family.isMember(model)) }
         }
         #if DEBUG
         // For pictures: `-nollie-demo-papertrail` taps it once the window has settled.

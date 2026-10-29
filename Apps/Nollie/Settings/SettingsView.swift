@@ -32,7 +32,7 @@ struct SettingsView: View {
                 categoryRows
             }
             .task(id: refreshKey) {
-                if let runtime = model.runtime { await summary.load(runtime) }
+                if let runtime = model.runtime { await summary.load(runtime, owner: !model.family.isMember(model)) }
             }
             .navigationDestination(for: SettingsCategory.self) { SettingsDestination(category: $0, developerMode: developerMode) }
             // The Mac sidebar's Papertrail button opens What left your Mac, from anywhere.
