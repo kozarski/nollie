@@ -1044,6 +1044,9 @@ def main(argv=None):
     if ship.dry:
         failed = ship.state.get("preflight_failed") or []
         print(f"\nDry run finished. What a real run would send: {ship.out / 'would-send.txt'}")
+        missing = [step for step in STEPS if step not in ship.state["steps"]]
+        if missing:
+            print(f"Not done yet in this rehearsal: {', '.join(missing)}.")
         if failed:
             print(f"A real run would stop at the preflight: {', '.join(failed)}.")
             return 1
