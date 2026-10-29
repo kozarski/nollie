@@ -2,8 +2,8 @@
 
 [← Papertrail](papertrail.md)
 
-Status: built, embedded behind one project switch, and **off** (27 Oct 2026). The only step left is Corey's in the
-developer portal, then flipping `NOLLIE_NETWORK_FILTER_READY` to `YES`.
+Status: built and **on** in 1.2 (29 Oct 2026). The portal steps are done and `NOLLIE_NETWORK_FILTER_READY` is `YES`;
+the filter itself still starts only when the person turns on "Stop what Papertrail can't see".
 
 ## Why
 
@@ -67,14 +67,14 @@ variables; the nearest labelled parent's is used when its own has none. No label
 knows it, else the address), port, `tcp` or `udp`, the bot, and whether it was refused. Never an argument, a path
 beyond the file name, or a byte. A refused flow never left, so it is counted, not written.
 
-## What Corey needs to do
+## Portal and project steps (done 29 Oct 2026)
 
 In the developer portal (Certificates, Identifiers & Profiles):
 
 1. Identifiers › `com.coreykozarski.nollie`: turn on **Network Extensions** and **System Extension**.
 2. Register a new App ID, `com.coreykozarski.nollie.network-filter`, with **Network Extensions** on.
-3. Make a **Developer ID** provisioning profile for each of those two App IDs (for `direct-release.sh`), and install
-   them. Development builds can let Xcode make development profiles once 1 and 2 are done.
+3. Profiles: none by hand. `direct-release.sh` exports with automatic signing through Corey's Xcode account, which
+   makes the Developer ID profiles for both App IDs, as it does for every other target.
 
 Then in the project:
 

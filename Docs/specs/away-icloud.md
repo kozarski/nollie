@@ -265,7 +265,9 @@ status) is recorded in that bot's Papertrail as "Your iCloud" with the time and 
 through the add-on's `POST /api/plugins/nollie-workflow/papertrail/icloud` (the Mac app only; the Link door does
 not let a phone reach it). Stop and status notes that belong to no one bot are recorded under the main bot.
 
-## What Corey must do in Apple's portals
+## Apple's portals (done 29 Oct 2026)
+
+The schema below is imported in development and deployed to production, with the indexes listed.
 
 1. **Container.** `iCloud.com.coreykozarski.nollie` already exists and is in every app's entitlements (iPhone,
    Mac App Store, Mac Direct, the alert helper and the notification extensions). Nothing new to create.

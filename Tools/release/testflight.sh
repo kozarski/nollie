@@ -23,8 +23,8 @@
 #   env PLATFORM=macos bash Tools/release/testflight.sh
 #
 # On the Mac the script archives the NollieMac scheme, then exports a .pkg and uploads it as a Mac build.
-# First add a macOS platform to the app record. The keychain must also hold the Mac App Store
-# profiles named in ExportOptions-macOS.plist and an installer certificate for the Mac.
+# First add a macOS platform to the app record. Export signs automatically through Corey's Xcode account,
+# which makes the App Store profiles and uses his installer certificate for the Mac.
 #
 # Set DRY_RUN=1 on either platform to stop once the export and its checks are done; nothing is uploaded.
 
