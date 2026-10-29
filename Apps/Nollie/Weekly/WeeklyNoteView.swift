@@ -40,16 +40,11 @@ struct WeeklyNotePage: View {
     }
     #endif
 
-    /// "19 to 25 Oct. 3 helpers busy."
+    /// "19 to 25 Oct", then "3 helpers busy." under it. On one line a number after the dates read
+    /// as part of them ("Oct. 2 helpers"), so each gets a line of its own.
     private var line: String? {
         guard let note = weekly.note else { return nil }
-        let dates = WeeklyNoteDates.range(note.since, note.until)
-        // Some languages end a short month with its own full stop ("Okt."), so the dates do not get a second one.
-        if dates.hasSuffix(".") {
-            return String(localized: "\(dates) \(note.headline)", comment: "The week's dates, already ending in a full stop, then a short summary")
-        }
-        return String(localized: "\(dates). \(note.headline)",
-                      comment: "The week's dates, then a short summary like 3 helpers busy")
+        return WeeklyNoteDates.range(note.since, note.until) + "\n" + note.headline
     }
 }
 
@@ -157,7 +152,10 @@ struct WeeklyLineRow: View {
     private let narrow = false
     #endif
 
-    private var stacked: Bool { typeSize.isAccessibilitySize || (narrow && line.actions.count > 1) }
+    /// On a phone any line with buttons puts them under its words, so every row in the note has
+    /// the same shape and no headline is squeezed into a short column beside a capsule.
+    private var stacked: Bool { typeSize.isAccessibilitySize || (narrow && !line.actions.isEmpty) }
+    @ScaledMetric(relativeTo: .body) private var symbolColumn: CGFloat = 26
 
     var body: some View {
         let large = stacked
@@ -167,7 +165,7 @@ struct WeeklyLineRow: View {
                 Image(systemName: line.symbol)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(line.isNew ? WeeklyInk.tint : Ink.text2)
-                    .frame(width: 26)
+                    .frame(width: symbolColumn)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(shown).font(.headline).foregroundStyle(Ink.text)
@@ -191,7 +189,7 @@ struct WeeklyLineRow: View {
             if !large { Spacer(minLength: 8) }
             if !line.actions.isEmpty {
                 WeeklyActionButtons(actions: line.actions, line: line.id)
-                    .padding(.leading, large ? 40 : 0)
+                    .padding(.leading, large ? symbolColumn + 14 : 0)
             }
         }
         .padding(.leading, 20).padding(.trailing, line.actions.isEmpty ? 22 : 10).padding(.vertical, 12)
@@ -317,7 +315,12 @@ struct WeeklyActionButtons: View {
         }
         .buttonStyle(.nollieGlass)
         .buttonBorderShape(.capsule)
+        // A full-size capsule on the phone, where a small one is too short for a fingertip.
+        #if os(iOS)
+        .controlSize(.regular)
+        #else
         .controlSize(.small)
+        #endif
         .tint(action.asksFirst ? .red : nil)
         .accessibilityLabel(title)
         .testID("weekly.action.\(line).\(title)")
