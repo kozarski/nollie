@@ -499,12 +499,17 @@ Default profile only (403 otherwise), `Cache-Control: no-store`:
   is 404.
 - `POST /api/plugins/nollie-workflow/rehearsals/{post_id}/keep-off`: the entry becomes
   `kept_off` and the schedule stays paused. 200, 404 or 409 as above.
+- `GET /api/plugins/nollie-workflow/night-shift`: `{"on": bool, "damaged": bool}`. No settings file is off; a
+  damaged one reads as on, as the recorder treats it. `PUT` with `{"on": bool}` changes `night_shift` only and
+  answers the same with `"saved": true`. The app's switch in Settings › Night shift uses it; the Link door lets only
+  the owner's own devices reach it.
 - `GET /api/plugins/nollie-workflow/sleep?since=<unix seconds>`: `{"version": 1, "gaps": [...]}`, oldest
   first, cut to `since` (default 14 days back, at most 35). A schedule's page asks it why a run was late.
 
 ### Turn it on
 
-Both features ship off. With a backup, on the Mac that runs Hermes:
+Both features ship off. Night shift is turned on in the app, in Settings › Night shift. By hand, with a backup, on
+the Mac that runs Hermes:
 
 ```sh
 python3 Companions/nollie-workflow/install.py --recorder
