@@ -13,11 +13,13 @@ private extension ChatSession {
         #if os(iOS)
         // A card that came through iCloud is answered the same way.
         if AwayPhone.isAwayCard(card) {
+            ApprovalFeel.answered(choice)
             Task { await AwayPhone.shared.answer(card, choice: choice, in: self) }
             return
         }
         #endif
         guard !AppModel.shared.awayBlocks() else { return }
+        ApprovalFeel.answered(choice)
         Task { await respond(card: card, result: ["choice": .string(choice)]) }
     }
 
@@ -28,6 +30,19 @@ private extension ChatSession {
             onChoice: { self.answerApproval(card, with: $0) },
             onSystemControl: { SystemControl.answer($0, card: card, chat: self) },
             onSignIn: { await SignInAnswer.answer($0, card: card, chat: self) })
+    }
+}
+
+/// What a finger feels when an approval is answered: a clear tick for a yes, a light tap for a no.
+enum ApprovalFeel {
+    @MainActor static func answered(_ choice: String) {
+        #if os(iOS)
+        if choice == "deny" {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        } else {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+        #endif
     }
 }
 
