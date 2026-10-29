@@ -77,18 +77,13 @@ struct FamilySharePage: View {
                                         id: "family.they"),
                       trailing: FactTile(title: "Only you", tint: Ink.text2,
                                          facts: [Fact(symbol: "checkmark.seal.fill", word: "Say yes"), Fact(symbol: "brain.head.profile", word: "Memory"),
+                                                 Fact(symbol: "bubble.left.and.bubble.right.fill", word: "Your chats"),
                                                  Fact(symbol: "creditcard.fill", word: "Cards"), Fact(symbol: "person.3.fill", word: "Other helpers")],
                                          id: "family.you"))
-            VStack(spacing: 14) {
-                Button(action: add) { PageActionLabel(LocalizedStringResource("Add someone"), symbol: "person.badge.plus") }
-                    .pageAction(tint: .teal)
-                    .testID("family.add")
-                // Safety: what the copy takes with it, and what never goes.
-                Text("Each person gets their own \(name), with your instructions and none of your memory or chats.")
-                    .font(.footnote).foregroundStyle(Ink.text2).multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .testID("family.copyNote")
-            }
+            // What never goes with the copy is on the Only you tile, so no note under the button.
+            Button(action: add) { PageActionLabel(LocalizedStringResource("Add someone"), symbol: "person.badge.plus") }
+                .pageAction(tint: .teal)
+                .testID("family.add")
             if !people.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
                     PageHeading(people.count == 1 ? LocalizedStringResource("Shared with", comment: "Heading over the one person who has this helper")
