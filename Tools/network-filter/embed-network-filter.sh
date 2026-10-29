@@ -8,7 +8,6 @@ set -eu
 
 . "$SRCROOT/Tools/runtime-helper/embedding-paths.sh"
 build_root=$(embedding_directory "$TARGET_BUILD_DIR")
-products_root=$(embedding_directory "$BUILT_PRODUCTS_DIR")
 name="com.coreykozarski.nollie.network-filter.systemextension"
 relative="$CONTENTS_FOLDER_PATH/Library/SystemExtensions/$name"
 embedding_check_path "$build_root" "$relative"
@@ -31,6 +30,9 @@ if [ "${NOLLIE_NETWORK_FILTER_READY:-NO}" != "YES" ]; then
   exit 0
 fi
 
+# Only now the products folder. Xcode's script sandbox lets this phase read only what it lists, so the
+# phase lists the built filter's files as inputs; the client edition, which embeds nothing, never looks.
+products_root=$(embedding_directory "$BUILT_PRODUCTS_DIR")
 source=$(embedding_product "$products_root" "$name")
 embedding_check_distinct "$source" "$embedded"
 for required in "Contents/Info.plist" "Contents/MacOS/com.coreykozarski.nollie.network-filter"; do

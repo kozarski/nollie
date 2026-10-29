@@ -1466,6 +1466,8 @@
 			files = (
 			);
 			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/com.coreykozarski.nollie.network-filter.systemextension/Contents/Info.plist",
+				"$(BUILT_PRODUCTS_DIR)/com.coreykozarski.nollie.network-filter.systemextension/Contents/MacOS/com.coreykozarski.nollie.network-filter",
 				"$(SRCROOT)/Tools/network-filter/embed-network-filter.sh",
 				"$(SRCROOT)/Tools/runtime-helper/embedding-paths.sh",
 			);
