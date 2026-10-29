@@ -44,6 +44,7 @@ struct PageHero: View {
     var tint: Color
     /// The title's identifier; the line's is the same with `.lead` in place of `.hero`.
     var id: String
+    @Environment(\.self) private var environment
 
     init(symbol: String, title: LocalizedStringResource, line: LocalizedStringResource? = nil, tint: Color, id: String) {
         self.init(verbatim: symbol, title: String(localized: title), line: line.map { String(localized: $0) }, tint: tint, id: id)
@@ -73,7 +74,8 @@ struct PageHero: View {
             mark
             Text(title)
                 .font(.largeTitle.weight(.bold))
-                .foregroundStyle(tint)
+                // Bright tints (teal, green, orange) sink just far enough to read on a white page.
+                .foregroundStyle(tint.readable(against: Ink.canvas, ratio: 3, in: environment))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
@@ -205,9 +207,17 @@ struct FactTile: View {
 
 /// A tile's fact: its symbol in a narrow column, then its words.
 private struct TileFactStyle: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: Configuration) -> some View { TileFact(configuration: configuration) }
+}
+
+/// The column grows with the text size, so a large symbol never runs into the tile's edge.
+private struct TileFact: View {
+    var configuration: LabelStyleConfiguration
+    @ScaledMetric(relativeTo: .body) private var column: CGFloat = 24
+
+    var body: some View {
         HStack(spacing: 12) {
-            configuration.icon.font(.body.weight(.semibold)).frame(width: 24)
+            configuration.icon.font(.body.weight(.semibold)).frame(width: column)
             configuration.title
         }
     }
