@@ -11,6 +11,7 @@ import SwiftUI
 ///     -nollie-demo-window <width>x<height>           sizes the window
 ///     -nollie-demo-bot-page <kind>                   opens one of a bot's pages
 ///     -nollie-demo-bot-profile <name>                which bot that page is for
+///     -nollie-demo-say <words>                       sends those words in a new chat
 ///     -nollie-demo-app-menu                          shows the app menu open after 45 seconds, for a picture of it
 ///
 /// (`-nollie-demo-sidebar`, which hides the sidebar, lives in the split view.)
@@ -43,7 +44,19 @@ struct MacDemoLaunch: ViewModifier {
             .task { await holdSettingsTab() }
             .task { await openPageAndSizeWindow() }
             .task { await openBotPage() }
+            .task { await sayForDemo() }
             .onAppear { showAppMenu() }
+    }
+
+    /// `-nollie-demo-say <words-with-dashes>`: once the bots are in, a new chat with the default bot
+    /// sends those words, as on the iPhone, for pictures of a turn (an approval, a card).
+    private func sayForDemo() async {
+        guard DemoMode.isOn, let words = Self.value(after: "-nollie-demo-say") else { return }
+        await waitForBots(polls: 60)
+        try? await Task.sleep(for: .seconds(2))
+        model.demoFirstMessage = words.replacingOccurrences(of: "-", with: " ")
+        model.sideChatRequestedAt = Date()
+        model.newChatRequest = UUID()
     }
 
     /// Pops the app menu (the one named for the app) open over the window and leaves it there. A timer, not
