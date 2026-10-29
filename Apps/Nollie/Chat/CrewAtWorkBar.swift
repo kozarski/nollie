@@ -84,10 +84,16 @@ struct CrewAtWorkBar: View {
     }
 
     private func whoLabel(_ members: [CrewAtWork.Member]) -> some View {
-        HStack(spacing: 12) {
+        let headline = members.isEmpty ? outcome.map(Self.short) ?? "" : CrewAtWork.headline(members.map(\.helper))
+        // At the largest sizes the faces sit above the words, which get the bar's whole width and
+        // break only between words: "2 helpers working", never "work-ing".
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+            : AnyLayout(HStackLayout(spacing: 12))
+        return layout {
             faces(members)
             VStack(alignment: .leading, spacing: 1) {
-                Text(members.isEmpty ? outcome.map(Self.short) ?? "" : CrewAtWork.headline(members.map(\.helper)))
+                Text(verbatim: typeSize.isAccessibilitySize ? LineBreaks.wholeWords(headline) : headline)
+                    .accessibilityLabel(headline)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Ink.text)
                     .fixedSize(horizontal: false, vertical: true)
@@ -102,8 +108,9 @@ struct CrewAtWorkBar: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            Spacer(minLength: 0)
+            if !typeSize.isAccessibilitySize { Spacer(minLength: 0) }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(.capsule)
         .accessibilityElement(children: .combine)
         .accessibilityHint(members.count > 1 ? "Shows each helper" : "Opens the chat")

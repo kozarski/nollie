@@ -15,6 +15,7 @@ struct OnboardingView: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var typeSize
     @ScaledMetric(relativeTo: .largeTitle) private var desktopTitleSize: CGFloat = 38
     @ScaledMetric(relativeTo: .body) private var desktopBodySize: CGFloat = 17
     @AppStorage(OnboardingProgress.storageKey) private var savedProgress = ""
@@ -331,12 +332,17 @@ struct OnboardingView: View {
             controls.fixedSize(horizontal: false, vertical: true)
             }
             #else
-            ScrollView { stepContents }
+            // At the accessibility sizes the buttons follow the words in the scroll, instead of
+            // floating over a page that is taller than the screen.
+            ScrollView {
+                stepContents
+                if typeSize.isAccessibilitySize { controls }
+            }
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(.hidden)
             .id(progress.step)
             .background { background }
-            .safeAreaInset(edge: .bottom, spacing: 0) { controls }
+            .safeAreaInset(edge: .bottom, spacing: 0) { if !typeSize.isAccessibilitySize { controls } }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     if let previous = previousStep {
@@ -950,11 +956,14 @@ struct OnboardingView: View {
             #if os(macOS)
             Color.clear
             #else
-            // Fades in from above, so there is no hard edge over the page.
-            Rectangle().fill(.regularMaterial)
-                .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.45)],
-                                     startPoint: .top, endPoint: .bottom))
-                .ignoresSafeArea(edges: .bottom)
+            // Fades in from above, so there is no hard edge over the page. In the scroll at the
+            // largest sizes the buttons sit on the page itself.
+            if !typeSize.isAccessibilitySize {
+                Rectangle().fill(.regularMaterial)
+                    .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.45)],
+                                         startPoint: .top, endPoint: .bottom))
+                    .ignoresSafeArea(edges: .bottom)
+            }
             #endif
         }
     }

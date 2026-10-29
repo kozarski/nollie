@@ -163,19 +163,7 @@ struct LeftYourMacPage: View {
                 GlassStack {
                     ForEach(bots) { day in
                         NavigationLink { ProfileCardView(profileName: day.bot, initialTab: .papertrail) } label: {
-                            HStack(spacing: 14) {
-                                BotAvatar(profile: day.bot, size: 34)
-                                Text(day.name).font(.headline).foregroundStyle(Ink.text)
-                                Spacer(minLength: 8)
-                                Text(CrewSummaryWords.bot(day.today)).font(.body).foregroundStyle(Ink.text2)
-                                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Ink.text3)
-                                    .accessibilityHidden(true)
-                            }
-                            .padding(.leading, 14).padding(.trailing, 22).padding(.vertical, 10)
-                            .frame(minHeight: 54)
-                            .contentShape(Capsule())
-                            .nollieGlass(.regular, in: Capsule(), solid: Ink.card)
-                            .accessibilityElement(children: .combine)
+                            LeftBotRow(day: day)
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("left.bot." + day.bot)
@@ -273,5 +261,37 @@ struct PapertrailSearchButton: View {
     private func open() {
         model.selectedTab = .settings
         model.papertrailRequest = UUID()
+    }
+}
+
+/// One helper on What left your Mac: its face, its name and how often it went online. At the
+/// largest text sizes the count goes under the name, whole words only, in a softly rounded box,
+/// so "Online" is never cut into "On-" beside a squeezed name.
+private struct LeftBotRow: View {
+    var day: CrewSummaryModel.BotDay
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        let large = typeSize.isAccessibilitySize
+        let shape = large ? AnyShape(.rect(cornerRadius: 26, style: .continuous)) : AnyShape(Capsule())
+        HStack(spacing: 14) {
+            BotAvatar(profile: day.bot, size: 34)
+            let words = large ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2)) : AnyLayout(HStackLayout(spacing: 8))
+            words {
+                Text(day.name).font(.headline).foregroundStyle(Ink.text)
+                if !large { Spacer(minLength: 0) }
+                Text(verbatim: large ? LineBreaks.wholeWords(CrewSummaryWords.bot(day.today)) : CrewSummaryWords.bot(day.today))
+                    .font(.body).foregroundStyle(Ink.text2)
+                    .accessibilityLabel(CrewSummaryWords.bot(day.today))
+            }
+            if large { Spacer(minLength: 0) }
+            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Ink.text3)
+                .accessibilityHidden(true)
+        }
+        .padding(.leading, 14).padding(.trailing, 22).padding(.vertical, 10)
+        .frame(minHeight: 54)
+        .contentShape(shape)
+        .nollieGlass(.regular, in: shape, solid: Ink.card)
+        .accessibilityElement(children: .combine)
     }
 }

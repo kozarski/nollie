@@ -11,10 +11,14 @@ import SwiftUI
 /// A settings page: a centred column on the canvas that scrolls, with air between its parts.
 struct SettingsPage<Content: View>: View {
     var id: String
+    /// Space at each side. A page under a large navigation title gives `SettingsMargin.underTitle`,
+    /// so its rows start where the title's first letter does.
+    var margin: CGFloat
     private let content: Content
 
-    init(_ id: String, @ViewBuilder content: () -> Content) {
+    init(_ id: String, margin: CGFloat = 24, @ViewBuilder content: () -> Content) {
         self.id = id
+        self.margin = margin
         self.content = content()
     }
 
@@ -22,7 +26,7 @@ struct SettingsPage<Content: View>: View {
         ScrollView {
             VStack(spacing: 36) { content }
                 .frame(maxWidth: 560)
-                .padding(EdgeInsets(top: 28, leading: 24, bottom: 40, trailing: 24))
+                .padding(EdgeInsets(top: 28, leading: margin, bottom: 40, trailing: margin))
                 .frame(maxWidth: .infinity)
         }
         .background(Ink.canvas.ignoresSafeArea())
@@ -32,6 +36,18 @@ struct SettingsPage<Content: View>: View {
         .scrollEdgeEffectStyle(.hard, for: .top)
         #endif
         .testID(id)
+    }
+}
+
+/// How far a page's rows sit from its sides.
+enum SettingsMargin {
+    /// The system's own inset for a large navigation title on the phone.
+    static var underTitle: CGFloat {
+        #if os(iOS)
+        16
+        #else
+        24
+        #endif
     }
 }
 
@@ -72,7 +88,9 @@ struct PageHero: View {
     var body: some View {
         VStack(spacing: 12) {
             mark
-            Text(title)
+            // "Went online 5 times today" never leaves the 5 alone at the end of a line.
+            Text(verbatim: LineBreaks.keepingNumbers(title))
+                .accessibilityLabel(Text(verbatim: title))
                 .font(.largeTitle.weight(.bold))
                 // Bright tints (teal, green, orange) sink just far enough to read on a white page.
                 .foregroundStyle(tint.readable(against: Ink.canvas, ratio: 3, in: environment))
@@ -245,6 +263,7 @@ struct GlassSwitch: View {
     var title: String
     @Binding var isOn: Bool
     var id: String
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     init(_ title: LocalizedStringResource, isOn: Binding<Bool>, id: String) {
         self.init(verbatim: String(localized: title), isOn: isOn, id: id)
@@ -266,7 +285,10 @@ struct GlassSwitch: View {
         .toggleStyle(.switch)
         .inset(h: 22, v: 14)
         .frame(maxWidth: .infinity)
-        .nollieGlass(.regular, in: Capsule(), solid: Ink.card)
+        // A capsule, or soft corners once large text wraps the words: a capsule's round ends
+        // would cut into three lines of words.
+        .nollieGlass(.regular, in: typeSize.isAccessibilitySize ? AnyShape(.rect(cornerRadius: 26, style: .continuous)) : AnyShape(Capsule()),
+                     solid: Ink.card)
         .testID(id)
     }
 }
