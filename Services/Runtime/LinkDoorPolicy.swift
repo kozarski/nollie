@@ -128,6 +128,9 @@ enum LinkDoorPolicy {
         Rule(["GET"], "/api/plugins/nollie-workflow/posts"),
         Rule(["POST"], "/api/plugins/nollie-workflow/rehearsals/*/turn-on"),
         Rule(["POST"], "/api/plugins/nollie-workflow/rehearsals/*/keep-off"),
+        // Night shift's one switch, from the owner's own devices. A shared member's phone never gets past the
+        // family door to it (`LinkDoorFamily.memberRoute`), and rehearsals keep their own switch on the Mac.
+        Rule(["GET", "PUT"], "/api/plugins/nollie-workflow/night-shift"),
         // When the Mac slept, for a schedule that ran late: times and a kind only.
         Rule(["GET"], "/api/plugins/nollie-workflow/sleep"),
         Rule(["GET"], "/api/plugins/nollie-computer/preview"),

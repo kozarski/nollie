@@ -210,6 +210,7 @@ struct NollieLinkDoorTests {
             ("GET", "/api/plugins/nollie-workflow/bot-looks", false), ("PUT", "/api/plugins/nollie-workflow/bot-looks/planner", false),
             ("GET", "/api/plugins/nollie-computer/preview", false), ("POST", "/nollie/link/claim", false),
             ("GET", "/api/plugins/nollie-workflow/posts", false), ("GET", "/api/plugins/nollie-workflow/sleep", false),
+            ("GET", "/api/plugins/nollie-workflow/night-shift", false), ("PUT", "/api/plugins/nollie-workflow/night-shift", false),
             ("POST", "/api/plugins/nollie-workflow/rehearsals/rehearsal-career-3f2a9c-e-81/turn-on", false),
             ("POST", "/api/plugins/nollie-workflow/rehearsals/rehearsal-career-3f2a9c-e-81/keep-off", false),
             ("POST", "/api/plugins/nollie-workflow/sign-ins/requests/0123456789abcdef0123456789abcdef/claim", false),
@@ -283,6 +284,9 @@ struct NollieLinkDoorTests {
             ("POST", "/api/plugins/nollie-workflow/rehearsals/r1/run-now", false),
             ("POST", "/api/plugins/nollie-workflow/rehearsals/r1/x/turn-on", false),
             ("POST", "/api/plugins/nollie-workflow/rehearsals//turn-on", false),
+            // Night shift's switch: read and set it, nothing else.
+            ("POST", "/api/plugins/nollie-workflow/night-shift", false), ("DELETE", "/api/plugins/nollie-workflow/night-shift", false),
+            ("PUT", "/api/plugins/nollie-workflow/night-shift/on", false), ("PUT", "/api/plugins/nollie-workflow/night-shift", true),
             ("POST", "/api/plugins/nollie-workflow/rehearsals/bulk-delete/keep-off", false),
             ("POST", "/api/plugins/nollie-workflow/night-shift", false), ("PUT", "/api/plugins/nollie-workflow/settings", false),
             // Saved sign-ins: a phone only says it is answering; everything else is the Mac's.
@@ -1116,6 +1120,17 @@ extension NollieLinkDoorTests {
                                 ("PUT", "/api/plugins/nollie-workflow/weekly-note"), ("POST", path + "/remove-app")] {
             #expect(LinkDoorFamily.memberRoute(method: method, path: owned, query: nil, websocket: false) == .refused)
         }
+    }
+
+    /// Only the owner flips Night shift: their linked phone reaches the switch, a shared member's never does.
+    @Test func onlyTheOwnerReachesTheNightShiftSwitch() {
+        let path = "/api/plugins/nollie-workflow/night-shift"
+        for method in ["GET", "PUT"] {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .hermes)
+            #expect(LinkDoorFamily.memberRoute(method: method, path: path, query: nil, websocket: false) == .refused)
+            #expect(LinkDoorFamily.memberRoute(method: method, path: path, query: "profile=default", websocket: false) == .refused)
+        }
+        #expect(LinkDoorPolicy.route(method: "POST", path: path, websocket: false) == .refused)
     }
 
     @Test(.timeLimit(.minutes(1))) func aLinkedPhoneSwapsAwayKeysAndOnlyPublicKeysPass() async throws {
