@@ -175,9 +175,10 @@ def require_export_metadata(info, identifier, team, entitlements, profile, platf
     allowed = grants.get("com.apple.developer.icloud-container-identifiers", [])
     environment = grants.get("com.apple.developer.icloud-container-environment")
     production_allowed = environment == "Production" or (isinstance(environment, list) and "Production" in environment)
-    if (not isinstance(allowed, list) or CLOUD_CONTAINER not in allowed or not production_allowed
-            or not isinstance(grants.get("com.apple.developer.icloud-services"), list)
-            or "CloudKit" not in grants["com.apple.developer.icloud-services"]):
+    # Profiles Xcode makes grant every iCloud service as "*"; a hand-made one lists them.
+    services = grants.get("com.apple.developer.icloud-services")
+    cloudkit_allowed = services == "*" or (isinstance(services, list) and "CloudKit" in services)
+    if not isinstance(allowed, list) or CLOUD_CONTAINER not in allowed or not production_allowed or not cloudkit_allowed:
         raise GuardError("The provisioning profile does not grant production Nollie CloudKit access.")
 
 

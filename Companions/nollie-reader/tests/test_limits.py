@@ -44,8 +44,8 @@ def _pace(root, queue):
     pacer = module.HostPacer(root, interval=0.3)
     stamps = []
     for _ in range(3):
-        pacer.wait_turn("shared.example.com", max_wait=10)
-        stamps.append(time.time())
+        slot = pacer.wait_turn("shared.example.com", max_wait=10)
+        stamps.append((slot, time.time()))
     queue.put(stamps)
 
 
@@ -159,11 +159,13 @@ class HostPacerTests(unittest.TestCase):
             stamps = sorted(s for _ in workers for s in queue.get(timeout=60))
             for worker in workers:
                 worker.join(timeout=60)
-        gaps = [b - a for a, b in zip(stamps, stamps[1:])]
         self.assertEqual(len(stamps), 6)
-        # Each stamp is taken just after the turn, so a busy machine can shave a little off a gap;
-        # without pacing the two processes would land within milliseconds of each other.
-        self.assertGreaterEqual(min(gaps), 0.2)
+        # The turns both processes were given sit a full interval apart. When each read starts depends on how
+        # quickly the machine wakes it, so that part only has to be no earlier than its turn.
+        slots = [slot for slot, _ in stamps]
+        self.assertGreaterEqual(min(b - a for a, b in zip(slots, slots[1:])), 0.3 - 1e-6)
+        for slot, started in stamps:
+            self.assertGreaterEqual(started, slot)
 
     def test_rest_after_slow_down(self):
         with TemporaryDirectory() as temporary:
