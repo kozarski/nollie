@@ -190,6 +190,14 @@ import Testing
         ])
         attach(NightShiftCard(card: held, expanded: []) { _ in }.padding(16)
             .dynamicTypeSize(.accessibility3), named: "night-shift-held-large-text", width: 390)
+        // The morning's capsule at the top of the main chat: a busy night, one that waits for you, and a quiet one,
+        // then the largest text size.
+        attach(VStack(spacing: 14) {
+            NightShiftCapsule(card: night, open: {}, putAway: {})
+            NightShiftCapsule(card: held, open: {}, putAway: {})
+            NightShiftCapsule(card: .init(counts: .init()), open: {}, putAway: {})
+            NightShiftCapsule(card: night, open: {}, putAway: {}).dynamicTypeSize(.accessibility3)
+        }.padding(16), named: "night-shift-capsule", width: 390)
         let cards = VStack(spacing: 14) {
             ConversationPostView(post: rehearsalSample(), expanded: []) { _ in }
             ConversationPostView(post: rehearsalSample(state: .on), expanded: []) { _ in }
