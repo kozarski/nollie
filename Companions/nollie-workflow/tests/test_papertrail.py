@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
+import threading
 import time
 from types import SimpleNamespace
 import unittest
@@ -186,11 +187,16 @@ class RecorderTests(unittest.TestCase):
         lock = os.open(self.root / "papertrail.lock", os.O_RDWR | os.O_CREAT, 0o600)
         self.addCleanup(os.close, lock)
         fcntl.flock(lock, fcntl.LOCK_EX)
-        started = time.monotonic()
-        for n in range(3):
-            self.recorder.post_auxiliary_call(turn_id="t-1", aux_task="compression", provider="anthropic",
-                                              base_url="https://api.anthropic.com", ended_at=NOW - n, usage=usage(5))
-        self.assertLess(time.monotonic() - started, 0.2)
+
+        def hooks():
+            for n in range(3):
+                self.recorder.post_auxiliary_call(turn_id="t-1", aux_task="compression", provider="anthropic",
+                                                  base_url="https://api.anthropic.com", ended_at=NOW - n, usage=usage(5))
+        # The lock stays held until the hooks are back, so a hook that waited for it would never return in time.
+        calls = threading.Thread(target=hooks)
+        calls.start()
+        calls.join(10)
+        self.assertFalse(calls.is_alive(), "a hook waited for the other process's lock")
         self.assertEqual(lines(self.root), [])
         fcntl.flock(lock, fcntl.LOCK_UN)
         self.assertTrue(self.recorder.flush())
