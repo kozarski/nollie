@@ -159,6 +159,15 @@ struct TranscriptView: View {
             #endif
             .sheet(item: selectedTextItem) { selectTextSheet($0).withAppModel() }
             .sheet(isPresented: $showAwayGrace) { awayGraceSheet().withAppModel() }
+            #if DEBUG
+            .task {
+                // For pictures of what opens the main chat (the weekly note, the morning's Night shift):
+                // `-nollie-demo-thread-top` scrolls to the start once the thread has settled.
+                guard DemoMode.isOn, ProcessInfo.processInfo.arguments.contains("-nollie-demo-thread-top") else { return }
+                try? await Task.sleep(for: .seconds(8))
+                scrollPosition.scrollTo(edge: .top)
+            }
+            #endif
     }
 
     private var selectedTextItem: Binding<SelectTextItem?> {
