@@ -156,6 +156,19 @@ class ExportTests(unittest.TestCase):
         entitlements["aps-environment"] = "development"
         with self.assertRaises(guard.GuardError): self.check(info, entitlements, profile)
 
+    def test_xcode_profile_granting_every_icloud_service_is_accepted(self):
+        info, entitlements, profile = signing_fixture()
+        profile["Entitlements"]["com.apple.developer.icloud-services"] = "*"
+        profile["Entitlements"]["com.apple.developer.icloud-container-environment"] = ["Production", "Development"]
+        self.check(info, entitlements, profile)
+
+    def test_profile_without_cloudkit_is_rejected(self):
+        for services in (None, [], ["CloudDocuments"], "CloudDocuments"):
+            with self.subTest(services=services), self.assertRaises(guard.GuardError):
+                info, entitlements, profile = signing_fixture()
+                profile["Entitlements"]["com.apple.developer.icloud-services"] = services
+                self.check(info, entitlements, profile)
+
     def test_wrong_or_nonproduction_profile_is_rejected(self):
         for change in ("team", "identity", "aps", "container", "environment"):
             with self.subTest(change=change), self.assertRaises(guard.GuardError):
