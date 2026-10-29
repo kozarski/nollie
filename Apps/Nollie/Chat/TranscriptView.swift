@@ -243,6 +243,7 @@ struct TranscriptView: View {
         #endif
         .spread(.center)
         .dynamicTypeSize(ChatStyle.stepped(phoneTypeSize, prefs.textSize))
+        .environment(\.threadWaitsOnYou, !approvals.isEmpty)
         .background(ScrollViewProbe(metrics: metrics))
     }
 

@@ -33,7 +33,7 @@
       }
     },
     "%@ %@" : {
-      "comment" : "A verb, then what it acted on, like Ran df -h\nA weekday, then a time, like Tuesday 5:34 PM\nThe week's dates, already ending in a full stop, then a short summary",
+      "comment" : "A verb, then what it acted on, like Ran df -h\nA weekday, then a time, like Tuesday 5:34 PM",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4854,7 +4854,7 @@
       }
     },
     "%@. %@" : {
-      "comment" : "A choice's name, then its line\nThe week's dates, then a short summary like 3 helpers busy",
+      "comment" : "A choice's name, then its line",
       "localizations" : {
         "de" : {
           "stringUnit" : {

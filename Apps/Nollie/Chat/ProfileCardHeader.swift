@@ -87,9 +87,13 @@ struct ProfileCardControls: View {
             .allowsHitTesting(false)
     }
 
-    /// A glass circle 40 points wide; with Reduce Transparency on, it is solid.
+    /// A glass circle a fingertip wide; with Reduce Transparency on, it is solid. Its symbol stops
+    /// growing at the largest text sizes, as the system's own bar buttons do, so it stays inside.
     @ViewBuilder private func disc(_ symbol: String) -> some View {
-        let face = Glyph(symbol, .body.weight(.semibold), .primary).frame(square: 40).contentShape(.circle)
+        let face = Glyph(symbol, .body.weight(.semibold), .primary)
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .frame(square: Ink.minTarget)
+            .contentShape(.circle)
         if solid {
             face.background {
                 Circle().fill(Color(.secondarySystemGroupedBackground)).overlay(Circle().strokeBorder(.primary.opacity(0.12), lineWidth: 1))

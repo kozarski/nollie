@@ -193,7 +193,9 @@ struct BotMessageNotice: View {
         } label: {
             pillContent
         }
-        .disabled(message == nil)
+        // Nothing to unfold: the pill simply does not answer a tap. Disabling it dimmed the words
+        // below a readable contrast, so "Messaged Work" looked broken beside its reply.
+        .allowsHitTesting(message != nil)
         .accessibilityLabel(headline)
         .accessibilityValue(stateWord)
         .accessibilityHint(hint)

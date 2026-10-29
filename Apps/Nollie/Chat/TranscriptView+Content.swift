@@ -13,7 +13,7 @@ extension TranscriptView {
             ForEach(approvals) { card in
                 ThreadApprovalCard(chat: chat, card: card)
                     .atLeading(upTo: bubbleCap)
-                    .transition(.opacity)
+                    .transition(ApprovalArrival.transition(reduceMotion: reduceMotion))
                     .id("card-" + card.id)
             }
             // If the turn stopped for want of System control, one tap switches it on and the bot

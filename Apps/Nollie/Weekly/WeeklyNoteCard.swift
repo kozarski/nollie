@@ -95,7 +95,8 @@ struct ThreadCapsule: View {
                     .font(.footnote.weight(.bold))
                     .foregroundStyle(Ink.text2)
                     .frame(width: 32, height: 32)
-                    .contentShape(.circle)
+                    // A fingertip's square around the small cross, without moving it.
+                    .tapTarget(face: 32)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(putAwayLabel)

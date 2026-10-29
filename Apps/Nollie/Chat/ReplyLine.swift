@@ -22,6 +22,7 @@ struct ReplyLine: View {
     var onReply: (String) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.threadWaitsOnYou) private var waitsOnYou
 
     private var thoughts: String? {
         guard showReasoning, let reasoning, !reasoning.isEmpty else { return nil }
@@ -78,7 +79,8 @@ struct ReplyLine: View {
                     .inset(h: Ink.bubblePadH, v: Ink.bubblePadV)
                     .background(fill, in: shape)
             }
-            TypingBubble(tool: typingTool).accessibilityIdentifier("thread.typing")
+            // While an approval waits the bot is not typing, it is waiting on the person.
+            if !waitsOnYou { TypingBubble(tool: typingTool).accessibilityIdentifier("thread.typing") }
             if hasStats { statsLine.padding(.leading, 6).contentTransition(.numericText()) }
         }
     }
@@ -133,4 +135,9 @@ struct ReplyLine: View {
         UIPasteboard.general.string = text
         #endif
     }
+}
+
+extension EnvironmentValues {
+    /// Set on the thread while an approval in it waits for an answer.
+    @Entry var threadWaitsOnYou = false
 }

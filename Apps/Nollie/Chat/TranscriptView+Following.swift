@@ -23,8 +23,20 @@ extension TranscriptView {
         if mayFollow() { easeToBottom() }
     }
 
-    /// A new card brings a thread that is on its end down with it.
-    func followApprovals() { easeToBottomIfFollowing() }
+    /// A new card brings a thread that is on its end down with it. The card is the one thing to
+    /// act on, so it is followed however tall it is (at the largest text sizes one card can be
+    /// taller than `mayFollow` allows), and again while its rows are measured.
+    func followApprovals() {
+        guard metrics.followsEnd else { return }
+        easeToBottom(0.3)
+        Task { @MainActor in
+            for _ in 0..<3 {
+                guard await pause(150), !metrics.userScrolling else { return }
+                metrics.stickToBottom = true
+                easeToBottom()
+            }
+        }
+    }
 
     /// Whether new content may carry the thread along. It needs the follow flag, no touch in
     /// progress, and the end close by. If the end is over 1.5 screens away someone is reading
