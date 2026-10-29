@@ -16,10 +16,12 @@ struct LiveStreamClientTests {
     private static let beat = LiveWire.ServerMessage.beat(.init(micros: 5_000_000, fresh: true, link: .fine, level: 1, control: .helper))
     private static let pointer = LiveWire.ServerMessage.pointer(.init(x: 211, y: 284, at: 1.5))
 
-    private func client(_ port: Int, token: String = "live-test-token") throws -> LiveStreamClient {
+    private func client(_ port: Int, token: String = "live-test-token", readDelay: TimeInterval = 0) throws -> LiveStreamClient {
         let gateway = try GatewayURL.normalize("http://127.0.0.1:\(port)/hermes")
+        // No test here is about the hello deadline, so it is far off: five seconds was reached by a busy device while
+        // the hello was still on its way, and the feed closed as unavailable.
         return LiveStreamClient(target: .init(gateway: gateway, profile: "work", sessionID: "live-session", token: token),
-                                helloTimeout: 5)
+                                helloTimeout: 60, readDelay: readDelay)
     }
 
     /// Everything the feed says, as short words, up to and including its close.
@@ -93,9 +95,26 @@ struct LiveStreamClientTests {
             socket.close()
         }
         defer { server.stop() }
-        // The end and the connection's own ending arrive together: the reason must win every time.
+        // The end and the connection's own ending arrive together: the reason must win every time, even when the
+        // device is too busy to hand back the last read at once (run it under load to see that).
         for _ in 0..<40 {
-            #expect(await words(try client(server.port)) == ["hello Studio desktop 1280x800", "end stopped", "closed ended stopped"])
+            let said = await words(try client(server.port))
+            #expect(said == ["hello Studio desktop 1280x800", "end stopped", "closed ended stopped"])
+        }
+    }
+
+    /// A device too busy to get to each read for a second and a half still hears why the stream ended. It used to
+    /// close the feed one second after the connection went, read or no read, and a busy phone said "dropped".
+    @Test func aBusyDeviceStillHearsTheEnd() async throws {
+        let server = try await LiveSocketServer.start { socket in
+            socket.text(Self.hello)
+            socket.text(.end(.stopped))
+            socket.close()
+        }
+        defer { server.stop() }
+        for _ in 0..<4 {
+            let said = await words(try client(server.port, readDelay: 1.5))
+            #expect(said == ["hello Studio desktop 1280x800", "end stopped", "closed ended stopped"])
         }
     }
 
