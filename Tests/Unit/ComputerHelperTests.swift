@@ -22,6 +22,8 @@ import Testing
         #expect(ComputerBroker.parse([:]) == .invalid("Unknown request."))
     }
 
+    // The broker only listens in the Direct edition; the App Store edition's sandbox has no /tmp for it.
+    #if NOLLIE_DIRECT
     @MainActor @Test func brokerAnswersOnlyThisUserAndRefusesWhenNobodyIsThere() async throws {
         let folder = URL(fileURLWithPath: "/tmp").appendingPathComponent("nc-" + UUID().uuidString.prefix(6))
         let path = folder.appendingPathComponent("c.sock").path
@@ -46,6 +48,7 @@ import Testing
         #expect(unknown == false)
         #expect(center.task == nil)
     }
+    #endif
 
     private static var finderPID: Int? {
         NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").first.map { Int($0.processIdentifier) }
