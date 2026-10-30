@@ -5,8 +5,8 @@
 <h1 align="center">Nollie</h1>
 
 <p align="center">
-  Your own crew of AI helpers, on your Mac.<br>
-  Chat like Messages. Approve from your iPhone.
+  Your crew. Your call.<br>
+  AI helpers on your Mac that wait for your yes.
 </p>
 
 <p align="center">
@@ -26,8 +26,8 @@
 > **In short:** Nollie is a free, open-source Mac and iPhone app for
 > [Hermes Agent](https://github.com/NousResearch/hermes-agent). Install one app and it sets up a few AI
 > helpers on your Mac that research, write, run errands on the web and keep an eye on things for you.
-> Anything that matters, like sending an email, waits for your yes on your phone. No accounts, no servers,
-> no tracking. **Version 1.1, Apple silicon Mac on macOS 26+.**
+> Anything that matters, like sending an email, waits for your yes, on your Mac or iPhone. No accounts, no
+> servers, no tracking. **Version 1.3, Apple silicon Mac on macOS 26+.**
 
 <p align="center">
   <img src="Docs/Assets/readme-hero.png" alt="Nollie on a Mac: a chat with Nollie, and Mason, Scout and Wren in the sidebar" width="860">
