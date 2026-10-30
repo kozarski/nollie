@@ -180,6 +180,16 @@ class NotesTests(unittest.TestCase):
                 self.assertTrue(ship.notes_problems(text, "1.3"))
 
 
+class SiteTests(unittest.TestCase):
+    def test_a_served_page_matches_its_file_without_cloudflares_bot_check(self):
+        page = b"<html><body><p>Hi</p>\n</body></html>"
+        served = page.replace(b"</body>", b"<script>(function(){var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js"
+                                           b"?ray=a52b';})();</script></body>")
+        self.assertEqual(ship.as_written(served), page)
+        own = page.replace(b"</body>", b"<script src=\"site.js\"></script></body>")
+        self.assertEqual(ship.as_written(own), own)
+
+
 class KeyTests(unittest.TestCase):
     VALUES = {"ASC_APP_ID": "1", "ASC_KEY_ID": "PERSONAL01", "ASC_ISSUER_ID": "issuer-fixture",
               "ASC_KEY_PATH": "/fixture/key.p8", "ASC_KEY_KIND": "individual"}

@@ -424,6 +424,15 @@ def now():
     return datetime.datetime.now().isoformat(timespec="seconds")
 
 
+# Cloudflare adds its bot check to every page it serves, with a new ray id each time, so it is set aside
+# before a served page is compared with the file.
+CLOUDFLARE_SCRIPT = re.compile(rb"<script>(?:(?!</script>).)*?/cdn-cgi/(?:(?!</script>).)*</script>", re.S)
+
+
+def as_written(page):
+    return CLOUDFLARE_SCRIPT.sub(b"", page)
+
+
 def fetch(url, timeout=30):
     request = urllib.request.Request(url, headers={"Cache-Control": "no-cache", "User-Agent": "nollie-ship"})
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -936,7 +945,7 @@ class Ship:
             local = sha256(SITE / "public" / "index.html")
             for attempt in range(12):
                 try:
-                    live = hashlib.sha256(fetch(SITE_URL)).hexdigest()
+                    live = hashlib.sha256(as_written(fetch(SITE_URL))).hexdigest()
                 except OSError:
                     live = ""
                 if live == local:
