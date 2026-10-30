@@ -433,9 +433,10 @@ def fetch(url, timeout=30):
 # --- The release -----------------------------------------------------------------------------------------
 
 class Ship:
-    def __init__(self, args, root=ROOT):
+    def __init__(self, args, root=None):
         self.args = args
-        self.root = Path(root)
+        # Read when made, not when defined, so a test that points ROOT elsewhere never reaches a real run's state.
+        self.root = Path(root or ROOT)
         self.version = args.version
         parse_version(self.version)
         self.tag = f"v{self.version}"
