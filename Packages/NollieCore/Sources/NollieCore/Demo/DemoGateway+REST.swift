@@ -36,6 +36,9 @@ extension DemoGateway {
         case "/api/plugins/nollie-workflow/attention":
             return (200, ["counts": ["default": .number(Double(kanban.waiting()))]])
         case "/api/plugins/nollie-workflow/posts": return (200, DemoRoutes.posts(now: now))
+        case "/api/plugins/nollie-workflow/night-shift":
+            if method == "PUT", let on = body["on"]?.boolValue { nightShiftOn = on }
+            return (200, ["on": .bool(nightShiftOn), "damaged": false])
         case "/api/plugins/nollie-workflow/papertrail":
             let bot = query["bot"] ?? "default"
             guard let view = DemoRoutes.papertrail(bot: bot, days: Int(query["days"] ?? "") ?? 1, now: now) else {

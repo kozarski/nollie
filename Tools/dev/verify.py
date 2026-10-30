@@ -39,6 +39,7 @@ GOLDEN_UI = [
     "CrewNoteUITests",
     "PapertrailUITests",
     "NightShiftUITests",
+    "NightShiftMorningUITests",
     "SignInUITests",
     "AskFirstUITests",
     "HelperComputerUITests",

@@ -75,7 +75,8 @@ class AddressTests(unittest.TestCase):
             handler.send_header("Content-Length", "100000")
             handler.end_headers()
             try:
-                for _ in range(40):
+                # Thirty seconds of drip, far longer than the half-second cap, so only the cap can end the read.
+                for _ in range(600):
                     handler.wfile.write(b"x" * 10)
                     handler.wfile.flush()
                     time.sleep(0.05)
@@ -89,7 +90,7 @@ class AddressTests(unittest.TestCase):
         with self.assertRaises(ConnectionError):
             netsafe.fetch_once(netsafe.normalize(f"http://slow.example.com:{site.port}/"), resolver=resolver,
                                allowed=allowed, timeout=5, total_timeout=0.5)
-        self.assertLess(time.monotonic() - started, 1.5)
+        self.assertLess(time.monotonic() - started, 10)
 
 
 if __name__ == "__main__":

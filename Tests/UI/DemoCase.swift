@@ -54,10 +54,11 @@ class DemoCase: XCTestCase {
     }
 
     /// Launches the demo copy fresh, with the mock gateway saved and the first-run cards out of the
-    /// way. `extra` adds launch flags; `withGateway: false` starts with nothing saved (onboarding).
+    /// way. `extra` adds launch flags; `withGateway: false` starts with nothing saved (onboarding);
+    /// `nightCard: true` leaves the morning's Night shift capsule as the app last left it.
     /// Returns once the bots list is up, unless `waitForBots` is off.
     func startDemo(_ extra: [String] = [], look: Look = .light, portrait: Bool = true,
-                   withGateway: Bool = true, waitForBots: Bool = true) throws {
+                   withGateway: Bool = true, waitForBots: Bool = true, nightCard: Bool = false) throws {
         let (address, bundle) = try requireMock()
         app?.terminate()
         if portrait { XCUIDevice.shared.orientation = .portrait }
@@ -68,6 +69,7 @@ class DemoCase: XCTestCase {
         if withGateway {
             flags += ["-nollie-demo-gateway", address, "mock-token", "Studio",
                       "-notificationsSetupCardDone", "YES", "-bots.animate", "NO"] + Self.weeklyCardPutAway
+            if !nightCard { flags += Self.nightCardPutAway }
         }
         app.launchArguments = flags + extra
         app.launch()
@@ -81,6 +83,10 @@ class DemoCase: XCTestCase {
     /// flow about something else starts with it put away, like the other first-run cards. A flow about
     /// the note leaves this flag out.
     static let weeklyCardPutAway = ["-nollie.weekly.putAway", "<date>2099-01-01T00:00:00Z</date>"]
+
+    /// The morning's Night shift capsule opens the main chat's thread the same way, every day the mock has a card.
+    /// A flow about it leaves this flag out.
+    static let nightCardPutAway = ["-nollie.nightShift.putAway", "<date>2099-01-01T00:00:00Z</date>"]
 
     /// Posts a control call to the local mock gateway and waits for its answer, without the main actor:
     /// safe in any tear-down, even after a failure stopped the flow. Nothing happens without the mock.

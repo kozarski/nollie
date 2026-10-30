@@ -149,8 +149,12 @@ struct ApprovalCardView: View {
             if let commandText { commandBlock(commandText) }
             if approval.smartDenied == true { flagNote }
             // Answers sit side by side, or stack on a narrow phone with big text. The round menu
-            // stays outside that fitting, because a menu can't be laid out twice.
-            HStack(alignment: .bottom, spacing: 8) {
+            // stays outside that fitting, because a menu can't be laid out twice. At the largest
+            // sizes it takes a row of its own under the answers, so it never sits on Deny's edge.
+            let answerLayout = typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .trailing, spacing: 8))
+                : AnyLayout(HStackLayout(alignment: .bottom, spacing: 8))
+            answerLayout {
                 SideBySideOrStacked { fill in answers(fill: fill) }
                 moreAnswers
             }

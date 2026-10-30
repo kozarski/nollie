@@ -5,8 +5,10 @@ import Testing
 // The engine on the real gateway client: reconnect with seq replay, and the endless main chat stitched across
 // compressions. See Docs/specs/conversation-engine.md.
 
+/// Waits until `condition` holds. Nothing here is measured against real time, so the limit only stops a test that
+/// hangs; ten seconds was short enough for a loaded Mac to run past while the test was working.
 @MainActor
-private func cetWait(_ what: String, timeout: Duration = .seconds(10), _ condition: @MainActor () async -> Bool) async throws {
+private func cetWait(_ what: String, timeout: Duration = .seconds(60), _ condition: @MainActor () async -> Bool) async throws {
     let deadline = ContinuousClock.now + timeout
     while ContinuousClock.now < deadline {
         if await condition() { return }

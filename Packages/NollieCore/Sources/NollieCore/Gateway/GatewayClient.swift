@@ -24,6 +24,9 @@ public actor GatewayClient {
     private let noticeFeed: AsyncStream<GatewayNotice>.Continuation
     private let transport: any GatewayTransport
     private let endpoint: EndpointSource
+    /// Runs the machine's timers: given a delay, reads the clock at once and gives a wait that ends that long after.
+    /// Tests pass a clock they move by hand, so no timer depends on how busy the computer is.
+    private let wait: @Sendable (Duration) -> @Sendable () async throws -> Void
     private var machine: GatewayMachine
     private var channels: [Int: any GatewayChannel] = [:]
     private var timers: [GatewayTimer: Task<Void, Never>] = [:]
@@ -32,8 +35,20 @@ public actor GatewayClient {
 
     public init(transport: any GatewayTransport, configuration: GatewayConfiguration = GatewayConfiguration(),
                 endpoint: @escaping EndpointSource) {
+        self.init(transport: transport, configuration: configuration, clock: ContinuousClock(), endpoint: endpoint)
+    }
+
+    /// A client whose timers run on `clock`.
+    public init<C: Clock<Duration>>(transport: any GatewayTransport, configuration: GatewayConfiguration = GatewayConfiguration(),
+                                    clock: C, endpoint: @escaping EndpointSource) {
         self.transport = transport
         self.endpoint = endpoint
+        wait = { delay in
+            // The deadline is read when the machine asks, not when the timer's task first runs, so a slow start never
+            // makes a timer late.
+            let deadline = clock.now.advanced(by: delay)
+            return { try await clock.sleep(until: deadline, tolerance: nil) }
+        }
         machine = GatewayMachine(configuration: configuration)
         (notices, noticeFeed) = AsyncStream.makeStream(of: GatewayNotice.self)
     }
@@ -102,8 +117,9 @@ public actor GatewayClient {
             channels.removeValue(forKey: socket)?.close(code: code)
         case .schedule(let timer, let generation, let delay):
             timers[timer]?.cancel()
+            let waited = wait(delay)
             timers[timer] = Task {
-                guard (try? await Task.sleep(for: delay)) != nil else { return }
+                guard (try? await waited()) != nil else { return }
                 self.timerFired(timer, generation)
             }
         case .cancelTimer(let timer):

@@ -13,6 +13,10 @@
 # the App Store Connect API key testflight.sh uses (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_PATH). With
 # neither, the DMG is signed but not notarized: Gatekeeper accepts the app inside, not the DMG, and the
 # script says so at the end. Set SPARKLE_KEY_FILE to sign updates from a key file (sparkle-appcast.sh).
+#
+# DRY_RUN=1 sends nothing to Apple: it archives, exports with Developer ID here, runs every check that does
+# not need Apple's ticket, makes and signs the DMG and the zip, and says what it would have sent. The
+# appcast is signed with a stand-in key (sparkle-appcast.sh), so nothing it makes can ship.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 ROOT="$PWD"
@@ -27,6 +31,7 @@ EXPORT="$OUT/export"
 NOTARIZED="$OUT/notarized"
 mkdir -p "$OUT"
 say() { printf '\n== %s\n' "$1"; }
+DRY="${DRY_RUN:-}"
 NOTARY=()
 if [ -n "${NOTARY_PROFILE:-}" ]; then
   NOTARY=(--keychain-profile "$NOTARY_PROFILE")
@@ -40,7 +45,13 @@ xcodebuild -project Nollie.xcodeproj -scheme NollieMacDirect -configuration Dire
   -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" -allowProvisioningUpdates archive > "$OUT/archive.log" 2>&1 \
   || { tail -20 "$OUT/archive.log"; exit 1; }
 
-if [ -n "${NOTARY_PROFILE:-}" ]; then
+if [ -n "$DRY" ]; then
+  say "Export with Developer ID (dry run: nothing goes to Apple)"
+  xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$EXPORT" \
+    -exportOptionsPlist Tools/release/ExportOptions-DeveloperID.plist -allowProvisioningUpdates > "$OUT/export.log" 2>&1 \
+    || { tail -20 "$OUT/export.log"; exit 1; }
+  echo "Would send: Nollie.app to Apple's notary service through the Apple Account signed in to Xcode."
+elif [ -n "${NOTARY_PROFILE:-}" ]; then
   say "Export with Developer ID"
   xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$EXPORT" \
     -exportOptionsPlist Tools/release/ExportOptions-DeveloperID.plist -allowProvisioningUpdates > "$OUT/export.log" 2>&1
@@ -66,14 +77,19 @@ else
 fi
 
 APP="$NOTARIZED/Nollie.app"
+[ -z "$DRY" ] || APP="$EXPORT/Nollie.app"
 [ -d "$APP" ] || { echo "Notarization did not finish." >&2; exit 1; }
 
 say "Check the app"
 codesign --verify --deep --strict "$APP"
-xcrun stapler validate "$APP"
-spctl -a -vvv -t exec "$APP" > "$OUT/gatekeeper.txt" 2>&1 || true
-cat "$OUT/gatekeeper.txt"
-grep -q "source=Notarized Developer ID" "$OUT/gatekeeper.txt" || { echo "Gatekeeper did not accept the app." >&2; exit 1; }
+if [ -n "$DRY" ]; then
+  echo "Dry run: no ticket to staple or check, and Gatekeeper is not asked, since Apple has not seen this app."
+else
+  xcrun stapler validate "$APP"
+  spctl -a -vvv -t exec "$APP" > "$OUT/gatekeeper.txt" 2>&1 || true
+  cat "$OUT/gatekeeper.txt"
+  grep -q "source=Notarized Developer ID" "$OUT/gatekeeper.txt" || { echo "Gatekeeper did not accept the app." >&2; exit 1; }
+fi
 for helper in "$APP/Contents/Helpers/Nollie Runtime.app" "$APP/Contents/Library/LoginItems/Nollie Notifications.app"; do
   signature=$(codesign -dvv "$helper" 2>&1)
   case "$signature" in *"Authority=Developer ID Application"*) ;; *) echo "Not Developer ID: $helper" >&2; exit 1 ;; esac
@@ -102,14 +118,21 @@ ln -s /Applications "$STAGE/Applications"
 hdiutil create -volname "Nollie" -srcfolder "$STAGE" -format UDZO -fs APFS "$DMG" > /dev/null
 IDENTITY=$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application: Corey Kozarski/ {print $2; exit}')
 codesign --sign "$IDENTITY" --timestamp "$DMG"
-if [ ${#NOTARY[@]} -gt 0 ]; then
+if [ -n "$DRY" ]; then
+  if [ ${#NOTARY[@]} -gt 0 ]; then
+    if [ -n "${NOTARY_PROFILE:-}" ]; then how="the notarytool profile $NOTARY_PROFILE"; else how="the API key $ASC_KEY_ID"; fi
+    echo "Would send: $(basename "$DMG") to Apple's notary service with notarytool and $how, then staple it."
+  else
+    echo "Would not notarize the DMG: neither NOTARY_PROFILE nor the ASC_KEY_* settings are set."
+  fi
+elif [ ${#NOTARY[@]} -gt 0 ]; then
   xcrun notarytool submit "$DMG" "${NOTARY[@]}" --wait
   xcrun stapler staple "$DMG"
 fi
 codesign --verify "$DMG"
 DMG_NOTARIZED=""
-spctl -a -t open --context context:primary-signature "$DMG" 2> /dev/null && DMG_NOTARIZED=yes
-[ -n "$DMG_NOTARIZED" ] || [ ${#NOTARY[@]} -eq 0 ] || { echo "The DMG was sent to Apple but Gatekeeper does not accept it." >&2; exit 1; }
+[ -n "$DRY" ] || { spctl -a -t open --context context:primary-signature "$DMG" 2> /dev/null && DMG_NOTARIZED=yes; }
+[ -n "$DMG_NOTARIZED" ] || [ ${#NOTARY[@]} -eq 0 ] || [ -n "$DRY" ] || { echo "The DMG was sent to Apple but Gatekeeper does not accept it." >&2; exit 1; }
 ditto -c -k --keepParent "$APP" "$OUT/Nollie-$VERSION-$BUILD.zip"
 rm -rf "$STAGE"
 
@@ -122,7 +145,10 @@ echo "App: $APP"
 echo "DMG: $DMG"
 echo "Zip: $OUT/Nollie-$VERSION-$BUILD.zip"
 echo "Appcast: $OUT/appcast.xml"
-if [ -z "$DMG_NOTARIZED" ]; then
+if [ -n "$DRY" ]; then
+  echo
+  echo "Dry run: nothing was sent to Apple. These files are not notarized and the appcast's signature is a stand-in's."
+elif [ -z "$DMG_NOTARIZED" ]; then
   echo
   echo "warning: the DMG is not notarized, so opening a downloaded copy shows a warning. Set NOTARY_PROFILE or" >&2
   echo "the ASC_KEY_* settings and run this again, or notarize and staple it by hand before it ships." >&2

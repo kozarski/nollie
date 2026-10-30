@@ -334,10 +334,11 @@ public final class ConversationEngine {
     }
 
     private func syncWindow() async {
-        historyRows = await window.rows
-        historyAtNewestEnd = await window.atNewestEnd
-        historyAtOldestEnd = await window.atOldestEnd
-        let known = await window.lineage
+        let snapshot = await window.snapshot
+        historyRows = snapshot.rows
+        historyAtNewestEnd = snapshot.atNewestEnd
+        historyAtOldestEnd = snapshot.atOldestEnd
+        let known = snapshot.lineage
         // The reducer leads on the tip; the window may have learned older segments.
         if known != state.lineage { state.lineage = state.lineage.merging(known) }
         let shown = Set(historyRows.map(\.address.rowId))

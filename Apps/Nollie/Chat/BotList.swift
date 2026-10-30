@@ -83,6 +83,8 @@ struct BotPresenceAvatar: View {
 enum BotActivity {
     static func line(_ presence: BotPresence) -> String {
         guard let live = presence.live else { return presence.onBoard ? String(localized: "Working on a task…") : String(localized: "Working…") }
+        // Held on an approval it is waiting on the person, not typing (the Mac's header reads this).
+        if live.botState == .needsYou { return String(localized: "Needs your OK") }
         if let goal = ChatGoals.shared.goal(for: live.storedID), !goal.isEmpty { return goal }
         if live.botState == .thinking { return String(localized: "Thinking…") }
         return humanize(live.statusLine)
@@ -127,24 +129,33 @@ struct BotListRow: View {
     var selected = false
     var pinned = false
     @State private var hovering = false
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    /// At the largest text sizes the time goes under the name, and the name and the last line may
+    /// take two lines, so a narrow sidebar never cuts a name to "Def…".
+    private var large: Bool { typeSize.isAccessibilitySize }
 
     var body: some View {
         let presence = BotPresence(runtime: runtime, profile: profile.name, mainID: entry.storedID, remoteBusy: entry.busy)
         HStack(spacing: 12) {
             BotPresenceAvatar(profile: profile.name, size: Ink.rowAvatar, working: presence.working, needsYou: presence.needsYou, state: presence.live?.botState)
             VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(profile.shownName)
-                        .font(Ink.rowName)
-                        .foregroundStyle(Ink.text)
-                        .lineLimit(1)
-                    if pinned {
-                        Image(systemName: "pin.fill")
-                            .font(.caption2)
-                            .foregroundStyle(Ink.text3)
-                            .accessibilityHidden(true)
+                let top = large ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+                    : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 6))
+                top {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(verbatim: large ? LineBreaks.wholeWords(profile.shownName) : profile.shownName)
+                            .font(Ink.rowName)
+                            .foregroundStyle(Ink.text)
+                            .lineLimit(large ? 2 : 1)
+                        if pinned {
+                            Image(systemName: "pin.fill")
+                                .font(.caption2)
+                                .foregroundStyle(Ink.text3)
+                                .accessibilityHidden(true)
+                        }
                     }
-                    Spacer(minLength: 4)
+                    if !large { Spacer(minLength: 4) }
                     if presence.working {
                         Text("Now").font(Ink.rowTime).foregroundStyle(Ink.text3)
                     } else if let d = entry.lastDate {
@@ -183,7 +194,8 @@ struct BotListRow: View {
     /// The open bot's soft highlight: a pill beside a chat on iPhone and iPad, as their sidebars draw it.
     private var highlight: AnyShape {
         #if os(iOS)
-        AnyShape(Capsule())
+        // A row of several lines at the largest sizes gets soft corners, not a circle's ends.
+        large ? AnyShape(.rect(cornerRadius: 22, style: .continuous)) : AnyShape(Capsule())
         #else
         AnyShape(.rect(cornerRadius: 12, style: .continuous))
         #endif
@@ -213,7 +225,7 @@ struct BotListRow: View {
             }
         }
         .font(Ink.rowPreview)
-        .lineLimit(1)
+        .lineLimit(large ? 2 : 1)
         .truncationMode(.tail)
     }
 

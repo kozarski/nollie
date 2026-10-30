@@ -42,11 +42,18 @@ public final class LiveStreamClient: LiveFeed {
         var ready = false
         var greeted = false
         var ended: LiveWire.EndReason?
+        /// A read is waiting on the connection. It always comes back once the connection fails or is
+        /// cancelled, bringing any last message (often the end) before its error.
+        var reading = false
     }
 
+    /// Delays the handling of each read by this long, as a device too busy to get to it would. Tests only.
+    private let readDelay: TimeInterval
+
     /// Opens at once. Without a target (a gateway signed in some other way) the feed closes as
-    /// unavailable straight away, and the app keeps its snapshots.
-    public init(target: Target?, helloTimeout: TimeInterval = 10) {
+    /// unavailable straight away, and the app keeps its snapshots. `readDelay` is for tests.
+    public init(target: Target?, helloTimeout: TimeInterval = 10, readDelay: TimeInterval = 0) {
+        self.readDelay = readDelay
         let inbox = Inbox()
         self.inbox = inbox
         events = AsyncStream(unfolding: { await inbox.next() }, onCancel: { inbox.readerLeft() })
@@ -66,14 +73,14 @@ public final class LiveStreamClient: LiveFeed {
                 self.state.withLock { $0.ready = true }
                 receive()
             // Waiting means no route or a refusal; a live picture that late is no use. Once
-            // ready, the read loop ends the feed itself, after any last message (often the end)
-            // that comes with the error; the pause only covers a read that never returns.
+            // ready, the read that is out ends the feed when it comes back, after any last message
+            // (often the end) that came before the error. It always comes back once the connection
+            // has failed or is cancelled; a connection left waiting is cancelled so that it does.
+            // Closing on a one-second timer instead lost the end whenever the device took longer than
+            // that to get to the read, and the person was told the stream dropped, not why it ended.
             case .waiting, .failed, .cancelled:
-                if self.state.withLock({ $0.ready }) {
-                    queue.asyncAfter(deadline: .now() + 1) { [weak self] in self?.close() }
-                } else {
-                    close()
-                }
+                guard self.state.withLock({ $0.ready && $0.reading }) else { close(); return }
+                if case .waiting = state { self.connection?.cancel() }
             default: break
             }
         }
@@ -151,18 +158,30 @@ public final class LiveStreamClient: LiveFeed {
     // MARK: Reading
 
     private func receive() {
-        connection?.receiveMessage { [weak self] content, context, _, error in
+        guard let connection else { return }
+        state.withLock { $0.reading = true }
+        connection.receiveMessage { [weak self] content, context, _, error in
             guard let self else { return }
-            // The last message can arrive together with the error that ends the connection.
-            let metadata = context?.protocolMetadata(definition: NWProtocolWebSocket.definition) as? NWProtocolWebSocket.Metadata
-            switch metadata?.opcode {
-            case .text?: if let content { text(content) }
-            case .binary?: if let content { video(content) }
-            default: break
+            guard readDelay <= 0 else {
+                queue.asyncAfter(deadline: .now() + readDelay) { [weak self] in self?.handle(content, context, error) }
+                return
             }
-            guard error == nil, let metadata, metadata.opcode != .close else { close(); return }
-            if !inbox.closed { receive() }
+            handle(content, context, error)
         }
+    }
+
+    /// One read come back: its message, if any, then the next read, or the end of the feed.
+    private func handle(_ content: Data?, _ context: NWConnection.ContentContext?, _ error: NWError?) {
+        state.withLock { $0.reading = false }
+        // The last message can arrive together with the error that ends the connection.
+        let metadata = context?.protocolMetadata(definition: NWProtocolWebSocket.definition) as? NWProtocolWebSocket.Metadata
+        switch metadata?.opcode {
+        case .text?: if let content { text(content) }
+        case .binary?: if let content { video(content) }
+        default: break
+        }
+        guard error == nil, let metadata, metadata.opcode != .close else { close(); return }
+        if !inbox.closed { receive() }
     }
 
     private func text(_ data: Data) {

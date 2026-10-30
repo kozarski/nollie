@@ -66,6 +66,12 @@ public actor ConversationWindow {
 
     public var addresses: Set<ConversationRowAddress> { Set(rows.map(\.address)) }
 
+    /// The rows, both ends and the lineage read in one go, so a reader never pairs the rows of one page with the ends
+    /// of another that landed between two reads.
+    public var snapshot: (rows: [ConversationHistoryRow], atNewestEnd: Bool, atOldestEnd: Bool, lineage: ConversationLineage) {
+        (rows, atNewestEnd, atOldestEnd, lineage)
+    }
+
     // MARK: Opening
 
     /// Shows the newest cached rows at once, before Hermes is asked. Returns whether any were cached.

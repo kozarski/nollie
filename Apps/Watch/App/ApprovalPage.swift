@@ -65,9 +65,12 @@ struct ApprovalPage: View {
                 Button {
                     approval.asksAgain ? (askingAgain = true) : send(.once)
                 } label: {
-                    Text(WatchWords.allowOnce).font(.headline).frame(maxWidth: .infinity)
+                    Text(WatchWords.allowOnce).font(.headline).foregroundStyle(.black).frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.glassProminent)
+                // Ink, as on the iPhone in dark: a white pill, so the answer reads as the main one
+                // and not as a grey, switched-off button.
+                .tint(.white)
                 .accessibilityIdentifier("watch.approval.once")
             case .denyOnly:
                 Label(WatchWords.approveOnPhone, systemImage: "iphone")

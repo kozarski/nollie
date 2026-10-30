@@ -144,6 +144,18 @@ class NightShiftFixtureTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIsNone(mock.night_shift_rest("GET", "/api/plugins/nollie-workflow/private-bots", {}, {}))
 
+    def test_the_switch_is_kept_and_a_reset_turns_it_on(self):
+        path = "/api/plugins/nollie-workflow/night-shift"
+        self.addCleanup(mock.NIGHT_SHIFT.update, on=True)
+        self.assertEqual(self.request(path), (200, {"on": True, "damaged": False}))
+        self.assertEqual(self.request(path, "PUT", {"on": False}), (200, {"on": False, "damaged": False, "saved": True}))
+        self.assertEqual(self.request(path)[1]["on"], False)
+        self.assertEqual(self.request(path, "PUT", {"on": "no"})[0], 422)
+        self.assertEqual(self.request(path, "POST")[0], 405)
+        self.assertEqual(self.request(path + "?profile=work")[0], 403)
+        self.request("/api/_mock/night-shift", "POST")
+        self.assertEqual(self.request(path)[1]["on"], True)
+
     def test_another_profile_is_refused(self):
         for path, method in ((POSTS + "?profile=work", "GET"),
                              (f"/api/plugins/nollie-workflow/rehearsals/{REHEARSAL}/turn-on?profile=work", "POST"),

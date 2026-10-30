@@ -227,6 +227,37 @@ class NightRouteTests(unittest.TestCase):
         (self.root / "rehearsals.json").write_text("{")
         self.assertEqual(self.client.post(BASE + f"/rehearsals/{self.post['id']}/turn-on").status_code, 503)
 
+    def test_the_night_shift_switch(self):
+        response = self.client.get(BASE + "/night-shift")
+        self.assertEqual((response.status_code, response.headers["cache-control"]), (200, "no-store"))
+        self.assertEqual(response.json(), {"on": False, "damaged": False}, "no file is off")
+        response = self.client.put(BASE + "/night-shift", json={"on": True})
+        self.assertEqual(response.json(), {"on": True, "damaged": False, "saved": True})
+        saved = json.loads((self.root / "night-shift.json").read_text())
+        self.assertEqual((saved["night_shift"], saved["rehearsals"], saved["morning_hour"]), (True, False, 7),
+                         "only Night shift changes")
+        self.assertEqual(self.client.get(BASE + "/night-shift").json()["on"], True)
+        self.assertFalse(self.client.put(BASE + "/night-shift", json={"on": False}).json()["on"])
+        self.assertFalse(json.loads((self.root / "night-shift.json").read_text())["night_shift"])
+
+    def test_the_switch_takes_only_a_true_or_false(self):
+        for bad in ({"on": "yes"}, {"on": 1}, {}, {"rehearsals": True}):
+            self.assertEqual(self.client.put(BASE + "/night-shift", json=bad).status_code, 422, bad)
+        self.assertFalse((self.root / "night-shift.json").exists())
+
+    def test_a_damaged_switch_reads_on_and_a_save_mends_it(self):
+        self.root.mkdir(parents=True, exist_ok=True)
+        (self.root / "night-shift.json").write_text("{")
+        self.assertEqual(self.client.get(BASE + "/night-shift").json(), {"on": True, "damaged": True})
+        self.assertEqual(self.client.put(BASE + "/night-shift", json={"on": False}).json(),
+                         {"on": False, "damaged": False, "saved": True})
+
+    def test_the_switch_belongs_to_the_main_profile(self):
+        self.active = "career"
+        self.assertEqual(self.client.get(BASE + "/night-shift").status_code, 403)
+        self.assertEqual(self.client.put(BASE + "/night-shift", json={"on": True}).status_code, 403)
+        self.assertFalse((self.root / "night-shift.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

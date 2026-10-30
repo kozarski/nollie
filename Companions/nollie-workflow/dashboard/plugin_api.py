@@ -466,6 +466,37 @@ def posts(since: int | None = None, limit: int = 60):
     return JSONResponse({"version": 1, "posts": shown}, headers=NO_STORE)
 
 
+def _night_switch(target):
+    """Night shift's one switch as the recorder reads it: no file is off, and a damaged file is on, so a broken
+    file never turns the watch off."""
+    try:
+        settings = _shift.read_settings(target / "nollie-workflow")
+    except (OSError, ValueError):
+        return {"on": True, "damaged": True}
+    return {"on": bool(settings and settings["night_shift"]), "damaged": False}
+
+
+@router.get("/night-shift")
+def night_shift():
+    """Whether Night shift watches unattended runs and posts the morning card. Rehearsals keep their own switch."""
+    return JSONResponse(_night_switch(home()), headers=NO_STORE)
+
+
+class NightShiftSwitch(BaseModel):
+    on: StrictBool
+
+
+@router.put("/night-shift")
+def save_night_shift(body: NightShiftSwitch):
+    """The owner's switch for Night shift. The Link door lets only the owner's own devices reach it."""
+    target = home()
+    try:
+        _shift.write_settings(target / "nollie-workflow", night_shift=body.on)
+    except (OSError, ValueError):
+        raise HTTPException(503, "Night shift's settings cannot be written.", headers=NO_STORE) from None
+    return JSONResponse(dict(_night_switch(target), saved=True), headers=NO_STORE)
+
+
 @router.get("/sleep")
 def sleep(since: int | None = None):
     """When the Mac was asleep, off, or without Hermes, oldest first: times and a kind, nothing else."""

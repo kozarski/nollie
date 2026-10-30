@@ -1,6 +1,6 @@
 # Remove Nollie
 
-[← Nollie](../../README.md)
+[← Nollie](../../README.md) · [Help](README.md)
 
 Nollie keeps everything it writes on your Mac in one folder:
 `~/Library/Application Support/Nollie`. Removing it is one button.

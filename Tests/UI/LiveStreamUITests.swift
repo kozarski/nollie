@@ -140,7 +140,7 @@ final class LiveStreamUITests: XCTestCase {
         app = XCUIApplication(bundleIdentifier: bundle)
         app.launchArguments = ["-nollie-demo-gateway", address, "mock-token", "Studio",
                                "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES",
-                               "-bots.animate", "NO", "-launchTab", "chats", "-colorSchemePreference", look] + DemoCase.weeklyCardPutAway
+                               "-bots.animate", "NO", "-launchTab", "chats", "-colorSchemePreference", look] + DemoCase.weeklyCardPutAway + DemoCase.nightCardPutAway
         app.launch()
         _ = try visible("bots.row.default", timeout: 30)
     }

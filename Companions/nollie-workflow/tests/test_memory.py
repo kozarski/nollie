@@ -53,6 +53,7 @@ class Hermes:
     def hold(self, target, seconds, then_add=None):
         path = self.folder / memory.FILES[target]
         ready = threading.Event()
+        released = threading.Event()
 
         def run():
             fd = os.open(str(path) + ".lock", os.O_RDWR | os.O_CREAT, 0o600)
@@ -62,9 +63,12 @@ class Hermes:
             if then_add:
                 raw = path.read_text() if path.exists() else ""
                 path.write_text(memory.DELIMITER.join(memory.parse(raw) + [then_add]))
+            # Set while the lock is still held: whoever gets the lock next sees it set.
+            released.set()
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
         thread = threading.Thread(target=run)
+        thread.released = released
         thread.start()
         ready.wait()
         return thread
@@ -130,10 +134,10 @@ class MemoryFileTests(unittest.TestCase):
     def test_waits_for_hermes_and_keeps_what_it_wrote_meanwhile(self):
         self.write("user", "A\n§\nB")
         writer = Hermes(self.home / "memories").hold("user", 0.3, then_add="Hermes learnt this")
-        started = time.monotonic()
         self.memory.edit("user", "A", "A, edited")
+        # The edit waited for Hermes to let go, however long the computer took to get there.
+        self.assertTrue(writer.released.is_set(), "the edit went ahead while Hermes held the file")
         writer.join()
-        self.assertGreaterEqual(time.monotonic() - started, 0.25)
         self.assertEqual(self.texts(), ["A, edited", "B", "Hermes learnt this"])
 
     def test_a_lock_held_too_long_is_a_gentle_try_again(self):

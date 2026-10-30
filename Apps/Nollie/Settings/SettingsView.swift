@@ -25,14 +25,14 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            SettingsPage("settings.page") {
+            SettingsPage("settings.page", margin: SettingsMargin.underTitle) {
                 // The answer first: what left your Mac today, and what the crew did overnight.
                 if model.isDemo { LeaveDemoRow() }
                 if search.isEmpty, model.runtime != nil { CrewSummaryTiles(summary: summary) }
                 categoryRows
             }
             .task(id: refreshKey) {
-                if let runtime = model.runtime { await summary.load(runtime) }
+                if let runtime = model.runtime { await summary.load(runtime, owner: !model.family.isMember(model)) }
             }
             .navigationDestination(for: SettingsCategory.self) { SettingsDestination(category: $0, developerMode: developerMode) }
             // The Mac sidebar's Papertrail button opens What left your Mac, from anywhere.

@@ -1,3 +1,4 @@
+import WatchKit
 import Foundation
 import Observation
 import WatchConnectivity
@@ -68,7 +69,12 @@ final class WatchModel: NSObject {
         defer { sending.remove(approval.id) }
         let answer = WatchWire.Answer(cardID: approval.id, requestID: approval.requestID, chatID: approval.chatID,
                                       profile: approval.profile, connectionID: approval.connectionID, choice: choice)
-        guard let reply = await send(.answer(answer)) else { return show(WatchWords.phoneAway) }
+        guard let reply = await send(.answer(answer)) else {
+            WKInterfaceDevice.current().play(.failure)
+            return show(WatchWords.phoneAway)
+        }
+        // The wrist says how it went before the words do: a tick for a yes, a tap for a no.
+        WKInterfaceDevice.current().play(!reply.done ? .failure : choice == .deny ? .click : .success)
         if let fresh = reply.snapshot { take(fresh) }
         show(reply.line)
     }
@@ -77,7 +83,11 @@ final class WatchModel: NSObject {
         guard !sending.contains(Self.stopKey) else { return }
         sending.insert(Self.stopKey)
         defer { sending.remove(Self.stopKey) }
-        guard let reply = await send(.stop) else { return show(WatchWords.phoneAway) }
+        guard let reply = await send(.stop) else {
+            WKInterfaceDevice.current().play(.failure)
+            return show(WatchWords.phoneAway)
+        }
+        WKInterfaceDevice.current().play(reply.done ? .stop : .failure)
         if let fresh = reply.snapshot { take(fresh) }
         show(reply.line)
     }

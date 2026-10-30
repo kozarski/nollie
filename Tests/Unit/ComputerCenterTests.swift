@@ -880,7 +880,8 @@ import Testing
 }
 #endif
 
-#if os(macOS)
+#if os(macOS) && NOLLIE_DIRECT
+// The broker only listens in the Direct edition; the App Store edition's sandbox has no /tmp for it.
 /// The real add-on (Companions/nollie-mac/server.py, as Hermes would run it) talking to the real
 /// broker and coordinator, with a recorded driver: the two sides speak the same protocol.
 @MainActor

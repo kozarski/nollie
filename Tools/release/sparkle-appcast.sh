@@ -13,6 +13,9 @@
 # Notes:   the GitHub release's text (gh), else <folder>/notes.md, else a one-line stand-in
 # Seeds:   the latest published appcast, so earlier versions stay in the feed
 # Writes:  <folder>/appcast.xml and <folder>/sparkle-signatures.txt
+#
+# DRY_RUN=1 rehearses all of it with a stand-in key made for the run, so neither the keychain nor the
+# update key is touched. Installed copies would refuse what it signs, which is the point: it cannot ship.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 OUT="$(cd "${1:?release folder}" && pwd)"
@@ -33,7 +36,23 @@ DMG="$OUT/Nollie-$VERSION-$BUILD.dmg"
 TOOLS=$(Tools/sparkle/fetch-sparkle.sh)/bin
 APP_KEY=$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APP/Contents/Info.plist")
 KEY=()
-if [ -n "${SPARKLE_KEY_FILE:-}" ]; then
+DRY="${DRY_RUN:-}"
+if [ -n "$DRY" ]; then
+  # A key that lives for this run only. Its signatures are checked against its own public half.
+  STANDIN="$OUT/standin-key"
+  mkdir -p "$STANDIN"
+  cat > "$STANDIN/make.swift" <<'SWIFT'
+import CryptoKit
+import Foundation
+let key = Curve25519.Signing.PrivateKey()
+try! Data(key.rawRepresentation.base64EncodedString().utf8).write(to: URL(fileURLWithPath: CommandLine.arguments[1]))
+print(key.publicKey.rawRepresentation.base64EncodedString())
+SWIFT
+  ( umask 077; swift "$STANDIN/make.swift" "$STANDIN/private.txt" > "$STANDIN/public.txt" )
+  KEY=(--ed-key-file "$STANDIN/private.txt")
+  APP_KEY=$(cat "$STANDIN/public.txt")
+  echo "Dry run: signing with a stand-in key. Installed copies of Nollie would refuse these signatures."
+elif [ -n "${SPARKLE_KEY_FILE:-}" ]; then
   [ -f "$SPARKLE_KEY_FILE" ] || { echo "There is no key file at $SPARKLE_KEY_FILE." >&2; exit 1; }
   KEY=(--ed-key-file "$SPARKLE_KEY_FILE")
 else
@@ -83,6 +102,26 @@ fi
   --link "https://nollie.app" \
   --embed-release-notes --maximum-deltas 0 \
   "$STAGE"
+if [ -n "$DRY" ]; then
+  # generate_appcast leaves the item unsigned when the key is not the app's, as with the stand-in. Put
+  # the stand-in's checked signature on it, so the check below looks at a whole item.
+  signature=$(grep -F "$(basename "$ZIP")" "$OUT/sparkle-signatures.txt" | sed -E 's/.*edSignature="([^"]+)".*/\1/')
+  python3 -I - "$STAGE/appcast.xml" "$VERSION" "$signature" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+SPARKLE = "http://www.andymatuschak.org/xml-namespaces/sparkle"
+ET.register_namespace("sparkle", SPARKLE)
+ET.register_namespace("dc", "http://purl.org/dc/elements/1.1/")
+path, version, signature = sys.argv[1:]
+tree = ET.parse(path)
+for item in tree.getroot().findall("./channel/item"):
+    enclosure = item.find("enclosure")
+    if item.findtext(f"{{{SPARKLE}}}shortVersionString") == version and enclosure is not None:
+        enclosure.set(f"{{{SPARKLE}}}edSignature", signature)
+tree.write(path, xml_declaration=True, encoding="utf-8")
+PY
+  rm -rf "$STANDIN"
+fi
 cp "$STAGE/appcast.xml" "$OUT/appcast.xml"
 python3 -I Tools/release/check_appcast.py "$OUT/appcast.xml" --tag "$TAG" --zip "$ZIP"
 echo "Appcast: $OUT/appcast.xml"

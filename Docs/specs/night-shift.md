@@ -75,7 +75,9 @@ All Hermes-side logic is in `Companions/nollie-workflow`. Nothing in Hermes is p
 
 `<main home>/nollie-workflow/night-shift.json` (0600):
 `{"version": 1, "night_shift": false, "rehearsals": false, "morning_hour": 7}`. `control.py night-shift on|off` and
-`control.py rehearsals on|off` change it. The recorder reads it (cached, rechecked at most every 10 seconds by
+`control.py rehearsals on|off` change it. The app's switch in Settings › Night shift changes `night_shift` only, through
+`GET`/`PUT /api/plugins/nollie-workflow/night-shift` (`{"on": bool}`; a damaged file reads as on). The Link door lets
+the owner's own devices reach it and never a shared member's. The recorder reads it (cached, rechecked at most every 10 seconds by
 mtime). A missing file means both off; a damaged one means both on with the last good values, so a broken file never
 turns protection off.
 

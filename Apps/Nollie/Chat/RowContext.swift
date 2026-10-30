@@ -11,6 +11,19 @@ enum ChatRowTransition {
     static let fadeIn = AnyTransition.asymmetric(insertion: AnyTransition.opacity.animation(quickEase), removal: .identity)
 }
 
+/// A waiting approval rises into place with a soft spring instead of popping in, so the eye
+/// lands on it. Leaving, it just goes: the working bubble may take its place in the same update.
+@MainActor
+enum ApprovalArrival {
+    static func transition(reduceMotion: Bool) -> AnyTransition {
+        let look: AnyTransition = reduceMotion
+            ? .opacity
+            : .scale(scale: 0.96, anchor: .bottomLeading).combined(with: .offset(y: 12)).combined(with: .opacity)
+        let pace: Animation = reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.38, bounce: 0.12)
+        return .asymmetric(insertion: look.animation(pace), removal: .identity)
+    }
+}
+
 /// A reply that just finished pops in where it sits, without animating the row's size.
 @MainActor
 enum ReplyArrival {

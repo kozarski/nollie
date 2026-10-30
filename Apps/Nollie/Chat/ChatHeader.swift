@@ -162,6 +162,8 @@ private struct ChatHeaderPill: View {
     }
 
     private var status: StatusLine {
+        // A turn held on an approval waits on the person, not on the bot: the list's words, in the header too.
+        if chat.isRunning, chat.botState == .needsYou { return StatusLine(text: String(localized: "Needs your OK")) }
         if chat.isRunning {
             // Use the goal that the device model wrote, falling back to the current step.
             let goal = ChatGoals.shared.goal(for: chat.storedID)

@@ -1466,6 +1466,8 @@
 			files = (
 			);
 			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/com.coreykozarski.nollie.network-filter.systemextension/Contents/Info.plist",
+				"$(BUILT_PRODUCTS_DIR)/com.coreykozarski.nollie.network-filter.systemextension/Contents/MacOS/com.coreykozarski.nollie.network-filter",
 				"$(SRCROOT)/Tools/network-filter/embed-network-filter.sh",
 				"$(SRCROOT)/Tools/runtime-helper/embedding-paths.sh",
 			);
@@ -1889,7 +1891,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1897,7 +1899,7 @@
 				INFOPLIST_FILE = Services/NetworkFilter/Info.plist;
 				OTHER_LDFLAGS = "-lbsm";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.network-filter";
 				PRODUCT_MODULE_NAME = NollieNetworkFilter;
 				PRODUCT_NAME = "com.coreykozarski.nollie.network-filter";
@@ -1916,7 +1918,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1924,7 +1926,7 @@
 				INFOPLIST_FILE = Services/NetworkFilter/Info.plist;
 				OTHER_LDFLAGS = "-lbsm";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.network-filter";
 				PRODUCT_MODULE_NAME = NollieNetworkFilter;
 				PRODUCT_NAME = "com.coreykozarski.nollie.network-filter";
@@ -1949,7 +1951,7 @@
 				NOLLIE_FILTER_IDENTITY_YES = "Apple Development";
 				NOLLIE_FILTER_SIGN_STYLE_NO = Manual;
 				NOLLIE_FILTER_SIGN_STYLE_YES = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1957,7 +1959,7 @@
 				INFOPLIST_FILE = Services/NetworkFilter/Info.plist;
 				OTHER_LDFLAGS = "-lbsm";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.network-filter";
 				PRODUCT_MODULE_NAME = NollieNetworkFilter;
 				PRODUCT_NAME = "com.coreykozarski.nollie.network-filter";
@@ -1982,7 +1984,7 @@
 				NOLLIE_FILTER_IDENTITY_YES = "Apple Development";
 				NOLLIE_FILTER_SIGN_STYLE_NO = Manual;
 				NOLLIE_FILTER_SIGN_STYLE_YES = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1990,7 +1992,7 @@
 				INFOPLIST_FILE = Services/NetworkFilter/Info.plist;
 				OTHER_LDFLAGS = "-lbsm";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.network-filter";
 				PRODUCT_MODULE_NAME = NollieNetworkFilter;
 				PRODUCT_NAME = "com.coreykozarski.nollie.network-filter";
@@ -2120,10 +2122,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2140,7 +2142,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_PREVIEWS = YES;
@@ -2150,7 +2152,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2165,7 +2167,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2176,7 +2178,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
 				PRODUCT_NAME = "Nollie Notifications";
 				SDKROOT = macosx;
@@ -2192,7 +2194,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2202,7 +2204,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2289,7 +2291,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/NotificationService/Info.plist;
@@ -2298,7 +2300,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2318,7 +2320,7 @@
 				NOLLIE_DIRECT_ENTITLEMENTS_YES = NollieMacDirectFilter.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2335,7 +2337,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				NOLLIE_SPARKLE_VERSION = 2.10.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -2357,7 +2359,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2368,7 +2370,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
 				PRODUCT_NAME = "Nollie Notifications";
 				SDKROOT = macosx;
@@ -2384,14 +2386,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Services/Runtime/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
 				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
 				PRODUCT_NAME = "Nollie Runtime";
@@ -2408,14 +2410,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Services/Runtime/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
 				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
 				PRODUCT_NAME = "Nollie Runtime";
@@ -2435,7 +2437,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2444,7 +2446,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2459,7 +2461,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2470,7 +2472,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2484,11 +2486,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2503,7 +2505,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2514,7 +2516,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
 				PRODUCT_NAME = "Nollie Notifications";
 				SDKROOT = macosx;
@@ -2529,10 +2531,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2547,11 +2549,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2566,7 +2568,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/NotificationContent/Info.plist;
@@ -2575,7 +2577,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -2597,7 +2599,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2609,7 +2611,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2760,7 +2762,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_PREVIEWS = YES;
@@ -2770,7 +2772,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2787,7 +2789,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Apps/Nollie/Nollie.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2796,7 +2798,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2811,11 +2813,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2830,10 +2832,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2847,11 +2849,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2865,10 +2867,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2883,7 +2885,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2893,7 +2895,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2908,7 +2910,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationService/NollieNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/NotificationService/Info.plist;
@@ -2917,7 +2919,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2932,7 +2934,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -2942,7 +2944,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -2964,7 +2966,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/NotificationContent/Info.plist;
@@ -2973,7 +2975,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -2998,7 +3000,7 @@
 				CODE_SIGN_ENTITLEMENTS = Apps/Mac/NollieMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3010,7 +3012,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_MODULE_NAME = Nollie;
 				PRODUCT_NAME = Nollie;
@@ -3028,7 +3030,7 @@
 				CODE_SIGN_ENTITLEMENTS = Apps/Mac/NollieMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -3039,7 +3041,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER)";
 				PRODUCT_MODULE_NAME = Nollie;
 				PRODUCT_NAME = Nollie;
@@ -3054,7 +3056,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3066,7 +3068,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -3081,7 +3083,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/MacNotificationService/NollieMacNotificationService.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3092,7 +3094,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).notifications";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -3107,12 +3109,12 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -3127,12 +3129,12 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -3147,7 +3149,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3156,7 +3158,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				NOLLIE_SPARKLE_VERSION = 2.10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3178,7 +3180,7 @@
 				NOLLIE_DIRECT_ENTITLEMENTS_YES = NollieMacDirectFilter.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -3194,7 +3196,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				NOLLIE_SPARKLE_VERSION = 2.10.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -3216,14 +3218,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Services/Runtime/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
 				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
 				PRODUCT_NAME = "Nollie Runtime";
@@ -3241,14 +3243,14 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Runtime/NollieRuntime.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Services/Runtime/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.coreykozarski.nollie.runtime;
 				PRODUCT_MODULE_NAME = NollieRuntimeHelper;
 				PRODUCT_NAME = "Nollie Runtime";
@@ -3265,7 +3267,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3274,7 +3276,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				NOLLIE_SPARKLE_VERSION = 2.10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).mactests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3291,7 +3293,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Services/Notifications/NollieNotifications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3302,7 +3304,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.coreykozarski.nollie.background-alerts";
 				PRODUCT_NAME = "Nollie Notifications";
 				SDKROOT = macosx;
@@ -3318,7 +3320,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/NotificationContent/NollieNotificationContent.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3328,7 +3330,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -3349,7 +3351,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3359,7 +3361,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3374,7 +3376,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3384,7 +3386,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3399,7 +3401,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/Controls/Info.plist;
@@ -3408,7 +3410,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3423,7 +3425,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Extensions/Controls/Info.plist;
@@ -3432,7 +3434,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -3449,7 +3451,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_PREVIEWS = YES;
@@ -3459,7 +3461,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3477,7 +3479,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_PREVIEWS = YES;
@@ -3487,7 +3489,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3505,7 +3507,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3514,7 +3516,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3532,7 +3534,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/App/NollieWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3541,7 +3543,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3558,7 +3560,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3568,7 +3570,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3586,7 +3588,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3596,7 +3598,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3614,7 +3616,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Apps/Watch/Widgets/Info.plist;
@@ -3623,7 +3625,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3641,7 +3643,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Apps/Watch/Widgets/NollieWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Apps/Watch/Widgets/Info.plist;
@@ -3650,7 +3652,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).watchkitapp.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -3668,7 +3670,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3680,7 +3682,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -3696,7 +3698,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -3708,7 +3710,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -3724,7 +3726,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3735,7 +3737,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -3751,7 +3753,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/Controls/NollieMacControls.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 5985LRZFZS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -3762,7 +3764,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(NOLLIE_BUNDLE_IDENTIFIER).controls";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

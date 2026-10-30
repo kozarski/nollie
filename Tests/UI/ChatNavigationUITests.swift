@@ -33,7 +33,7 @@ final class ChatNavigationUITests: XCTestCase {
             "-nollie-demo-gateway", address, "mock-token", "Studio",
             "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES",
             "-bots.animate", "NO",
-        ] + DemoCase.weeklyCardPutAway + extra
+        ] + DemoCase.weeklyCardPutAway + DemoCase.nightCardPutAway + extra
         app.launch()
         _ = try visible("bots.list", timeout: 30)
         _ = try visible("bots.row.work", timeout: 30)
