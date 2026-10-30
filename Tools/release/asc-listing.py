@@ -41,7 +41,9 @@ def die(message):
 
 
 def make_token():
-    keys = {name: settings[name] for name in ("ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_KEY_PATH")}
+    # ASC_KEY_KIND too: Corey's own key signs as him only with it, and Apple refuses its token without it.
+    keys = {name: settings[name] for name in ("ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_KEY_PATH", "ASC_KEY_KIND")
+            if settings.get(name)}
     out = subprocess.check_output(["swift", os.path.join(HERE, "asc-jwt.swift")], env={**os.environ, **keys})
     return out.decode().strip()
 
