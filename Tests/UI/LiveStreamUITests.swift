@@ -138,7 +138,7 @@ final class LiveStreamUITests: XCTestCase {
         self.address = address
         XCUIDevice.shared.orientation = .portrait
         app = XCUIApplication(bundleIdentifier: bundle)
-        app.launchArguments = ["-nollie-demo-gateway", address, "mock-token", "Studio",
+        app.launchArguments = DemoCase.modelsAllowed + ["-nollie-demo-gateway", address, "mock-token", "Studio",
                                "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES",
                                "-bots.animate", "NO", "-launchTab", "chats", "-colorSchemePreference", look] + DemoCase.weeklyCardPutAway + DemoCase.nightCardPutAway
         app.launch()

@@ -23,7 +23,7 @@ final class HelperComputerUITests: XCTestCase {
         try mock(["reset": true, "setup": "no_cua", "ready_after": 3])
 
         app = XCUIApplication(bundleIdentifier: bundle)
-        app.launchArguments = ["-nollie-demo-gateway", address, "mock-token", "Studio", "-companionPromptShown", "YES",
+        app.launchArguments = DemoCase.modelsAllowed + ["-nollie-demo-gateway", address, "mock-token", "Studio", "-companionPromptShown", "YES",
                                "-notificationsSetupCardDone", "YES", "-nollie-demo-tab", "chats",
                                "-nollie-demo-bot-page", "settings", "-nollie-demo-bot-profile", "work",
                                "-nollie-demo-bot-tab", "computer",

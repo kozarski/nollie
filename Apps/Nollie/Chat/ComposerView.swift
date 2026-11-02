@@ -278,6 +278,8 @@ struct ComposerView: View {
         #if os(iOS)
         // Away from home, words alone go through iCloud to the Mac.
         if chat.staged.isEmpty, AwayPhone.shared.carries(AppModel.shared) {
+            // The Mac sends these on without asking, so the ask before an online model happens here.
+            if let check = chat.runtime.shareCheck, !(await check(chat.profileName, chat)) { return }
             let outgoing = QuotedMessage.wrap(text, quoting: quote)
             (quote, text, focused) = ("", "", true)
             if let back = await AwayPhone.shared.send(outgoing, in: chat) { text = back }

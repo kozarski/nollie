@@ -75,6 +75,7 @@ struct KanbanNewTaskSheet: View {
             #endif
             .toolbar { bar }
             .task { await prepare() }
+            .onlineModelAsk()
         }
     }
 
@@ -100,6 +101,8 @@ struct KanbanNewTaskSheet: View {
         guard let store else { return }
         isSaving = true
         defer { isSaving = false }
+        // Asked here first, so a Not now closes nothing and says nothing went wrong.
+        if let check = model.runtime?.shareCheck, !(await check(draft.request.assignee ?? "default", nil)) { return }
         guard let made = await store.create(draft.request) else {
             problem = store.lastError ?? String(localized: "The gateway turned the task away.")
             return

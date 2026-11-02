@@ -2572,6 +2572,35 @@
         }
       }
     },
+    "%@ privacy policy" : {
+      "comment" : "Privacy: a link; %@ is a company",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datenschutzerklärung von %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Política de privacidad de %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Politique de confidentialité de %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@のプライバシーポリシー"
+          }
+        }
+      }
+    },
     "%@ refused the sign-in" : {
       "localizations" : {
         "de" : {
@@ -3147,6 +3176,64 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@を使用。"
+          }
+        }
+      }
+    },
+    "%@ uses an online model from %@. To answer, it sends:" : {
+      "comment" : "Privacy: a helper's name, then one or more companies; a list of what goes follows",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ nutzt ein Online-Modell von %2$@. Für eine Antwort sendet es:"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ usa un modelo en línea de %2$@. Para responder, envía:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ utilise un modèle en ligne de %2$@. Pour répondre, il envoie :"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@は%2$@のオンラインモデルを使います。返答のために送るもの："
+          }
+        }
+      }
+    },
+    "%@ uses an online model. To answer, it sends:" : {
+      "comment" : "Privacy: a helper's name; a list of what goes follows",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ nutzt ein Online-Modell. Für eine Antwort sendet es:"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ usa un modelo en línea. Para responder, envía:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ utilise un modèle en ligne. Pour répondre, il envoie :"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@はオンラインモデルを使います。返答のために送るもの："
           }
         }
       }
@@ -5264,6 +5351,59 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%lld件のアクション"
+          }
+        }
+      }
+    },
+    "%lld allowed" : {
+      "comment" : "Privacy: how many online models' companies are allowed",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld erlaubt"
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld permitido"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld permitidos"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld autorisé"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld autorisés"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld件を許可"
           }
         }
       }
@@ -13765,6 +13905,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "以前のテストが送信から%2$lld秒後に%1$@に届き、内容も開けました。仕組みは動作していますが、ここではプッシュが遅いです。"
+          }
+        }
+      }
+    },
+    "An online model" : {
+      "comment" : "Privacy: a row in Settings for a model the gateway didn't name",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Online-Modell"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un modelo en línea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un modèle en ligne"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オンラインモデル"
           }
         }
       }
@@ -39313,6 +39482,35 @@
         }
       }
     },
+    "How Nollie handles your data" : {
+      "comment" : "Privacy: a link to Nollie's privacy policy",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie Nollie mit deinen Daten umgeht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo trata Nollie tus datos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment Nollie traite vos données"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nollieのデータの取り扱い"
+          }
+        }
+      }
+    },
     "How Nollie works" : {
       "localizations" : {
         "de" : {
@@ -51356,6 +51554,35 @@
         }
       }
     },
+    "Nollie asks before a helper's words first go to one." : {
+      "comment" : "Privacy: under the title Online models",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nollie fragt, bevor die Worte eines Helfers zum ersten Mal an eines gehen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nollie pregunta antes de que las palabras de un ayudante vayan por primera vez a uno."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nollie demande avant que les mots d'un assistant partent pour la première fois vers l'un d'eux."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ヘルパーの言葉が初めてオンラインモデルに送られる前に、Nollieが確認します。"
+          }
+        }
+      }
+    },
     "Nollie asks for each one only when it needs it, and says why first." : {
       "localizations" : {
         "de" : {
@@ -53192,6 +53419,35 @@
         }
       }
     },
+    "None yet" : {
+      "comment" : "Privacy: no online model's company allowed yet",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguno aún"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun pour l'instant"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まだありません"
+          }
+        }
+      }
+    },
     "Normal" : {
       "comment" : "A task priority",
       "localizations" : {
@@ -54895,6 +55151,64 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "見つかりませんでした"
+          }
+        }
+      }
+    },
+    "Nothing goes until you allow it. Each company's own privacy policy covers what it gets. You can change this in Settings › Privacy." : {
+      "comment" : "Privacy: under the ask before words first go to an online model",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nichts wird gesendet, bis du es erlaubst. Was ein Unternehmen erhält, fällt unter seine eigene Datenschutzerklärung. Du kannst das unter Einstellungen › Datenschutz ändern."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se envía nada hasta que lo permitas. Lo que recibe cada empresa se rige por su propia política de privacidad. Puedes cambiarlo en Ajustes › Privacidad."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien n'est envoyé tant que vous ne l'autorisez pas. Ce que reçoit chaque entreprise relève de sa propre politique de confidentialité. Vous pouvez modifier ce choix dans Réglages › Confidentialité."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "許可するまで何も送信されません。各社が受け取る内容には、その会社のプライバシーポリシーが適用されます。この設定は「設定」›「プライバシー」で変更できます。"
+          }
+        }
+      }
+    },
+    "Nothing is allowed yet. A model on your own computer never needs asking." : {
+      "comment" : "Privacy: Settings, when no online model's company is allowed",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch ist nichts erlaubt. Ein Modell auf deinem eigenen Computer braucht nie eine Erlaubnis."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no se ha permitido nada. Un modelo en tu propio ordenador nunca necesita permiso."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien n'est encore autorisé. Un modèle sur votre propre ordinateur n'a jamais besoin d'autorisation."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まだ何も許可されていません。自分のコンピュータ上のモデルには確認は不要です。"
           }
         }
       }
@@ -56767,6 +57081,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "オンライン %lld回"
+          }
+        }
+      }
+    },
+    "Online models" : {
+      "comment" : "Privacy: a Settings row and page about the online models' companies allowed",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Online-Modelle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modelos en línea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modèles en ligne"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オンラインモデル"
           }
         }
       }
@@ -72879,6 +73222,64 @@
         }
       }
     },
+    "Share with %@?" : {
+      "comment" : "Privacy: the ask before words first go to an online model; %@ names one or more companies",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit %@ teilen?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Compartir con %@?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager avec %@ ?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@と共有しますか？"
+          }
+        }
+      }
+    },
+    "Share with an online model?" : {
+      "comment" : "Privacy: the ask before words first go to an online model the gateway didn't name",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit einem Online-Modell teilen?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Compartir con un modelo en línea?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager avec un modèle en ligne ?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オンラインモデルと共有しますか？"
+          }
+        }
+      }
+    },
     "Shared with" : {
       "comment" : "Heading over the one person who has this helper",
       "localizations" : {
@@ -88569,6 +88970,35 @@
         }
       }
     },
+    "This is the demo, so nothing leaves %@." : {
+      "comment" : "Privacy: %@ is a phrase like this iPhone",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das ist die Demo, also verlässt nichts %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto es la demo, así que nada sale de %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est la démo, donc rien ne quitte %@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これはデモなので、%@から何も送信されません。"
+          }
+        }
+      }
+    },
     "This isn't a current Nollie pairing code. Make a new code on your Mac and scan again." : {
       "localizations" : {
         "de" : {
@@ -91680,6 +92110,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "通知をオンにしてから、「登録」を%@してください。"
+          }
+        }
+      }
+    },
+    "Turn one off and Nollie asks again before the next message goes there." : {
+      "comment" : "Privacy: Settings, under the online models' companies allowed",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schalte eines aus, und Nollie fragt erneut, bevor die nächste Nachricht dorthin geht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactiva uno y Nollie volverá a preguntar antes de que el próximo mensaje vaya allí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivez-en un et Nollie redemandera avant que le prochain message y parte."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オフにすると、次のメッセージが送られる前にNollieがもう一度確認します。"
           }
         }
       }
@@ -97341,6 +97800,64 @@
         }
       }
     },
+    "What it reads for you, like web pages, and your calendar, reminders or contacts if you let it" : {
+      "comment" : "Privacy: what goes to an online model",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was es für dich liest, etwa Webseiten, und deinen Kalender, deine Erinnerungen oder Kontakte, wenn du es erlaubst"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que lee por ti, como páginas web, y tu calendario, recordatorios o contactos si lo permites"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qu'il lit pour vous, comme des pages web, et votre calendrier, vos rappels ou vos contacts si vous l'autorisez"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "代わりに読んだもの。ウェブページや、許可した場合はカレンダー、リマインダー、連絡先"
+          }
+        }
+      }
+    },
+    "What it remembers about you" : {
+      "comment" : "Privacy: what goes to an online model; a helper's memory",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was es sich über dich merkt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que recuerda sobre ti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qu'il retient de vous"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたについて覚えていること"
+          }
+        }
+      }
+    },
     "What it said: %@" : {
       "comment" : "The assistant's reason for turning down the sign-in",
       "localizations" : {
@@ -97759,6 +98276,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "何を聞きますか？"
+          }
+        }
+      }
+    },
+    "What you write, and the files and photos you add" : {
+      "comment" : "Privacy: what goes to an online model",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was du schreibst, und die Dateien und Fotos, die du hinzufügst"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo que escribes y los archivos y fotos que añades"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que vous écrivez, et les fichiers et photos que vous ajoutez"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたが書いた内容と、追加したファイルや写真"
           }
         }
       }

@@ -16,6 +16,8 @@ final class HelperRoutineSwitch {
         var create: (_ profile: String, _ payload: JSONValue) async throws -> JSONValue
         /// Pauses (true) or resumes (false) one schedule.
         var pause: (_ profile: String, _ job: String, _ pause: Bool) async throws -> JSONValue
+        /// Asked before a schedule turns on, since each run sends the helper's words to its model. False keeps it off.
+        var share: @MainActor (_ profile: String) async -> Bool = { _ in true }
     }
 
     let helper: ReadyMadeHelper
@@ -67,6 +69,7 @@ final class HelperRoutineSwitch {
         busy = true
         problem = nil
         defer { busy = false }
+        if on, !(await calls.share(profile)) { return }
         do {
             if let job, !ScheduledWork.completed(job) {
                 _ = try await calls.pause(profile, job.identity, !on)
@@ -101,6 +104,10 @@ extension HelperRoutineSwitch.Calls {
             pause: { profile, job, pause in
                 try await api.send("POST", "/api/cron/jobs/\(job)/\(pause ? "pause" : "resume")", profile: profile,
                                    body: EmptyBody())
+            },
+            share: { [weak runtime] profile in
+                guard let runtime, let check = runtime.shareCheck else { return true }
+                return await check(profile, nil)
             })
     }
 }

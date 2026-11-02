@@ -36,7 +36,7 @@ final class HelperGalleryUITests: XCTestCase {
         continueAfterFailure = false
         XCUIDevice.shared.orientation = .portrait
         app = XCUIApplication(bundleIdentifier: bundle)
-        app.launchArguments = [
+        app.launchArguments = DemoCase.modelsAllowed + [
             "-nollie-demo-gateway", address, "mock-token", "Studio", "-launchTab", "chats",
             "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES",
             "-bots.animate", "NO", "-nollie.developerMode", "NO",

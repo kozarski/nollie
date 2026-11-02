@@ -123,6 +123,10 @@ public final class GatewayRuntime {
     /// bot's profile, it returns false to send nothing and leave the card waiting. The app uses it
     /// for Face ID before buying, sending and posting.
     public var approvalOwnerCheck: (@MainActor (ApprovalRequest, String) async -> Bool)? = nil
+    /// Asked before words for a bot go out: a message, a board task or a comment on one. Given the bot's
+    /// profile and the chat (nil outside one), it returns false to send nothing. The app uses it to
+    /// ask before anything first goes to an online model's company.
+    public var shareCheck: (@MainActor (String, ChatSession?) async -> Bool)? = nil
 
     // MARK: Parts that belong to this gateway
 

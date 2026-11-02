@@ -13,12 +13,21 @@ extension ChatSession {
     /// text for the composer to prefill when a slash command asks for that, or a sentence to show
     /// when the chat could not be opened.
     ///
-    /// The message is fixed before anything waits: its words and the files staged at this moment
-    /// belong to it alone. A second send while the first is still uploading cannot take them, and
-    /// files the person stages afterwards are left for the next message.
+    /// The message is fixed once the share check has passed: its words and the files staged at that
+    /// moment belong to it alone. A second send while the first is still uploading cannot take them,
+    /// and files the person stages afterwards are left for the next message.
+    ///
+    /// The app's share check (`shareCheck`) comes first, for anything but a command. If it says no,
+    /// nothing is sent, the files stay staged and the words come back for the composer.
+    /// `askedOnPhone` is for a message that came through iCloud: the phone asked before sending it.
     @discardableResult
-    public func send(_ rawText: String) async -> String? {
+    public func send(_ rawText: String, askedOnPhone: Bool = false) async -> String? {
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.isEmpty && staged.isEmpty { return nil }
+        let command = text.hasPrefix("/") && staged.isEmpty
+        if !command, !askedOnPhone, let check = runtime.shareCheck, !(await check(profileName, self)) {
+            return rawText
+        }
         let files = staged
         if text.isEmpty && files.isEmpty { return nil }
         staged = []
@@ -29,7 +38,7 @@ extension ChatSession {
         }
         composerHistory += text.isEmpty ? [] : [text]
 
-        if text.hasPrefix("/") && files.isEmpty {
+        if command {
             return await dispatchSlash(text)
         } else if isRunning || isSubmitting {
             queue.append(QueuedMessage(text: text, attachments: files))
