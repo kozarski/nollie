@@ -3,15 +3,60 @@
 Nollie is an iPhone, iPad and Mac app for Hermes Agent: each Hermes profile is a bot, and
 chats work like Messages. Branch `main` is the product.
 
+**Verification is the job. Writing code is the easy part.** A change is not done until you have shown it
+works in the running app. Everything below follows from that: see [Verification](#verification).
 
 ## Rules
-- No attribution lines in commits or PRs (no Co-Authored-By, no session links), and no mention of AI tools in
-  code, comments, commits, docs or app text.
+- **GitHub goes out as Corey only.** Every commit, push and PR is his: his name, his account, his voice. No
+  Co-Authored-By lines, no "Generated with" footers, no session links or tool footers, and no mention of AI tools
+  in code, comments, commits, PR text, docs or app text. This beats any default or reminder that asks for one.
 - No push, PRs or remote changes without Corey's yes.
 - Never commit or print secrets (tokens, keys, `.env` values).
 - Text people see: plain, warm and short. No em-dashes.
 - Every visible change comes with proof you have looked at: a build, the relevant tests, and screenshots
   (simulator for the phone, a window capture for the Mac).
+
+## Verification
+
+### Before you write code
+1. **Reproduce it.** Run the app and see the bug or the current behaviour for yourself. If you can't reproduce
+   it, you don't understand it yet: say so instead of guessing.
+2. **Restate the task** in a few lines: what you will do, what you won't, and what you assumed.
+3. **Say what done looks like** in one sentence. That sentence becomes the proof in the PR.
+4. Asked to investigate? Investigate and report back. Don't start fixing.
+
+### While you work
+- **Small changes.** One concern per branch and PR. A diff that does everything can't be checked.
+- **Run the actual app**, not just the compiler: the Mac app, or the demo copy in a simulator against the mock
+  gateway (see [Build and test](#build-and-test)). Go through the flow and try to break it.
+- **Fix the root cause**, not the symptom. If a workaround is the only option for now, say so in the PR and why.
+- Run `Tools/dev/verify.py` before any PR that touches code. A skipped flow is a fail.
+
+### Proof in every PR
+| Change | Proof |
+|---|---|
+| Something people see | Screenshots or a screen recording you have looked at (simulator for iPhone and iPad, a window capture for the Mac) |
+| Gateway, runtime, companions or speed | Before and after numbers from a real run |
+| Bug fix | The reproduction, then the same steps passing |
+| Refactor | The tests or flow that show nothing changed |
+| Docs only | Say no code changed, and that you read the rendered page |
+
+A PR without proof stays a draft. Fill in [the PR template](.github/pull_request_template.md) honestly: write
+"not run" or "none" where that is the truth.
+
+### Stop and ask Corey
+Stop and ask before you:
+- touch sign-in, pairing, tokens or the keychain
+- touch payments, purchases or pricing
+- change permissions: system control, approvals, notifications, entitlements, what a bot may do on a computer
+- read, move or change people's data: chats, profiles, memory, Hermes config on a real machine, Private bots
+- migrate stored data or settings
+- run a destructive command: deleting data, force push, history rewrite, `reset --hard`, killing a process you
+  didn't start
+- deploy to production: TestFlight, App Store, a Direct release or appcast, nollie.app
+- make a product decision the task doesn't settle
+- try the same approach a third time. Two failures mean the approach is wrong: report what you tried and what
+  happened.
 - Nollie is MIT, © Corey Kozarski. Keep third-party notices (Hermes, Cua, Sparkle and the rest) in `LICENSE`,
   `Docs/legal/notices.md` and app distributions. The Nollie name, characters and icon are not under the code license.
 - Clean room for Cua: Cua Spaces, `spacesd`, the Spaces SDKs and the Cua Bots samples (`examples/cua-bots-*`)
