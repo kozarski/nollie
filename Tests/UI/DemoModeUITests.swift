@@ -1,7 +1,8 @@
 import XCTest
 
-/// "Try a demo" from the first screen: the demo opens, a chat takes a message and answers it, an
-/// Ask first card can be answered, and leaving the demo goes back to the first screen. It needs no
+/// "Try a demo" from the first screen: the demo opens, the first message asks before anything goes to an
+/// online model, a chat takes a message and answers it, an Ask first card can be answered, and leaving the
+/// demo goes back to the first screen. It needs no
 /// gateway at all, because the demo runs inside the app. Runs on the demo copy.
 @MainActor
 final class DemoModeUITests: XCTestCase {
@@ -101,10 +102,19 @@ final class DemoModeUITests: XCTestCase {
         let prompt = "Find me a quiet cafe near the park"
         composer.typeText(prompt)
         visible(app.buttons.matching(identifier: "composer.send").firstMatch).tap()
+        // The first message asks before anything goes to the online model's company. Not now sends nothing
+        // and keeps the words; Allow sends them.
+        visible(app.buttons.matching(identifier: "onlineModel.notNow").firstMatch).tap()
+        XCTAssertFalse(any("thread.typing").waitForExistence(timeout: 2), "a message went without a yes")
+        XCTAssertEqual(composer.value as? String, prompt, "the words did not come back to the message box")
+        visible(app.buttons.matching(identifier: "composer.send").firstMatch).tap()
+        XCTAssertTrue(text("Share with Anthropic?").waitForExistence(timeout: 10), "the ask did not name the company")
+        shot("demo-3-ask-online-model")
+        visible(app.buttons.matching(identifier: "onlineModel.allow").firstMatch).tap()
         XCTAssertTrue(any("thread.typing").waitForExistence(timeout: 15), "no typing bubble while the reply was written")
         XCTAssertTrue(text("In your own Nollie").waitForExistence(timeout: 30), "the reply never arrived")
         XCTAssertTrue(text("Searched").waitForExistence(timeout: 5), "the steps of the turn did not show")
-        shot("demo-3-reply")
+        shot("demo-3b-reply")
 
         // Ask first: Mason is waiting on a yes, and Allow once sends it.
         visible(app.buttons.matching(identifier: "chat.back").firstMatch).tap()

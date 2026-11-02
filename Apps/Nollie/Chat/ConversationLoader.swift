@@ -61,16 +61,18 @@ final class ConversationLoader {
         }
     }
 
-    /// Once the chat exists, the compose sheet's first message goes out.
-    func sendFirstMessage(of route: ChatRoute, in session: ChatSession) async {
-        guard !sentFirst, let words = route.initialText, !words.isEmpty || !route.initialAttachments.isEmpty else { return }
+    /// Once the chat exists, the compose sheet's first message goes out. Words that did not go (a Not now
+    /// to an online model, say) come back for the message box.
+    func sendFirstMessage(of route: ChatRoute, in session: ChatSession) async -> String? {
+        guard !sentFirst, let words = route.initialText, !words.isEmpty || !route.initialAttachments.isEmpty else { return nil }
         sentFirst = true
         for item in route.initialAttachments {
             guard let file = item.localURL, let data = try? Data(contentsOf: file) else { continue }
             session.stageAttachment(data: data, name: item.name, kind: item.kind)
             try? FileManager.default.removeItem(at: file)
         }
-        _ = await session.send(words)
+        let back = await session.send(words)
         NotificationCenter.default.post(name: .hermesSessionsChanged, object: nil)
+        return back
     }
 }

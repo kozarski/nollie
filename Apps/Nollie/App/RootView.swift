@@ -40,6 +40,7 @@ struct RootView: View {
 
     var body: some View {
         screens
+            .onlineModelAsk()
             .animation(.default, value: model.lock.isLocked)
             .onChange(of: model.hiddenTabs) { before, now in
                 // A saved Board launch can finish once the plugin answers.

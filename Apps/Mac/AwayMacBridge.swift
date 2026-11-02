@@ -234,7 +234,8 @@ extension AwayMacBridge: AwayDeskHandler {
         // A chat id from the phone must belong to the bot it named.
         guard chat.profileName == bot else { return .failure(.unknownChat) }
         let from = chat.items.count
-        if let problem = await chat.send(text), !problem.isEmpty { return .failure(.notReady) }
+        // The phone asked before anything went to an online model.
+        if let problem = await chat.send(text, askedOnPhone: true), !problem.isEmpty { return .failure(.notReady) }
         carried[chat.storedID] = Carried(request: request, phone: phone, bot: bot, from: from, since: Date())
         return .success(chat.storedID)
     }

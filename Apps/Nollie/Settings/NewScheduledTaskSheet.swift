@@ -250,6 +250,7 @@ struct NewScheduledTaskSheet: View {
                 }
             }
             .interactiveDismissDisabled(saving)
+            .onlineModelAsk()
             .onAppear {
                 presented = true
                 if draft.profile.isEmpty {
@@ -265,7 +266,10 @@ struct NewScheduledTaskSheet: View {
 
     private func create() async {
         guard allowed, !saving, draft.canCreate,
-              runtime.profiles.contains(where: { $0.name == draft.profile }), submission.begin() else { return }
+              runtime.profiles.contains(where: { $0.name == draft.profile }) else { return }
+        // The task's words go to the bot's model each time it runs, so the ask before an online model comes now.
+        if let check = runtime.shareCheck, !(await check(draft.profile, nil)) { return }
+        guard allowed, submission.begin() else { return }
         let submitted = draft
         let payload = submitted.payload()
         saving = true

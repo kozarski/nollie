@@ -20,7 +20,7 @@ final class NightShiftUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         XCUIDevice.shared.appearance = dark ? .dark : .light
         app = XCUIApplication(bundleIdentifier: bundle)
-        app.launchArguments = ["-nollie-demo-gateway", address, "mock-token", "Studio",
+        app.launchArguments = DemoCase.modelsAllowed + ["-nollie-demo-gateway", address, "mock-token", "Studio",
                                "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES", "-bots.animate", "NO",
                                "-nollie.developerMode", "YES", "-nollie.newChatView", "YES",
                                "-colorSchemePreference", dark ? "dark" : "light"] + DemoCase.weeklyCardPutAway + DemoCase.nightCardPutAway

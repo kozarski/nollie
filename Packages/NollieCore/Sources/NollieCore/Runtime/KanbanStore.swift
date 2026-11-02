@@ -56,7 +56,7 @@ public final class KanbanStore {
     /// Server wording for the latest refused change. Later reads do not clear it.
     public internal(set) var lastRefusal: String?
 
-    private weak var runtime: GatewayRuntime?
+    private(set) weak var runtime: GatewayRuntime?
     private var heardBefore: Availability?
     private var cursor = KanbanEventCursor()
     private var mayFollowActivity = false

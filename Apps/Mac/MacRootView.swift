@@ -45,6 +45,7 @@ struct MacRootView: View {
     var body: some View {
         layers
             .modifier(MacWindowChrome(touring: touring, glass: glass))
+            .onlineModelAsk()
             // Kept for code that has no view to ask, like an App Intent run with the window closed.
             .task { MacWindow.openMain = { openWindow(id: MacWindow.main) } }
             .companionOffer(touring: touring)

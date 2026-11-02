@@ -58,7 +58,7 @@ struct PrivacyHero: View {
 }
 
 /// Settings › Privacy: whether Nollie is locked, one switch for the lock, one for Face ID before
-/// buying and sending, and when an answer from outside the app asks again.
+/// buying and sending, when an answer from outside the app asks again, and the online models allowed.
 struct PrivacyView: View {
     /// Read here as well as through `model.lock`, so the page follows the switch at once.
     @AppStorage(AppLock.enabledKey) private var lockOn = false
@@ -128,10 +128,45 @@ struct PrivacyView: View {
                     .onChange(of: askAgain) { LocalNotifier.registerCategories() }
                 PageNote(.verbatim(Self.approvalsLine(askAgain)), id: "security.approvals.line")
             }
+            GlassLink("Online models", symbol: "hand.raised",
+                      value: OnlineModelsPrivacyView.rowWord(OnlineModelConsent.shared.allowed.count),
+                      id: "privacy.onlineModels") { OnlineModelsPrivacyView().untitledPage() }
             GlassLink("Permissions", symbol: "checkmark.shield",
                       value: PermissionsSummary.rowWord(PermissionsSummary.listed(), in: model.permissions),
                       id: "privacy.permissions") { PermissionsSettingsView().untitledPage() }
         }
         .task { await model.permissions.refresh() }
+    }
+}
+
+/// Settings › Privacy › Online models: the companies this device lets a helper's words go to, each
+/// with a switch that takes it back.
+struct OnlineModelsPrivacyView: View {
+    private var consent: OnlineModelConsent { .shared }
+
+    /// "None yet", or how many are allowed.
+    static func rowWord(_ count: Int) -> String {
+        count == 0 ? String(localized: "None yet", comment: "Privacy: no online model's company allowed yet")
+                   : String(localized: "\(count) allowed", comment: "Privacy: how many online models' companies are allowed")
+    }
+
+    var body: some View {
+        SettingsPage("privacy.onlineModels.page") {
+            PageHero(symbol: "hand.raised.fill", title: "Online models",
+                     line: "Nollie asks before a helper's words first go to one.", tint: .blue, id: "privacy.onlineModels.hero")
+            let allowed = consent.allowed.sorted { $0.value.localizedStandardCompare($1.value) == .orderedAscending }
+            if allowed.isEmpty {
+                PageNote("Nothing is allowed yet. A model on your own computer never needs asking.", id: "privacy.onlineModels.none")
+            } else {
+                ForEach(allowed, id: \.key) { id, name in
+                    GlassSwitch(.verbatim(name), isOn: Binding(get: { true }, set: { if !$0 { consent.withdraw(id) } }),
+                                id: "privacy.onlineModels." + id)
+                }
+                PageNote("Turn one off and Nollie asks again before the next message goes there.", id: "privacy.onlineModels.line")
+            }
+            Link(String(localized: "How Nollie handles your data", comment: "Privacy: a link to Nollie's privacy policy"),
+                 destination: URL(string: "https://nollie.app/privacy")!)
+                .small(.footnote)
+        }
     }
 }
