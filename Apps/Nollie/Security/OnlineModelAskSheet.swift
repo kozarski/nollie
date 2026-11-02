@@ -69,6 +69,7 @@ struct OnlineModelAskSheet: View {
             footnote
         }
         .sheetColumn()
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onlineModel.ask")
     }
 
@@ -110,13 +111,13 @@ struct OnlineModelAskHost: ViewModifier {
         return ask.host == id
     }
 
-    private var shown: Binding<OnlineModelConsent.Ask?> {
-        Binding(get: { mine(consent.pending) ? consent.pending : nil },
-                set: { if $0 == nil, mine(consent.pending) { consent.answer(false) } })
-    }
-
     func body(content: Content) -> some View {
-        content
+        // Read here, in the body, so a new ask redraws this view even when nothing else on screen changes.
+        let current = consent.pending
+        let shown = Binding<OnlineModelConsent.Ask?>(
+            get: { mine(current) ? current : nil },
+            set: { if $0 == nil, mine(consent.pending) { consent.answer(false) } })
+        return content
             .sheet(item: shown) { ask in
                 OnlineModelAskSheet(ask: ask) { consent.answer($0) }
                     .withAppModel()
