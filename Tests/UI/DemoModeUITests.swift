@@ -101,12 +101,14 @@ final class DemoModeUITests: XCTestCase {
         composer.tap()
         let prompt = "Find me a quiet cafe near the park"
         composer.typeText(prompt)
+        // What landed in the box, which on a busy simulator can differ from what was typed by a letter.
+        let typed = composer.value as? String
         visible(app.buttons.matching(identifier: "composer.send").firstMatch).tap()
         // The first message asks before anything goes to the online model's company. Not now sends nothing
         // and keeps the words; Allow sends them.
         visible(app.buttons.matching(identifier: "onlineModel.notNow").firstMatch).tap()
         XCTAssertFalse(any("thread.typing").waitForExistence(timeout: 2), "a message went without a yes")
-        XCTAssertEqual(composer.value as? String, prompt, "the words did not come back to the message box")
+        XCTAssertEqual(composer.value as? String, typed, "the words did not come back to the message box")
         visible(app.buttons.matching(identifier: "composer.send").firstMatch).tap()
         XCTAssertTrue(text("Share with Anthropic?").waitForExistence(timeout: 10), "the ask did not name the company")
         shot("demo-3-ask-online-model")
