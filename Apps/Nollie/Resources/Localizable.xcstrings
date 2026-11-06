@@ -40383,6 +40383,35 @@
         }
       }
     },
+    "In your own Nollie, this names the company, such as Anthropic for a Claude plan. To answer, %@ sends:" : {
+      "comment" : "Privacy: the demo's ask, an example of the real one; %@ is a helper's name; a list of what goes follows",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In deinem eigenen Nollie steht hier die Firma, etwa Anthropic bei einem Claude-Abo. Für eine Antwort sendet %@:"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En tu propio Nollie, aquí aparece la empresa, como Anthropic con un plan de Claude. Para responder, %@ envía:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans votre propre Nollie, la société est nommée ici, par exemple Anthropic pour un forfait Claude. Pour répondre, %@ envoie :"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたのNollieでは、ここに会社名が表示されます（ClaudeのプランならAnthropic）。返答のために%@が送るもの："
+          }
+        }
+      }
+    },
     "Indigo" : {
       "comment" : "An accent colour",
       "localizations" : {
@@ -83500,6 +83529,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ダッシュボードはディスク上のものより古いコードで動いているため、再起動するまで一部の設定が受け付けられません。"
+          }
+        }
+      }
+    },
+    "The demo's model" : {
+      "comment" : "Privacy: a row in Settings while the demo runs; its made-up model",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Modell der Demo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El modelo de la demo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le modèle de la démo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デモのモデル"
           }
         }
       }

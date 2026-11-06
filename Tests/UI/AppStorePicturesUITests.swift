@@ -75,7 +75,7 @@ final class AppStorePicturesUITests: XCTestCase {
         app.launchArguments = [
             "-nollie.onboarding.progress.v1", "", "-nollie.onboarding.welcomeIntroSeen", "YES",
             "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES", "-approvals.ownerCheck", "NO",
-            "-privacy.onlineModels.allowed", "<dict><key>anthropic</key><string>Anthropic</string></dict>",
+            "-privacy.onlineModels.allowed", "<dict><key>demo</key><string>The demo's model</string></dict>",
             "-nollie-demo-picture",
         ] + extra
         app.launch()
