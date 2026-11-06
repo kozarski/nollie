@@ -63,7 +63,6 @@
 - Homebrew: `brew install --cask kozarski/nollie/nollie`
 - Stop from anywhere, not only when your phone can reach your Mac
 - A family chat with your crew
-- Talking to Nollie with your voice
 
 ## Privacy
 
