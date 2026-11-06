@@ -74,7 +74,7 @@ struct MacRootView: View {
         }
         // In the title bar's row, beside the chat's own header, so no content is pushed down.
         .overlay(alignment: .top) {
-            if model.isDemo { DemoPill().padding(.top, 6).ignoresSafeArea(.container, edges: .top) }
+            if model.isDemo && !DemoMode.picture { DemoPill().padding(.top, 6).ignoresSafeArea(.container, edges: .top) }
         }
     }
 }

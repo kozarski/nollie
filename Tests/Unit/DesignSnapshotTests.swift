@@ -1,3 +1,4 @@
+import CoreImage
 import Foundation
 import SwiftUI
 import UserNotifications
@@ -103,6 +104,20 @@ import Testing
         attach(NollieLinkPanel(linkedName: "Corey's iPhone", state: .linked, devices: [device], now: now)
             .padding(28), named: "nollie-link-mac-linked", width: 480)
         attach(NollieLinkPanel(state: .hidden, devices: [], now: now).padding(28), named: "nollie-link-mac-hidden", width: 480)
+        // No iPhone linked yet: the App Store code comes first.
+        attach(NollieLinkPanel(state: .code("Nollie Link preview. This code cannot connect."), devices: [], now: now, getApp: true)
+            .padding(28), named: "nollie-link-mac-get-app", width: 480)
+    }
+
+    /// The App Store code opens Nollie for iPhone, and still reads with the icon over its middle.
+    @Test func theAppStoreCodeReadsAsNollieForIPhone() throws {
+        let renderer = ImageRenderer(content: RoundedCodeImage(value: AppStoreLink.iPhone.absoluteString))
+        renderer.scale = 2
+        let image = try #require(renderer.cgImage)
+        let detector = try #require(CIDetector(ofType: CIDetectorTypeQRCode, context: nil,
+                                               options: [CIDetectorAccuracy: CIDetectorAccuracyHigh]))
+        let read = detector.features(in: CIImage(cgImage: image)).compactMap { ($0 as? CIQRCodeFeature)?.messageString }
+        #expect(read == ["https://apps.apple.com/app/nollie-app/id6825756639"])
     }
     #endif
 

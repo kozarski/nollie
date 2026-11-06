@@ -65,6 +65,8 @@ struct NollieLinkSheet: View {
     @State private var requestID = UUID()
     @State private var pendingRemoval: NollieLinkIPCDevice?
     @State private var removing: UUID?
+    /// Past the App Store step, which comes first until an iPhone is linked.
+    @State private var hasApp = false
 
     private var preview: Bool {
         #if DEBUG
@@ -84,6 +86,7 @@ struct NollieLinkSheet: View {
             ScrollView {
                 NollieLinkPanel(linkedName: linkedName, state: codeState, devices: devices, removing: removing,
                                 canRemove: !model.lock.isLocked && !preview, issue: issue,
+                                getApp: !hasApp && devices.isEmpty, haveApp: { hasApp = true },
                                 retry: { requestID = UUID() }, remove: { pendingRemoval = $0 })
                 .frame(maxWidth: 420).padding(28).frame(maxWidth: .infinity)
             }
@@ -220,6 +223,9 @@ struct NollieLinkPanel: View {
     /// The last thing that went wrong, word for word, for Advanced.
     var issue: String? = nil
     var now = Date()
+    /// No iPhone linked yet: the App Store code comes before the pairing code.
+    var getApp = false
+    var haveApp: () -> Void = {}
     var retry: () -> Void = {}
     var remove: (NollieLinkIPCDevice) -> Void = { _ in }
 
@@ -264,6 +270,8 @@ struct NollieLinkPanel: View {
         switch state {
         case .linked, .locked, .hidden:
             EmptyView()
+        case .code where getApp:
+            GetIPhoneAppStep(haveApp: haveApp)
         case .code(let code):
             VStack(spacing: 18) {
                 PairingCodeImage(value: code).privacySensitive()

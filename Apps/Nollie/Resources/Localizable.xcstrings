@@ -23301,6 +23301,35 @@
         }
       }
     },
+    "Code for Nollie on the App Store. Scan it with your iPhone's camera." : {
+      "comment" : "Accessibility: the code that opens the App Store on an iPhone",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code für Nollie im App Store. Scanne ihn mit der Kamera deines iPhone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código de Nollie en el App Store. Escanéalo con la cámara del iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code pour Nollie sur l'App Store. Scannez-le avec l'appareil photo de votre iPhone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App StoreのNollieを開くコード。iPhoneのカメラで読み取ってください。"
+          }
+        }
+      }
+    },
     "Code hidden" : {
       "localizations" : {
         "de" : {
@@ -39619,6 +39648,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "何も聞き取れませんでした。マイクに近づいてもう一度お試しください。"
+          }
+        }
+      }
+    },
+    "I have the app" : {
+      "comment" : "Goes on from the App Store code to the pairing code",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich habe die App"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya tengo la app"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai déjà l'app"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリは入手済み"
           }
         }
       }
@@ -70244,6 +70302,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "スキャンして参加"
+          }
+        }
+      }
+    },
+    "Scan with your iPhone's camera to get Nollie from the App Store" : {
+      "comment" : "Under the code that opens Nollie on the App Store on an iPhone",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanne mit der Kamera deines iPhone, um Nollie aus dem App Store zu laden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escanea con la cámara del iPhone para descargar Nollie del App Store"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scannez avec l'appareil photo de votre iPhone pour télécharger Nollie sur l'App Store"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneのカメラで読み取ると、App StoreからNollieを入手できます"
           }
         }
       }

@@ -37,8 +37,9 @@ plist_set() { /usr/libexec/PlistBuddy -c "Set :$1 $2" "$contents/Info.plist"; }
 # Extensions, login items and the signing profile belong to the real bundle identity.
 (cd "$contents" && rm -rf PlugIns Library/LoginItems embedded.provisionprofile _CodeSignature)
 plist_set CFBundleIdentifier "$DEMO_ID"
-plist_set CFBundleName "Nollie Demo"
-plist_set CFBundleDisplayName "Nollie Demo"
+# DEMO_NAME=Nollie names the copy as the real app is named, for App Store pictures.
+plist_set CFBundleName "${DEMO_NAME:-Nollie Demo}"
+plist_set CFBundleDisplayName "${DEMO_NAME:-Nollie Demo}"
 
 # Signed ad hoc, no entitlements at all: no sandbox, keychain group, iCloud or push.
 codesign -f --deep -s - "$copy" 2>/dev/null

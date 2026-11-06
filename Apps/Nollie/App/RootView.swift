@@ -73,7 +73,7 @@ struct RootView: View {
         // In a demo the pill sits above the screen, not over it: a navigation bar ignores a safe
         // area inset and would draw through the pill.
         VStack(spacing: 0) {
-            if model.isDemo { DemoPill() }
+            if model.isDemo && !DemoMode.picture { DemoPill() }
             Group {
                 if isOnboarding {
                     OnboardingView(skipWelcome: Self.forceTour)

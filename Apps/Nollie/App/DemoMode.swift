@@ -12,6 +12,9 @@ import NollieCore
 ///                                                 sign-in (simulators lack Face ID)
 ///   -nollie-demo-watch                            opens Watch in the open chat once its
 ///                                                 helper is using a computer
+///   -nollie-demo-picture                          App Store pictures of Try a demo: no Demo
+///                                                 pill, no demo line on the online model ask, no
+///                                                 Leave demo row, and the Mac named as at home
 /// Release builds contain none of this.
 @MainActor
 enum DemoMode {
@@ -57,6 +60,9 @@ enum DemoMode {
     /// `-nollie-demo-alerts`: iCloud alerts count as on, for the away line's picture.
     static let alertsOn = isOn && ProcessInfo.processInfo.arguments.contains("-nollie-demo-alerts")
 
+    /// `-nollie-demo-picture`: Try a demo drawn for the App Store, without the marks that say it is the demo.
+    static let picture = isOn && ProcessInfo.processInfo.arguments.contains("-nollie-demo-picture")
+
     /// `-nollie-demo-icloud ready|off|link|signin|later`: away through iCloud, for the away page's pictures.
     static let iCloud: AwayICloudState? = {
         switch word(after: "-nollie-demo-icloud") {
@@ -94,6 +100,7 @@ enum DemoMode {
     static let exitRelay: String? = nil
     static let keys: String? = nil
     static let alertsOn = false
+    static let picture = false
     static let iCloud: AwayICloudState? = nil
     static let permissions: String? = nil
 }

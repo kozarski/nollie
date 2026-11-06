@@ -36,8 +36,9 @@ plist_set() { /usr/libexec/PlistBuddy -c "Set :$1 $2" "$copy/Info.plist"; }
 # Extensions and the Watch app are tied to the real bundle id, so leave them out.
 rm -rf "$copy/PlugIns" "$copy/Watch" "$copy/_CodeSignature"
 plist_set CFBundleIdentifier "$DEMO_ID"
-plist_set CFBundleName "Nollie Demo"
-plist_set CFBundleDisplayName "Nollie Demo"
+# DEMO_NAME=Nollie names the copy as the real app is named, for App Store pictures.
+plist_set CFBundleName "${DEMO_NAME:-Nollie Demo}"
+plist_set CFBundleDisplayName "${DEMO_NAME:-Nollie Demo}"
 codesign -f --deep -s - "$copy" 2>/dev/null
 
 # A fresh start: whatever is installed under the demo id goes first.

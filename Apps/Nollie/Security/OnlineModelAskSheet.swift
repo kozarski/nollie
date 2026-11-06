@@ -52,7 +52,7 @@ struct OnlineModelAskSheet: View {
                 item("brain", String(localized: "What it remembers about you", comment: "Privacy: what goes to an online model; a helper's memory"))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if ask.demo {
+            if ask.demo && !DemoMode.picture {
                 Text("This is the demo, so nothing leaves \(DeviceWords.this).", comment: "Privacy: %@ is a phrase like this iPhone")
                     .small(.footnote, .secondary)
                     .multilineTextAlignment(.center)
