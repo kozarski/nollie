@@ -110,7 +110,10 @@ final class DemoModeUITests: XCTestCase {
         XCTAssertFalse(any("thread.typing").waitForExistence(timeout: 2), "a message went without a yes")
         XCTAssertEqual(composer.value as? String, typed, "the words did not come back to the message box")
         visible(app.buttons.matching(identifier: "composer.send").firstMatch).tap()
-        XCTAssertTrue(text("Share with Anthropic?").waitForExistence(timeout: 10), "the ask did not name the company")
+        // The demo's helpers use no company's model, so the ask says it is an example of the real one.
+        XCTAssertTrue(text("Share with an online model?").waitForExistence(timeout: 10), "the demo's ask did not show")
+        XCTAssertTrue(text("In your own Nollie, this names the company").exists, "the demo's ask did not say it is an example")
+        XCTAssertFalse(text("Share with Anthropic?").exists, "the demo named a company it does not use")
         shot("demo-3-ask-online-model")
         visible(app.buttons.matching(identifier: "onlineModel.allow").firstMatch).tap()
         XCTAssertTrue(any("thread.typing").waitForExistence(timeout: 15), "no typing bubble while the reply was written")

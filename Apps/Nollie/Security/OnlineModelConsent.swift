@@ -16,8 +16,10 @@ final class OnlineModelConsent {
     /// Where the companies allowed on this device are kept.
     nonisolated static let key = "privacy.onlineModels.allowed"
 
-    /// The demo's helpers stand in for a common setup: a Claude plan.
-    static let demoCompany = ModelCompany.behind("claude-subscription")!
+    /// The demo's helpers think with nothing real and nothing leaves the device, so its ask names no company: it
+    /// shows the ask as an example, and Settings lists the demo's model until the demo ends.
+    static let demoCompany = ModelCompany(
+        id: "demo", name: String(localized: "The demo's model", comment: "Privacy: a row in Settings while the demo runs; its made-up model"))
 
     struct Ask: Identifiable {
         let id = UUID()

@@ -10,8 +10,11 @@ struct OnlineModelAskSheet: View {
         FittedSheet { card }
     }
 
-    /// The companies the gateway named. Empty when it didn't say which model the helper uses.
-    private var known: [ModelCompany] { ask.companies.filter { $0.id != OnlineModelConsent.unknownCompany.id } }
+    /// The companies the gateway named. Empty when it didn't say which model the helper uses, and in the demo,
+    /// whose model belongs to no company.
+    private var known: [ModelCompany] {
+        ask.demo ? [] : ask.companies.filter { $0.id != OnlineModelConsent.unknownCompany.id }
+    }
 
     /// "Anthropic", or "Anthropic and OpenAI".
     private var who: String { ListFormatter.localizedString(byJoining: known.map(\.name)) }
@@ -36,7 +39,11 @@ struct OnlineModelAskSheet: View {
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isHeader)
             Group {
-                if known.isEmpty {
+                if ask.demo {
+                    // An example, said as one: the demo's helpers use no company's model.
+                    Text("In your own Nollie, this names the company, such as Anthropic for a Claude plan. To answer, \(ask.bot) sends:",
+                         comment: "Privacy: the demo's ask, an example of the real one; %@ is a helper's name; a list of what goes follows")
+                } else if known.isEmpty {
                     Text("\(ask.bot) uses an online model. To answer, it sends:", comment: "Privacy: a helper's name; a list of what goes follows")
                 } else {
                     Text("\(ask.bot) uses an online model from \(who). To answer, it sends:",
