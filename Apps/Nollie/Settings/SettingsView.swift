@@ -27,7 +27,7 @@ struct SettingsView: View {
         NavigationStack(path: $path) {
             SettingsPage("settings.page", margin: SettingsMargin.underTitle) {
                 // The answer first: what left your Mac today, and what the crew did overnight.
-                if model.isDemo { LeaveDemoRow() }
+                if model.isDemo && !DemoMode.picture { LeaveDemoRow() }
                 if search.isEmpty, model.runtime != nil { CrewSummaryTiles(summary: summary) }
                 categoryRows
             }

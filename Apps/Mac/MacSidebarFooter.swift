@@ -33,8 +33,11 @@ struct MacSidebarFooter: View {
         .frame(height: 64)
     }
 
+    /// Nollie set up on this Mac is "This Mac" here: its full name ran past the narrow sidebar. The tooltip and
+    /// VoiceOver say the same short name.
     private var gatewayName: String {
-        model.runtime?.connection.name ?? model.store.active?.name ?? String(localized: "No gateway")
+        guard let connection = model.runtime?.connection ?? model.store.active else { return String(localized: "No gateway") }
+        return MacKeepAwake.isOnThisMac(connection) ? String(localized: "This Mac") : connection.name
     }
 
     private var connectionNote: String {

@@ -140,7 +140,9 @@ import Testing
         let asking = Task { await consent.ask([OnlineModelConsent.demoCompany], bot: "Mason", chat: nil, demo: true) }
         await pump { consent.pending != nil }
         #expect(consent.pending?.demo == true)
-        #expect(consent.pending?.companies.map(\.name) == ["Anthropic"])
+        // The demo's model belongs to no company, so its ask names none and nothing real is ever allowed.
+        #expect(consent.pending?.companies.map(\.name) == ["The demo's model"])
+        #expect(ModelCompany.behind("claude-subscription")?.id != OnlineModelConsent.demoCompany.id)
         consent.answer(true)
         #expect(await asking.value)
         #expect(consent.allows(OnlineModelConsent.demoCompany), "Settings shows it during the demo")

@@ -4,6 +4,11 @@ On a live version only the promotional text can change; the rest goes in with th
 submission. Promotional text was set on 6 Nov 2026 for iPhone and Mac. The App Store name stays "Nollie App"
 ("Nollie" is taken). No other companies' names in the listing (App Review 2.3.7).
 
+Where it stands (6 Nov 2026): iPhone and iPad 1.3.2 went to App Review with this description, keywords and
+promotional text and the new pictures. The subtitle could not change yet, because the app's details are locked while
+Mac 1.3.1 is in review. The Mac App Store edition gets all of it, the subtitle included, with its 1.3.2 once Mac
+1.3.1 is out.
+
 ## Subtitle (30 characters, both platforms)
 
 Your crew. Your call.
@@ -65,6 +70,15 @@ No accounts, no ads and no tracking. Nollie is open source under the MIT license
 
 ## Screenshots
 
-All 18 on the listing are from 1.1 (iPhone 6.7" ×7, iPad 12.9" ×6, Watch Ultra ×3, Mac ×2). Retake them from
-the 1.3 demo for the next version: the iPad and Duo sidebar, the morning Night shift card, the ask before an
-online model, approvals with Face ID, and the Watch's approval page.
+Taken from Try a demo in picture mode (`-nollie-demo-picture`, no Demo pill or demo lines) by
+`Tests/UI/AppStorePicturesUITests.swift`, with the copy named Nollie (`DEMO_NAME=Nollie`):
+
+- iPhone 6.9" (1320 × 2868), 6: Ask first, a comparison with its search, Night shift, Papertrail, making a helper,
+  the chats. On iPhone and iPad 1.3.2.
+- iPad 13" (2752 × 2064, landscape, full-screen apps), the same 6, with Night shift open beside the chat. On 1.3.2.
+- Mac (2880 × 1800), 5: Ask first, the Board, the comparison, Night shift, Papertrail, each window on the site's
+  aurora. For Mac 1.3.2.
+- Apple Watch Ultra: the 3 from 1.1 stay; they still match and show no demo marks.
+
+The ask before an online model is left out: it names a company. For App Review, a picture of the real ask
+("Share with Anthropic?", against the mock gateway) is attached to the review notes instead.

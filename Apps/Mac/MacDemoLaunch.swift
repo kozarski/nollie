@@ -104,6 +104,9 @@ struct MacDemoLaunch: ViewModifier {
         frame.origin.y += frame.height - wanted[1]
         frame.size = CGSize(width: wanted[0], height: wanted[1])
         window.setFrame(frame, display: true)
+        // The window that Try a demo opens comes up behind; in front, its title bar looks as it does in use.
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate()
     }
 
     private func openBotPage() async {
