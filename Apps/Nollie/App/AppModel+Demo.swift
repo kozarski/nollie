@@ -17,7 +17,7 @@ extension AppModel {
         await deactivate()
         DemoSession.setSettingsAside()
         // App Store pictures name the Mac as a real one is named.
-        let name = DemoMode.picture ? (DeviceWords.isMac ? "Nollie on this Mac" : "Mac") : "Demo"
+        let name = DemoMode.picture ? (DeviceWords.isMac ? "This Mac" : "Mac") : "Demo"
         var connection = GatewayConnection(name: name, gateway: gateway.address, authMode: .sessionToken)
         connection.connectionKind = "local"
         // Set before the runtime exists, so nothing it starts is wired like a real gateway.
