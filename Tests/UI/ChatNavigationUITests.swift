@@ -29,7 +29,7 @@ final class ChatNavigationUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         XCUIDevice.shared.appearance = .light
         app = XCUIApplication(bundleIdentifier: bundle)
-        app.launchArguments = [
+        app.launchArguments = DemoCase.modelsAllowed + [
             "-nollie-demo-gateway", address, "mock-token", "Studio",
             "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES",
             "-bots.animate", "NO",

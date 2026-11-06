@@ -121,6 +121,7 @@ struct KanbanTaskSheet: View {
     var body: some View {
         NavigationStack {
             page
+                .onlineModelAsk()
                 .inlineTitle(.verbatim(state.task?.title ?? String(localized: "Task", comment: "A Board task; a title")))
                 .toolbar { toolbar }
                 .alert("Rename", isPresented: isAsking(.rename)) {

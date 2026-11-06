@@ -35,6 +35,7 @@ extension AppModel {
         store.endDemo()
         demo = nil
         DemoSession.putSettingsBack()
+        OnlineModelConsent.shared.reload()
         resetNavigation()
         await activateSavedConnection()
     }

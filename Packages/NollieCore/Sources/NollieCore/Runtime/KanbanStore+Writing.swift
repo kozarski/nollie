@@ -90,7 +90,8 @@ extension KanbanStore {
     }
 
     public func comment(_ task: KanbanTask, _ text: String) async -> Bool {
-        await submit(.comment(task.id, text)).accepted
+        guard await mayShare(with: task.assignee) else { return false }
+        return await submit(.comment(task.id, text)).accepted
     }
 
     public func delete(_ task: KanbanTask) async -> Bool {
@@ -99,7 +100,14 @@ extension KanbanStore {
 
     /// Creates a task. If nothing would pick it up, the reply includes the dispatcher's warning.
     public func create(_ new: KanbanNewTask) async -> KanbanTaskEnvelope? {
-        await submit(.add(new)).answer
+        guard await mayShare(with: new.assignee) else { return nil }
+        return await submit(.add(new)).answer
+    }
+
+    /// The runtime's share check for the bot that will read the words; the main bot takes a task no one has yet.
+    private func mayShare(with assignee: String?) async -> Bool {
+        guard let runtime, let check = runtime.shareCheck else { return true }
+        return await check(assignee ?? "default", nil)
     }
 
     private enum StopOutcome {

@@ -386,6 +386,8 @@ final class AppModel {
         #endif
         // A yes to buying, sending or posting checks it's you first, wherever it is given.
         runtime.approvalOwnerCheck = ApprovalOwnerCheck.hook(for: runtime)
+        // Words for a bot first go to an online model's company only once the person allows it, the demo's too.
+        runtime.shareCheck = OnlineModelConsent.hook(for: runtime) { [weak self] in self?.demo != nil }
         // A demo has no push, no notifications, no screen control and no remembered sign-in.
         guard demo == nil else { return }
         runtime.linkDemo = DemoMode.reach != nil

@@ -18,7 +18,7 @@ final class TranscriptDisclosureUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         XCUIDevice.shared.appearance = .light
         app = XCUIApplication(bundleIdentifier: bundle)
-        app.launchArguments = [
+        app.launchArguments = DemoCase.modelsAllowed + [
             "-nollie-demo-gateway", address, "mock-token", "Studio",
             "-launchTab", "chats", "-companionPromptShown", "YES",
             "-notificationsSetupCardDone", "YES", "-bots.animate", "NO",

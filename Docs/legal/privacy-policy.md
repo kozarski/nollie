@@ -1,6 +1,6 @@
 # Nollie privacy policy
 
-Last updated: 25 October 2026.
+Last updated: 2 November 2026.
 
 Nollie is an app for running your own AI assistant, Hermes, on your Mac and using it from your
 iPhone and iPad. It is made by Corey Kozarski, an independent developer in London.
@@ -8,12 +8,14 @@ iPhone and iPad. It is made by Corey Kozarski, an independent developer in Londo
 ## The short version
 - Nollie has no servers and no accounts. Your chats stay between your devices and your own Mac.
 - Nollie does not collect, sell or share your data, and has no analytics, ads or tracking.
-- When you choose an online model (for example your ChatGPT or Claude plan), your messages go to
-  that provider under your own account, and their privacy policy applies.
+- When a helper uses an online model (for example your ChatGPT or Claude plan), Nollie names the
+  company and asks before anything goes to it. Then your messages go to that company under your own
+  account, and its privacy policy applies. The live policy at https://nollie.app/privacy lists what
+  goes and to whom.
 
 ## What goes where
 - **Your chats and files** go from the app to your own Hermes, which runs on your Mac.
-- **Replies** come from the model you picked: one on your Mac, or an online provider you signed in to.
+- **Replies** come from the model you picked: one on your Mac, or an online model's company you allowed.
 - **Web research** your bots do goes from your Mac to search services and websites over your own
   internet connection.
 - **Notifications** when the app is closed: a short preview (up to 240 characters) is stored in

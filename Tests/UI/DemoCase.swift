@@ -71,13 +71,22 @@ class DemoCase: XCTestCase {
                       "-notificationsSetupCardDone", "YES", "-bots.animate", "NO"] + Self.weeklyCardPutAway
             if !nightCard { flags += Self.nightCardPutAway }
         }
-        app.launchArguments = flags + extra
+        app.launchArguments = DemoCase.modelsAllowed + flags + extra
         app.launch()
         addTeardownBlock { [weak self] in self?.app?.terminate() }
         if withGateway, waitForBots {
             XCTAssertTrue(find("bots.list").waitForExistence(timeout: 30), "the bots list did not come up")
         }
     }
+
+    /// The mock's bots think with online models, so flows start with those companies allowed, as if asked
+    /// before. The demo flow leaves this out and answers the ask itself.
+    /// With --neutral-models the mock calls them workshop, relay and free.
+    static let modelsAllowed = ["-privacy.onlineModels.allowed",
+                                "<dict><key>anthropic</key><string>Anthropic</string><key>openai</key><string>OpenAI</string>"
+                                + "<key>openrouter</key><string>OpenRouter</string><key>nous</key><string>Nous Research</string>"
+                                + "<key>workshop</key><string>workshop</string><key>relay</key><string>relay</string>"
+                                + "<key>free</key><string>free</string></dict>"]
 
     /// The weekly note's card opens the main chat's thread and moves the first messages down, so a
     /// flow about something else starts with it put away, like the other first-run cards. A flow about

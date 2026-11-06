@@ -77,6 +77,7 @@ struct ConversationView: View {
             .toolbar(.hidden, for: .navigationBar)
             .modifier(ConversationSheets(chat: chat, open: $panels))
             .modifier(ApprovalConfirmation(chat: chat, asked: $confirming))
+            .onlineModelAsk(over: chat)
             .modifier(ChatVisibility(chat: chat, requestedID: loader.requestedID,
                                      obscured: !panels.isEmpty || confirming != nil,
                                      clearRead: { clearDelivered(for: chat) }))
@@ -154,7 +155,7 @@ struct ConversationView: View {
         #if DEBUG
         stageTestFile(in: session)
         #endif
-        await loader.sendFirstMessage(of: route, in: session)
+        if let back = await loader.sendFirstMessage(of: route, in: session), composerText.isEmpty { composerText = back }
     }
 
     /// A notification's route for this chat brings its message into focus.

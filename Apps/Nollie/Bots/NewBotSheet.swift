@@ -103,6 +103,7 @@ struct NewBotSheet: View {
             form
         } else if gallery.availability == .ready {
             HelperGalleryView(runtime: runtime, gallery: gallery) { makingOwn = true }
+                .onlineModelAsk()
                 .navigationTitle("New Bot")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { cancelItem }
