@@ -162,4 +162,32 @@ final class AppStorePicturesUITests: XCTestCase {
         shot("06-chats")
         leave()
     }
+
+    /// For App Review: the ask as a real setup shows it, naming the company, which the demo's example ask does not.
+    /// Connected to the local mock gateway (started without --neutral-models), whose helpers use Anthropic,
+    /// with nothing allowed yet.
+    func test9ForReviewTheRealAsk() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let address = env["HERMES_E2E_URL"], env["HERMES_E2E_TOKEN"] == "mock-token" else {
+            throw XCTSkip("Needs the local mock gateway (HERMES_E2E_URL, HERMES_E2E_TOKEN=mock-token)")
+        }
+        XCUIDevice.shared.orientation = wide ? .landscapeLeft : .portrait
+        app.terminate()
+        app.launchArguments = [
+            "-companionPromptShown", "YES", "-notificationsSetupCardDone", "YES", "-bots.animate", "NO",
+            "-approvals.ownerCheck", "NO", "-nollie-demo-gateway", address, "mock-token", "Studio",
+        ]
+        app.launch()
+        visible(any("bots.list"), timeout: 30)
+        open("default")
+        let composer = visible(app.textViews["composer.text"].firstMatch, timeout: 30)
+        composer.tap()
+        composer.typeText("Find me a quiet cafe near the park")
+        visible(app.buttons.matching(identifier: "composer.send").firstMatch).tap()
+        visible(app.buttons.matching(identifier: "onlineModel.allow").firstMatch, timeout: 20)
+        XCTAssertTrue(text("Share with Anthropic?").exists, "the real ask did not name the company")
+        shot("review-real-ask")
+        app.buttons.matching(identifier: "onlineModel.notNow").firstMatch.tap()
+        leave()
+    }
 }
