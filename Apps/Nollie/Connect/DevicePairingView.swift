@@ -64,6 +64,8 @@ struct MacDevicePairingView: View {
     @State private var showSetupReview = false
     @State private var installer = PairingCompanionInstaller()
     @State private var installTask: Task<Void, Never>?
+    /// Past the App Store step. The one-use code, which lasts two minutes, is made only after it.
+    @State private var hasApp = false
 
     var body: some View {
         NavigationStack {
@@ -91,6 +93,8 @@ struct MacDevicePairingView: View {
                             PairingCodeImage(value: "Nollie pairing preview. This code cannot connect.")
                             instructions
                         }
+                    } else if !hasApp {
+                        GetIPhoneAppStep { hasApp = true }
                     } else if paired {
                         Text("Finish the connection check on your iPhone.")
                             .foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -131,7 +135,7 @@ struct MacDevicePairingView: View {
                             }.font(.callout)
                         }
                     }
-                    if !paired {
+                    if !paired && hasApp {
                         Text("Only scan a code from your own Mac. The code works once and expires after two minutes.")
                             .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     }
@@ -148,6 +152,7 @@ struct MacDevicePairingView: View {
         .frame(minWidth: 420, idealWidth: 480, minHeight: 580)
         .sheet(isPresented: $showSetupReview) { setupReview.withAppModel() }
         .task(id: requestID) { await prepareAndWatch() }
+        .onChange(of: hasApp) { requestID = UUID() }
         .onDisappear { revoke() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { revoke() }
@@ -212,6 +217,7 @@ struct MacDevicePairingView: View {
 
     private func prepareAndWatch() async {
         guard !DevicePairingPreview.isEnabled else { loading = false; return }
+        guard hasApp else { return }
         installer.clearStatus()
         loading = true; paired = false; ended = false; issue = nil; companionNeeded = false
         guard !model.lock.isLocked else {

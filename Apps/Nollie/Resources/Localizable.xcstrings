@@ -23301,6 +23301,35 @@
         }
       }
     },
+    "Code for Nollie on the App Store. Scan it with your iPhone's camera." : {
+      "comment" : "Accessibility: the code that opens the App Store on an iPhone",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code für Nollie im App Store. Scanne ihn mit der Kamera deines iPhone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código de Nollie en el App Store. Escanéalo con la cámara del iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code pour Nollie sur l'App Store. Scannez-le avec l'appareil photo de votre iPhone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App StoreのNollieを開くコード。iPhoneのカメラで読み取ってください。"
+          }
+        }
+      }
+    },
     "Code hidden" : {
       "localizations" : {
         "de" : {
@@ -39623,6 +39652,35 @@
         }
       }
     },
+    "I have the app" : {
+      "comment" : "Goes on from the App Store code to the pairing code",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich habe die App"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya tengo la app"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai déjà l'app"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリは入手済み"
+          }
+        }
+      }
+    },
     "I listen while you talk. Your voice stays on %@, and only your words are sent." : {
       "comment" : "Safety: what leaves the device in talk mode; %@ is a phrase like this iPhone",
       "localizations" : {
@@ -40321,6 +40379,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "使用中"
+          }
+        }
+      }
+    },
+    "In your own Nollie, this names the company, such as Anthropic for a Claude plan. To answer, %@ sends:" : {
+      "comment" : "Privacy: the demo's ask, an example of the real one; %@ is a helper's name; a list of what goes follows",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In deinem eigenen Nollie steht hier die Firma, etwa Anthropic bei einem Claude-Abo. Für eine Antwort sendet %@:"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En tu propio Nollie, aquí aparece la empresa, como Anthropic con un plan de Claude. Para responder, %@ envía:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans votre propre Nollie, la société est nommée ici, par exemple Anthropic pour un forfait Claude. Pour répondre, %@ envoie :"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたのNollieでは、ここに会社名が表示されます（ClaudeのプランならAnthropic）。返答のために%@が送るもの："
           }
         }
       }
@@ -70248,6 +70335,35 @@
         }
       }
     },
+    "Scan with your iPhone's camera to get Nollie from the App Store" : {
+      "comment" : "Under the code that opens Nollie on the App Store on an iPhone",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanne mit der Kamera deines iPhone, um Nollie aus dem App Store zu laden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escanea con la cámara del iPhone para descargar Nollie del App Store"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scannez avec l'appareil photo de votre iPhone pour télécharger Nollie sur l'App Store"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneのカメラで読み取ると、App StoreからNollieを入手できます"
+          }
+        }
+      }
+    },
     "Scanner preview. The camera is off." : {
       "localizations" : {
         "de" : {
@@ -83413,6 +83529,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ダッシュボードはディスク上のものより古いコードで動いているため、再起動するまで一部の設定が受け付けられません。"
+          }
+        }
+      }
+    },
+    "The demo's model" : {
+      "comment" : "Privacy: a row in Settings while the demo runs; its made-up model",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Modell der Demo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El modelo de la demo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le modèle de la démo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "デモのモデル"
           }
         }
       }
