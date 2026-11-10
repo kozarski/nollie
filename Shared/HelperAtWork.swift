@@ -76,6 +76,13 @@ enum HelperAtWorkWords {
     static let stopping = String(localized: "Telling your Mac", comment: "Safety: a Stop on its way to the Mac")
     static let stopped = String(localized: "The job has ended", comment: "Safety: the Mac took the Stop")
     static let notReached = String(localized: "Stop didn't reach your Mac", comment: "Safety: the work may still be going")
+    /// How long a helper has been at it: "Just started", "4 min", "1 hr, 5 min".
+    static func elapsed(since: Date, now: Date = Date()) -> String {
+        let seconds = max(0, now.timeIntervalSince(since))
+        if seconds < 60 { return String(localized: "Just started", comment: "A helper began its work under a minute ago") }
+        let whole = Duration.seconds(Int(seconds) / 60 * 60)
+        return whole.formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
+    }
     /// Before the time since the helper was last seen ("Last seen 2 min ago").
     static let lastSeen = String(localized: "Last seen")
     static let setting = String(localized: "Show Stop on the Lock Screen while a helper is working")

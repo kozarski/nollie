@@ -152,7 +152,7 @@ struct LinkDoorFamilyTests {
             ("GET", "/api/plugins/nollie-workflow/papertrail?bot=career-sam"), ("GET", "/api/plugins/nollie-workflow/memory?bot=career-sam"),
             ("GET", "/api/plugins/nollie-workflow/payments/cards"), ("GET", "/api/plugins/nollie-workflow/private-bots"),
             ("GET", "/api/plugins/nollie-workflow/posts"), ("GET", "/api/plugins/nollie-workflow/attention"),
-            ("GET", "/api/plugins/kanban/board"), ("GET", "/api/cron/jobs"), ("POST", "/api/cron/jobs/x/trigger"),
+            ("GET", "/api/plugins/kanban/board"), ("GET", "/api/cron/jobs"), ("POST", "/api/cron/jobs/x/trigger"), ("POST", "/api/cron/jobs/x/cancel"),
             ("GET", "/api/media?path=/x"), ("GET", "/api/media/proxy?url=x"), ("GET", "/api/analytics/usage"),
             ("GET", "/api/skills"), ("GET", "/api/config/schema"), ("GET", "/api/model/options"),
             ("POST", "/api/plugins/nollie-computer/take-over?profile=career-sam"), ("GET", "/api/plugins/nollie-computer/preview"),

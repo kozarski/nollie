@@ -56,12 +56,15 @@ enum ScheduledWork {
         return ["completed", "finished", "done"].contains(state)
     }
 
+    static let runningWord = String(localized: "Checking now", comment: "A scheduled task's standing")
+
     /// One word for the job's standing, shown in the list.
     static func status(_ job: CronJob, raw: JSONValue) -> String {
-        if CronRun.isRunning(raw) { return String(localized: "Checking now", comment: "A scheduled task's standing") }
+        if CronRun.isRunning(raw) { return runningWord }
         if completed(job) { return String(localized: "Finished", comment: "A scheduled task's standing") }
         if paused(job) { return String(localized: "Paused", comment: "A scheduled task's standing") }
-        if let last = job.lastStatus, last != "skipped", !CronRun.isGood(last) {
+        // A run stopped by the person (Hermes's "cancelled") is no failure.
+        if let last = job.lastStatus, !["skipped", "cancelled"].contains(last), !CronRun.isGood(last) {
             return String(localized: "Check needed", comment: "A scheduled task's standing")
         }
         return String(localized: "Scheduled", comment: "A scheduled task's standing")
@@ -95,6 +98,7 @@ enum ScheduledWork {
     static func result(_ job: CronJob) -> String {
         guard let status = job.lastStatus, !status.isEmpty else { return String(localized: "No result yet") }
         if CronRun.isGood(status) { return String(localized: "Completed", comment: "A scheduled task's last result") }
+        if status == "cancelled" { return String(localized: "Stopped", comment: "A scheduled task's last result: Stop ended the run") }
         return status.replacingOccurrences(of: "_", with: " ").capitalized
     }
 

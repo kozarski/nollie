@@ -50,6 +50,8 @@ struct TurnMenu: View {
     @State private var board = TurnBoard.shared
     @Environment(\.openWindow) private var openWindow
     @Environment(AppModel.self) private var model
+    /// How the last Stop on a schedule's run went, for a few seconds.
+    @State private var stopNote: String?
 
     private var control: SystemControl { .shared }
 
@@ -60,8 +62,13 @@ struct TurnMenu: View {
                 IdleHeader(gateway: model.runtime.map { "\($0.connection.name) · \($0.socketState.label)" })
             }
             ForEach(board.turns) { turn in
-                TurnRow(turn: turn, open: open, switchOff: switchOff)
+                TurnRow(turn: turn, open: open, switchOff: switchOff, stopRun: stopRun,
+                        stopping: turn.jobID.map { model.runtime?.schedules.stopping.contains($0) == true } ?? false)
                 if turn.id != board.turns.last?.id { Divider().inset(h: 12) }
+            }
+            if let stopNote {
+                Text(stopNote).font(.caption).foregroundStyle(.secondary).inset(h: 12, v: 6)
+                    .accessibilityIdentifier("menubar.stopRunNote")
             }
             if !allowed.isEmpty { Divider() }
             ForEach(allowed) { bot in
@@ -77,6 +84,17 @@ struct TurnMenu: View {
     private func switchOff(_ profile: String, _ runtime: GatewayRuntime?) {
         guard let runtime else { return }
         Task { await control.set(false, profile: profile, rt: runtime) }
+    }
+
+    /// Stops one schedule's run on the gateway; the schedule stays on.
+    private func stopRun(_ turn: TurnBoard.Turn) {
+        guard let jobID = turn.jobID, let runtime = model.runtime else { return }
+        Task {
+            let line = await ScheduleStopWords.stop(jobID: jobID, profile: turn.profile, on: runtime)
+            stopNote = line
+            try? await Task.sleep(for: .seconds(5))
+            if stopNote == line { stopNote = nil }
+        }
     }
 
     /// Brings the app forward, onto a chat when one is given.
@@ -161,6 +179,8 @@ private struct TurnRow: View {
     let turn: TurnBoard.Turn
     let open: (String?) -> Void
     let switchOff: (String, GatewayRuntime?) -> Void
+    let stopRun: (TurnBoard.Turn) -> Void
+    var stopping = false
 
     private var control: SystemControl { .shared }
 
@@ -186,6 +206,7 @@ private struct TurnRow: View {
     /// summary of its goal, or its current step in everyday words.
     private var progress: (words: String, tint: Color) {
         if turn.attention { return (turn.detail, .orange) }
+        if turn.kind != .chat { return (turn.detail, .secondary) }
         return (ChatGoals.shared.goal(for: turn.id) ?? BotActivity.humanize(turn.detail), .secondary)
     }
 
@@ -206,7 +227,7 @@ private struct TurnRow: View {
                         choiceButton(choice)
                     }
                     if !mustOpenCard {
-                        Button(turn.attention ? "Answer in Nollie" : "Open") { open(turn.id) }
+                        Button(turn.attention ? "Answer in Nollie" : "Open") { open(turn.kind == .chat ? turn.id : nil) }
                             .modifier(LinkLook())
                             .foregroundStyle(.tint)
                     }
@@ -232,6 +253,10 @@ private struct TurnRow: View {
 
     private var choices: [RowChoice] {
         if let waiting { return approvalChoices(waiting.chat, waiting.card, waiting.approval) }
+        if turn.jobID != nil {
+            return [RowChoice(title: stopping ? ScheduleStopWords.stopping : HelperAtWorkWords.stop, identifier: "menubar.stopRun",
+                              help: ScheduleStopWords.hint) { if !stopping { stopRun(turn) } }]
+        }
         let usingMac = !turn.attention && turn.detail.contains("computer_use") && control.isOn(turn.profile, turn.chat?.runtime)
         guard usingMac else { return [] }
         return [RowChoice(title: String(localized: "Stop", comment: "Safety: turns system control off for this bot"), identifier: "menubar.stopUsingMac",

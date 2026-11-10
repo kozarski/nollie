@@ -90,7 +90,7 @@ enum LinkDoorPolicy {
     /// returns secrets from config.yaml), plugin and MCP management, updates, restarts and ops,
     /// sign-in, local model downloads, files (Hermes's file routes are not confined to a folder
     /// the door can enforce), the raw file system and git, logs, Hermes's own memory routes (reset and provider), webhooks, creating or
-    /// changing scheduled tasks (their scripts can't be inspected here), deleting bots, bulk
+    /// changing scheduled tasks (their scripts can't be inspected here; stopping one run is fine), deleting bots, bulk
     /// session routes, and every page or asset outside `/api`.
     private static let rules: [Rule] = [
         Rule(["GET"], "/api/status"), Rule(["GET"], "/api/health"),
@@ -107,6 +107,9 @@ enum LinkDoorPolicy {
         Rule(["GET"], "/api/cron/jobs"), Rule(["GET", "DELETE"], "/api/cron/jobs/*"),
         Rule(["POST"], "/api/cron/jobs/*/pause"), Rule(["POST"], "/api/cron/jobs/*/resume"),
         Rule(["POST"], "/api/cron/jobs/*/trigger"),
+        // Stop on one schedule's run: Hermes ends that run and leaves the schedule as it was. Harmless, and the
+        // person's own call from their phone, like Run now. Editing a schedule stays on the Mac.
+        Rule(["POST"], "/api/cron/jobs/*/cancel"),
         Rule(["GET"], "/api/analytics/usage"), Rule(["GET"], "/api/skills"), Rule(["GET"], "/api/tools/toolsets"),
         Rule(["GET", "POST", "PATCH", "DELETE"], "/api/plugins/kanban/**"), Rule([], "/api/plugins/kanban/events", socket: true),
         Rule(["GET"], "/api/plugins/nollie-workflow/private-bots"), Rule(["GET"], "/api/plugins/nollie-workflow/attention"),

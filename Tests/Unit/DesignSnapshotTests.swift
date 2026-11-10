@@ -122,6 +122,17 @@ import Testing
     #endif
 
     #if os(macOS)
+    /// The menu bar's list with a schedule the Mac's scheduler started, running four minutes, with its own Stop.
+    @Test func theMenuBarWithAScheduleRunning() throws {
+        let rt = try runtime()
+        let now = Date()
+        rt.schedules.show(ScheduleActivity(runs: [ScheduleActivity.Run(jobID: "brief", name: "Morning job alerts", profile: "career",
+                                                                       startedAt: now.addingTimeInterval(-245))], checkedAt: now))
+        TurnBoard.shared.showGatewayWork(rt, now: now)
+        defer { TurnBoard.shared.showGatewayWork(nil) }
+        attach(TurnMenu(), named: "menubar-schedule-running", width: 320)
+    }
+
     /// Away from home on the Mac: off, on and needing Tailscale (with the exit node card), and ready.
     @Test func theAwayFromHomePage() {
         attach(AwayFromHomePage(hero: .home, facts: AwayFacts(on: false, tailscale: "missing")),

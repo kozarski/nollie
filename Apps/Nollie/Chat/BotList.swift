@@ -82,7 +82,10 @@ struct BotPresenceAvatar: View {
 @MainActor
 enum BotActivity {
     static func line(_ presence: BotPresence) -> String {
-        guard let live = presence.live else { return presence.onBoard ? String(localized: "Working on a task…") : String(localized: "Working…") }
+        guard let live = presence.live else {
+            if let work = presence.gatewayWork { return work.line }
+            return presence.onBoard ? String(localized: "Working on a task…") : String(localized: "Working…")
+        }
         // Held on an approval it is waiting on the person, not typing (the Mac's header reads this).
         if live.botState == .needsYou { return String(localized: "Needs your OK") }
         if let goal = ChatGoals.shared.goal(for: live.storedID), !goal.isEmpty { return goal }

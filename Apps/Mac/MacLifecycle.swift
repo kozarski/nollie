@@ -68,6 +68,7 @@ struct MacLifecycle: ViewModifier {
     }
 
     private func startUp() async {
+        GatewayWorkMirror.start(model)
         await model.activateSavedConnection()
         await model.cloudAlerts.refresh()
         await model.refreshCompanionUpdateFlag()

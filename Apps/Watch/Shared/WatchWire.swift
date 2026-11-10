@@ -133,6 +133,8 @@ enum WatchWire {
         /// Where it is using a computer, or nil when it is only working in a chat.
         var place: HelperWorkPlace?
         var since: Date
+        /// The schedule or Board task it is working on, by name, when the gateway says. Nil from an older phone.
+        var work: String? = nil
     }
 
     // MARK: What the Watch asks
@@ -289,6 +291,11 @@ enum WatchWords {
 
     /// "1 waiting for you": approvals that need a yes or no.
     static func waiting(_ n: Int) -> String { String(localized: "\(n) waiting for you", comment: "Approvals waiting for a yes or no") }
+
+    /// A schedule or task by name with how long it has run: "Morning brief · 4 min".
+    static func on(_ work: String, since: Date, now: Date = Date()) -> String {
+        "\(work) \u{00B7} \(HelperAtWorkWords.elapsed(since: since, now: now))"
+    }
 
     /// What a helper is doing, under its name.
     static func doing(_ place: HelperWorkPlace?) -> String {

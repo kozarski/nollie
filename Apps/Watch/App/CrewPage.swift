@@ -20,7 +20,7 @@ struct CrewPage: View {
                         Text(WatchWords.count(helpers.count))
                             .font(.title3.weight(.semibold))
                             .accessibilityAddTraits(.isHeader)
-                        ForEach(helpers) { HelperRow(helper: $0, stale: stale) }
+                        ForEach(helpers) { HelperRow(helper: $0, stale: stale, now: context.date) }
                         if stale, let made = model.snapshot?.made {
                             Text(WatchWords.seenAt(made.formatted(date: .omitted, time: .shortened)))
                                 .font(.footnote)
@@ -75,6 +75,13 @@ struct CrewPage: View {
 private struct HelperRow: View {
     let helper: WatchWire.Helper
     let stale: Bool
+    let now: Date
+
+    /// A schedule or Board task by name and how long it has run, else where it is working.
+    private var line: String {
+        guard helper.place == nil, let work = helper.work else { return WatchWords.doing(helper.place) }
+        return WatchWords.on(work, since: helper.since, now: now)
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -85,7 +92,7 @@ private struct HelperRow: View {
                 Text(helper.name)
                     .font(.headline)
                     .lineLimit(1)
-                Text(WatchWords.doing(helper.place))
+                Text(line)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)

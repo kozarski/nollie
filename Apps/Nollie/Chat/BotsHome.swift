@@ -231,11 +231,48 @@ struct BotPresence {
     /// A card of its is being worked on the board.
     var onBoard = false
 
-    init(runtime: GatewayRuntime, profile: String, mainID: String?, remoteBusy: Bool = false) {
+    /// A schedule's run or a Board card the gateway says it is on, wherever it was started.
+    var gatewayWork: GatewayWork?
+
+    init(runtime: GatewayRuntime, profile: String, mainID: String?, remoteBusy: Bool = false, now: Date = Date()) {
         let chats = runtime.chats.filter { $0.profileName == profile }
         live = chats.first { $0.isRunning }
-        onBoard = runtime.kanban.activity.state(for: profile) == .working
-        working = live != nil || onBoard || remoteBusy || BotComputerActivity.hasDelegatedWork(runtime: runtime, profile: profile)
+        onBoard = runtime.kanban.activity.state(for: profile, now: now) == .working
+        gatewayWork = GatewayWork.of(runtime, profile: profile, now: now)
+        working = live != nil || onBoard || gatewayWork != nil || remoteBusy
+            || BotComputerActivity.hasDelegatedWork(runtime: runtime, profile: profile)
         needsYou = chats.contains { runtime.needsAttention.contains($0.storedID) } || (mainID.map { runtime.needsAttention.contains($0) } ?? false)
     }
+}
+
+/// Work the gateway reports for a bot, started anywhere (the Mac's scheduler, the Board's
+/// dispatcher, another device): a schedule's run first, else the Board card it has been on longest.
+struct GatewayWork: Equatable {
+    enum Kind: Equatable {
+        case schedule(jobID: String)
+        case board(taskID: String)
+    }
+
+    var kind: Kind
+    /// The schedule's or the card's name.
+    var title: String
+    var since: Date?
+
+    var jobID: String? {
+        if case .schedule(let id) = kind { return id }
+        return nil
+    }
+
+    @MainActor static func of(_ runtime: GatewayRuntime, profile: String, now: Date = Date()) -> GatewayWork? {
+        if let run = runtime.schedules.activity.runs(for: profile, now: now).first {
+            return GatewayWork(kind: .schedule(jobID: run.jobID), title: run.name, since: run.startedAt)
+        }
+        if let card = runtime.kanban.activity.work(for: profile, now: now) {
+            return GatewayWork(kind: .board(taskID: card.taskID), title: card.title, since: card.since)
+        }
+        return nil
+    }
+
+    /// Its row's words: "Working on “Morning brief”".
+    var line: String { String(localized: "Working on “\(title)”", comment: "A helper is busy with a schedule's run or a Board task, named") }
 }
