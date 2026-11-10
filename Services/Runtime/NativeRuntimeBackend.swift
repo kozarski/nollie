@@ -6,7 +6,7 @@ import Foundation
 /// command, saved-PID adoption or process-name scan enters this implementation.
 actor NativeRuntimeBackend: NollieRuntimeBackend {
     typealias Contract = NollieRuntimeContract
-    static let entrypointDigest = "6a10009c138c42fa02854c5ad9ddb5bff754e249083df939257fd43491a81ec0"
+    static let entrypointDigest = "ec4bdd962231cc6dbdd4c23f20545d895f063f586e96557cc7df74d5b05cf4a8"
     static let addonsDigest = "f30da3b9b00012436099457d5e3d845ebd848dfff749647d8ca4ec7133ad5aba"
     private let installations: URL
     private let entrypoint: URL
