@@ -137,7 +137,7 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
         case "Writing…": return String(localized: "Writing…", table: "Core")
         case "Sending…": return String(localized: "Sending…", table: "Core")
         case "Queued on the gateway": return String(localized: "Queued on the gateway", table: "Core")
-        case waitingForOtherChatLine: return String(localized: "Waiting for the other chat to finish…", table: "Core")
+        case waitingForOtherChatLine: return String(localized: "Waiting in line…", table: "Core", comment: "A message waits behind a turn running in this chat elsewhere")
         case CompressionNotice.summarizingLine: return CompressionNotice.summarizingWords
         default: break
         }
@@ -152,7 +152,7 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
     }
 
     /// The status while a prompt waits behind a turn Hermes is running in this chat elsewhere.
-    public static let waitingForOtherChatLine = "Waiting for the other chat to finish…"
+    public static let waitingForOtherChatLine = "Waiting in line…"
 
     /// A chat's title before it has one of its own.
     public static var newChatTitle: String { String(localized: "New chat", table: "Core") }

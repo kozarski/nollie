@@ -95,7 +95,7 @@ extension ConversationActivity {
         case .thinking: String(localized: "Thinking", comment: "What the bot is doing now")
         case .runningTool, .preparingTool: String(localized: "Working", comment: "What the bot is doing now")
         case .summarizing: String(localized: "Summarizing", comment: "What the bot is doing now")
-        case .waitingForOtherChat: String(localized: "Waiting for the other chat to finish", comment: "What the bot is doing now")
+        case .waitingForOtherChat: String(localized: "Waiting in line", comment: "What the bot is doing now: a message waits behind a turn running elsewhere")
         case .status(let words): words
         }
     }
