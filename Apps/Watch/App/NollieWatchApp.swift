@@ -43,6 +43,11 @@ struct WatchHome: View {
                 CrewPage()
                     .tag(WatchModel.crewPage)
                     .containerBackground(crewTint.gradient, for: .tabView)
+                if let board = model.snapshot?.board {
+                    BoardPage(note: board)
+                        .tag(WatchModel.boardPage)
+                        .containerBackground(Color.blue.opacity(0.24).gradient, for: .tabView)
+                }
                 if let night = model.snapshot?.night {
                     NightPage(note: night)
                         .tag(WatchModel.nightPage)

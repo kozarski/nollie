@@ -14274,6 +14274,35 @@
         }
       }
     },
+    "Answer on your iPhone." : {
+      "comment" : "Under Board tasks on the Watch",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Antworte auf deinem iPhone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Responde en tu iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Répondez sur votre iPhone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhoneで答えてください。"
+          }
+        }
+      }
+    },
     "Answer the approval in Nollie" : {
       "comment" : "Something to say to Siri; match the Siri phrase in this language",
       "localizations" : {
@@ -20048,6 +20077,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "写真を変更"
+          }
+        }
+      }
+    },
+    "Change these on your Mac." : {
+      "comment" : "A linked iPhone shows a bot's switches but can't flip them",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ändere das auf deinem Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cámbialo en tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modifiez ces réglages sur votre Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macで変更してください。"
           }
         }
       }
@@ -33216,6 +33274,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "説明を編集"
+          }
+        }
+      }
+    },
+    "Edit this on your Mac." : {
+      "comment" : "A linked iPhone can pause or delete a schedule but not edit it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bearbeite das auf deinem Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Edítalo en tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modifiez ceci sur votre Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macで編集してください。"
           }
         }
       }

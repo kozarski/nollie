@@ -130,6 +130,7 @@ struct ToolsView: View {
     private var rt: GatewayRuntime? { model.runtime }
     private var profile: String { BotAccessPresentation.profile(explicit: profileName, selected: rt?.selectedProfile) }
     private var scope: String { "\(rt?.connection.id.uuidString ?? "")/\(profile)" }
+    private var linked: Bool { OnYourMac.applies(rt?.connection) }
 
     private var botName: String { rt?.profiles.first { $0.name == profile }?.shownName ?? profile }
     private var groups: BotAccessPresentation.ToolsetGroups { BotAccessPresentation.grouped(toolsets) }
@@ -138,11 +139,16 @@ struct ToolsView: View {
         SettingsList {
             SettingsHeaderSection(title: "Apps & access")
             if let error { Text(error).small(.footnote, .red) }
-            Section {
-                NavigationLink { MCPView(profileName: profile) } label: {
-                    Label("Connections", systemImage: "point.3.connected.trianglepath.dotted")
-                }.testID("apps.connections")
-            } header: { Text("Apps & services") }
+            if linked {
+                // The door keeps connected apps on the Mac altogether, so there is no list to open here.
+                Section { OnYourMacNote(words: OnYourMac.changeThese) }
+            } else {
+                Section {
+                    NavigationLink { MCPView(profileName: profile) } label: {
+                        Label("Connections", systemImage: "point.3.connected.trianglepath.dotted")
+                    }.testID("apps.connections")
+                } header: { Text("Apps & services") }
+            }
             if !loaded {
                 Section { ProgressView("Checking capabilities…") }
             } else if toolsets.isEmpty, error == nil {
@@ -197,7 +203,7 @@ struct ToolsView: View {
                     }
                 }
             }
-            .disabled(busy.contains(t.name) || model.lock.isLocked)
+            .disabled(busy.contains(t.name) || model.lock.isLocked || linked)
             .testID("tool.toggle.\(t.name)")
         }
     }
@@ -245,6 +251,7 @@ struct SkillsView: View {
     private var rt: GatewayRuntime? { model.runtime }
     private var profile: String { BotAccessPresentation.profile(explicit: profileName, selected: rt?.selectedProfile) }
     private var scope: String { "\(rt?.connection.id.uuidString ?? "")/\(profile)" }
+    private var linked: Bool { OnYourMac.applies(rt?.connection) }
 
     /// One skill with its on/off switch. The scope is noted when the switch is flipped, so a late
     /// answer for another bot or gateway is ignored.
@@ -264,13 +271,14 @@ struct SkillsView: View {
                 if let about = skill.description { Text(about).small(.caption, .secondary).lineLimit(2) }
             }
         }
-        .disabled(model.lock.isLocked || busy.contains(skill.name))
+        .disabled(model.lock.isLocked || busy.contains(skill.name) || linked)
     }
 
     var body: some View {
         SettingsList {
             SettingsHeaderSection(title: "Skills")
             if let error { Text(error).small(.footnote, .red) }
+            if linked { OnYourMacNote(words: OnYourMac.changeThese) }
             ForEach(skills.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }) { skillRow($0) }
         }
         .reloadable { await load() }
@@ -318,6 +326,7 @@ struct MCPView: View {
     private var rt: GatewayRuntime? { model.runtime }
     private var profile: String { BotAccessPresentation.profile(explicit: profileName, selected: rt?.selectedProfile) }
     private var scope: String { "\(rt?.connection.id.uuidString ?? "")/\(profile)" }
+    private var linked: Bool { OnYourMac.applies(rt?.connection) }
 
     var body: some View {
         SettingsList {

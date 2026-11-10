@@ -17,13 +17,16 @@ final class WatchModel: NSObject {
     private(set) var note: String?
     /// Cards being answered, and "stop" while a Stop travels.
     private(set) var sending: Set<String> = []
-    /// The page to show: a card's id, `crewPage`, `nightPage` or `weekPage`.
+    /// The page to show: a card's id, `crewPage`, `boardPage`, `nightPage` or `weekPage`.
     var page: String = WatchModel.crewPage
     /// The phone could not be reached last time.
     private(set) var phoneAway = false
 
     nonisolated static let crewPage = "crew"
+    nonisolated static let boardPage = "board"
     nonisolated static let nightPage = "night"
+    /// Pages that are not an approval's card.
+    nonisolated static let fixedPages: Set<String> = [crewPage, boardPage, nightPage, weekPage]
     nonisolated static let weekPage = "week"
     nonisolated static let stopKey = "stop"
 
@@ -144,11 +147,13 @@ final class WatchModel: NSObject {
         let helpersMoved = snapshot?.helpers != fresh.helpers || snapshot?.canStop != fresh.canStop
         let known = Set(snapshot?.approvals.map(\.id) ?? [])
         snapshot = fresh
-        let onCard = page != Self.crewPage && page != Self.nightPage && page != Self.weekPage
+        let onCard = !Self.fixedPages.contains(page)
         if !onCard, let new = fresh.approvals.first(where: { !known.contains($0.id) }) {
             // Something new waits: show it, unless a card is already open.
             page = new.id
         } else if page == Self.nightPage, fresh.night == nil {
+            page = Self.crewPage
+        } else if page == Self.boardPage, fresh.board == nil {
             page = Self.crewPage
         } else if page == Self.weekPage, fresh.week == nil {
             page = Self.crewPage

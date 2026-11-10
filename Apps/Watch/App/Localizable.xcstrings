@@ -505,6 +505,35 @@
         }
       }
     },
+    "Answer on your iPhone." : {
+      "comment" : "Under Board tasks on the Watch",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Antworte auf deinem iPhone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Responde en tu iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Répondez sur votre iPhone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhoneで答えてください。"
+          }
+        }
+      }
+    },
     "Approve on your iPhone" : {
       "comment" : "Safety: this yes needs the iPhone",
       "localizations" : {
@@ -785,6 +814,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "最終確認：%@"
+          }
+        }
+      }
+    },
+    "Needs your help" : {
+      "comment" : "Board tasks waiting for the person",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Braucht deine Hilfe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Necesita tu ayuda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "A besoin de votre aide"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "あなたの助けが必要"
           }
         }
       }

@@ -1,7 +1,7 @@
 #if DEBUG
 import Foundation
 
-/// `-nollie-watch-sample approval|phone|crew|stopping|quiet|night|night-quiet|week`: a debug build shows made-up helpers and
+/// `-nollie-watch-sample approval|phone|crew|stopping|quiet|board|night|night-quiet|week`: a debug build shows made-up helpers and
 /// approvals without a phone, for pictures of each screen. Nothing is sent anywhere.
 enum WatchSamples {
     struct Sample {
@@ -40,6 +40,12 @@ enum WatchSamples {
         case "quiet":
             snapshot.helpers = []
             return Sample(snapshot: snapshot, page: WatchModel.crewPage)
+        case "board":
+            snapshot.board = WatchWire.BoardNote(
+                tasks: [.init(title: "Renew the car insurance", detail: "Forager"),
+                        .init(title: "Pick a date for the boiler service", detail: "Nollie")],
+                more: 1)
+            return Sample(snapshot: snapshot, page: WatchModel.boardPage)
         case "night":
             snapshot.night = night
             return Sample(snapshot: snapshot, page: WatchModel.nightPage)
