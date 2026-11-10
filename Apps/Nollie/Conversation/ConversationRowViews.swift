@@ -185,10 +185,16 @@ private struct ToolStepLine: View {
     let step: ConversationToolStep
 
     var body: some View {
-        Label(step.shownWords, systemImage: step.symbol)
+        HStack(spacing: 8) {
+            Label(step.shownWords, systemImage: step.symbol)
+                .lineLimit(1)
+            // How far it has got, while it runs and the tool says.
+            if !step.done, let progress = step.progress {
+                Text(progress.shortText).monospacedDigit().foregroundStyle(Ink.text3)
+            }
+        }
             .font(Ink.steps)
             .foregroundStyle(Ink.text2)
-            .lineLimit(1)
             .padding(.horizontal, 14).padding(.vertical, 8)
             .overlay(Capsule().strokeBorder(Ink.line, lineWidth: 1))
             .opacity(step.done ? 1 : 0.7)

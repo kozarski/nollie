@@ -29,6 +29,8 @@ public struct ConversationState: Hashable, Sendable {
     /// The highest seq applied per runtime session.
     public internal(set) var watermarks: [String: Int] = [:]
 
+    /// How much of the streaming turn is shown, so a second copy of its frames is dropped.
+    var replyFrames = ReplyFrameLedger()
     var streamingRowId: String?
     /// The latest reply row of the current turn.
     var replyRowId: String?
@@ -155,13 +157,16 @@ extension ConversationState {
             watermarks[event.sessionId] = seq
         }
         let payload = event.payload ?? [:]
+        let turnId = payload["turn_id"]?.stringValue
         switch event.type {
         case GatewayWire.Events.messageStart.name:
+            guard replyFrames.start(turn: turnId) else { return }
             joinTurn()
             activity = .thinking
         case GatewayWire.Events.messageDelta.name:
+            guard let text = replyFrames.delta(payload["text"]?.stringValue ?? "", turn: turnId,
+                                               segment: payload["segment"]?.intValue, offset: payload["offset"]?.intValue) else { return }
             joinTurn()
-            let text = payload["text"]?.stringValue ?? ""
             updateStreaming { $0.text += text }
             activity = .writing
         case GatewayWire.Events.reasoningDelta.name:
@@ -173,6 +178,7 @@ extension ConversationState {
             joinTurn()
             activity = .thinking
         case GatewayWire.Events.messageInterim.name:
+            guard replyFrames.interim(turn: turnId, segment: payload["segment"]?.intValue) else { return }
             interim(text: payload["text"]?.stringValue ?? "", alreadyStreamed: payload["already_streamed"]?.boolValue ?? false)
         case GatewayWire.Events.toolStart.name:
             joinTurn()
@@ -182,6 +188,13 @@ extension ConversationState {
         case GatewayWire.Events.toolComplete.name:
             finishTool(payload)
             if running { activity = .thinking }
+        case GatewayWire.Events.toolProgress.name:
+            let progress = ToolProgress(progress: payload["progress"]?.doubleValue, total: payload["total"]?.doubleValue,
+                                        percent: payload["percent"]?.intValue, message: payload["message"]?.stringValue)
+            if let progress, let index = toolIndex(payload["tool_id"]?.stringValue ?? ""), case .tool(var step) = rows[index].kind, !step.done {
+                step.progress = progress
+                rows[index].kind = .tool(step)
+            }
         case GatewayWire.Events.toolOutputRisk.name:
             if let index = toolIndex(payload["tool_id"]?.stringValue ?? ""), case .tool(var step) = rows[index].kind {
                 step.risk = payload["risk"]?.stringValue
@@ -198,8 +211,10 @@ extension ConversationState {
         case GatewayWire.Events.sessionTitle.name:
             if let title = payload["title"]?.stringValue { self.title = title }
         case GatewayWire.Events.messageComplete.name:
+            replyFrames.finish()
             complete(payload)
         case GatewayWire.Events.error.name:
+            replyFrames.finish()
             sealStreaming(ending: .error)
             append(.error(payload["message"]?.stringValue ?? ""))
             endTurn()
@@ -577,6 +592,10 @@ extension ConversationState {
                 rows[index].address = ConversationRowAddress(segment: lineage.tip, rowId: stored)
             }
             if activity == .sending { activity = .thinking }
+        case .forwarded:
+            outbox.set(id, .sent)
+            setDelivery(rowId, .sent)
+            activity = .waitingForOtherChat
         case .refused(let reason, let retryable):
             if retryable {
                 outbox.set(id, .waiting)

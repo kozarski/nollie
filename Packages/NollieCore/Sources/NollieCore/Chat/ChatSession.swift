@@ -97,6 +97,12 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
     public var title: String
     public var composerHistory: [String] = []
     public var lastSubmitStatus: String?
+    /// Error rows for a message Hermes turned away because another chat was busy, which Try again sends.
+    public internal(set) var retryableFailures: Set<String> = []
+    /// What each of those rows would send again, and the person's bubble it came from.
+    @ObservationIgnored var heldForRetry: [String: (message: QueuedMessage, userRow: String)] = [:]
+    /// The last prompt went to the chat's owner (Hermes 0.23): its words arrive only in the stored history.
+    @ObservationIgnored var forwardedTurn = false
     public var stale = false
     public var resumeError: String?
     /// Reason the last turn ended early, if this device knows (Stop was pressed here, or the app was
@@ -131,6 +137,7 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
         case "Writing…": return String(localized: "Writing…", table: "Core")
         case "Sending…": return String(localized: "Sending…", table: "Core")
         case "Queued on the gateway": return String(localized: "Queued on the gateway", table: "Core")
+        case waitingForOtherChatLine: return String(localized: "Waiting for the other chat to finish…", table: "Core")
         case CompressionNotice.summarizingLine: return CompressionNotice.summarizingWords
         default: break
         }
@@ -144,6 +151,9 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
         return line
     }
 
+    /// The status while a prompt waits behind a turn Hermes is running in this chat elsewhere.
+    public static let waitingForOtherChatLine = "Waiting for the other chat to finish…"
+
     /// A chat's title before it has one of its own.
     public static var newChatTitle: String { String(localized: "New chat", table: "Core") }
 
@@ -156,6 +166,8 @@ public final class ChatSession: @MainActor Identifiable, ChatIdentity {
 
     // Bookkeeping that is never drawn.
     @ObservationIgnored var reply = LiveReply()
+    /// How much of the streaming turn is on screen, so a second copy of its frames is dropped.
+    @ObservationIgnored var replyFrames = ReplyFrameLedger()
     @ObservationIgnored var clock = TurnClock()
     @ObservationIgnored var book = SnapshotBook()
     @ObservationIgnored var ledger = CardLedger()

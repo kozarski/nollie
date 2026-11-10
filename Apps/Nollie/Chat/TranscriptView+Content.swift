@@ -105,6 +105,7 @@ extension TranscriptView {
         actions.onOpenBot = onOpenBot
         actions.onReply = onReply
         actions.onKeepRunning = { showAwayGrace = true }
+        actions.onRetry = { [chat] row in Task { await chat.sendAgain(failure: row) } }
         actions.onSelectText = { selectText = $0 }
         actions.setReasoningOpen = { id, open in openReasoning.mark(id, present: open) }
         actions.setToolOpen = { id, open in openTools.mark(id, present: open) }
@@ -113,7 +114,7 @@ extension TranscriptView {
             currentStepOnly: prefs.currentStepOnly, showStats: prefs.showTurnStats, interruptCause: chat.interruptCause,
             lastID: visibleItems.last?.id, openReasoning: openReasoning, openTools: openTools,
             showToolOutput: prefs.showToolOutput, compactTools: prefs.compactTools, wide: prefs.wideReplies,
-            maxBubble: bubbleCap, actions: actions, highlightedMessage: highlightedMessage)
+            maxBubble: bubbleCap, actions: actions, highlightedMessage: highlightedMessage, retryable: chat.retryableFailures)
     }
 }
 

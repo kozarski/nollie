@@ -23,6 +23,7 @@ enum ChatEventKind: String {
     case toolGenerating = "tool.generating"
     case toolComplete = "tool.complete"
     case toolOutputRisk = "tool.output_risk"
+    case toolProgress = "tool.progress"
     case sessionUsage = "session.usage"
     case sessionInfo = "session.info"
     case sessionTitle = "session.title"

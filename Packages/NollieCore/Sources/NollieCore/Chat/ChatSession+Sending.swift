@@ -75,7 +75,8 @@ extension ChatSession {
             drainQueue()
             return
         }
-        addRow(.user(text: text, attachments: sent))
+        let userRow = UUID().uuidString
+        items.append(TranscriptItem(id: userRow, kind: .user(text: text, attachments: sent)))
         startedHere = true
         (isRunning, statusLine) = (true, "Sending…")
         isSubmitting = false
@@ -85,17 +86,44 @@ extension ChatSession {
             let answer = try await ask("prompt.submit", params)
             let status = answer.text("status")
             lastSubmitStatus = status
-            if status == "queued" { statusLine = "Queued on the gateway" }
+            forwardedTurn = OwnerRefusal.isForwarded(answer)
+            if forwardedTurn {
+                statusLine = Self.waitingForOtherChatLine
+            } else if status == "queued" {
+                statusLine = "Queued on the gateway"
+            }
             runtime.pushRegistrar?.noteSend(session: storedID, runtime: runtime)
             activity.start(for: self)
         } catch {
             startedHere = false
             isRunning = false
             statusLine = nil
+            if let refusal = OwnerRefusal(error) {
+                // Said plainly. Only "busy" offers Try again: an unconfirmed message may still run.
+                let row = UUID().uuidString
+                items.append(TranscriptItem(id: row, kind: .error(text: refusal.words)))
+                if refusal.offersRetry {
+                    heldForRetry[row] = (QueuedMessage(text: text, attachments: sent), userRow)
+                    retryableFailures.insert(row)
+                }
+                return
+            }
             addFailure(error.localizedDescription)
             // The gateway refusing this message says nothing about the next, so that one may go. A
             // lost line would fail the rest too: they stay queued and go once the chat is back.
             if error is RPCError { drainQueue() }
+        }
+    }
+
+    /// Try again on a message the other chat was too busy to take: the old bubble and the error give way to a new send.
+    public func sendAgain(failure row: String) async {
+        guard let held = heldForRetry.removeValue(forKey: row) else { return }
+        retryableFailures.remove(row)
+        items.removeAll { $0.id == row || $0.id == held.userRow }
+        if isRunning || isSubmitting {
+            queue.append(held.message)
+        } else {
+            await submit(text: held.message.text, attachments: held.message.attachments, queued: false)
         }
     }
 

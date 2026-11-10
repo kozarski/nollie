@@ -3630,6 +3630,157 @@ def _cron_route(method: str, base: str, query: dict, body):
     return None
 
 
+# ── Chat renames, flags and deletes as Hermes 0.23 fences them ──────────────────────────────────
+# GET /api/sessions/{id}/mutation-snapshot gives {exists, runtime_revision, runtime_generation}; PATCH and DELETE
+# need request_id and expected_revision (DELETE also expected_generation, in its query) or answer 409, as 0.23 does.
+# A repeated request_id with the same change answers from its receipt. Test switches, POST /api/_mock/session-mutations:
+#   {"mode": "0.22"}     the older Hermes: no snapshot route (404), the extra fields ignored
+#   {"conflicts": n}     the next n writes find the chat changed elsewhere (revision moves, 409 revision_conflict)
+#   {"busy": n}          the next n writes find the chat busy (409 session_busy)
+#   {"refuse": "word"}   every write answers 409 with that word
+# GET /api/_mock/session-mutations returns the writes seen, oldest first. Any POST resets the switches and the chats.
+
+SESSION_MUTATIONS: dict = {}
+_SEEDED_SESSIONS = copy.deepcopy(STORED_SESSIONS)
+
+
+def _reset_session_mutations(fields: dict | None = None) -> None:
+    fields = fields or {}
+    STORED_SESSIONS[:] = copy.deepcopy(_SEEDED_SESSIONS)
+    SESSION_MUTATIONS.clear()
+    SESSION_MUTATIONS.update(mode=str(fields.get("mode") or "0.23"), conflicts=int(fields.get("conflicts") or 0),
+                             busy=int(fields.get("busy") or 0), refuse=fields.get("refuse"),
+                             log=[], revisions={}, receipts={})
+
+
+_reset_session_mutations()
+
+_SESSION_PATH = re.compile(r"/api/sessions/([^/]+)(/mutation-snapshot)?")
+_MUTATION_RESERVED = {"search", "stats", "empty", "bulk-delete", "import", "prune", "owner-backfill", "active"}
+
+
+def _session_known(session_id: str) -> bool:
+    return stored_row(session_id) is not None or any(live.stored == session_id or live.sid == session_id for live in LIVE.values())
+
+
+def _int_or_none(value):
+    try:
+        return None if value is None or value == "" else int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def session_mutations_rest(method: str, base: str, query: dict, body):
+    """Answers the snapshot, PATCH and DELETE of one stored chat; None for anything else."""
+    fields = body if isinstance(body, dict) else {}
+    if base == "/api/_mock/session-mutations":
+        if method == "POST":
+            _reset_session_mutations(fields)
+            return ok(dict(ok=True, mode=SESSION_MUTATIONS["mode"]))
+        return ok(dict(log=SESSION_MUTATIONS["log"], mode=SESSION_MUTATIONS["mode"]))
+    hit = _SESSION_PATH.fullmatch(base)
+    if hit is None or unquote(hit[1]) in _MUTATION_RESERVED:
+        return None
+    session_id, snapshot = unquote(hit[1]), bool(hit[2])
+    state = SESSION_MUTATIONS
+    legacy = state["mode"] == "0.22"
+    if snapshot:
+        if method != "GET":
+            return None
+        if legacy:
+            return refuse(404, f"No such API endpoint: {base[1:]}")
+        known = _session_known(session_id)
+        return ok(dict(session_id=session_id, exists=known, runtime_revision=state["revisions"].get(session_id, 0) if known else 0,
+                       runtime_generation=0 if known else None))
+    if method not in ("PATCH", "DELETE"):
+        return None
+
+    source = fields if method == "PATCH" else query
+    request_id = source.get("request_id") or None
+    revision, generation = _int_or_none(source.get("expected_revision")), _int_or_none(source.get("expected_generation"))
+    change = {key: fields[key] for key in ("title", "archived", "pinned", "hidden", "unread") if key in fields} if method == "PATCH" else {}
+    state["log"].append(dict(method=method, session_id=session_id, request_id=request_id, expected_revision=revision,
+                             expected_generation=generation, change=change))
+    if not legacy:
+        if request_id is None and revision is None and generation is None:
+            return refuse(409, "client_upgrade_required: this app is out of sync (different versions) with the Hermes backend; "
+                               "update the app to edit sessions")
+        if request_id is None or revision is None or (method == "DELETE" and generation is None):
+            return refuse(409, "mutation_identity_required")
+        digest = json.dumps([method, change, revision, generation], sort_keys=True)
+        receipt = state["receipts"].get((session_id, request_id))
+        if receipt is not None:
+            return (200, receipt[1]) if receipt[0] == digest else refuse(409, "admission_conflict")
+        if state["refuse"]:
+            return refuse(409, str(state["refuse"]))
+        if state["conflicts"] > 0:
+            # Someone else changed the chat in the meantime.
+            state["conflicts"] -= 1
+            state["revisions"][session_id] = state["revisions"].get(session_id, 0) + 1
+            return refuse(409, "revision_conflict")
+        if state["busy"] > 0:
+            state["busy"] -= 1
+            return refuse(409, "session_busy")
+        if not _session_known(session_id):
+            return (200, dict(ok=True, already_absent=True)) if method == "DELETE" else refuse(404, "not_found")
+        if revision != state["revisions"].get(session_id, 0):
+            return refuse(409, "revision_conflict")
+        if generation is not None and generation != 0:
+            return refuse(409, "stale_generation")
+
+    row = stored_row(session_id)
+    if method == "DELETE":
+        if row is not None:
+            STORED_SESSIONS.remove(row)
+        result = dict(ok=True, session_id=session_id, operation="delete", deleted_ids=[session_id])
+    else:
+        if row is not None:
+            row.update({key: value for key, value in change.items() if key in ("title", "archived", "pinned")})
+        state["revisions"][session_id] = state["revisions"].get(session_id, 0) + 1
+        result = dict(ok=True, session_id=session_id, operation="sidebar", revision=state["revisions"][session_id],
+                      title=(row or {}).get("title", change.get("title", "")))
+    if not legacy:
+        state["receipts"][(session_id, request_id)] = (digest, result)
+    return ok(result)
+
+
+# ── Turns handed to the chat's owner (Hermes 0.23) ───────────────────────────────────────────────
+# POST /api/_mock/owner {"mode": ..., "wait": s, "run": s} picks what prompt.submit does next:
+#   "forward"      answers {status: queued, admission_id, forwarded: true}; after `wait` seconds only message.start,
+#                  then after `run` an empty message.complete arrive, and the reply is in the stored history
+#   "busy"         error 4090, reason SESSION_OWNER_BUSY (nothing was sent; the app offers Try again)
+#   "unconfirmed"  error 4090, reason SESSION_OWNER_UNCONFIRMED (it may still run; no automatic retry)
+#   "not_owned"    error 4090, reason SESSION_NOT_OWNED
+#   "off"          the usual scripted turns
+# GET /api/_mock/owner returns the mode and the prompts forwarded so far.
+
+PROGRESS_STEP = 1.2
+
+OWNER_TURNS: dict = dict(mode="off", wait=4.0, run=1.5, forwarded=[])
+OWNER_REPLY = "All done. The export now runs at 2 AM, after the other job finishes."
+OWNER_REFUSALS = {
+    "busy": ("SESSION_OWNER_BUSY", "The gateway is running a turn in this chat and could not queue this message. "
+                                   "Nothing was sent. Send it again when the current turn ends."),
+    "unconfirmed": ("SESSION_OWNER_UNCONFIRMED", "The gateway is running a turn in this chat and did not confirm your "
+                                                 "message in time. It may already be queued there: check the chat before "
+                                                 "sending it again."),
+    "not_owned": ("SESSION_NOT_OWNED", "Session has pending work in the gateway's durable queue. Resume it through "
+                                       "the gateway to resolve it; nothing was run here."),
+}
+
+
+def owner_rest(method: str, base: str, body):
+    if base != "/api/_mock/owner":
+        return None
+    fields = body if isinstance(body, dict) else {}
+    if method == "POST":
+        mode = str(fields.get("mode") or "off")
+        if mode not in ("off", "forward", *OWNER_REFUSALS):
+            return refuse(400, f"unknown mode {mode}")
+        OWNER_TURNS.update(mode=mode, wait=float(fields.get("wait", 4.0)), run=float(fields.get("run", 1.5)), forwarded=[])
+    return ok(dict(mode=OWNER_TURNS["mode"], forwarded=OWNER_TURNS["forwarded"]))
+
+
 def _counts_as_config_write(method: str, base: str, body) -> bool:
     """Writes the computer preview reports: a config change or a write of the bot's lease file."""
     if method not in {"PUT", "PATCH", "POST"}:
@@ -3681,6 +3832,9 @@ def process_request(connection, request):
         ("quiet", lambda: memory_rest(method, base, query, body)),
         ("quiet", lambda: payments_rest(method, base, query, body)),
         ("quiet", lambda: link_rest(method, base, body)),
+        ("quiet", lambda: session_mutations_rest(method, base, query, body)),
+        ("quiet", lambda: owner_rest(method, base, body)),
+        ("quiet", lambda: reply_frames_rest(method, base, body)),
     ]
     answer = None
     for kind, ask_module in modules:
@@ -3699,11 +3853,6 @@ def process_request(connection, request):
             return steer_preview()
         if base.startswith("/api/plugins/kanban/"):
             answer = kanban_rest(method, base, query, fields)
-        elif method == "PATCH" and base.startswith("/api/sessions/"):
-            # Serves a chat rename made in the info sheet. The library passes on headers only, so
-            # the body can't be read; a plausible title is echoed back to exercise the "saved" path.
-            row = next((r for r in STORED_SESSIONS if r["id"] == base.split("/")[3]), None)
-            answer = (200, dict(ok=True, title=row["title"] if row else ""))
         elif base.startswith("/api/cron/jobs"):
             answer = _cron_route(method, base, query, body)
             if answer is None:
@@ -3843,13 +3992,56 @@ LIVE: dict[str, Session] = {}   # keyed by runtime id
 GATEWAYS: set = set()           # all connected JSON-RPC sockets, used by /mock/drop-sockets
 
 
+# Hermes 0.23 stamps a turn's reply frames (tui_gateway/stream_segments.py) so a copy can be dropped:
+# message.start carries turn_id, message.delta turn_id + segment + offset (UTF-16 units), message.interim
+# turn_id + the segment it seals. POST /api/_mock/reply-frames {"stamp": true, "twice": true} turns the
+# stamps on and sends every delta twice, as a replay or a second socket would. Both are off by default.
+REPLY_FRAMES: dict = dict(stamp=False, twice=False)
+
+
+def _utf16_len(text: str) -> int:
+    return len(text.encode("utf-16-le", errors="surrogatepass")) // 2
+
+
+def stamp_reply_frame(live, kind: str, payload):
+    if not REPLY_FRAMES["stamp"] or live is None:
+        return payload
+    if kind == "message.start":
+        live.__dict__["segments"] = dict(turn_id=uuid.uuid4().hex, segment=0, offset=0)
+        return {**(payload or {}), "turn_id": live.segments["turn_id"]}
+    cursor = live.__dict__.get("segments")
+    if cursor is None or payload is None:
+        return payload
+    if kind == "message.interim":
+        stamped = {**payload, "turn_id": cursor["turn_id"], "segment": cursor["segment"]}
+        cursor.update(segment=cursor["segment"] + 1, offset=0)
+        return stamped
+    if kind == "message.delta" and isinstance(payload.get("text"), str):
+        stamped = {**payload, "turn_id": cursor["turn_id"], "segment": cursor["segment"], "offset": cursor["offset"]}
+        cursor["offset"] += _utf16_len(payload["text"])
+        return stamped
+    if kind == "message.complete":
+        live.__dict__.pop("segments", None)
+    return payload
+
+
+def reply_frames_rest(method: str, base: str, body):
+    if base != "/api/_mock/reply-frames":
+        return None
+    fields = body if isinstance(body, dict) else {}
+    if method == "POST":
+        REPLY_FRAMES.update(stamp=bool(fields.get("stamp")), twice=bool(fields.get("twice")))
+    return ok(dict(REPLY_FRAMES))
+
+
 class RpcFault(Exception):
     """Raised by a request handler to answer with a JSON-RPC error."""
 
-    def __init__(self, code: int, message: str) -> None:
+    def __init__(self, code: int, message: str, data: dict | None = None) -> None:
         super().__init__(message)
         self.code = code
         self.message = message
+        self.data = data
 
 
 class Gateway:
@@ -3876,16 +4068,19 @@ class Gateway:
 
     async def event(self, kind, sid, payload=None):
         """Sends one `event` frame for a session to everyone who should hear it."""
+        live = LIVE.get(sid)
+        payload = stamp_reply_frame(live, kind, payload)
         params = {"type": kind, "session_id": sid, **({} if payload is None else {"payload": payload})}
         frame = {"jsonrpc": "2.0", "method": "event", "params": params}
-        live = LIVE.get(sid)
         if live and live.inflight is not None:
             # Keep what a client resuming mid-turn would need: the text so far, and finished tools.
             self._remember_for_resume(live, kind, payload or {})
 
+        copies = 2 if REPLY_FRAMES["twice"] and kind == "message.delta" else 1
         for listener in self._audience(live):
             try:
-                await listener.send(frame)
+                for _ in range(copies):
+                    await listener.send(frame)
             except Exception:  # noqa: BLE001
                 if live is not None:
                     live.members.discard(listener)
@@ -4045,6 +4240,26 @@ class Gateway:
         s.history += resume_rows(stored)
 
     # -- scripted turns -----------------------------------------------------------------------
+
+    async def _progress_turn(self, s, prompt):
+        """A tool that reports how far it has got (Hermes 0.23's tool.progress, from an MCP server's
+        notifications/progress): ten pages read, one every `PROGRESS_STEP` seconds, then the reply."""
+        await self.begin_message(s)
+        await self.stream_words(s, "Reading the ten release pages now.")
+        call = f"progress-{uuid.uuid4().hex[:8]}"
+        await self.event("tool.start", s.sid, dict(tool_id=call, name="read_pages", context="ten release pages"))
+        began = time.time()
+        for step in range(1, 11):
+            await asyncio.sleep(PROGRESS_STEP)
+            await self.event("tool.progress", s.sid, dict(tool_id=call, name="read_pages", progress=float(step), total=10.0,
+                                                         percent=step * 10, message=f"Page {step} of 10"))
+        await self.event("tool.complete", s.sid, dict(tool_id=call, name="read_pages", duration_s=round(time.time() - began, 1),
+                                                      summary="Read 10 pages"))
+        reply = "All ten pages read. Two of them mention the export change."
+        await self.stream_words(s, " " + reply)
+        whole = "Reading the ten release pages now. " + reply
+        await self.report_usage(s)
+        await self.settle(s, prompt, ["Reading the ten release pages now.", 1, reply], whole)
 
     async def _card_turn(self, s, prompt):
         """A reply carrying a card: an html fence containing a compact table and a line chart drawn
@@ -4655,6 +4870,7 @@ class Gateway:
         ("starts", "backup", "_backup_turn"),
         ("starts", "plan back", "_plan_back_turn"),
         ("starts", "interrupt", "_interrupt_turn"),
+        ("starts", "progress", "_progress_turn"),
     )
 
     @staticmethod
@@ -4704,7 +4920,10 @@ class Gateway:
         try:
             result = await getattr(self, action)(params, profile)
         except RpcFault as fault:
-            return dict(jsonrpc="2.0", id=request_id, error=dict(code=fault.code, message=fault.message))
+            error = dict(code=fault.code, message=fault.message)
+            if fault.data is not None:
+                error["data"] = fault.data
+            return dict(jsonrpc="2.0", id=request_id, error=error)
         return dict(jsonrpc="2.0", id=request_id, result=result)
 
     # Which handler answers which method. Handlers take (params, profile) and return the result.
@@ -4981,8 +5200,29 @@ class Gateway:
         s = self._session_in(p)
         if s is None:
             raise RpcFault(4006, "unknown session")
+        refusal = OWNER_REFUSALS.get(OWNER_TURNS["mode"])
+        if refusal is not None:
+            raise RpcFault(4090, refusal[1], {"reason": refusal[0]})
+        if OWNER_TURNS["mode"] == "forward":
+            # Hermes 0.23 hands the prompt to the chat's owner: queued behind its turn, then only
+            # message.start and an empty message.complete come back here. The reply is in the history.
+            admission = "adm-" + uuid.uuid4().hex[:8]
+            OWNER_TURNS["forwarded"].append(dict(session=s.sid, admission_id=admission, text=str(p.get("text", ""))))
+            asyncio.create_task(self.forwarded_turn(s, str(p.get("text", ""))))
+            return dict(status="queued", admission_id=admission, forwarded=True)
         asyncio.create_task(self.run_turn(s, str(p.get("text", ""))))
         return dict(status="streaming")
+
+    async def forwarded_turn(self, s: Session, prompt: str) -> None:
+        """The owner runs its own turn first (nothing relayed), then this prompt (start and complete only)."""
+        await asyncio.sleep(float(OWNER_TURNS["wait"]))
+        s.running, s.turn_started_at, s.turn_base = True, time.time(), len(s.history)
+        turn = uuid.uuid4().hex
+        await self.event("message.start", s.sid, {"turn_id": turn})
+        await asyncio.sleep(float(OWNER_TURNS["run"]))
+        self.store_turn(s, prompt, [OWNER_REPLY])
+        s.running, s.inflight = False, None
+        await self.event("message.complete", s.sid, {"text": "", "turn_id": turn})
 
     # -- projects -----------------------------------------------------------------------------
 

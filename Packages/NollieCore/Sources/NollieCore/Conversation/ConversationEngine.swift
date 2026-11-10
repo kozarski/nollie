@@ -288,8 +288,16 @@ public final class ConversationEngine {
             let result = await self.call(GatewayWire.Calls.promptSubmit.name, .object(params), timeout: self.configuration.submitTimeout)
             let sent: ConversationSendOutcome
             switch self.book.finish(ticket, result) {
-            case .answered(let answer)?: sent = .accepted(userRowId: answer["user_row_id"]?.intValue)
-            case .refused(let error)?: sent = .refused(error.message, retryable: error.code == GatewayRPCError.agentStarting)
+            case .answered(let answer)?:
+                let forwarded = answer["forwarded"]?.boolValue == true && answer["status"]?.stringValue == "queued"
+                sent = forwarded ? .forwarded : .accepted(userRowId: answer["user_row_id"]?.intValue)
+            case .refused(let error)?:
+                switch OwnerRefusal(code: error.code, reason: error.data?["reason"]?.stringValue) {
+                // It may still run behind the other turn: never sent again by itself, and history settles it.
+                case .unconfirmed?: sent = .uncertain
+                case let refusal?: sent = .refused(refusal.words, retryable: false)
+                case nil: sent = .refused(error.message, retryable: error.code == GatewayRPCError.agentStarting)
+                }
             case .notSent?: sent = .notSent
             case .unknown?, nil: sent = .uncertain
             }

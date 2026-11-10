@@ -30,6 +30,8 @@ public struct ToolActivity: Hashable, Sendable, Identifiable {
     public var summary: String?
     public var durationSeconds: Double?
     public var risk: String?
+    /// How far it has got while it runs, when the tool says (`tool.progress`).
+    public var progress: ToolProgress?
     public var resultText: String?
     /// The preview of what was run, as the gateway cut it.
     public var context: String?
