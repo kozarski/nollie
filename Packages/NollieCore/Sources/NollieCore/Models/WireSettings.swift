@@ -31,8 +31,16 @@ public struct SkillInfo: Identifiable, Sendable, Hashable, Codable {
     public var name: String
     public var usage: Int?
     public var enabled: Bool?
+    /// Hermes 0.23: the bot can't change this skill (it can still use it). Nil from older gateways.
+    public var locked: Bool?
 
     public var id: String { name }
+
+    public init(name: String, description: String? = nil, category: String? = nil, provenance: String? = nil,
+                usage: Int? = nil, enabled: Bool? = true, locked: Bool? = nil) {
+        self.name = name; self.description = description; self.category = category; self.provenance = provenance
+        self.usage = usage; self.enabled = enabled; self.locked = locked
+    }
 }
 
 public struct MCPServerInfo: Identifiable, Sendable, Hashable, Codable {

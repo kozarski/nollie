@@ -1122,6 +1122,28 @@ extension NollieLinkDoorTests {
         }
     }
 
+    /// Keep skills as they are: a linked phone reads one helper's switch, and only the Mac changes it or any skill's lock.
+    @Test func keepSkillsIsReadOnlyFromThePhone() {
+        let path = "/api/plugins/nollie-workflow/keep-skills"
+        #expect(LinkDoorPolicy.route(method: "GET", path: path, websocket: false) == .hermes)
+        for method in ["PUT", "POST", "DELETE", "PATCH"] {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .refused, "\(method)")
+        }
+        for (method, refused) in [("PUT", "/api/skills/lock"), ("PUT", "/api/skills/toggle"), ("GET", path + "/x"),
+                                  ("GET", "/api/skills/lock")] {
+            #expect(LinkDoorPolicy.route(method: method, path: refused, websocket: false) == .refused, "\(method) \(refused)")
+        }
+        #expect(LinkDoorPolicy.allowsQuery(path: path, query: "bot=career"))
+        for bad in [nil, "", "bot=a&bot=b", "bot=career&on=1", "profile=career", "bot=../x"] {
+            #expect(!LinkDoorPolicy.allowsQuery(path: path, query: bad), "\(bad ?? "nil")")
+        }
+        // A member's phone never reaches it.
+        #expect(LinkDoorFamily.memberRoute(method: "GET", path: path, query: "bot=career", websocket: false) == .refused)
+        // The skills list and the week's spending were readable before and still are.
+        #expect(LinkDoorPolicy.route(method: "GET", path: "/api/skills", websocket: false) == .hermes)
+        #expect(LinkDoorPolicy.route(method: "GET", path: "/api/analytics/usage", websocket: false) == .hermes)
+    }
+
     /// Only the owner flips Night shift: their linked phone reaches the switch, a shared member's never does.
     @Test func onlyTheOwnerReachesTheNightShiftSwitch() {
         let path = "/api/plugins/nollie-workflow/night-shift"
