@@ -198,6 +198,8 @@ def main():
     parser.add_argument("--folder", type=Path, required=True)
     parser.add_argument("--smoke", action="store_true", help="also start and stop both runtime roles")
     parser.add_argument("--seed", type=Path, help="a folder of already downloaded artifacts to reuse (each is still checked)")
+    parser.add_argument("--home-from", type=Path, help="an older rehearsal's installation whose home (bots, chats, settings) "
+                        "this one takes over, as a Mac does when Nollie moves it to a newer Hermes")
     args = parser.parse_args()
     folder = args.folder.resolve()
     for forbidden in FORBIDDEN:
@@ -258,6 +260,14 @@ def main():
              "import fastapi, uvicorn, websockets, openai; from ruamel.yaml import YAML"], installation, 60)
         return "frozen lockfile synced, imports checked"
     step("dependencies", sync)
+
+    if args.home_from:
+        def carry_home():
+            old = next(p for p in args.home_from.iterdir() if (p / "home").is_dir()) / "home"
+            shutil.rmtree(installation / "home")
+            shutil.copytree(old, installation / "home", symlinks=True)
+            return f"home from {old.parent.name}: " + ", ".join(sorted(p.name for p in (installation / "home/profiles").iterdir()))
+        step("home", carry_home)
 
     def addons():
         kit = installation / "Setup Kit"
