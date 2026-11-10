@@ -360,6 +360,19 @@ final class ManagedRuntimeClient {
         } catch { fail(String(localized: "Could not turn off the background service. Try again. Your setup files are kept.")) }
     }
 
+    /// Stops Hermes for an engine update and keeps the service registered, so starting it again needs no
+    /// new approval in Login Items. True when the service confirmed it stopped, or was not running.
+    func pauseForUpdate() async -> Bool {
+        guard isAvailable, !isBusy else { return false }
+        guard service.status() == .enabled else { return true }
+        isBusy = true
+        defer { isBusy = false }
+        clearConnection()
+        guard let reply = try? await request(.stop), let response = try? Self.decode(reply) else { return false }
+        state = .stopped; message = String(localized: "Updating Nollie's engine.")
+        return response.error == nil && response.snapshot.phase == .stopped
+    }
+
     func openApprovalSettings() {
         #if NOLLIE_DIRECT
         guard isAvailable else { return }

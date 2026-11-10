@@ -73,7 +73,11 @@ struct MacLifecycle: ViewModifier {
         await model.refreshCompanionUpdateFlag()
         #if NOLLIE_DIRECT
         // A newer Nollie may carry newer add-ons for the managed setup. They go in without asking.
-        Task.detached(priority: .utility) { await MacHermesSetup.updateAddOnsIfNeeded() }
+        // A newer Nollie may carry a newer Hermes; the engine update brings the add-ons along with it.
+        Task {
+            await EngineUpdate.shared.runIfNeeded()
+            await MacHermesSetup.updateAddOnsIfNeeded()
+        }
         #endif
     }
 
