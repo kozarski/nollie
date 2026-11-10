@@ -56,12 +56,20 @@ as a page after the crew. An older phone sends no note and an older Watch ignore
 
 ## Still open
 
-- Over Nollie Link a phone cannot make a new schedule or flip Apps & access switches, by design. Both screens still
-  offer the control and show the door's refusal; they should say "On your Mac" up front instead.
-- Night shift cards in Nollie's chat show only in the new chat view (Debug); Release builds on every device show them
-  in Settings › Night shift.
-- The Board's swipe actions in `KanbanView` never appear (they need a `List`); Move in the sheet and the long press
-  cover what they offered.
-- The Watch does not show Board tasks waiting for help, only approvals.
 - Who is working is what the phone can see: chats open on it, the Board's workers, and a bot's main chat the gateway's
   record shows mid-turn. A schedule's run, or another chat started on the Mac, does not show until the phone opens it.
+
+## Closed since
+
+- **On your Mac, said up front.** Over Nollie Link a phone cannot make or edit a schedule, flip a bot's tools or skills,
+  or see its connected apps, by design (`LinkDoorPolicy`). A linked phone now says so instead of offering the control
+  (`OnYourMac`): Schedules always opens Nollie's chat to ask, a schedule's page says "Edit this on your Mac.", and Apps
+  & access shows its switches greyed under "Change these on your Mac." with no Connections row.
+- **Night shift in the chat.** The morning's card sits at the top of the main chat in Release builds on every device
+  (`NightShiftStrip`), since 1.3.
+- **The Board's swipes.** Cards are not in a `List`, so the swipe actions never appeared. They are gone from the code;
+  the long press and Move in the task's sheet do the same things.
+- **Board tasks on the Watch.** Tasks waiting for the person show as a page after the crew (`WatchWire.BoardNote`,
+  `BoardPage`): each title and its helper, a private bot's left out, with "Answer on your iPhone." The phone reads the
+  Board with the Night shift note, so the page is there even if the Board was never opened. An older phone sends none
+  and an older Watch ignores it, so the version stays 1.

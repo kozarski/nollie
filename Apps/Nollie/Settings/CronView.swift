@@ -19,6 +19,10 @@ struct CronView: View {
     @State private var chatTask: Task<Void, Never>?
 
     private var runtime: GatewayRuntime? { model.runtime }
+    /// Only where the gateway takes a new schedule straight from this device.
+    private var byHand: Bool {
+        OnYourMac.makesSchedulesByHand(developerMode: developerMode, linked: OnYourMac.applies(runtime?.connection))
+    }
 
     /// Whether work started for `expected` may still change the screen.
     private func stillValid(for expected: GatewayRuntime) -> Bool {
@@ -81,11 +85,12 @@ struct CronView: View {
         .testID("schedules.task.\(job.identity)")
     }
 
-    /// In developer mode this makes a task by hand. Otherwise it opens Nollie's own chat to ask.
+    /// In developer mode this makes a task by hand. Otherwise, and always on a phone linked to a Mac, it
+    /// opens Nollie's own chat to ask.
     private var addButton: some View {
         Button {
             guard !model.lock.isLocked, !openingChat, let runtime else { return }
-            if developerMode {
+            if byHand {
                 newTask = NewTask(runtime: runtime)
             } else {
                 chatTask = Task { await askNollie(on: runtime) }
@@ -93,7 +98,7 @@ struct CronView: View {
         } label: {
             if openingChat {
                 ProgressView("Opening Nollie…")
-            } else if developerMode {
+            } else if byHand {
                 Label("New scheduled task", systemImage: "plus")
             } else {
                 Label("Ask Nollie", systemImage: "bubble.left")

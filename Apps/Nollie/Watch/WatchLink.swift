@@ -105,6 +105,8 @@ final class WatchLink: NSObject {
         readingNight = true
         defer { readingNight = false }
         let card = await CrewSummaryModel.latestNight(runtime)
+        // The Board is read here too, so tasks waiting for help reach the wrist even if its page was never opened.
+        await runtime.kanban.refresh()
         guard runtime.connection.id == AppModel.shared.runtime?.connection.id else { return }
         night = (runtime.connection.id, Date(), card)
     }
@@ -198,8 +200,8 @@ final class WatchLink: NSObject {
     }
 
     #if os(iOS)
-    /// What the Watch shows: every approval waiting in the open chats, the helpers at work, and the
-    /// last Night shift card as a note. Private bots' work stays off the wrist; their approvals show
+    /// What the Watch shows: every approval waiting in the open chats, the helpers at work, Board tasks
+    /// waiting for help, and the last Night shift card as a note. Private bots' work stays off the wrist; their approvals show
     /// only that something waits, and the add-on never puts them on the card.
     static func snapshot(runtime: GatewayRuntime?, now: Date, night: ConversationPost.NightShift? = nil) -> WatchWire.Snapshot {
         guard let runtime else { return .empty(at: now) }
@@ -223,7 +225,10 @@ final class WatchLink: NSObject {
                                   helpers: CrewAtWork.members(in: runtime, now: now).map(\.helper),
                                   canStop: connection.linkedMac != nil, connected: runtime.socketState.isOpen,
                                   night: WatchNight.note(night, now: now), week: WatchNight.week(WeeklyNoteModel.shared.note,
-                                                                                                shown: WeeklyNoteModel.shows(AppModel.shared)))
+                                                                                                shown: WeeklyNoteModel.shows(AppModel.shared)),
+                                  board: WatchNight.board(runtime.kanban.board,
+                                                          name: { profile in runtime.profiles.first { $0.name == profile }?.shownName ?? profile.capitalized },
+                                                          isPrivate: { isPrivate($0, on: runtime) }))
     }
     #endif
 }

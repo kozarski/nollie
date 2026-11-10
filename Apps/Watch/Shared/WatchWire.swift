@@ -31,6 +31,9 @@ enum WatchWire {
         /// The weekly note, worded on the phone from the records alone. Nil when the note is off, for a member of
         /// someone's household, and from a phone that does not send one yet.
         var week: WeekNote? = nil
+        /// Board tasks waiting for the person's help. Nil when none wait, when the Board hasn't been read, and from
+        /// a phone that does not send them yet.
+        var board: BoardNote? = nil
 
         static func empty(at made: Date = Date(), connected: Bool = false) -> Snapshot {
             Snapshot(made: made, approvals: [], helpers: [], canStop: false, connected: connected)
@@ -89,6 +92,15 @@ enum WatchWire {
             var title: String
             var detail: String
         }
+    }
+
+    /// Board tasks that need the person, in a few lines for the wrist: each task and who holds it. Read only; the
+    /// answer is given on the iPhone.
+    struct BoardNote: Codable, Equatable, Sendable {
+        /// The first few tasks: the title, and the helper's name.
+        var tasks: [NightNote.Line]
+        /// Tasks past the ones listed.
+        var more: Int
     }
 
     /// The weekly note in a few lines for the wrist: the week, its one line, and each helper's counts.
@@ -260,6 +272,8 @@ enum WatchWords {
     static let lastSeen = String(localized: "Last seen")
     static let nightShift = String(localized: "Night shift")
     static let yourWeek = String(localized: "Your week")
+    static let needsYourHelp = String(localized: "Needs your help", comment: "Board tasks waiting for the person")
+    static let answerOnPhone = String(localized: "Answer on your iPhone.", comment: "Under Board tasks on the Watch")
     static let fullNote = String(localized: "The whole note, with its taps, is in Nollie on your iPhone.")
 
     /// "Last seen 9:41", when the phone last sent a picture.

@@ -115,12 +115,16 @@ struct CronJobDetailView: View {
                 summary
                 actions
                 Section {
-                    Button("Edit details", systemImage: "pencil") {
-                        loadDrafts()
-                        isEditing = true
+                    if OnYourMac.applies(runtime.connection) {
+                        OnYourMacNote(words: OnYourMac.editThis)
+                    } else {
+                        Button("Edit details", systemImage: "pencil") {
+                            loadDrafts()
+                            isEditing = true
+                        }
+                        .disabled(isChanging || confirmed == nil)
+                        .testID("schedules.edit")
                     }
-                    .disabled(isChanging || confirmed == nil)
-                    .testID("schedules.edit")
                 }
             }
             Section {
