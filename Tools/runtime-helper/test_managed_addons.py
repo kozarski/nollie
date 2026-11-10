@@ -302,7 +302,7 @@ class ManagedAddOnsTests(unittest.TestCase):
         (staged / "config.yaml").unlink()
         self.assertEqual(addons.ensure_profile_workflow(self.home, "juniper", staged), ["juniper"])
         self.assertEqual(json.loads((staged / "config.yaml").read_text()),
-                         {"plugins": {"enabled": ["nollie-workflow"]}})
+                         {"plugins": {"enabled": ["nollie-workflow"]}, "agent": {"clarify_timeout": 3600}})
         self.assertEqual(list(staged.glob("config.yaml.bak-*")), [])
 
     def test_new_clone_gets_ask_first_even_if_the_source_was_initialized_and_off(self):
@@ -321,7 +321,7 @@ class ManagedAddOnsTests(unittest.TestCase):
         (self.home / "profiles/empty").mkdir()
         self.assertEqual(addons.ensure_workflow(self.home), ["default", "juniper"])
         self.assertEqual(json.loads((juniper / "config.yaml").read_text()),
-                         {"plugins": {"enabled": ["nollie-workflow"]}})
+                         {"plugins": {"enabled": ["nollie-workflow"]}, "agent": {"clarify_timeout": 3600}})
         self.assertEqual((juniper / "profile.yaml").read_text(), 'display_name: Juniper\n')
         self.assertFalse((self.home / "profiles/empty/config.yaml").exists())
 
@@ -473,6 +473,60 @@ class ManagedAddOnsTests(unittest.TestCase):
             addons.ensure_workflow(self.home)
         self.assertEqual(self.snapshot(self.home), before)
 
+    # A question card should not run out while the phone is in a pocket: an hour, unless the person picked.
+
+    def question_wait(self, home):
+        return json.loads((home / "config.yaml").read_text()).get("agent", {}).get("clarify_timeout")
+
+    def test_questions_wait_an_hour_in_every_bot_that_has_no_wait_of_its_own(self):
+        self.seed_workflow()
+        scout = self.bot("scout", {"agent": {"max_turns": 40}, "_config_version": 53})
+        mason = self.bot("mason", {"agent": {"clarify_timeout": 300}})
+        juniper = self.bot("juniper", {"clarify": {"timeout": 45}})
+        addons.ensure_workflow(self.home, "first")
+        self.assertEqual(self.question_wait(self.home), 3600)
+        self.assertEqual(json.loads((scout / "config.yaml").read_text())["agent"], {"max_turns": 40, "clarify_timeout": 3600})
+        self.assertEqual(self.question_wait(mason), 300)
+        self.assertIsNone(self.question_wait(juniper))
+        self.assertEqual(json.loads((juniper / "config.yaml").read_text())["clarify"], {"timeout": 45})
+        backup = json.loads((scout / "config.yaml.bak-nollie-addons-first-questions").read_text())
+        self.assertNotIn("clarify_timeout", backup["agent"])
+        self.assertEqual(addons.ensure_workflow(self.home, "second"), [])
+
+    def test_hermes_lowering_its_old_default_is_put_back_but_a_later_choice_stays(self):
+        self.seed_workflow()
+        # Set up on Hermes 0.22: its default of an hour was written in the config.
+        scout = self.bot("scout", {"agent": {"clarify_timeout": 3600}, "_config_version": 50})
+        addons.ensure_workflow(self.home, "first")
+        self.assertEqual(self.question_wait(scout), 3600)
+        # Hermes 0.23's step 53 lowers it to 90 seconds.
+        (scout / "config.yaml").write_text(json.dumps({"agent": {"clarify_timeout": 90}, "_config_version": 53}))
+        addons.ensure_workflow(self.home, "second")
+        self.assertEqual(self.question_wait(scout), 3600)
+        # The person picks 90 seconds themselves afterwards: that stays.
+        (scout / "config.yaml").write_text(json.dumps({"agent": {"clarify_timeout": 90}, "_config_version": 53}))
+        addons.ensure_workflow(self.home, "third")
+        self.assertEqual(self.question_wait(scout), 90)
+
+    def test_ninety_seconds_on_an_older_config_is_the_persons(self):
+        self.seed_workflow()
+        # Before step 53 nothing but the person could have put 90 there.
+        scout = self.bot("scout", {"agent": {"clarify_timeout": 90}, "_config_version": 50})
+        addons.ensure_workflow(self.home, "first")
+        self.assertEqual(self.question_wait(scout), 90)
+        # Upgraded already when Nollie first looks: 90 at version 53 is Hermes's step, so the hour comes back.
+        mason = self.bot("mason", {"agent": {"clarify_timeout": 90}, "_config_version": 53})
+        addons.ensure_workflow(self.home, "second")
+        self.assertEqual(self.question_wait(mason), 3600)
+
+    def test_a_linked_question_wait_note_is_refused(self):
+        self.seed_workflow()
+        scout = self.bot("scout")
+        (scout / "nollie-workflow").mkdir()
+        (scout / "nollie-workflow/question-wait.json").symlink_to(self.root / "elsewhere.json")
+        with self.assertRaises(addons.Refused):
+            addons.keep_questions_waiting(scout, "first")
+
     def test_profile_copy_updates_drop_an_old_marker_and_keep_the_old_copy(self):
         self.seed_workflow()
         scout = self.bot("scout")
@@ -485,7 +539,8 @@ class ManagedAddOnsTests(unittest.TestCase):
         addons.ensure_workflow(self.home, "second")
         self.assertFalse((target / "recorder-only").exists())
         self.assertEqual((scout / "plugin-backups/nollie-workflow-second/plugin.yaml").read_bytes(), original)
-        self.assertEqual(len(list(scout.glob("config.yaml.bak-*"))), 1)
+        self.assertEqual(sorted(path.name for path in scout.glob("config.yaml.bak-*")),
+                         ["config.yaml.bak-nollie-addons-first", "config.yaml.bak-nollie-addons-first-questions"])
 
     def test_linked_profiles_and_configs_are_refused_without_changing_target(self):
         self.seed_workflow()
