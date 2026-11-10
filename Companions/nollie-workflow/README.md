@@ -335,7 +335,7 @@ backs up the plugin as before; follow-up state is preserved in
 `nollie-workflow/followups.json` with private file permissions.
 
 Binding also requires the small scheduler overlay described in
-[Hermes compatibility](../hermes-patches/README.md). Hermes v0.22.2 has no hook
+[Hermes compatibility](../hermes-patches/README.md). Hermes v0.23.1 has no hook
 before a scheduled turn starts, and can wake a model when a pre-check script fails.
 The checked overlay makes bound jobs stop when that script is missing or fails.
 The companion checks the loaded capability. Its installer does not change Hermes

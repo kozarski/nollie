@@ -25,7 +25,7 @@ enum NativeSetupPlan {
     static let pythonVersion = "3.14.8"
     static let pythonKey = "cpython-3.14.8-macos-aarch64-none"
     /// SHA-256 of Services/Runtime/HermesOverlay/overlay.json: Nollie's reviewed changes to this Hermes.
-    static let hermesOverlayDigest = "dbaab45cd6f846b8650c0dc91e51c2d4835f17986659668d2ebd8bcaa6541530"
+    static let hermesOverlayDigest = "ef18f0b69d3e2fb138e289f9e2574ac71b51354465d17816851175775d75061d"
     /// What a prepared Hermes receipt records: the release plus the exact reviewed changes on top.
     static var hermesPreparedVersion: String { hermes.version + "+nollie." + hermesOverlayDigest.prefix(12) }
     struct Artifact: Sendable {
@@ -51,7 +51,7 @@ enum NativeSetupPlan {
     static var steps: [NativeDependencyStep] { [
         .init(id: "uv", title: String(localized: "Download manager"), detail: String(localized: "uv 0.13.4. A 14.3 MB verified download, kept inside Nollie's setup folder."), state: .notChecked, optional: false),
         .init(id: "python", title: String(localized: "Python runtime"), detail: String(localized: "Python 3.14.8. A 26.7 MB verified download. A separate runtime for Nollie, without changing your existing Python."), state: .notChecked, optional: false),
-        .init(id: "hermes", title: "Hermes Agent", detail: String(localized: "Hermes 0.22.2 at a fixed revision, an 81.5 MB verified download, with Nollie's reviewed changes for quiet bot chats, Board notes and safe scheduled checks."), state: .notChecked, optional: false),
+        .init(id: "hermes", title: "Hermes Agent", detail: String(localized: "Hermes 0.23.1 at a fixed revision, a 91.4 MB verified download, with Nollie's reviewed changes for Board notes and safe scheduled checks."), state: .notChecked, optional: false),
         .init(id: "dependencies", title: String(localized: "Runtime libraries"), detail: String(localized: "The exact versions in Hermes's lockfile, each checked against its recorded hash. About 40 MB."), state: .notChecked, optional: false),
         .init(id: "addons", title: String(localized: "Nollie add-ons"), detail: String(localized: "Board follow-through, Papertrail and the Night shift, the crew, the page reader, computer previews and using apps on this Mac. The reader's own libraries are about 20 MB, each checked against its recorded hash."), state: .notChecked, optional: false),
         .init(id: "service", title: String(localized: "Background service"), detail: String(localized: "Keeps your assistant running while this Mac is awake, even after Nollie closes. Starting it is a separate step, with your permission."), state: .notChecked, optional: false),

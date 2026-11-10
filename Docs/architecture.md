@@ -118,10 +118,10 @@ Workflow's Board reader and cron binding helpers live inside `nollie-workflow/he
 Both the standalone installer and managed Setup Kit keep them there; neither copies helpers into
 Hermes source. The add-on imports Hermes's existing Board and locked job-store code.
 
-Four source exceptions remain for Hermes v0.22.2: cron checks must stop before agent creation,
-Board notifications need a trusted machine tag and accurate timeout wording, and quiet Bot Chat
-needs that tag carried through delivery, storage, completion and resume. Hermes has no supported
-hooks at these points. The managed setup uses the minimal reviewed overlay and checks each pinned
+Three source exceptions remain for Hermes v0.23.1: cron checks must stop before agent creation,
+and Board notifications need a trusted machine tag and accurate timeout wording. Hermes has no
+supported hooks at these points. Quiet Bot Chat needs no change any more: Hermes 0.23 admits every
+Bot Chat delivery as an automated turn and keeps a bare control reply quiet on its own. The managed setup uses the minimal reviewed overlay and checks each pinned
 file's hash before replacing it. A changed source is refused. The
 [patch map and tests](../Companions/hermes-patches/README.md) record each gap and its coverage.
 

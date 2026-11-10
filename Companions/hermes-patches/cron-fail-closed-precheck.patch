@@ -1,16 +1,16 @@
 --- a/cron/scheduler.py
 +++ b/cron/scheduler.py
-@@ -2221,6 +2221,9 @@
+@@ -2231,6 +2231,9 @@
+ 
+ 
  _RunResult = tuple[bool, str, str, Optional[str]]
- 
- 
++
++
 +OLLIE_FAIL_CLOSED_PRECHECK_VERSION = 1
-+
-+
+ 
+ 
  def _prepare_job_prompt(
-     job: dict, job_id: str, job_name: str, extra_prompt: Optional[str], cancel_event,
- ) -> tuple[Optional[_RunResult], Optional[str]]:
-@@ -2261,6 +2264,9 @@
+@@ -2273,6 +2276,9 @@
      # (#96290).
      prerun_script = None
      script_path = job.get("script")
@@ -20,7 +20,7 @@
      if script_path:
          prerun_script = _run_job_script_with_claim_heartbeat(
              job,
-@@ -2269,6 +2275,9 @@
+@@ -2281,6 +2287,9 @@
              cancel_event=cancel_event,
          )
          _ran_ok, _script_output = prerun_script

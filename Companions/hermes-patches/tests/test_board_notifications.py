@@ -31,13 +31,17 @@ class BoardNotificationTests(unittest.TestCase):
             _session_profile_runtime_scope=lambda _: contextlib.nullcontext(),
             _session_turn_admission=lambda _: contextlib.nullcontext(True),
             _emit=lambda *args: self.emitted.append(args),
-            _run_prompt_submit=lambda *args, **kwargs: self.submitted.append((args[3], kwargs)),
+            _run_prompt_submit=self.submit,
         )
         self.notifications.register(self.server)
         self.server._collect_kanban_notifications = lambda _: self.texts
         self.server._notif_log_failure = lambda *args: self.failures.append(args)
         self.session = {"history_lock": threading.RLock(), "session_key": "fixture-session"}
         self.task = SimpleNamespace(title="Fixture research", assignee="fixture", max_runtime_seconds=None)
+
+    def submit(self, *args, **kwargs):
+        self.submitted.append((args[3], kwargs))
+        return True  # Hermes 0.23 admitted the turn
 
     def poll(self, texts=()):
         self.texts = list(texts)
@@ -93,7 +97,11 @@ class BoardNotificationTests(unittest.TestCase):
             with self.subTest(suppressed=suppressed):
                 self.config["display"]["suppress_warning_notifications"] = suppressed
                 self.session["running"] = False
+                shown = len(self.emitted)
                 self.poll([text])
+                # The setting only decides whether the status line shows. The turn starts either way.
+                expected = [] if suppressed else [("status.update", "fixture-live", {"kind": "process", "text": text})]
+                self.assertEqual(self.emitted[shown:], expected)
                 prompt, kwargs = self.submitted[-1]
                 self.assertEqual(prompt, text)
                 self.assertEqual(kwargs["display_kind"], "internal_notification")
@@ -101,7 +109,7 @@ class BoardNotificationTests(unittest.TestCase):
                 self.assertEqual(kwargs.get("display_metadata"), metadata)
                 self.assertEqual(self.session["_kanban_pending"], [])
         self.assertEqual(len(self.submitted), 2)
-        self.assertEqual(len(self.emitted), 2)
+        self.assertEqual(len(self.emitted), 1)
         self.assertFalse(self.failures)
 
     def test_busy_session_keeps_one_pending_batch_until_idle(self):

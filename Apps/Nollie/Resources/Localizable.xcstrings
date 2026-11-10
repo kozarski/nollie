@@ -38816,30 +38816,30 @@
         }
       }
     },
-    "Hermes 0.22.2 at a fixed revision, an 81.5 MB verified download, with Nollie's reviewed changes for quiet bot chats, Board notes and safe scheduled checks." : {
+    "Hermes 0.23.1 at a fixed revision, a 91.4 MB verified download, with Nollie's reviewed changes for Board notes and safe scheduled checks." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Hermes 0.22.2 in einer festen Revision, ein geprüfter Download mit 81,5 MB, mit den geprüften Änderungen von Nollie für ruhige Bot-Chats, Board-Notizen und sichere geplante Prüfungen."
+            "value" : "Hermes 0.23.1 in einer festen Revision, ein geprüfter Download mit 91,4 MB, mit den geprüften Änderungen von Nollie für Board-Notizen und sichere geplante Prüfungen."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Hermes 0.22.2 en una revisión fija, una descarga verificada de 81,5 MB, con los cambios revisados de Nollie para chats de bots silenciosos, notas del Tablero y comprobaciones programadas seguras."
+            "value" : "Hermes 0.23.1 en una revisión fija, una descarga verificada de 91,4 MB, con los cambios revisados de Nollie para notas del Tablero y comprobaciones programadas seguras."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Hermes 0.22.2 à une révision fixe, un téléchargement vérifié de 81,5 Mo, avec les modifications revues par Nollie pour des discussions entre bots discrètes, les notes du Tableau et des vérifications planifiées sûres."
+            "value" : "Hermes 0.23.1 à une révision fixe, un téléchargement vérifié de 91,4 Mo, avec les modifications revues par Nollie pour les notes du Tableau et des vérifications planifiées sûres."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "固定リビジョンのHermes 0.22.2。81.5MBの検証済みダウンロードで、ボットチャットを静かにする、ボードのメモ、安全なスケジュール確認のための、Nollieが確認した変更を含みます。"
+            "value" : "固定リビジョンのHermes 0.23.1。91.4MBの検証済みダウンロードで、ボードのメモと安全なスケジュール確認のための、Nollieが確認した変更を含みます。"
           }
         }
       }
