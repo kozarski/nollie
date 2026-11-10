@@ -127,9 +127,26 @@ import Testing
     }
 
     @Test func anAskFirstCardIsAlwaysRisky() {
-        let plain = ApprovalRequest(requestId: "r", sessionId: "s", description: "Look", toolName: "browser_click",
-                                    patternKey: "plugin_rule:nollie-ask-first:unsure:" + id)
-        #expect(ApprovalRisk.isRisky(plain))
+        for tool in ["browser_click", "browser_exec"] {
+            let plain = ApprovalRequest(requestId: "r", sessionId: "s", description: "Look", toolName: tool,
+                                        patternKey: "plugin_rule:nollie-ask-first:unsure:" + id)
+            #expect(ApprovalRisk.isRisky(plain))
+        }
+    }
+
+    @Test func aBrowserScriptKeepsEveryStepAndItsCheckLine() throws {
+        // Hermes 0.23's browser_exec: one script opens the page, types and presses, and the card lists each step.
+        let steps = "Press “Place order” on the browser.\nThe script will:\nOpen shop.example.com/cart\n"
+            + "Type “2” into #qty\nPress “Place order”\nWhy Nollie asks: the script presses “Place order”."
+        let ask = try #require(AskFirstAsk(approval("plugin_rule:nollie-ask-first:buy:" + id,
+                                                    steps + "\nYou're about to press “Place order”.")))
+        #expect(ask.kind == .buy)
+        #expect(ask.summary == steps)
+        #expect(ask.check == "You're about to press “Place order”.")
+        #expect(ask.buttonLabel == "Place order")
+        // In the person's own browser the words stay as the add-on wrote them.
+        let own = "Press “Buy now” on your own browser, signed in as you.\nThe script will:\nPress “Buy now”"
+        #expect(try #require(AskFirstAsk(approval("plugin_rule:nollie-ask-first:buy:" + id, own))).summary == own)
     }
 
     @Test func theCardTitleFollowsTheKindAndUnsureStaysNeutral() throws {

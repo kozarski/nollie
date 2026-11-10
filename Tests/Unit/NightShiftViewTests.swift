@@ -256,6 +256,32 @@ func rehearsalSample(state: ConversationPost.Rehearsal.State? = .ready, check: C
         #expect(RehearsalCard.everyTime == "Needs your yes each time")
     }
 
+    @Test func aBrowserScriptSaysWhatItDidInItsOwnWords() {
+        let run = ConversationPost.Run(id: "r", bot: "default", botName: "Nollie", title: "")
+        // Hermes 0.23's browser_exec: the add-on's label carries its own verb, so none goes before it.
+        let opened = ConversationPost.Action(tool: "browser_exec", target: "Opened bbc.co.uk/weather", status: .done,
+                                             receipt: .init(kind: .tool))
+        #expect(NightShiftWords.verb(opened) == "")
+        #expect(NightShiftWords.sentence(verb: NightShiftWords.verb(opened), target: opened.target,
+                                         receipt: NightShiftWords.receipt(opened, in: run))
+                == "Opened bbc.co.uk/weather. Part of this schedule's tools.")
+        let stopped = ConversationPost.Action(tool: "browser_exec", target: "Clicked Place order", status: .blocked,
+                                              receipt: .init(kind: .blocked, detail: "risky"))
+        #expect(NightShiftWords.verb(stopped) == "")
+        #expect(NightShiftWords.sentence(verb: NightShiftWords.verb(stopped), target: stopped.target,
+                                         receipt: NightShiftWords.receipt(stopped, in: run))
+                == "Clicked Place order. Stopped: a risky command needs your OK.")
+        #expect(NightShiftWords.verbs("browser_exec", target: "Filled in a form") == ("", ""))
+        #expect(NightShiftWords.wouldHave("browser_exec", target: "Opened a page") == "Would have:")
+        // Without a label, and the older browser tools, it reads as browsing, as before.
+        #expect(NightShiftWords.verbs("browser_exec") == ("Browsed", "Browse"))
+        #expect(NightShiftWords.verbs("browser_navigate", target: "bbc.co.uk/weather") == ("Browsed", "Browse"))
+        #expect(NightShiftWords.verbs("browser_snapshot").0 == "Looked at")
+        // The page it names stays out of the picture to share.
+        let shared = NightShiftShareModel.target(of: opened)
+        #expect(shared.count == 1 && shared[0].hidden)
+    }
+
     @Test func verbsFollowTheTool() {
         #expect(NightShiftWords.verbs("terminal") == ("Ran", "Run"))
         #expect(NightShiftWords.verbs("write_file") == ("Wrote", "Write"))
