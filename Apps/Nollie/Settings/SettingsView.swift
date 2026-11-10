@@ -108,7 +108,7 @@ struct SettingsView: View {
 
     #if DEBUG
     /// For pictures: `-nollie-demo-settings <page>` opens that page (its raw name),
-    /// `left` or `night` the summary pages, `models-advanced` Models › Advanced, and `bot-<tab>`
+    /// `left` or `night` the summary pages, `models-advanced` Models › Advanced, `skills` the main bot's skills, and `bot-<tab>`
     /// the default bot's settings.
     private func openDemoPage() async {
         let words = ProcessInfo.processInfo.arguments
@@ -184,6 +184,8 @@ private struct DemoSettingsPage: View {
             PermissionsSettingsView().untitledPage()
         } else if name == "models-advanced" {
             DemoModelsAdvanced()
+        } else if name == "skills" {
+            SkillsView(profileName: model.runtime?.defaultProfile ?? "default")
         } else if name.hasPrefix("bot-") {
             ProfileCardView(
                 profileName: model.runtime?.defaultProfile ?? "default",

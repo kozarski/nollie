@@ -38,6 +38,31 @@ enum DemoRoutes {
         })])
     }
 
+    // MARK: Skills and spending
+
+    /// The skills every demo bot has, as Hermes 0.23 lists them.
+    static let skills: [[String: JSONValue]] = [
+        ["name": "compare-prices", "description": "Compare a product's price across shops", "category": "shopping",
+         "enabled": true, "usage": 12, "provenance": "agent"],
+        ["name": "meeting-notes", "description": "Turn a meeting into short notes and next steps", "category": "notes",
+         "enabled": true, "usage": 5, "provenance": "bundled"],
+        ["name": "trip-plan", "description": "Plan a day out from a few details", "category": "plans",
+         "enabled": true, "usage": 2, "provenance": "hub"],
+    ]
+
+    /// A week of model costs as Hermes counts them: Nollie and Scout use a priced model, Mason and Wren a local one,
+    /// which Hermes doesn't price.
+    static func usage(bot: String, days: Int) -> JSONValue {
+        let perDay: Double = ["default": 0.16, "scout": 0.34][bot] ?? 0
+        let span = max(1, min(days, 30))
+        let cost = (perDay * Double(span) * 100).rounded() / 100
+        return ["period_days": .number(Double(span)),
+                "totals": ["total_estimated_cost": .number(cost), "total_actual_cost": 0, "total_sessions": .number(Double(span)),
+                           "total_input": .number(Double(span) * 24_000), "total_output": .number(Double(span) * 3_000)],
+                "by_model": [["model": .string(DemoSeed.model), "estimated_cost": .number(cost), "sessions": .number(Double(span))]],
+                "daily": []]
+    }
+
     // MARK: Schedules
 
     static func schedules(now: Double) -> [JSONValue] {

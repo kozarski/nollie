@@ -40,6 +40,9 @@ public actor DemoGateway {
     var kanban: DemoKanban
     var schedules: [JSONValue]
     var askFirst: [String: Bool] = [:]
+    /// Skills each bot can use but not change (Hermes 0.23's locks), and the bots that keep their skills as they are.
+    var skillLocks: [String: Set<String>] = ["scout": ["compare-prices"]]
+    var keepSkills: Set<String> = []
     /// Night shift's switch, on as the demo's morning card supposes.
     var nightShiftOn = true
     var seededAsk = false

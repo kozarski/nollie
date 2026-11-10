@@ -30,7 +30,32 @@ extension DemoGateway {
         case "/api/hermes/update/check":
             return (200, ["install_method": "git", "current_version": "demo", "behind": 0, "update_available": false,
                           "can_apply": false, "update_command": "", "message": nil, "commits": []])
-        case "/api/skills", "/api/tools/toolsets": return (200, [])
+        case "/api/tools/toolsets": return (200, [])
+        case "/api/skills":
+            let bot = query["profile"] ?? "default"
+            return (200, .array(DemoRoutes.skills.map { skill in
+                var row = skill
+                row["locked"] = .bool(skillLocks[bot, default: []].contains(skill["name"]?.stringValue ?? ""))
+                return .object(row)
+            }))
+        case "/api/skills/lock":
+            let bot = query["profile"] ?? "default"
+            guard method == "PUT", let name = body["name"]?.stringValue,
+                  DemoRoutes.skills.contains(where: { $0["name"]?.stringValue == name }) else { return refuse(404, "Skill not found.") }
+            let locked = body["locked"]?.boolValue == true
+            if locked { skillLocks[bot, default: []].insert(name) } else { _ = skillLocks[bot, default: []].remove(name) }
+            return (200, ["ok": true, "name": .string(name), "locked": .bool(locked)])
+        case "/api/plugins/nollie-workflow/keep-skills":
+            let bot = (method == "PUT" ? body["bot"]?.stringValue : query["bot"]) ?? "default"
+            guard DemoSeed.bots.contains(where: { $0.name == bot }) else { return refuse(404, "No such bot.") }
+            if method == "PUT", let on = body["on"]?.boolValue {
+                if on { keepSkills.insert(bot) } else { keepSkills.remove(bot) }
+                // As the add-on and the app do together: on locks every skill, off unlocks them.
+                skillLocks[bot] = on ? Set(DemoRoutes.skills.compactMap { $0["name"]?.stringValue }) : []
+            }
+            return (200, ["bot": .string(bot), "on": .bool(keepSkills.contains(bot))])
+        case "/api/analytics/usage":
+            return (200, DemoRoutes.usage(bot: query["profile"] ?? "default", days: Int(query["days"] ?? "") ?? 30))
         case "/api/mcp/servers": return (200, ["servers": []])
         case "/api/plugins/nollie-workflow/private-bots": return (200, ["profiles": [], "saved": true])
         case "/api/plugins/nollie-workflow/attention":
