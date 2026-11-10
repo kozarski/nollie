@@ -196,7 +196,8 @@ enum LinkDoorPolicy {
 
     static let awayRoutes: [String: Route] = ["/nollie/link/hosts": .hosts, "/nollie/link/away/on": .awayOn, "/nollie/link/away/off": .awayOff]
 
-    /// Paths whose query is held to one `profile` and nothing else.
+    /// Paths whose query is held to one bot name and nothing else: `bot`, which Nollie sends from Hermes 0.23
+    /// on (Hermes takes `profile` on a plugin route for itself), or `profile` from an older Nollie.
     static let profileOnlyPaths: Set<String> = ["/api/plugins/nollie-computer/take-over", "/api/plugins/nollie-computer/hand-back",
                                                "/api/plugins/nollie-computer/ask-first"]
 
@@ -207,7 +208,7 @@ enum LinkDoorPolicy {
 
     /// Every other path passes its query on as before; these take exactly one profile name.
     static func allowsQuery(path: String, query: String?) -> Bool {
-        if profileOnlyPaths.contains(path) { return onlyOneName("profile", in: query) }
+        if profileOnlyPaths.contains(path) { return onlyOneName("bot", in: query) || onlyOneName("profile", in: query) }
         if botOnlyPaths.contains(path) { return onlyOneName("bot", in: query) }
         return true
     }

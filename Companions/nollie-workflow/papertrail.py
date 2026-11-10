@@ -225,7 +225,10 @@ def _config(config_path):
         config = read_user_config_raw(config_path)
     except Exception:
         try:
-            import yaml
+            try:
+                import hermes_yaml as yaml  # Hermes's own reader; 0.23 no longer installs PyYAML
+            except ImportError:
+                import yaml
             config = yaml.safe_load(Path(config_path).read_text())
         except Exception:
             return {}

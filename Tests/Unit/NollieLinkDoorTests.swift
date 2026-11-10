@@ -956,9 +956,12 @@ extension NollieLinkDoorTests {
                 #expect(!LinkDoorPolicy.allowsQuery(path: path, query: bad), "\(path) \(bad ?? "nil")")
             }
         }
-        // The profile-only routes keep their own rule.
-        #expect(!LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "bot=default"))
+        // The computer's routes take one bot name, as `bot` from Hermes 0.23 on or `profile` from an older Nollie.
+        #expect(LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "bot=default"))
         #expect(LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "profile=default"))
+        for bad in ["bot=default&profile=default", "profile=default&bot=default", "bot=a&bot=b", "bot=../x"] {
+            #expect(!LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: bad), "\(bad)")
+        }
     }
 
     @Test func readyMadeHelpersAllowOnlyTheRosterAddAndUndo() {

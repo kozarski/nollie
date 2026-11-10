@@ -23,7 +23,7 @@ import Testing
             #expect(request.httpMethod == "GET")
             #expect(request.url?.path == "/hermes/api/plugins/nollie-computer/ask-first")
             #expect(URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems
-                    == [URLQueryItem(name: "profile", value: "work")])
+                    == [URLQueryItem(name: "bot", value: "work")])
             #expect(request.value(forHTTPHeaderField: "X-Hermes-Session-Token") == "ask-first-fixture")
             return (200, Data(#"{"profile":"work","enabled":false}"#.utf8))
         }
@@ -183,7 +183,7 @@ import Testing
         let (model, runtime) = try setup()
         let gate = AskFirstSettingsGate()
         AskFirstSettingsStub.handler = { request in
-            if request.url?.query == "profile=work" {
+            if request.url?.query == "bot=work" {
                 await gate.hold()
                 return (200, Data(#"{"profile":"work","enabled":true}"#.utf8))
             }
@@ -207,7 +207,7 @@ import Testing
                 await gate.hold()
                 return (200, Data(#"{"profile":"work","enabled":true}"#.utf8))
             }
-            let bot = request.url?.query == "profile=work" ? "work" : "home"
+            let bot = request.url?.query == "bot=work" ? "work" : "home"
             return (200, Data("{\"profile\":\"\(bot)\",\"enabled\":false}".utf8))
         }
         defer { AskFirstSettingsStub.reset() }

@@ -779,7 +779,7 @@ def ask_first_rest(method: str, base: str, query: dict, payload) -> tuple[int, o
         return None
     if method not in ("GET", "PUT"):
         return refuse(405, "Method Not Allowed")
-    profile = unquote(query.get("profile", ""))
+    profile = unquote(query.get("bot", query.get("profile", "")))
     if not PRIVATE_PROFILE_NAME.fullmatch(profile):
         return refuse(422, "Choose a bot first.")
     if private_identity(profile) or set(re.split(r"[^a-z0-9]+", profile)) & carried_over_private_names():
@@ -1242,7 +1242,7 @@ def own_computer_rest(method: str, base: str, query: dict, payload) -> tuple[int
                      log=OWN_COMPUTERS["log"]))
     if base != "/api/plugins/nollie-computer/own-computer":
         return None
-    name = unquote(query.get("profile", "")) if method == "GET" else body.get("profile")
+    name = unquote(query.get("bot", query.get("profile", ""))) if method == "GET" else body.get("profile")
     if not isinstance(name, str) or not PRIVATE_PROFILE_NAME.match(name):
         return refuse(422, "That isn't a helper on this Mac.")
     if name in private_names() or (name not in PROFILES and name not in CREATED_PROFILES):
@@ -1872,7 +1872,7 @@ def computer_pictures_paused() -> bool:
 
 
 def computer_preview_rest(query):
-    profile, sid = unquote(query.get("profile", "")), unquote(query.get("session_id", ""))
+    profile, sid = unquote(query.get("bot", query.get("profile", ""))), unquote(query.get("session_id", ""))
     COMPUTER_PREVIEW["requests"].append(dict(profile=profile, session_id=sid, at=time.time()))
     COMPUTER_PREVIEW["requests"] = COMPUTER_PREVIEW["requests"][-500:]
     row = next((r for r in STORED_SESSIONS if r["id"] == sid and r.get("profile") == profile), None)
@@ -1911,7 +1911,7 @@ def computer_control_rest(method, base, query):
         return None
     if method != "POST":
         return refuse(405, "Method Not Allowed")
-    profile = unquote(query.get("profile", ""))
+    profile = unquote(query.get("bot", query.get("profile", "")))
     if profile != "default" or profile.lower() in private_names() or COMPUTER_PREVIEW["state"] == "unsupported":
         return refuse(409, "This computer can't be taken over right now.")
     if COMPUTER_PREVIEW["held"] != action:

@@ -431,7 +431,10 @@ class OwnComputers:
             raise Refused("This helper's settings can't be read right now.", 500) from None
         load = self.yaml_load
         if load is None:
-            import yaml
+            try:
+                import hermes_yaml as yaml  # Hermes's own reader; 0.23 no longer installs PyYAML
+            except ImportError:
+                import yaml
             load = yaml.safe_load
         try:
             document = load(text)

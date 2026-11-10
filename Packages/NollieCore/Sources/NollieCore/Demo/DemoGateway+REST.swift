@@ -51,7 +51,7 @@ extension DemoGateway {
             return (200, ["bot": body["bot"] ?? "default", "kind": body["kind"] ?? "web", "name": body["name"] ?? nil,
                           "on": body["on"] ?? true])
         case "/api/plugins/nollie-computer/ask-first":
-            let bot = query["profile"] ?? "default"
+            let bot = query["bot"] ?? query["profile"] ?? "default"
             if method == "PUT" { askFirst[bot] = body["enabled"]?.boolValue ?? true }
             return (200, ["profile": .string(bot), "enabled": .bool(askFirst[bot] ?? true)])
         case "/api/sessions": return (200, sessionsList())

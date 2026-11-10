@@ -160,12 +160,20 @@ extension HermesAPI {
 // MARK: One request
 
 extension HermesAPI {
+    /// The query item that names the bot. Nollie's computer add-on runs in the main bot and looks after
+    /// each helper itself, so it is told the bot as `bot`: from Hermes 0.23 a `profile` on a plugin route
+    /// hands the request to that helper's own plugin host instead, where the add-on isn't listed.
+    public static func botQueryName(_ path: String) -> String {
+        path.hasPrefix("/api/plugins/nollie-computer/") ? "bot" : "profile"
+    }
+
     /// One request. `timeout` replaces the session's wait when given. `answers` lists error
     /// statuses whose body is the answer the caller wants (a 409 carrying the current state),
     /// so they are returned, not thrown.
     public func raw(_ method: String, _ path: String, query: Query = [], profile: String? = nil, body: Body?, authenticated: Bool, timeout: TimeInterval? = nil, answers: Set<Int> = []) async throws -> (Data, HTTPURLResponse) {
-        let wantsProfile = profile.map { !$0.isEmpty } == true && !query.contains { $0.name == "profile" }
-        let items = wantsProfile ? query + [URLQueryItem(name: "profile", value: profile)] : query
+        let name = Self.botQueryName(path)
+        let wantsProfile = profile.map { !$0.isEmpty } == true && !query.contains { $0.name == name }
+        let items = wantsProfile ? query + [URLQueryItem(name: name, value: profile)] : query
 
         // Built fresh for each try, since a renewal changes what the headers say.
         let build = { [self] in

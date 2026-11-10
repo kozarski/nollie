@@ -149,6 +149,22 @@ def smoke(installation, report):
                                                   "/api/plugins/nollie-workflow/private-bots",
                                                   "/api/plugins/nollie-workflow/papertrail?days=1",
                                                   "/api/plugins/nollie-crew/crew")}
+        # A helper bot: made through Hermes's own route (so Ask first goes on before it is served), then
+        # the add-ons' routes for it. From Hermes 0.23 a helper's add-on routes run in its own plugin host.
+        def post(path, body):
+            request = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=json.dumps(body).encode(), method="POST",
+                                             headers={"X-Hermes-Session-Token": token, "Content-Type": "application/json"})
+            try:
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    return response.status
+            except urllib.error.HTTPError as error:
+                return error.code
+        helper = {"create": post("/api/profiles", {"name": "rover", "description": "A dry-run helper."})}
+        # Nollie's computer add-on looks after each helper from the main bot, so it is told the bot as `bot`.
+        for path in ("/api/plugins/nollie-computer/ask-first?bot=rover",
+                     "/api/plugins/nollie-computer/own-computer?bot=rover"):
+            helper[path] = get(path)[0]
+        helper["ask_first_on_disk"] = (i / "home/profiles/rover/plugins/nollie-workflow").is_dir()
         _, options = get("/api/model/options?profile=default")
         # A fresh setup lists OpenRouter only once Hermes holds a key for it.
         signed_in = [p.get("slug") for p in (options or {}).get("providers", []) if isinstance(p, dict) and p.get("authenticated")]
@@ -158,12 +174,14 @@ def smoke(installation, report):
         plugin_errors = [line for line in gateway_log.splitlines()
                          if "nollie" in line.lower() and any(word in line.lower() for word in ("error", "traceback", "failed"))]
         report["smoke"] = {"api_identity": status == 200 and bool(identity and identity.get("ok")),
-                           "routes": routes, "gateway_running_after_10s": gateway_alive,
+                           "routes": routes, "helper": helper, "gateway_running_after_10s": gateway_alive,
                            "key_from_pipe_reaches_hermes": "openrouter" in signed_in,
                            "no_key_in_files": "fake-dry-run-key" not in (i / "home/.env").read_text(errors="replace")
                            if (i / "home/.env").exists() else True,
                            "gateway_plugin_errors": plugin_errors[:10]}
         return (report["smoke"]["api_identity"] and gateway_alive and not plugin_errors
+                and helper["create"] == 200 and helper["ask_first_on_disk"]
+                and all(code == 200 for path, code in helper.items() if path.startswith("/api/"))
                 and report["smoke"]["key_from_pipe_reaches_hermes"] and report["smoke"]["no_key_in_files"])
     finally:
         for role, (process, write_end) in children.items():

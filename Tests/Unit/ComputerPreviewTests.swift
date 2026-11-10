@@ -86,7 +86,7 @@ import NollieCore
             #expect(request.httpMethod == "GET")
             #expect(request.url?.path == "/hermes/api/plugins/nollie-computer/preview")
             let query = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems ?? []
-            #expect(query.contains(URLQueryItem(name: "profile", value: "work")))
+            #expect(query.contains(URLQueryItem(name: "bot", value: "work")))
             #expect(query.contains(URLQueryItem(name: "session_id", value: "preview-session")))
             #expect(request.value(forHTTPHeaderField: "X-Hermes-Session-Token") == "preview-test-token")
             return (200, body)
