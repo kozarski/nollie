@@ -253,6 +253,9 @@ class RehearsalRunTests(RecorderCase):
         self.assertIsNone(guard("web_extract", {"urls": ["https://a.example/b"]}))
         self.assertEqual(guard("web_extract", {"urls": ["https://a.example/b?q=1"]})["message"], receipts.REHEARSAL)
         self.assertEqual(guard("browser_console", {"expression": "1+1"})["message"], receipts.REHEARSAL)
+        self.assertEqual(guard("browser_exec", {"code": "print(js('1+1'))"})["message"], receipts.REHEARSAL)
+        self.assertEqual(guard("browser_exec", {"code": "new_tab('https://a.example/')"})["message"], receipts.REHEARSAL)
+        self.assertIsNone(guard("browser_exec", {"code": "print(page_info())"}))
         self.assertEqual(guard("terminal", {"command": "ls"})["message"], receipts.REHEARSAL)
 
     def test_the_reply_is_silenced_from_memory(self):

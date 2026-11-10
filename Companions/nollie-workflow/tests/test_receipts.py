@@ -187,6 +187,55 @@ class LookOnlyTests(unittest.TestCase):
         self.assertTrue(receipts.look_only("browser_console", {}))
         self.assertFalse(receipts.look_only("browser_console", {"expression": "document.cookie"}))
 
+    def test_a_browser_script_only_when_it_reads_the_page_already_open(self):
+        for code in ("print(page_info())", "wait_for_load()\ncapture_screenshot()", "ensure_real_tab()\nprint(page_info())"):
+            self.assertTrue(receipts.look_only("browser_exec", {"code": code}), code)
+        # Opening a page or running a page script never was look-only (browser_navigate, browser_console).
+        for code in ("new_tab('https://a.example/b')", "print(js('document.cookie'))", "click_at_xy(1, 2)",
+                     "fill_input('#q', 'x')", "eval('1')", "def (", "my_helper()", None, "",
+                     "print(page_info())\nimport os\nos.remove('/Users/sam/notes.md')",
+                     "x = page_info()", "print(page_info(), file=open('/Users/sam/notes.md', 'w'))",
+                     "page_info(open('/Users/sam/notes.md', 'w'))", "close_tab()"):
+            self.assertFalse(receipts.look_only("browser_exec", {"code": code}), code)
+        self.assertFalse(receipts.look_only("browser_exec", {}))
+
+
+class BrowserLabelTests(unittest.TestCase):
+    """A browser_exec step in Night shift: a plain label from what the script does, never its code."""
+
+    def label(self, code):
+        return receipts.target("browser_exec", {"code": code})
+
+    def test_labels(self):
+        click = ("js(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Place order')"
+                 ".click()\")")
+        for code, label in (
+                ("# Checking the weather\nnew_tab('https://www.bbc.co.uk/weather?postcode=BA1')\nprint(page_info())",
+                 "Opened bbc.co.uk/weather"),
+                ("for u in ['https://a.example/x', 'https://b.example/y', 'https://c.example/']:\n    goto_url(u)",
+                 "Opened a.example/x and 2 more pages"),
+                ("goto_url(next_page())", "Opened a page"),
+                ("new_tab('https://shop.example.com/cart')\nfill_input('#qty', '2')\n" + click, "Clicked Place order"),
+                ("new_tab('https://forms.example.org/apply')\nfill_input('#name', 'Sam')", "Filled in a form on forms.example.org"),
+                ("fill_input('#name', 'Sam')", "Filled in a form"),
+                ("click_at_xy(812, 604)", "Clicked on a page"),
+                ("new_tab('https://shop.example.com/')\nclick_at_xy(812, 604)", "Clicked on a page on shop.example.com"),
+                ("press_key('Enter')", "Pressed a key"),
+                ("print(page_info())", "Read a page"),
+                ("print(js('document.title'))", "Read a page"),
+                ("def (", "Used the browser"),
+                ("", "Used the browser")):
+            with self.subTest(code=code):
+                self.assertEqual(self.label(code), label)
+
+    def test_the_script_itself_never_shows(self):
+        code = "# Sending Priya the invoice\nfill_input('#password', 'hunter2-correct-horse')\nprint(page_info())"
+        self.assertEqual(self.label(code), "Filled in a form")
+        secret = ("js(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Card 4242 4242')"
+                  ".click()\")")
+        self.assertEqual(self.label(secret), "Clicked on a page")
+        self.assertLessEqual(len(self.label("new_tab('https://example.com/" + "a" * 500 + "')")), receipts.TARGET_LIMIT)
+
 
 class BlockTests(unittest.TestCase):
     def test_the_mac(self):
