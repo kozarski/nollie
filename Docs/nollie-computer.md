@@ -102,7 +102,7 @@ builds it into `~/Library/Caches/Nollie/computer-helper` (rebuildable; safe to d
 2. A sparse clone of the tag (only the files the build reads), checked against the pinned commit
    and tree ids, with no local changes. The build stops if any folder above the source holds a
    `.cargo/config`, so nothing outside the clone can change it.
-3. All 625 locked crates, fetched with `/usr/bin/curl` and checked against Cargo.lock
+3. All 617 locked crates, fetched with `/usr/bin/curl` and checked against Cargo.lock
    (`vendor-crates.py`; `NOLLIE_CRATE_SEED` can point at a folder of `.crate` files to skip downloads).
    Every vendored file's SHA-256 goes in its `.cargo-checksum.json`, so cargo rechecks them each build.
 4. `cargo build -p cua-driver --release --locked --offline` in a clean environment, with build paths
@@ -243,7 +243,7 @@ right Privacy & Security page instead. The status refreshes while the window is 
 ## What is proven, and what still needs a person
 
 Proven on this Mac (Tests/Unit/ComputerHelperTests.swift, run inside the signed DirectDebug app):
-the embedded helper starts, reports version 0.36.0 and embedded mode, refuses `list_windows` from
+the embedded helper starts, reports version 0.46.1 and embedded mode, refuses `list_windows` from
 a plain caller with "outside the capability manifest", reports its permission attribution as
 `host`, allows Finder only inside Nollie's trusted session, refuses another app, `list_apps` and
 `get_screen_size` there, refuses input in a view-only session, stops in under a second, and leaves

@@ -51,6 +51,7 @@ struct MacRootView: View {
             .companionOffer(touring: touring)
             .notificationNavigation(model)
             .weeklyNoteHost()
+            .whatsNewHost()
             #if NOLLIE_DIRECT
             .modifier(LeftoverOffer())
             #endif

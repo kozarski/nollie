@@ -21,6 +21,23 @@ enum WatchNight {
                                    needsLook: needsLook)
     }
 
+    /// Tasks the wrist lists before "2 more".
+    static let shownTasks = 3
+
+    /// The Board tasks that wait for the person, as the Board's Blocked lane has them. A private bot's task stays
+    /// off the wrist, as its work does everywhere else. Nil when nothing waits or the Board hasn't been read.
+    static func board(_ board: KanbanBoard?, name: (String) -> String, isPrivate: (String) -> Bool) -> WatchWire.BoardNote? {
+        guard let board else { return nil }
+        let waiting = KanbanPresentationGroup.blocked.tasks(in: board).filter { task in
+            task.assignee.map { !isPrivate($0) } ?? true
+        }
+        guard !waiting.isEmpty else { return nil }
+        let lines = waiting.prefix(shownTasks).map {
+            WatchWire.NightNote.Line(title: $0.title, detail: $0.assignee.map(name) ?? "")
+        }
+        return WatchWire.BoardNote(tasks: Array(lines), more: waiting.count - lines.count)
+    }
+
     /// Helpers the wrist's weekly note lists before "2 more".
     static let shownHelpers = 4
 

@@ -28,7 +28,7 @@ class PinTests(unittest.TestCase):
     def test_pin_names_one_checked_release(self):
         pin = dict(re.findall(r"^([A-Z0-9_]+)=(\S+)$", (HERE / "pin.env").read_text(), re.M))
         self.assertEqual(pin["DRIVER_TAG"], f"cua-driver-rs-v{pin['DRIVER_VERSION']}")
-        self.assertTrue(pin["DRIVER_VERSION"].startswith("0.36."))
+        self.assertTrue(pin["DRIVER_VERSION"].startswith("0.46."))
         for key in ("DRIVER_COMMIT", "DRIVER_TREE", "TELEMETRY_TREE"):
             self.assertRegex(pin[key], r"^[0-9a-f]{40}$")
         for key in ("DRIVER_LOCK_SHA256", "RUST_SHA256"):

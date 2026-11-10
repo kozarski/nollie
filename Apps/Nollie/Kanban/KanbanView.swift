@@ -160,30 +160,6 @@ struct KanbanView: View {
         .draggable(dragToken(for: task, in: store))
         .testID("board.task.\(task.id)")
         .contextMenu { actions(for: task, store: store) }
-        .swipeActions(edge: .leading, allowsFullSwipe: false) { leadingSwipe(task, store) }
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) { trailingSwipe(task) }
-    }
-
-    @ViewBuilder private func leadingSwipe(_ task: KanbanTask, _ store: KanbanStore) -> some View {
-        if ![.done, .archived].contains(task.column) {
-            Button("Done", systemImage: "checkmark") { question = .done(task) }
-                .tint(.green)
-        }
-        if task.column == .blocked {
-            Button("Unblock", systemImage: "play") { Task { await move(task, to: .ready, store: store) } }
-                .tint(.blue)
-        }
-    }
-
-    @ViewBuilder private func trailingSwipe(_ task: KanbanTask) -> some View {
-        Button("Delete", systemImage: "trash", role: .destructive) { question = .delete(task) }
-        if task.isWorking {
-            Button("Stop", systemImage: "stop.fill") { question = .stop(task) }
-                .tint(.orange)
-        } else if ![.blocked, .done, .archived].contains(task.column) {
-            Button("Block", systemImage: "hand.raised") { question = .block(task) }
-                .tint(.orange)
-        }
     }
 
     static func priorityName(_ level: Int) -> String {

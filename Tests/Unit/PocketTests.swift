@@ -28,6 +28,77 @@ import Testing
     }
 }
 
+/// A phone linked to a Mac says what stays on the Mac before anyone taps it.
+@Suite struct OnYourMacTests {
+    @Test func aLinkedPhoneNeverMakesAScheduleByHand() {
+        #expect(OnYourMac.makesSchedulesByHand(developerMode: true, linked: false))
+        #expect(!OnYourMac.makesSchedulesByHand(developerMode: true, linked: true))
+        #expect(!OnYourMac.makesSchedulesByHand(developerMode: false, linked: false))
+    }
+
+    @Test func onlyALinkedConnectionCounts() throws {
+        #expect(!OnYourMac.applies(nil))
+        var connection = GatewayConnection(name: "Studio", gateway: try GatewayURL.normalize("http://127.0.0.1:9119"), authMode: .sessionToken)
+        #expect(!OnYourMac.applies(connection))
+        connection.linkedMac = LinkedMac(macName: "Studio", pin: Data([1, 2, 3]), port: 8443, hosts: ["studio.local"], installTag: "tag", deviceID: UUID())
+        #expect(OnYourMac.applies(connection))
+    }
+
+    @Test func theWordsAreShortAndPlain() {
+        for words in [OnYourMac.changeThese, OnYourMac.editThis] {
+            #expect(words.hasSuffix("on your Mac."))
+            #expect(!words.contains("\u{2014}"))
+        }
+    }
+}
+
+#if os(iOS)
+/// Board tasks waiting for help, made small for the wrist.
+@Suite struct WatchBoardTests {
+    private func blocked(_ id: String, _ title: String, by assignee: String? = nil, kind: String? = nil) -> KanbanTask {
+        var task = KanbanTask(id: id, title: title, status: "blocked", assignee: assignee)
+        task.blockKind = kind
+        return task
+    }
+
+    private func note(_ tasks: [KanbanTask]) -> WatchWire.BoardNote? {
+        let board = KanbanBoard(columns: [.init(name: "blocked", tasks: tasks),
+                                          .init(name: "ready", tasks: [.init(id: "r", title: "Ready one", status: "ready")])])
+        return WatchNight.board(board, name: { $0 == "career" ? "Scout" : $0.capitalized }, isPrivate: { $0 == "moss" })
+    }
+
+    @Test func onlyTasksThatNeedThePersonShow() throws {
+        let note = try #require(note([blocked("a", "Renew the insurance", by: "career"),
+                                      blocked("b", "Waits on another task", by: "career", kind: "dependency"),
+                                      blocked("c", "Pick a date")]))
+        #expect(note.tasks.map(\.title) == ["Renew the insurance", "Pick a date"])
+        #expect(note.tasks.map(\.detail) == ["Scout", ""])
+        #expect(note.more == 0)
+    }
+
+    @Test func aPrivateBotsTaskStaysOffTheWrist() {
+        #expect(note([blocked("a", "Something private", by: "moss")]) == nil)
+    }
+
+    @Test func aLongListIsCutAndCounted() throws {
+        let many = (1...5).map { blocked("t\($0)", "Task \($0)", by: "career") }
+        let note = try #require(note(many))
+        #expect(note.tasks.count == WatchNight.shownTasks)
+        #expect(note.more == 5 - WatchNight.shownTasks)
+    }
+
+    @Test func nothingWaitingIsNoPageAndAnOlderPhoneStillReads() throws {
+        #expect(note([]) == nil)
+        #expect(WatchNight.board(nil, name: { $0 }, isPrivate: { _ in false }) == nil)
+        var snapshot = WatchWire.Snapshot.empty(at: Date(timeIntervalSince1970: 1_800_050_000), connected: true)
+        snapshot.board = WatchWire.BoardNote(tasks: [.init(title: "Pick a date", detail: "Nollie")], more: 1)
+        #expect(try WatchWire.snapshot(from: WatchWire.message(snapshot)) == snapshot)
+        let old = Data(#"{"version":1,"made":1800050000,"approvals":[],"helpers":[],"canStop":false,"connected":true}"#.utf8)
+        #expect(try #require(WatchWire.decodeSnapshot(old)).board == nil)
+    }
+}
+#endif
+
 #if os(iOS)
 @MainActor
 @Suite struct CrewAtWorkTests {

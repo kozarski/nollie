@@ -37,6 +37,15 @@ final class DemoModeUITests: XCTestCase {
         }
     }
 
+    /// An iPad, or an iPhone Duo opened out: the list stays beside the chat, so there is no way back to tap.
+    private var isWide: Bool { app.windows.firstMatch.frame.width >= 700 }
+
+    /// Back to the chat list. On a wide screen it never left.
+    private func backToChats(file: StaticString = #filePath, line: UInt = #line) {
+        guard !isWide else { return }
+        visible(app.buttons.matching(identifier: "chat.back").firstMatch, file: file, line: line).tap()
+    }
+
     private func text(_ fragment: String) -> XCUIElement {
         let withFragment = NSPredicate(format: "label CONTAINS %@", fragment)
         let labels = app.staticTexts.matching(withFragment)
@@ -122,7 +131,7 @@ final class DemoModeUITests: XCTestCase {
         shot("demo-3b-reply")
 
         // Ask first: Mason is waiting on a yes, and Allow once sends it.
-        visible(app.buttons.matching(identifier: "chat.back").firstMatch).tap()
+        backToChats()
         tap("bots.pinned.mason")
         let card = visible(any("approval.askFirst"), timeout: 30)
         shot("demo-4-ask-first")
@@ -132,7 +141,7 @@ final class DemoModeUITests: XCTestCase {
         shot("demo-5-sent")
 
         // Leaving goes back to the first screen.
-        visible(app.buttons.matching(identifier: "chat.back").firstMatch).tap()
+        backToChats()
         visible(any("demo.pill")).tap()
         visible(app.buttons.matching(identifier: "demo.leave").firstMatch).tap()
         visible(app.buttons["onboarding.tryDemo"].firstMatch, timeout: 30)
@@ -165,8 +174,15 @@ final class DemoModeUITests: XCTestCase {
         shot("demo-8-night-shift")
 
         // Back out through Settings' own way out, and leave the shared demo copy with no setup under way.
-        let backCorner = app.coordinate(withNormalizedOffset: CGVector(dx: 0.095, dy: 0.114))
-        backCorner.tap()
+        // On a phone the page's way back sits in the top corner. On a wide screen Settings is a sheet in the
+        // middle, where that corner is outside it and closes the sheet, so Settings is opened again.
+        if isWide {
+            let back = app.navigationBars.buttons.firstMatch
+            if back.waitForExistence(timeout: 3), back.isHittable { back.tap() }
+            if !any("settings.leaveDemo").waitForExistence(timeout: 5) { tap("chats.settings") }
+        } else {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.095, dy: 0.114)).tap()
+        }
         visible(any("settings.leaveDemo")).tap()
         visible(app.buttons["onboarding.skip"].firstMatch, timeout: 30).tap()
     }

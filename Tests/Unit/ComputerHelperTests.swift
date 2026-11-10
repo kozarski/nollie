@@ -66,7 +66,7 @@ import Testing
         let helper = try ComputerHelper(support: support)
         defer { helper.stop() }
         let metadata = try helper.metadata()
-        #expect(metadata["driver_version"] as? String == "0.36.0")
+        #expect(metadata["driver_version"] as? String == "0.46.1")
         #expect(metadata["embedded"] as? Bool == true)
 
         // Any other process running as this user reaches only the permission check.

@@ -10442,6 +10442,35 @@
         }
       }
     },
+    "A small tidy-up this time. Here's what changed, and where to find it." : {
+      "comment" : "What's new, 1.3.3: the opening line",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diesmal ein kleines Aufräumen. Das hat sich geändert, und hier findest du es."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esta vez, un pequeño repaso. Esto es lo que ha cambiado y dónde encontrarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un petit rangement cette fois. Voici ce qui a changé, et où le trouver."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "今回は小さな整理です。変わったことと、その場所をお知らせします。"
+          }
+        }
+      }
+    },
     "A spoken conversation. Replies are read aloud." : {
       "localizations" : {
         "de" : {
@@ -13909,6 +13938,35 @@
         }
       }
     },
+    "An iPhone linked to your Mac can pause, run or delete a schedule. Editing one, and choosing what a helper may use, happen on your Mac. Those controls used to look ready and then not work. Now they're greyed, with a note saying why. To add a schedule from your iPhone, ask Nollie in the chat." : {
+      "comment" : "What's new, 1.3.3: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ein mit deinem Mac verbundenes iPhone kann einen Zeitplan pausieren, starten oder löschen. Bearbeiten, und festlegen, was ein Helfer nutzen darf, geschieht auf deinem Mac. Diese Schalter sahen bisher bereit aus und funktionierten dann nicht. Jetzt sind sie ausgegraut, mit einem Hinweis, warum. Um vom iPhone aus einen Zeitplan anzulegen, frag Nollie im Chat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un iPhone enlazado a tu Mac puede pausar, ejecutar o eliminar una programación. Editarla, y elegir qué puede usar un ayudante, se hace en tu Mac. Esos controles antes parecían listos y luego no funcionaban. Ahora aparecen atenuados, con una nota que explica por qué. Para añadir una programación desde tu iPhone, pídeselo a Nollie en el chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un iPhone lié à votre Mac peut mettre en pause, lancer ou supprimer une programmation. La modifier, et choisir ce qu'un assistant peut utiliser, se fait sur votre Mac. Ces réglages semblaient prêts, puis ne fonctionnaient pas. Ils sont maintenant grisés, avec une note qui explique pourquoi. Pour ajouter une programmation depuis votre iPhone, demandez à Nollie dans la conversation."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macにリンクした iPhone では、スケジュールの一時停止、実行、削除ができます。編集と、ヘルパーが使えるものの選択は Mac で行います。これまでは操作できそうに見えて、実際には動きませんでした。今はグレー表示になり、理由が添えられます。iPhoneからスケジュールを追加するには、チャットでNollieに頼んでください。"
+          }
+        }
+      }
+    },
     "An online model" : {
       "comment" : "Privacy: a row in Settings for a model the gateway didn't name",
       "localizations" : {
@@ -14270,6 +14328,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollieで答える"
+          }
+        }
+      }
+    },
+    "Answer on your iPhone." : {
+      "comment" : "Under Board tasks on the Watch",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Antworte auf deinem iPhone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Responde en tu iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Répondez sur votre iPhone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhoneで答えてください。"
           }
         }
       }
@@ -14894,6 +14981,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Apple Intelligenceは現在利用できません。"
+          }
+        }
+      }
+    },
+    "Apple Watch · below your crew" : {
+      "comment" : "What's new, 1.3.3: where to find it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apple Watch · unter deiner Crew"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apple Watch · debajo de tu equipo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apple Watch · sous votre équipe"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apple Watch · クルーの下"
           }
         }
       }
@@ -18294,6 +18410,35 @@
         }
       }
     },
+    "Board tasks on your wrist" : {
+      "comment" : "What's new, 1.3.3",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Board-Aufgaben am Handgelenk"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tareas del tablero en tu muñeca"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Les tâches du tableau à votre poignet"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ボードのタスクを手首で"
+          }
+        }
+      }
+    },
     "Board: %@ (⌘B)" : {
       "comment" : "%@ says how many tasks need help",
       "localizations" : {
@@ -20048,6 +20193,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "写真を変更"
+          }
+        }
+      }
+    },
+    "Change these on your Mac." : {
+      "comment" : "A linked iPhone shows a bot's switches but can't flip them",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ändere das auf deinem Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cámbialo en tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modifiez ces réglages sur votre Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macで変更してください。"
           }
         }
       }
@@ -22848,6 +23022,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "消去しました"
+          }
+        }
+      }
+    },
+    "Clearer about what stays on your Mac" : {
+      "comment" : "What's new, 1.3.3",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Klarer, was auf deinem Mac bleibt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Más claro sobre lo que se queda en tu Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Plus clair sur ce qui reste sur votre Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macに残るものがわかりやすく"
           }
         }
       }
@@ -33220,6 +33423,35 @@
         }
       }
     },
+    "Edit this on your Mac." : {
+      "comment" : "A linked iPhone can pause or delete a schedule but not edit it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bearbeite das auf deinem Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Edítalo en tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modifiez ceci sur votre Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macで編集してください。"
+          }
+        }
+      }
+    },
     "Edited file" : {
       "comment" : "A step a bot took, past tense",
       "localizations" : {
@@ -37755,6 +37987,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Macが戻ったら送信"
+          }
+        }
+      }
+    },
+    "Got it" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alles klar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Entendido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Compris"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "OK"
           }
         }
       }
@@ -44392,6 +44652,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "今週%lld回Macの外に送信"
+          }
+        }
+      }
+    },
+    "Less" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Weniger"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Menos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Moins"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "閉じる"
           }
         }
       }
@@ -51444,6 +51732,35 @@
         }
       }
     },
+    "Nollie %@" : {
+      "comment" : "The app's name and a version number",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie %@"
+          }
+        }
+      }
+    },
     "Nollie Companion %@" : {
       "localizations" : {
         "de" : {
@@ -51580,6 +51897,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollie Computer"
+          }
+        }
+      }
+    },
+    "Nollie Computer, refreshed" : {
+      "comment" : "What's new, 1.3.3",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie Computer, aufgefrischt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie Computer, renovado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie Computer, rafraîchi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie Computerを更新"
           }
         }
       }
@@ -55271,6 +55617,35 @@
         }
       }
     },
+    "Nothing has moved, and there's nothing new to set up. A helper still asks before each task, and only uses the apps you say yes to." : {
+      "comment" : "What's new, 1.3.3: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nichts ist umgezogen, und es gibt nichts Neues einzurichten. Ein Helfer fragt weiterhin vor jeder Aufgabe und nutzt nur die Apps, denen du zustimmst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nada se ha movido y no hay nada nuevo que configurar. Un ayudante sigue preguntando antes de cada tarea y solo usa las apps a las que dices que sí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Rien n'a bougé, et il n'y a rien de nouveau à configurer. Un assistant demande toujours avant chaque tâche et n'utilise que les apps que vous acceptez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "場所は変わっておらず、新しい設定もありません。ヘルパーはこれまでどおりタスクごとに確認し、あなたが許可したアプリだけを使います。"
+          }
+        }
+      }
+    },
     "Nothing is allowed yet. A model on your own computer never needs asking." : {
       "comment" : "Privacy: Settings, when no online model's company is allowed",
       "localizations" : {
@@ -57787,6 +58162,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "MacでNollieを開き、「新しく始める」を選んでください。"
+          }
+        }
+      }
+    },
+    "Open Nollie on your Watch and scroll down past your crew. You'll see each task that's waiting, and the helper holding it. To answer one, open the Board on your iPhone." : {
+      "comment" : "What's new, 1.3.3: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Öffne Nollie auf deiner Watch und scrolle an deiner Crew vorbei nach unten. Du siehst jede wartende Aufgabe und den Helfer, der sie hält. Zum Antworten öffnest du das Board auf deinem iPhone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre Nollie en tu Watch y desplázate hacia abajo, más allá de tu equipo. Verás cada tarea que espera y el ayudante que la lleva. Para responder, abre el tablero en tu iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ouvrez Nollie sur votre Watch et faites défiler au-delà de votre équipe. Vous verrez chaque tâche en attente et l'assistant qui s'en occupe. Pour répondre, ouvrez le tableau sur votre iPhone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "WatchでNollieを開き、クルーの下までスクロールしてください。待っているタスクと、それを担当するヘルパーが表示されます。答えるには、iPhoneでボードを開いてください。"
           }
         }
       }
@@ -70679,6 +71083,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "スリープ中はスケジュールが待機します。"
+          }
+        }
+      }
+    },
+    "Schedules · Apps & access" : {
+      "comment" : "What's new, 1.3.3: where to find it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zeitpläne · Apps & Zugriff"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Programaciones · Apps y acceso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Programmations · Apps et accès"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "スケジュール · アプリとアクセス"
           }
         }
       }
@@ -85452,6 +85885,35 @@
         }
       }
     },
+    "The part that lets a helper use the apps you approve is up to date." : {
+      "comment" : "What's new, 1.3.3",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Teil, mit dem ein Helfer die von dir erlaubten Apps nutzt, ist auf dem neuesten Stand."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La parte que permite a un ayudante usar las apps que apruebas está al día."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La partie qui permet à un assistant d'utiliser les apps que vous approuvez est à jour."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "あなたが許可したアプリをヘルパーが使うための部分が最新になりました。"
+          }
+        }
+      }
+    },
     "The picture to share, with personal details blurred" : {
       "localizations" : {
         "de" : {
@@ -98569,6 +99031,34 @@
         }
       }
     },
+    "What's new" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Was ist neu"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Novedades"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nouveautés"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "新機能"
+          }
+        }
+      }
+    },
     "What's wrong?" : {
       "localizations" : {
         "de" : {
@@ -98649,6 +99139,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Macがスリープしたりネットワークが切れたりすると、ゲートウェイとの接続が切れます。"
+          }
+        }
+      }
+    },
+    "When a task needs your help, your Apple Watch now shows it." : {
+      "comment" : "What's new, 1.3.3",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn eine Aufgabe deine Hilfe braucht, zeigt deine Apple Watch sie jetzt an."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cuando una tarea necesita tu ayuda, tu Apple Watch ahora la muestra."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Quand une tâche a besoin de vous, votre Apple Watch l'affiche désormais."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "タスクにあなたの助けが必要なとき、Apple Watchに表示されるようになりました。"
           }
         }
       }
@@ -98790,6 +99309,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "コンパニオンがHermesを見つける場所です。通常は%@のアドレスです。"
+          }
+        }
+      }
+    },
+    "Where to find it: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hier findest du es: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dónde encontrarlo: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Où le trouver : %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "場所: %@"
           }
         }
       }
@@ -100721,6 +101268,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "このまま続けられます。Nollieはこれをバックグラウンドで完了させます。"
+          }
+        }
+      }
+    },
+    "You can read this again in Settings, under About." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Du kannst das jederzeit in den Einstellungen unter „Über“ nachlesen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Puedes volver a leerlo en Ajustes, en Acerca de."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vous pouvez relire ceci dans Réglages, sous À propos."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "設定の「情報」でもう一度読めます。"
           }
         }
       }
@@ -103226,6 +103801,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "iPhoneがペアリングされました"
+          }
+        }
+      }
+    },
+    "Your iPhone now tells you when something is changed on your Mac." : {
+      "comment" : "What's new, 1.3.3",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein iPhone sagt dir jetzt, wenn etwas auf deinem Mac geändert wird."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu iPhone ahora te dice cuándo algo se cambia en tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre iPhone vous indique désormais quand un réglage se modifie sur votre Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macで変更する項目を、iPhoneが知らせるようになりました。"
           }
         }
       }
