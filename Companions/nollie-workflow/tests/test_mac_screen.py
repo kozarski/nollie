@@ -25,7 +25,7 @@ class MacScreenTests(unittest.TestCase):
         self.assertIn("mac_do", mac_screen.MESSAGE)
 
     def test_other_tools_are_left_alone(self):
-        for tool in ("mcp__cua__computer_screenshot", "mcp__nollie_mac__mac_do", "browser_navigate", "terminal",
+        for tool in ("mcp__cua__computer_screenshot", "mcp__nollie_mac__mac_do", "browser_navigate", "browser_exec", "terminal",
                      "computer_use_extra", "", None):
             self.assertIsNone(mac_screen.refuse(tool_name=tool, args={}))
             self.assertIsNone(mac_screen.scrub(tool_name=tool, result="anything"))
@@ -67,6 +67,8 @@ class ScreenCaptureTests(unittest.TestCase):
 
     def test_code_and_scripts_it_runs_are_read_too(self):
         self.assertTrue(self.refused("execute_code", {"code": "from mss import mss\nwith mss() as s: s.shot()"}))
+        # A Hermes 0.23 browser script is Python too.
+        self.assertTrue(self.refused("browser_exec", {"code": "import subprocess\nsubprocess.run(['screencapture', '-x', 's.png'])"}))
         self.assertTrue(self.refused("execute_code", {"code": "import Quartz\nQuartz.CGWindowListCreateImage(r, 1, 0, 0)",
                                                       "language": "python"}))
         with TemporaryDirectory() as folder:
@@ -85,6 +87,8 @@ class ScreenCaptureTests(unittest.TestCase):
                         "python3 -c 'print(1)'", "open ~/Pictures/Screenshot-2026-10-27.png"]:
             self.assertFalse(self.refused("terminal", {"command": command}), command)
         self.assertFalse(self.refused("execute_code", {"code": "await page.screenshot(path='page.png')"}))
+        # The browser's own picture, from a Hermes 0.23 script, is the page, not this Mac's screen.
+        self.assertFalse(self.refused("browser_exec", {"code": "new_tab('https://a.example/')\ncapture_screenshot()"}))
         for tool in ("browser_vision", "vision_analyze", "mcp__cua__computer_screenshot", "read_file"):
             self.assertIsNone(mac_screen.refuse(tool_name=tool, args={"command": "screencapture x.png"}))
 

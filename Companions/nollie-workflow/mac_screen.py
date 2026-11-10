@@ -15,7 +15,8 @@ import re
 
 TOOLS = frozenset({"computer_use"})
 SHELL_TOOLS = frozenset({"terminal", "process", "process_manage"})
-CODE_TOOLS = frozenset({"execute_code"})
+# browser_exec (Hermes 0.23) runs a whole Python script beside its browser helpers, like execute_code.
+CODE_TOOLS = frozenset({"execute_code", "browser_exec"})
 WRAPPERS = frozenset({"tool_call", "connectors__execute", "multi_tool_use.parallel", "parallel"})
 SCRIPT_LIMIT = 256 * 1024
 # Programs, system calls and libraries that take a picture of the screen or record it. Matched on whole words in
