@@ -166,7 +166,7 @@ private struct PillReading {
         case .sending, .thinking: pose = .thinking
         case .writing: pose = .speaking
         case .runningTool, .preparingTool: pose = .usingTool
-        case .summarizing, .status: pose = .working
+        case .summarizing, .status, .waitingForOtherChat: pose = .working
         case .idle: pose = chat.running ? .working : .idle
         }
     }

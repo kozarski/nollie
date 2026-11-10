@@ -7,7 +7,7 @@ import Foundation
 actor NativeRuntimeBackend: NollieRuntimeBackend {
     typealias Contract = NollieRuntimeContract
     static let entrypointDigest = "ec4bdd962231cc6dbdd4c23f20545d895f063f586e96557cc7df74d5b05cf4a8"
-    static let addonsDigest = "f30da3b9b00012436099457d5e3d845ebd848dfff749647d8ca4ec7133ad5aba"
+    static let addonsDigest = "fb6bbfc8a33542bce23cc8ce2eded2caed63ea2585d30787fd1a950e7b82cf13"
     private let installations: URL
     private let entrypoint: URL
     private let keys: any RuntimeKeyStoring

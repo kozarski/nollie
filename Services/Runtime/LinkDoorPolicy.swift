@@ -97,6 +97,8 @@ enum LinkDoorPolicy {
         Rule([], "/api/ws", socket: true),
         Rule(["GET"], "/api/sessions"), Rule(["GET"], "/api/sessions/search"),
         Rule(["GET", "PATCH", "DELETE"], "/api/sessions/*"), Rule(["GET"], "/api/sessions/*/messages"),
+        // Hermes 0.23 wants a chat's revision before a rename, archive or delete: a read of two counters.
+        Rule(["GET"], "/api/sessions/*/mutation-snapshot"),
         Rule(["GET", "POST"], "/api/profiles"), Rule(["GET", "POST"], "/api/profiles/active"),
         Rule(["GET"], "/api/profiles/sessions"), Rule(["PATCH"], "/api/profiles/*"),
         Rule(["GET", "PUT"], "/api/profiles/*/soul"), Rule(["PUT"], "/api/profiles/*/description"),

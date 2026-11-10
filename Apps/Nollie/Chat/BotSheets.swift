@@ -319,8 +319,13 @@ struct BotHistoryView: View {
     private func archive(_ session: StoredSession) async {
         guard let runtime else { return }
         forget(session)
-        let change: [String: JSONValue] = ["archived": .bool(true), "pinned": .bool(false), "profile": .string(profile)]
-        let _: JSONValue? = try? await runtime.api.send("PATCH", "/api/sessions/\(session.id)", json: .object(change))
+        do {
+            try await runtime.api.updateSession(session.id, profile: profile, fields: ["archived": .bool(true), "pinned": .bool(false)])
+        } catch {
+            await load()
+            errorText = String(localized: "\u{201C}\(session.displayTitle)\u{201D} did not archive: \(error.localizedDescription)",
+                               comment: "A chat's title in quotes, then the reason")
+        }
         NotificationCenter.default.post(name: .hermesSessionsChanged, object: nil)
     }
 
@@ -328,7 +333,14 @@ struct BotHistoryView: View {
         guard let runtime else { return }
         if let open = runtime.chatForStored(session.id) { runtime.closeChat(open) }
         forget(session)
-        let _: JSONValue? = try? await runtime.api.send("DELETE", "/api/sessions/\(session.id)", profile: profile, body: EmptyBody())
+        do {
+            try await runtime.api.deleteSession(session.id, profile: profile)
+        } catch {
+            // The chat is still there: bring the row back and say why, once.
+            await load()
+            errorText = String(localized: "\u{201C}\(session.displayTitle)\u{201D} was not deleted: \(error.localizedDescription)",
+                               comment: "A chat's title in quotes, then the reason")
+        }
         NotificationCenter.default.post(name: .hermesSessionsChanged, object: nil)
     }
 }

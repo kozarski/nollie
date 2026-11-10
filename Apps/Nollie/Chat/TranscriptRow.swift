@@ -74,6 +74,9 @@ struct TranscriptRow: View, Equatable {
     /// When the gateway cut a turn short: the reason if this device knows it, and a way to the setting.
     var interruptCause: InterruptedTurn.Cause? = nil
     var onKeepRunning: () -> Void = {}
+    /// An error row whose message can go again shows Try again.
+    var canRetry: Bool = false
+    var onRetry: RowActions.WithText = { _ in }
     var reasoningOpen: Binding<Bool> = Binding.constant(false)
     var onSelectText: RowActions.WithText = { _ in }
     var toolOpen: Binding<Bool> = .constant(false)
@@ -101,7 +104,7 @@ struct TranscriptRow: View, Equatable {
             && typingTool == other.typingTool && interruptCause == other.interruptCause
             && showReasoning == other.showReasoning && showStats == other.showStats
             && showToolOutput == other.showToolOutput && compactTools == other.compactTools
-            && wide == other.wide && maxBubble == other.maxBubble
+            && wide == other.wide && maxBubble == other.maxBubble && canRetry == other.canRetry
     }
 
     private var look: BubbleLook {
@@ -208,13 +211,21 @@ struct TranscriptRow: View, Equatable {
     }
 
     private func failureBox(_ text: String) -> some View {
-        Label(text, systemImage: "exclamationmark.triangle.fill")
-            .font(.footnote)
-            .foregroundStyle(.red)
-            .textSelection(.enabled)
-            .padding(12)
-            .spread()
-            .background(.red.opacity(0.12), in: .rect(cornerRadius: 16, style: .continuous))
+        VStack(alignment: .leading, spacing: 10) {
+            Label(text, systemImage: "exclamationmark.triangle.fill")
+                .font(.footnote)
+                .foregroundStyle(.red)
+                .textSelection(.enabled)
+            if canRetry {
+                Button("Try again", systemImage: "arrow.clockwise") { onRetry(item.id) }
+                    .font(.footnote.weight(.semibold))
+                    .buttonStyle(.glass)
+                    .accessibilityIdentifier("chat.failure.retry")
+            }
+        }
+        .padding(12)
+        .spread()
+        .background(.red.opacity(0.12), in: .rect(cornerRadius: 16, style: .continuous))
     }
 
     /// A message to another bot shows "Messaging X…", then "Messaged X", followed by X's reply.

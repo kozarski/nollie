@@ -87,6 +87,8 @@ public struct ConversationToolStep: Codable, Hashable, Sendable {
     public var resultText: String?
     public var seconds: Double?
     public var risk: String?
+    /// How far it has got while it runs, when the tool says (`tool.progress`).
+    public var progress: ToolProgress?
 
     public init(toolId: String, name: String, context: String? = nil, argumentsText: String? = nil, done: Bool = false,
                 summary: String? = nil, resultText: String? = nil, seconds: Double? = nil, risk: String? = nil) {
@@ -170,6 +172,8 @@ public enum ConversationActivity: Codable, Hashable, Sendable {
     case runningTool(String)
     case preparingTool(String)
     case summarizing
+    /// A message handed to the chat's owner waits for the turn running there.
+    case waitingForOtherChat
     /// Hermes's own words.
     case status(String)
 }

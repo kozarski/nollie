@@ -77,6 +77,17 @@ extension ChatSession {
             log.debug("unhandled event \(ev.type, privacy: .public)")
             return
         }
+        // Hermes 0.23 may send a turn's frames twice (a replay, a retried attempt, a second socket).
+        var freshText = ""
+        switch kind {
+        case .messageStart: guard replyFrames.start(payload) else { return }
+        case .messageInterim: guard replyFrames.interim(payload) else { return }
+        case .messageDelta:
+            guard let fresh = replyFrames.delta(payload) else { return }
+            freshText = fresh
+        case .messageComplete, .error: replyFrames.finish()
+        default: break
+        }
         if kind.opensTurn, !startedHere, !isRunning, !adoptingTurn, !isResuming { adoptTurnStartedElsewhere() }
         if kind == .messageComplete || kind == .error { startedHere = false }
         if kind.movesTurn { checkApprovalsIfTurnMovedOn() }
@@ -85,7 +96,7 @@ extension ChatSession {
         case .messageStart:
             beginStreaming()
         case .messageDelta:
-            replyGrew(payload)
+            replyGrew(freshText)
         case .reasoningDelta:
             reasoningGrew(payload)
         case .thinkingDelta:
@@ -96,7 +107,11 @@ extension ChatSession {
         case .messageInterim:
             interimReply(payload)
         case .messageComplete:
+            let forwarded = forwardedTurn
+            forwardedTurn = false
             turnCompleted(payload)
+            // A prompt the owner ran streamed nothing here: the stored history has the whole reply.
+            if forwarded { Task { [weak self] in try? await self?.resumeFromGateway() } }
         case .sessionUsage:
             guard let fresh = try? payload["usage"]?.decode(Usage.self) else { break }
             usage = fresh
@@ -115,7 +130,13 @@ extension ChatSession {
             toolFinished(payload)
         case .toolOutputRisk:
             _ = withTool(payload.text("tool_id") ?? "") { $0.risk = payload.text("risk") }
+        case .toolProgress:
+            guard let progress = ToolProgress(payload) else { break }
+            _ = withTool(payload.text("tool_id") ?? "") { step in
+                if step.status == .running { step.progress = progress }
+            }
         case .error:
+            forwardedTurn = false
             appendError(payload.text("message") ?? String(localized: "Unknown error", table: "Core"))
             endPhase = "error"
             isRunning = false
@@ -148,10 +169,9 @@ extension ChatSession {
 
     // MARK: Reply text
 
-    private func replyGrew(_ payload: JSONValue) {
+    private func replyGrew(_ chunk: String) {
         if reply.rowID == nil { beginStreaming() }
         setStatus("Writing…")   // the turn surface follows this
-        let chunk = payload.text("text") ?? ""
         clock.characters += chunk.count
         reply.assembler.appendDelta(chunk)
         scheduleStreamingUpdate()

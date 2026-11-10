@@ -52,6 +52,8 @@ final class RowActions {
     var onOpenBot: WithText = { _ in }
     var onReply: WithText = { _ in }
     var onKeepRunning: () -> Void = {}
+    /// Try again on an error row whose message can go again (the row's id).
+    var onRetry: WithText = { _ in }
     var onSelectText: WithText = { _ in }
     var setReasoningOpen: WithFlag = { _, _ in }
     var setToolOpen: WithFlag = { _, _ in }
@@ -82,6 +84,8 @@ struct RowContext: Equatable {
     var maxBubble: CGFloat
     var actions: RowActions
     var highlightedMessage: String? = nil
+    /// Error rows that offer Try again.
+    var retryable: Set<String> = []
 
     /// Display choices, as one comparable list.
     private var choices: [AnyHashable] {
@@ -90,7 +94,7 @@ struct RowContext: Equatable {
 
     /// Live state of the chat, as one comparable list.
     private var liveState: [AnyHashable] {
-        [typingTool, interruptCause, lastID, openReasoning, openTools, highlightedMessage]
+        [typingTool, interruptCause, lastID, openReasoning, openTools, highlightedMessage, retryable]
     }
 
     static func == (lhs: RowContext, rhs: RowContext) -> Bool {
@@ -142,6 +146,7 @@ struct RowContext: Equatable {
             showStats: showStats,
             onEdit: actions.onEdit, onOpenBot: actions.onOpenBot, onReply: actions.onReply,
             interruptCause: id == lastID ? interruptCause : nil, onKeepRunning: actions.onKeepRunning,
+            canRetry: retryable.contains(id), onRetry: actions.onRetry,
             reasoningOpen: toggle(id, in: openReasoning, write: actions.setReasoningOpen),
             onSelectText: actions.onSelectText,
             toolOpen: toggle(id, in: openTools, write: actions.setToolOpen),

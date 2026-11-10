@@ -28,9 +28,15 @@ final class BotChats {
 
     func delete(_ session: StoredSession, from runtime: GatewayRuntime) async {
         if let open = runtime.chatForStored(session.id) { runtime.closeChat(open) }
-        let _: JSONValue? = try? await runtime.api.send(
-            "DELETE", "/api/sessions/\(session.id)", profile: botName, body: EmptyBody())
+        var refusal: String?
+        do {
+            try await runtime.api.deleteSession(session.id, profile: botName)
+        } catch {
+            refusal = String(localized: "\u{201C}\(session.displayTitle)\u{201D} was not deleted: \(error.localizedDescription)",
+                             comment: "A chat's title in quotes, then the reason")
+        }
         await refresh(from: runtime)
+        if let refusal { failure = refusal }
     }
 }
 
