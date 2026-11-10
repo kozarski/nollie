@@ -1,4 +1,4 @@
-"""Papertrail for every bot that is not private, the Night shift recorder, saved sign-ins, saved cards and
+"""Papertrail for every bot that is not private, the Night shift recorder, saved sign-ins, saved cards, kept skills and
 the Mac's Calendar, Reminders and Contacts for every bot that is not private, and Board follow-through for the main bot only. Ask first, and the picture pause that
 keeps a typed password out of screenshots, load in every bot, private ones too. The rule that keeps this Mac's screen on this Mac (no Hermes computer_use,
 no screen capture from a bot's terminal or code) loads in every bot that is not private. Nothing else loads for a private bot,
@@ -34,6 +34,7 @@ def register(ctx):
     _register_sign_ins(ctx, profile, home)
     _register_apple_data(ctx, profile, home)
     _register_payments(ctx, profile, home)
+    _register_keep_skills(ctx, profile, home)
 
 
 def _register_mac_screen(ctx, profile, default_home):
@@ -173,6 +174,25 @@ def _register_payments(ctx, profile, default_home):
         register_payments(ctx, default_home, profile, watch)
     except Exception as exc:
         logging.getLogger("nollie-workflow").warning("Paying with saved cards did not start: %s", type(exc).__name__)
+
+
+def _register_keep_skills(ctx, profile, default_home):
+    """Keep skills as they are: a skill the helper makes or installs is locked at once while its switch is on."""
+    import logging
+    try:
+        from pathlib import Path
+        from . import private_bots
+        try:
+            private = private_bots.names(default_home) | private_bots.carried_over_names()
+        except (OSError, ValueError):
+            return  # A damaged Private list: nothing here until it is repaired.
+        if not profile or private_bots.excluded(profile, private):
+            return
+        from .keep_skills import register as register_keep_skills
+        bot_home = Path(default_home) if profile == "default" else Path(default_home) / "profiles" / profile
+        register_keep_skills(ctx, default_home, profile, bot_home)
+    except Exception as exc:
+        logging.getLogger("nollie-workflow").warning("Keeping skills did not start: %s", type(exc).__name__)
 
 
 def _register_ask_first(ctx, profile, default_home):

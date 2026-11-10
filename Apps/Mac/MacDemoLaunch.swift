@@ -112,7 +112,8 @@ struct MacDemoLaunch: ViewModifier {
     private func openBotPage() async {
         guard DemoMode.isOn, let name = Self.value(after: "-nollie-demo-bot-page"),
               let kind = BotSheet.Kind(rawValue: name) else { return }
-        try? await Task.sleep(for: .seconds(5))
+        await waitForBots(polls: 60)
+        try? await Task.sleep(for: .seconds(2))
         let chosen = Self.value(after: "-nollie-demo-bot-profile")
         if let profile = chosen ?? model.runtime?.defaultProfile ?? model.runtime?.profiles.first?.name {
             model.openBotPage(kind, profile: profile)

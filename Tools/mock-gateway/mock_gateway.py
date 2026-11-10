@@ -2340,6 +2340,82 @@ SKILLS = [
     dict(name="release-notes", description="Write release notes from merged pull requests", category="engineering", enabled=False, usage=3, provenance="agent"),
 ]
 
+# Hermes 0.23's skill locks, per bot: a locked skill can't be changed by its bot, only used. Keep skills as they are is
+# the workflow add-on's switch per bot; with it on, a skill the bot makes is locked at once (the add-on's
+# on_skill_lifecycle hook). `POST /api/_mock/skills {"reset": true}` or `{"bot": "work", "made": "name"}` plays one.
+SKILL_LOCKS: dict[str, set] = {}
+SKILLS_MADE: dict[str, list] = {}
+KEEP_SKILLS: set = set()
+
+
+def skills_reset() -> None:
+    SKILL_LOCKS.clear()
+    SKILLS_MADE.clear()
+    KEEP_SKILLS.clear()
+    for skill in SKILLS:
+        skill.pop("locked", None)
+    # One the person locked by hand, so the list shows a lock before the switch is touched.
+    SKILL_LOCKS["default"] = {"incident-writeup"}
+
+
+skills_reset()
+
+
+def _skills_of(bot: str) -> list:
+    made = [dict(name=name, description="Made by this bot", category="notes", enabled=True, usage=1, provenance="agent")
+            for name in SKILLS_MADE.get(bot, [])]
+    return [dict(skill, locked=skill["name"] in SKILL_LOCKS.get(bot, set())) for skill in SKILLS + made]
+
+
+def skills_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    fields = payload if isinstance(payload, dict) else {}
+    bot = unquote(query.get("profile") or "default")
+    if base == "/api/_mock/skills" and method == "POST":
+        if fields.get("reset"):
+            skills_reset()
+        made, owner = fields.get("made"), fields.get("bot", "default")
+        if isinstance(made, str) and re.fullmatch(r"[a-z0-9-]{1,64}", made) and isinstance(owner, str):
+            SKILLS_MADE.setdefault(owner, []).append(made)
+            if owner in KEEP_SKILLS:
+                SKILL_LOCKS.setdefault(owner, set()).add(made)
+        return ok(dict(ok=True, keep=sorted(KEEP_SKILLS), locks={k: sorted(v) for k, v in SKILL_LOCKS.items()}))
+    if base == "/api/skills":
+        return ok(_skills_of(bot)) if method == "GET" else None
+    if base in ("/api/skills/lock", "/api/skills/toggle"):
+        if method != "PUT":
+            return refuse(405, "Method Not Allowed")
+        name = fields.get("name")
+        skill = next((s for s in _skills_of(bot) if s["name"] == name), None)
+        if skill is None:
+            return refuse(404, f"Skill '{name}' not found.")
+        if base.endswith("/toggle"):
+            enabled = fields.get("enabled") is True
+            for row in SKILLS:
+                if row["name"] == name:
+                    row["enabled"] = enabled
+            return ok(dict(ok=True, name=name, enabled=enabled))
+        locked = fields.get("locked") is True
+        (SKILL_LOCKS.setdefault(bot, set()).add if locked else SKILL_LOCKS.setdefault(bot, set()).discard)(name)
+        return ok(dict(ok=True, name=name, locked=locked))
+    if base == "/api/plugins/nollie-workflow/keep-skills":
+        if method not in ("GET", "PUT"):
+            return refuse(405, "Method Not Allowed")
+        if query.get("profile", "default") != "default":
+            return refuse(403, "Board follow-through belongs to Nollie.")
+        who = unquote(query.get("bot", "default")) if method == "GET" else fields.get("bot")
+        if not isinstance(who, str) or not PRIVATE_PROFILE_NAME.fullmatch(who):
+            return refuse(422, "Send a bot's Hermes profile name.")
+        if private_identity(who) or set(re.split(r"[^a-z0-9]+", who)) & carried_over_private_names():
+            return refuse(403, "Private bots are left alone.")
+        if who not in PROFILES and who not in CREATED_PROFILES:
+            return refuse(404, "No such bot.")
+        if method == "PUT":
+            if set(fields) != {"bot", "on"} or not isinstance(fields.get("on"), bool):
+                return refuse(422, "Send on as true or false.")
+            (KEEP_SKILLS.add if fields["on"] else KEEP_SKILLS.discard)(who)
+        return ok(dict(bot=who, on=who in KEEP_SKILLS))
+    return None
+
 CRON_JOBS = [
     dict(job_id="morning-brief", name="Morning brief", schedule="0 7 * * 1-5",
      prompt_preview="Summarize alerts that fired overnight, failed jobs and open PRs.", deliver="local",
@@ -2795,8 +2871,10 @@ def _auxiliary_route(query: dict) -> tuple[int, object]:
 
 
 def _usage_analytics_route(query: dict) -> tuple[int, object]:
-    """Thirty (or `days`) days of made-up usage. The seed is fixed, so the numbers are the same every call."""
+    """Thirty (or `days`) days of made-up usage. The seed is fixed, so the numbers are the same every call. `work` runs
+    on a local model, so it has tokens and no cost, as Hermes reports a model it has no price for."""
     span = int(query.get("days") or 30)
+    local = unquote(query.get("profile") or "default") == "work"
     dice = random.Random(7)
     today = datetime.date.today()
     daily = []
@@ -2810,7 +2888,7 @@ def _usage_analytics_route(query: dict) -> tuple[int, object]:
                       output_tokens=runs * dice.randint(1500, 6000),
                       cache_read_tokens=runs * dice.randint(40000, 120000),
                       reasoning_tokens=0,
-                      estimated_cost=round(runs * 0.31, 2),
+                      estimated_cost=0 if local else round(runs * 0.31, 2),
                       actual_cost=0,
                       sessions=runs,
                       api_calls=runs * dice.randint(4, 15)))
@@ -2821,7 +2899,7 @@ def _usage_analytics_route(query: dict) -> tuple[int, object]:
     main_model = dict(model=MODEL, input_tokens=total("input_tokens"), output_tokens=total("output_tokens"),
                   estimated_cost=total("estimated_cost"), sessions=total("sessions"), api_calls=total("api_calls"))
     other_model = dict(model="openai/gpt-5.5", input_tokens=120000, output_tokens=9000,
-                   estimated_cost=1.2, sessions=3, api_calls=20)
+                   estimated_cost=0 if local else 1.2, sessions=3, api_calls=20)
     totals = dict(total_input=total("input_tokens"), total_output=total("output_tokens"),
               total_cache_read=total("cache_read_tokens"), total_reasoning=0,
               total_estimated_cost=total("estimated_cost"), total_actual_cost=0,
@@ -2928,7 +3006,6 @@ EXACT_ROUTES = {
     "/api/dashboard/plugins/hub": _plugin_hub_route,
     "/api/env": lambda query: (200, ENV_VARS),
     "/api/tools/toolsets": lambda query: (200, TOOLSETS),
-    "/api/skills": lambda query: (200, SKILLS),
     "/api/mcp/servers": _mcp_servers_route,
     "/api/cron/jobs": lambda query: (200, dict(jobs=CRON_JOBS, count=len(CRON_JOBS))),
     "/api/messaging/platforms": _messaging_route,
@@ -3890,6 +3967,7 @@ def process_request(connection, request):
         ("quiet", lambda: apple_data_rest(method, base, query, body)),
         ("quiet", lambda: memory_rest(method, base, query, body)),
         ("quiet", lambda: payments_rest(method, base, query, body)),
+        ("quiet", lambda: skills_rest(method, base, query, body)),
         ("quiet", lambda: link_rest(method, base, body)),
         ("quiet", lambda: session_mutations_rest(method, base, query, body)),
         ("quiet", lambda: owner_rest(method, base, body)),
@@ -4455,6 +4533,36 @@ class Gateway:
         await self.stream_words(s, "\n\n" + reply)
         await self.settle(s, prompt, layout, intro + "\n\n" + reply)
 
+    # Hermes 0.23's approval for a priced MCP tool on an untrusted server, word for word as tools/mcp_tool_handlers.py and
+    # tools/mcp_tool_costs.py build it: the price and the chat's running total are only in this text.
+    PAID_TOOL_COMMAND = ("MCP tool 'get_quote' on UNTRUSTED server 'quotes' wants to run. Costs about 5 credits. "
+                         "This chat has used about 10 credits on 'quotes' (limit 50). This tool is write-capable "
+                         "(no readOnlyHint=true annotation) and may modify external state.\n\nArguments:\n"
+                         '{\n  "symbol": "AAPL"\n}')
+    PAID_TOOL_DESCRIPTION = ("Server 'quotes' is configured 'trust: untrusted'. Approve to run 'get_quote' once, for this "
+                             "session, or always, or deny to block it.")
+
+    async def _paid_tool_turn(self, s, prompt):
+        """"paid tool": a connected app's tool with a declared price waits for a yes, as Hermes asks for it."""
+        tool = "mcp_quotes_get_quote"
+        intro = "I'll get the latest quote."
+        await self.begin_message(s)
+        await self.stream_words(s, intro)
+        call = f"quote-{int(time.time() * 1000)}"
+        await self.event("tool.start", s.sid, dict(tool_id=call, name=tool, args=dict(symbol="AAPL")))
+        answer = await self.ask("approval", s.sid, dict(
+            request_id=f"req-{uuid.uuid4().hex[:8]}", command=self.PAID_TOOL_COMMAND, description=self.PAID_TOOL_DESCRIPTION,
+            pattern_key="mcp_elicitation", pattern_keys=["mcp_elicitation"],
+            choices=["once", "session", "always", "deny"], allow_session=True, allow_permanent=True))
+        if answer is None or answer.get("choice", "deny") == "deny":
+            reply = "Okay, I didn't run it."
+        else:
+            await self.event("tool.complete", s.sid, dict(tool_id=call, name=tool, duration_s=0.4, summary="quote",
+                                                       result=json.dumps(dict(symbol="AAPL", price=231.4))))
+            reply = "AAPL is at 231.40."
+        await self.stream_words(s, "\n\n" + reply)
+        await self.settle(s, prompt, [intro, 1, reply], intro + "\n\n" + reply)
+
     # A payment with a saved card, as the workflow add-on's request_payment asks: the Mac's own words for it,
     # on Ask first's buy card, so Face ID guards the yes. Only a payment provider's published test card.
     ASK_FIRST_PAY = ("Pay \u00a348.99 to shop.example.com with Visa ending 4242.\n"
@@ -4918,6 +5026,7 @@ class Gateway:
         ("starts", "delegate", "_delegate_turn"),
         ("starts", "crew", "_crew_turn"),
         ("starts", "sign in", "_sign_in_turn"),
+        ("starts", "paid tool", "_paid_tool_turn"),
         ("starts", "ask first", "_ask_first_turn"),
         ("starts", "compress", "_compress_turn"),
         ("starts", "card", "_card_turn"),

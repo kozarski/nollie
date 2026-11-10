@@ -71,20 +71,28 @@ final class WeeklyNoteModel {
         // The This Mac switches, where this device can read them (a phone over Nollie Link can't).
         await SystemControl.shared.refreshAll(runtime)
         guard model.runtime === runtime else { return }
-        let records = await withTaskGroup(of: (String, WeekRecord?).self) { group in
+        // Each helper's week, and what its models cost (Hermes's own counts, in the helper's scope).
+        let (records, spends) = await withTaskGroup(of: (String, WeekRecord?, ModelSpend?).self) { group in
             for profile in profiles {
                 let bot = profile.name
-                group.addTask { (bot, try? await WeekRecord.load(bot: bot, api: api)) }
+                group.addTask {
+                    async let record = try? await WeekRecord.load(bot: bot, api: api)
+                    async let spend = ModelSpend.load(bot: bot, api: api)
+                    return (bot, await record ?? nil, await spend)
+                }
             }
-            var found: [String: WeekRecord] = [:]
-            for await (bot, record) in group { if let record { found[bot] = record } }
-            return found
+            var found: [String: WeekRecord] = [:], spent: [String: ModelSpend] = [:]
+            for await (bot, record, spend) in group {
+                if let record { found[bot] = record }
+                if let spend { spent[bot] = spend }
+            }
+            return (found, spent)
         }
         guard model.runtime === runtime, Self.shows(model) else { return }
         let inputs = profiles.map { profile in
             WeeklyHelperInput(profile: profile.name, name: profile.shownName, record: records[profile.name],
                               macOn: SystemControl.shared.state(profile.name, runtime),
-                              muted: HelperMute.isMuted(profile.name, connection: gateway))
+                              muted: HelperMute.isMuted(profile.name, connection: gateway), spend: spends[profile.name])
         }
         note = WeeklyNote.build(inputs, isPrivate: { PrivateBots.isPrivate($0, connection: gateway) })
         if readFrom?.gateway != gateway { done = [:] }

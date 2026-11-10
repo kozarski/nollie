@@ -266,6 +266,12 @@ struct SkillsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
                     Text(skill.name)
+                    // Locked: the bot can't change it, only use it (Keep skills as they are, or a lock made on the Mac).
+                    if skill.locked == true {
+                        Image(systemName: "lock.fill").small(.caption2, .secondary)
+                            .accessibilityLabel(Text("Locked", comment: "A skill its bot can use but not change"))
+                            .testID("skill.locked.\(skill.name)")
+                    }
                     if developerMode, let origin = skill.provenance { Text(origin).small(.caption2, .tertiary) }
                 }
                 if let about = skill.description { Text(about).small(.caption, .secondary).lineLimit(2) }

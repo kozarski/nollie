@@ -44,7 +44,8 @@ struct WeeklyNotePage: View {
     /// as part of them ("Oct. 2 helpers"), so each gets a line of its own.
     private var line: String? {
         guard let note = weekly.note else { return nil }
-        return WeeklyNoteDates.range(note.since, note.until) + "\n" + note.headline
+        return ([WeeklyNoteDates.range(note.since, note.until), note.headline] + [note.spendLine].compactMap { $0 })
+            .joined(separator: "\n")
     }
 }
 

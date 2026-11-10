@@ -25,6 +25,13 @@ private, in the main bot's scope like Papertrail. Counts, names and times only:
 | `apps`, `web` | The bot's config: connected apps (MCP servers) by name, on or off, and a URL one's host; whether the web tools are on. Never a command, argument, header or key |
 | `filter` | `on`/`off` from Nollie Runtime's switch file (`NOLLIE_NETWORK_FILTER`), `none` when Hermes wasn't started through the door |
 
+What the models cost comes from Hermes itself, not the add-on: `GET /api/analytics/usage?days=7&profile=<bot>`, read
+for the same bots. Hermes prices each call from the model's list price (or the provider's own figure where it reports
+one) and keeps it in the session store, so the note says "about". The larger of the totals and the sum by model is
+used, since Hermes adds side calls (pictures, summaries) to the models but not to the totals. The window is the last
+seven days, a little longer than the note's week. A bot on a local model, a subscription, or a model Hermes has no
+price for has nothing priced, and then no line is shown at all.
+
 Private bots are refused (403) before their home is looked up. The Link door allows the read with exactly one `bot`.
 A member of someone's household is never let through (the family door passes chats only), and the app shows neither
 the card, the setting nor the notification on a member's device.
@@ -37,6 +44,8 @@ the card, the setting nor the notification on a member's device.
 - **Each helper**: its schedules that ran or are new ("Morning brief", "Ran 5 times · 1 didn't finish · Paused"),
   Board tasks, questions with the answers ("Yes 4 · No 1"), This Mac when this device can read it and it is on; then
   "Went online 10 times. 40 replies stayed on your Mac." and its places, new ones first, six at most.
+- **Spending**, when Hermes priced anything: "This week: about $4.20 on models" under the headline, and "About $1.20 on
+  models" among each helper's lines. Under a cent is said as such.
 - Helpers with nothing recorded are named on one line; a week that couldn't be read is said, never guessed.
 - With the filter off: "Papertrail's filter is off, so a program that skips Nollie's door could go unseen." With no
   door: "This setup has no door, so Papertrail sees model calls, searches and pages only."

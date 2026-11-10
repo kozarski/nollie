@@ -32,6 +32,7 @@ _sign_ins = __import__(_name + ".sign_ins", fromlist=["Store"])
 _apple = __import__(_name + ".apple_data", fromlist=["Store"])
 _memory = __import__(_name + ".memory", fromlist=["Memory"])
 _payments = __import__(_name + ".payments", fromlist=["Store"])
+_keep_skills = __import__(_name + ".keep_skills", fromlist=["Store"])
 _cron_followups = __import__(_name + ".hermes_support.ollie_cron_followups", fromlist=["ready"])
 NO_STORE = {"Cache-Control": "no-store"}
 router = APIRouter()
@@ -969,6 +970,51 @@ def save_payment_bot_switch(body: PaymentSwitch):
     except OSError:
         raise HTTPException(503, "The switch cannot be saved.", headers=NO_STORE) from None
     return payment_switch(store, body.bot)
+
+
+# Keep skills as they are: which helpers lock each new skill they make. The app locks and unlocks the skills a helper
+# already has through Hermes's own lock route. A phone may read the switch; changing it stays on the Mac.
+
+def keep_skills_bot(bot):
+    """The store, once the bot is known and not private."""
+    target = home()
+    if not isinstance(bot, str) or not _private.PROFILE_NAME.match(bot):
+        raise HTTPException(422, "Send a bot's Hermes profile name.", headers=NO_STORE)
+    if _core.private_identity(bot, apple_private(target)):
+        raise HTTPException(403, "Private bots are left alone.", headers=NO_STORE)
+    bot_home(bot, target)
+    return _keep_skills.Store(target)
+
+
+def keep_skills_switch(store, bot):
+    try:
+        on = bot in store.bots()
+    except (OSError, ValueError):
+        raise HTTPException(503, "The switch cannot be read.", headers=NO_STORE) from None
+    return JSONResponse({"bot": bot, "on": on}, headers=NO_STORE)
+
+
+@router.get("/keep-skills")
+def keep_skills(bot: str = "default"):
+    return keep_skills_switch(keep_skills_bot(bot), bot)
+
+
+class KeepSkillsSwitch(BaseModel):
+    model_config = {"extra": "forbid"}
+    bot: str
+    on: StrictBool
+
+
+@router.put("/keep-skills")
+def save_keep_skills(body: KeepSkillsSwitch):
+    store = keep_skills_bot(body.bot)
+    try:
+        store.set_bot(body.bot, body.on)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc), headers=NO_STORE) from None
+    except OSError:
+        raise HTTPException(503, "The switch cannot be saved.", headers=NO_STORE) from None
+    return keep_skills_switch(store, body.bot)
 
 
 def payment_public(record):
