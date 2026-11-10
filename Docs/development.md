@@ -103,3 +103,6 @@ For Sparkle, change `Tools/sparkle/pin.env` and `NOLLIE_SPARKLE_VERSION` in each
 targets together with the pin; `check-latest.py --local` names what is left. It is linked by build settings, not as a
 package product, so that only the Direct configurations get it (the next build fetches it into the cache).
 Finish with `python3 -I Tools/dev/managed-setup-dry-run.py --folder <empty folder> --smoke` and `Tools/dev/verify.py`.
+For a Hermes move, also rehearse the move itself: run the old release's rehearsal into one folder, then this one with
+`--home-from <that folder>`, which carries the old home (bots, chats, settings) across before the add-ons go in, as
+a Mac does when Nollie updates its engine at launch (`Apps/Nollie/Connect/EngineUpdate.swift`).
