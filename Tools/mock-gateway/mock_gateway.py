@@ -2326,8 +2326,9 @@ _TOOLSET_ROWS = (
     ("files", "File Operations", "read, write, patch, search", True, True,
      ["patch", "read_file", "search_files", "write_file"]),
     ("code", "Code Execution", "execute_code", True, True, ["execute_code"]),
-    ("browser", "Browser Automation", "navigate, click, type, scroll", False, True,
-     ["browser_click", "browser_navigate"]),
+    # As Hermes 0.23 lists it: one browser_exec script tool in place of browser_click, browser_navigate and the rest.
+    ("browser", "Browser Automation", "navigate, click, type, extract, screenshots", False, True,
+     ["browser_cdp", "browser_dialog", "browser_exec", "browser_vault"]),
     ("vision", "Vision / Image Analysis", "vision_analyze", True, False, ["vision_analyze"]),
 )
 TOOLSETS = [dict(zip(("name", "label", "description", "enabled", "configured", "tools"), row), platform="cli")
