@@ -3764,7 +3764,7 @@
     },
     "%lld of %lld" : {
       "extractionState" : "manual",
-      "comment" : "A helper's place in a batch: 2 of 3",
+      "comment" : "How far a tool has got: steps done of all steps",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4624,6 +4624,10 @@
         }
       }
     },
+    "%lld so far" : {
+      "extractionState" : "manual",
+      "comment" : "How many steps a tool has done, with no total known"
+    },
     "%lld stopped" : {
       "extractionState" : "manual",
       "comment" : "How many Board tasks were stopped",
@@ -5260,6 +5264,10 @@
         }
       }
     },
+    "%lld%%" : {
+      "extractionState" : "manual",
+      "comment" : "How far a tool has got, in percent"
+    },
     ", " : {
       "extractionState" : "manual",
       "comment" : "Between items of a list: a, b and c",
@@ -5528,6 +5536,9 @@
           }
         }
       }
+    },
+    "A Board task" : {
+      "extractionState" : "manual"
     },
     "A computer of its own" : {
       "extractionState" : "manual",
@@ -5850,6 +5861,22 @@
           }
         }
       }
+    },
+    "About %@" : {
+      "extractionState" : "manual",
+      "comment" : "What one call to a connected app's tool costs, in the app's own unit, like 5 credits"
+    },
+    "About %@ on models" : {
+      "extractionState" : "manual",
+      "comment" : "What a helper's AI models cost this week, estimated"
+    },
+    "About %@ used in this chat" : {
+      "extractionState" : "manual",
+      "comment" : "A connected app's spending in this chat so far"
+    },
+    "About %@ used in this chat · Limit %@" : {
+      "extractionState" : "manual",
+      "comment" : "A connected app's spending in this chat so far, then the app's limit for one chat"
     },
     "Add" : {
       "extractionState" : "manual",
@@ -8937,6 +8964,12 @@
         }
       }
     },
+    "Hermes is still finishing work in this chat elsewhere, so nothing was sent." : {
+      "extractionState" : "manual"
+    },
+    "Hermes needs a newer Nollie for this. Update Nollie and try again." : {
+      "extractionState" : "manual"
+    },
     "Installing Cua" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9142,6 +9175,10 @@
           }
         }
       }
+    },
+    "Limit %@ in this chat" : {
+      "extractionState" : "manual",
+      "comment" : "A connected app's spending limit for one chat"
     },
     "Link taken off" : {
       "extractionState" : "manual",
@@ -9824,6 +9861,9 @@
           }
         }
       }
+    },
+    "No answer to Stop" : {
+      "extractionState" : "manual"
     },
     "No approval is waiting." : {
       "extractionState" : "manual",
@@ -12119,6 +12159,9 @@
         }
       }
     },
+    "Schedule" : {
+      "extractionState" : "manual"
+    },
     "Scheduled" : {
       "extractionState" : "manual",
       "comment" : "A Board status",
@@ -13413,6 +13456,12 @@
         }
       }
     },
+    "The other chat did not confirm this message. It may still arrive, so check before sending it again." : {
+      "extractionState" : "manual"
+    },
+    "The other chat is still busy, so nothing was sent." : {
+      "extractionState" : "manual"
+    },
     "The proxy in front of the gateway turned the sign-in request away (403). With Nginx Proxy Manager and Block Common Exploits, this build already encodes the request so the rule should not match; otherwise let /auth/ through the proxy." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13761,6 +13810,9 @@
         }
       }
     },
+    "This bot does not allow that change." : {
+      "extractionState" : "manual"
+    },
     "This card has run out." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13819,6 +13871,9 @@
         }
       }
     },
+    "This chat changed somewhere else. Try again." : {
+      "extractionState" : "manual"
+    },
     "This chat could not be opened on the gateway: %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13848,6 +13903,9 @@
         }
       }
     },
+    "This chat is busy with a reply. Try again when it is done." : {
+      "extractionState" : "manual"
+    },
     "This chat is gone from the gateway. It may have been a one-off run, or the gateway restarted without it. Start a new chat to carry on." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13876,6 +13934,9 @@
           }
         }
       }
+    },
+    "This chat is no longer there." : {
+      "extractionState" : "manual"
     },
     "This code has expired. Create a new one on your Mac." : {
       "extractionState" : "manual",
@@ -14196,6 +14257,14 @@
           }
         }
       }
+    },
+    "This week: about %@ on models" : {
+      "extractionState" : "manual",
+      "comment" : "What the helpers' AI models cost this week, estimated"
+    },
+    "This week: under %@ on models" : {
+      "extractionState" : "manual",
+      "comment" : "What the helpers' AI models cost this week, less than a cent"
     },
     "Timed out waiting for %@." : {
       "extractionState" : "manual",
@@ -14523,6 +14592,10 @@
         }
       }
     },
+    "Under %@ on models" : {
+      "extractionState" : "manual",
+      "comment" : "What a helper's AI models cost this week, less than a cent"
+    },
     "Undo" : {
       "extractionState" : "manual",
       "comment" : "A button",
@@ -14789,6 +14862,10 @@
           }
         }
       }
+    },
+    "Waiting in line…" : {
+      "extractionState" : "manual",
+      "comment" : "A message waits behind a turn running in this chat elsewhere"
     },
     "Web" : {
       "extractionState" : "manual",

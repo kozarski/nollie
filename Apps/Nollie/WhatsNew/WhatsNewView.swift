@@ -177,7 +177,7 @@ private struct WhatsNewHost: ViewModifier {
         // For pictures: `-nollie-demo-whats-new` opens the newest note in the demo copy.
         if DemoMode.isOn, ProcessInfo.processInfo.arguments.contains("-nollie-demo-whats-new") {
             try? await Task.sleep(for: .seconds(2))
-            showing = WhatsNew.note(for: WhatsNew.currentVersion, in: WhatsNew.notes).map { [$0] } ?? []
+            showing = WhatsNew.notes.first.map { [$0] } ?? []
             return
         }
         #endif

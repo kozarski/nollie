@@ -5,12 +5,12 @@ final class WhatsNewUITests: DemoCase {
     func testTheNoteOpensTellsMoreAndCloses() throws {
         try startDemo(["-launchTab", "chats", "-nollie-demo-whats-new"])
         XCTAssertTrue(find("whatsNew.title").waitForExistence(timeout: 20), "the note never opened")
-        XCTAssertTrue(find("whatsNew.item.watch-board").exists)
+        XCTAssertTrue(find("whatsNew.item.who-is-working").exists)
         shot("whats-new")
 
-        XCTAssertFalse(find("whatsNew.more.watch-board").exists, "the detail was open before More")
-        tap("whatsNew.toggle.watch-board")
-        XCTAssertTrue(find("whatsNew.more.watch-board").waitForExistence(timeout: 5), "More did not open the detail")
+        XCTAssertFalse(find("whatsNew.more.who-is-working").exists, "the detail was open before More")
+        tap("whatsNew.toggle.who-is-working")
+        XCTAssertTrue(find("whatsNew.more.who-is-working").waitForExistence(timeout: 5), "More did not open the detail")
         shot("whats-new-more")
 
         tap("whatsNew.done")

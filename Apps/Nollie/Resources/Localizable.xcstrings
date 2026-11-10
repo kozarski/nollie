@@ -9650,6 +9650,9 @@
         }
       }
     },
+    "A helper's settings · Apps" : {
+      "comment" : "What's new, 1.4: where to find it"
+    },
     "A home for %@." : {
       "localizations" : {
         "de" : {
@@ -9817,6 +9820,9 @@
           }
         }
       }
+    },
+    "A newer engine underneath" : {
+      "comment" : "What's new, 1.4"
     },
     "A prepared component contains an unsupported file." : {
       "localizations" : {
@@ -10188,6 +10194,9 @@
           }
         }
       }
+    },
+    "A schedule or a Board task running on your Mac now shows on your iPhone, iPad and Watch." : {
+      "comment" : "What's new, 1.4"
     },
     "A separate setup on this Mac for %@." : {
       "localizations" : {
@@ -12624,7 +12633,7 @@
       }
     },
     "Allow" : {
-      "comment" : "Safety: approval button, after Touch ID; lets the bot use the listed apps",
+      "comment" : "Privacy: lets words go to an online model's company\nSafety: approval button, after Touch ID; lets the bot use the listed apps",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -20827,6 +20836,9 @@
         }
       }
     },
+    "Chats · the bar at the bottom" : {
+      "comment" : "What's new, 1.4: where to find it"
+    },
     "Chats, tasks and tools for your assistant, together." : {
       "localizations" : {
         "de" : {
@@ -22799,6 +22811,9 @@
           }
         }
       }
+    },
+    "Choose whether a schedule runs once when your Mac wakes, or waits for next time." : {
+      "comment" : "What's new, 1.4"
     },
     "Choose your Hermes folder" : {
       "localizations" : {
@@ -29116,6 +29131,9 @@
         }
       }
     },
+    "Couldn't stop it. Try again." : {
+      "comment" : "Safety: Stop did not reach Hermes"
+    },
     "Couldn't turn it on. Try again." : {
       "localizations" : {
         "de" : {
@@ -33059,6 +33077,7 @@
       }
     },
     "Each person gets their own %@, with your instructions and none of your memory or chats." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -33085,6 +33104,9 @@
           }
         }
       }
+    },
+    "Each schedule has a switch for this. You change it on your Mac." : {
+      "comment" : "What's new, 1.4: the detail"
     },
     "Earlier messages summarized" : {
       "localizations" : {
@@ -33905,6 +33927,12 @@
           }
         }
       }
+    },
+    "Ends this run. The schedule stays on." : {
+      "comment" : "Safety: what Stop on a schedule's run does"
+    },
+    "Engine update didn't finish" : {
+
     },
     "Enter Sign-In…" : {
       "localizations" : {
@@ -37232,6 +37260,7 @@
       }
     },
     "Get Nollie from nollie.app to set up a new assistant. This version connects to one you already run." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -37962,6 +37991,9 @@
           }
         }
       }
+    },
+    "Goes past this chat's limit" : {
+      "comment" : "Safety: a connected app's tool would take the chat past the app's spending limit"
     },
     "Goes when your Mac is back" : {
       "localizations" : {
@@ -41382,6 +41414,9 @@
         }
       }
     },
+    "It can still use them. New ones stay as made." : {
+
+    },
     "It can't click or type in your apps." : {
       "comment" : "Safety: what a hands-off bot cannot do",
       "localizations" : {
@@ -41607,6 +41642,9 @@
           }
         }
       }
+    },
+    "It had already finished." : {
+      "comment" : "Safety: Stop found no run in progress"
     },
     "It isn't available right now." : {
       "localizations" : {
@@ -42572,6 +42610,9 @@
         }
       }
     },
+    "Just started" : {
+      "comment" : "A helper began its work under a minute ago"
+    },
     "Kanban is off on this gateway" : {
       "localizations" : {
         "de" : {
@@ -42993,6 +43034,9 @@
           }
         }
       }
+    },
+    "Keep skills as they are" : {
+      "comment" : "What's new, 1.4"
     },
     "Keep track of the steps in a piece of work." : {
       "localizations" : {
@@ -46075,6 +46119,9 @@
         }
       }
     },
+    "Locked" : {
+      "comment" : "A skill its bot can use but not change"
+    },
     "Locked with %@" : {
       "comment" : "Face ID or Touch ID",
       "localizations" : {
@@ -47644,6 +47691,15 @@
         }
       }
     },
+    "Missed while your Mac was asleep" : {
+      "comment" : "What's new, 1.4"
+    },
+    "Missed while your Mac was asleep? It runs once when it wakes." : {
+
+    },
+    "Missed while your Mac was asleep? It waits for the next time." : {
+
+    },
     "Missing what it points to" : {
       "localizations" : {
         "de" : {
@@ -49054,7 +49110,7 @@
       }
     },
     "Needs your help" : {
-      "comment" : "Where a task stands",
+      "comment" : "Board tasks waiting for the person\nWhere a task stands",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -53284,6 +53340,9 @@
         }
       }
     },
+    "Nollie moved your setup to Hermes 0.23 by itself. Your bots, chats and settings came along." : {
+      "comment" : "What's new, 1.4"
+    },
     "Nollie needs attention" : {
       "localizations" : {
         "de" : {
@@ -54710,6 +54769,7 @@
       }
     },
     "Not now" : {
+      "comment" : "Privacy: sends nothing to an online model's company",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -57322,6 +57382,9 @@
         }
       }
     },
+    "One switch stops a helper rewriting its own skills." : {
+      "comment" : "What's new, 1.4"
+    },
     "One that runs on this Mac." : {
       "comment" : "Under 'Needs a model': a model that runs on this Mac",
       "localizations" : {
@@ -58447,6 +58510,9 @@
           }
         }
       }
+    },
+    "Open a schedule while it runs and tap Stop this run, or use Stop in the bar at the bottom of your chats. Only that one run ends. The next one happens as planned." : {
+      "comment" : "What's new, 1.4: the detail"
     },
     "Open an app" : {
       "comment" : "Safety: a screen action on the Mac, starts a sentence",
@@ -66494,28 +66560,28 @@
     "Remove “%@” from %@?" : {
       "comment" : "Safety: asks before taking a connected app away from a helper; the app, then the helper. Keep exact meaning",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Remove “%1$@” from %2$@?"
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "„%1$@“ von %2$@ entfernen?"
           }
         },
-        "fr" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Retirer « %1$@ » de %2$@ ?"
+            "state" : "new",
+            "value" : "Remove “%1$@” from %2$@?"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "¿Quitar «%1$@» de %2$@?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retirer « %1$@ » de %2$@ ?"
           }
         },
         "ja" : {
@@ -68816,6 +68882,9 @@
         }
       }
     },
+    "Run when your Mac wakes" : {
+
+    },
     "Running" : {
       "comment" : "A Status row's state word\nA step's state\nThe companion is running",
       "localizations" : {
@@ -68987,6 +69056,12 @@
           }
         }
       }
+    },
+    "Running for" : {
+
+    },
+    "Running on schedule" : {
+      "comment" : "A schedule's run is in progress"
     },
     "Running, version %@" : {
       "localizations" : {
@@ -71116,6 +71191,12 @@
         }
       }
     },
+    "Schedules · Run when your Mac wakes" : {
+      "comment" : "What's new, 1.4: where to find it"
+    },
+    "Schedules · the schedule's page" : {
+      "comment" : "What's new, 1.4: where to find it"
+    },
     "School" : {
       "comment" : "A ready-made helper's name",
       "localizations" : {
@@ -71913,6 +71994,9 @@
           }
         }
       }
+    },
+    "See who's working" : {
+      "comment" : "What's new, 1.4"
     },
     "Seeing a test means this %@ can read it, not that an alert arrived." : {
       "localizations" : {
@@ -77342,6 +77426,12 @@
         }
       }
     },
+    "Some skills couldn't be locked. Try again." : {
+
+    },
+    "Some skills couldn't be unlocked. Try again." : {
+
+    },
     "Someone at home" : {
       "localizations" : {
         "de" : {
@@ -79186,6 +79276,9 @@
         }
       }
     },
+    "Stop ends a schedule's run that's going right now. The schedule stays on." : {
+      "comment" : "What's new, 1.4"
+    },
     "Stop ends the job on your Mac, stops replies and pauses schedules. Your iPhone asks to be unlocked first." : {
       "comment" : "Safety: what Stop does",
       "localizations" : {
@@ -79214,6 +79307,9 @@
           }
         }
       }
+    },
+    "Stop means stop" : {
+      "comment" : "What's new, 1.4"
     },
     "Stop reading" : {
       "localizations" : {
@@ -79329,6 +79425,9 @@
         }
       }
     },
+    "Stop this run" : {
+      "comment" : "Safety: ends one schedule's run in progress; the schedule stays"
+    },
     "Stop what Papertrail can't see" : {
       "localizations" : {
         "de" : {
@@ -79385,6 +79484,9 @@
         }
       }
     },
+    "Stop “%@”" : {
+      "comment" : "Safety: ends one schedule's run in progress, named"
+    },
     "Stop, pressed in any app that has the chat open, ends the turn with the same words." : {
       "localizations" : {
         "de" : {
@@ -79414,7 +79516,7 @@
       }
     },
     "Stopped" : {
-      "comment" : "A Status row's state word\nA badge on a computer's picture: the live picture ended\nA reply that was stopped part way\nAn action that was stopped\nHow a run ended",
+      "comment" : "A Status row's state word\nA badge on a computer's picture: the live picture ended\nA reply that was stopped part way\nA scheduled task's last result: Stop ended the run\nAn action that was stopped\nHow a run ended",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -79562,6 +79664,9 @@
           }
         }
       }
+    },
+    "Stopped. The schedule stays on." : {
+      "comment" : "Safety: Hermes is stopping the run"
     },
     "Stopped: a risky command needs your OK" : {
       "localizations" : {
@@ -79789,6 +79894,9 @@
           }
         }
       }
+    },
+    "Stopping…" : {
+      "comment" : "Safety: Stop was pressed for a schedule's run"
     },
     "Stops reading and listens" : {
       "localizations" : {
@@ -82704,6 +82812,9 @@
           }
         }
       }
+    },
+    "The amount is an estimate from Hermes. When a model runs on your Mac or comes with your plan, there's nothing to show, so the line stays hidden." : {
+      "comment" : "What's new, 1.4: the detail"
     },
     "The assistant rejected a background check. The helper will try again." : {
       "localizations" : {
@@ -92299,6 +92410,9 @@
         }
       }
     },
+    "Turn it on and the helper can still use every skill it has, but can't change them. New skills it makes are kept as made. You change it on your Mac." : {
+      "comment" : "What's new, 1.4: the detail"
+    },
     "Turn it on in %@ first." : {
       "localizations" : {
         "de" : {
@@ -94531,6 +94645,12 @@
           }
         }
       }
+    },
+    "Updating Nollie's engine" : {
+
+    },
+    "Updating Nollie's engine." : {
+
     },
     "Updating…" : {
       "localizations" : {
@@ -97133,6 +97253,9 @@
         }
       }
     },
+    "Waiting in line" : {
+      "comment" : "What the bot is doing now: a message waits behind a turn running elsewhere"
+    },
     "Waiting to continue" : {
       "comment" : "Where a task stands",
       "localizations" : {
@@ -98379,6 +98502,9 @@
         }
       }
     },
+    "What it costs" : {
+      "comment" : "What's new, 1.4"
+    },
     "What it does" : {
       "localizations" : {
         "de" : {
@@ -99142,6 +99268,12 @@
           }
         }
       }
+    },
+    "When a helper is on a schedule or a Board task, its row says what it's working on, and the bar at the bottom of your chats says for how long. It shows wherever the work started, even if it was on your Mac." : {
+      "comment" : "What's new, 1.4: the detail"
+    },
+    "When a helper works a web page, Ask first now reads every step before it happens. Private bots stay private. If the update didn't finish, the sidebar says so, and opening Nollie again tries once more." : {
+      "comment" : "What's new, 1.4: the detail"
     },
     "When a task needs your help, your Apple Watch now shows it." : {
       "comment" : "What's new, 1.3.3",
@@ -100126,6 +100258,12 @@
           }
         }
       }
+    },
+    "Working on the Board" : {
+      "comment" : "A helper is working a Board task"
+    },
+    "Working on “%@”" : {
+      "comment" : "A helper is busy with a schedule's run or a Board task, named"
     },
     "Working on: %@" : {
       "localizations" : {
@@ -103384,6 +103522,9 @@
         }
       }
     },
+    "Your crew got easier to follow. Here's what's new, and where to find it." : {
+      "comment" : "What's new, 1.4: the opening line"
+    },
     "Your crew is full." : {
       "localizations" : {
         "de" : {
@@ -104624,6 +104765,12 @@
           }
         }
       }
+    },
+    "Your week · Ask first cards" : {
+      "comment" : "What's new, 1.4: where to find it"
+    },
+    "Your weekly note says about how much went on models, and a paid tool shows its price before you say yes." : {
+      "comment" : "What's new, 1.4"
     },
     "Yuanbao" : {
       "comment" : "A bot capability",
@@ -109130,6 +109277,17 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "「%1$@」をアーカイブできませんでした：%2$@"
+          }
+        }
+      }
+    },
+    "“%@” was not deleted: %@" : {
+      "comment" : "A chat's title in quotes, then the reason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“%1$@” was not deleted: %2$@"
           }
         }
       }
