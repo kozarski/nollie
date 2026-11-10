@@ -26,6 +26,10 @@ struct NollieLinkDoorTests {
         #expect(request.value("x-hermes-session-token") == "abc")
         #expect(!request.isWebSocketUpgrade)
 
+        // A phone forgets a memory note or removes a schedule with a DELETE that carries a small JSON body.
+        let forget = try LinkDoorHTTP.parseRequest(head(["DELETE /api/plugins/nollie-workflow/memory/notes?bot=default HTTP/1.1",
+                                                          "Host: h", "Content-Length: 2"], body: "{}"))
+        #expect(forget.method == "DELETE")
         let socket = try LinkDoorHTTP.parseRequest(head(["GET /api/ws?token=abc HTTP/1.1", "Host: h", "Upgrade: websocket",
                                                          "Connection: keep-alive, Upgrade", "Sec-WebSocket-Version: 13",
                                                          "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ=="]))
@@ -59,6 +63,7 @@ struct NollieLinkDoorTests {
             ("signed length", head(["POST /api/sessions HTTP/1.1", "Host: h", "Content-Length: +1"])),
             ("hex length", head(["POST /api/sessions HTTP/1.1", "Host: h", "Content-Length: 0x10"])),
             ("GET body", head(["GET /api/status HTTP/1.1", "Host: h", "Content-Length: 1"], body: "x")),
+            ("HEAD body", head(["HEAD /api/status HTTP/1.1", "Host: h", "Content-Length: 1"], body: "x")),
             ("expect", head(["POST /api/sessions HTTP/1.1", "Host: h", "Expect: 100-continue", "Content-Length: 1"])),
             ("dot segment", head(["GET /api/../env HTTP/1.1"] + base)),
             ("dot", head(["GET /api/./status HTTP/1.1"] + base)),

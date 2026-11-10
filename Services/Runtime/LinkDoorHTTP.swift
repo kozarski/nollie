@@ -96,7 +96,9 @@ enum LinkDoorHTTP {
             guard value <= limits.body else { throw .bodyTooLarge }
             length = value
         }
-        if ["GET", "HEAD", "DELETE"].contains(method), length > 0 { throw .malformed("body") }
+        // A DELETE may carry a JSON body (forgetting one memory note, removing a schedule), held to the same
+        // length and size checks as any other body.
+        if ["GET", "HEAD"].contains(method), length > 0 { throw .malformed("body") }
         guard all("expect").isEmpty else { throw .unsupported("expect") }
 
         let upgrades = all("upgrade")

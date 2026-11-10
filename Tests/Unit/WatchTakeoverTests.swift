@@ -218,8 +218,8 @@ import NollieCore
         #expect(handoff.isHeld(rt, profile))
         #expect(await handoff.handBack(profile: profile, runtime: rt, api: api) == .done(.helper))
         #expect(!handoff.isHeld(rt, profile))
-        #expect(paths.all == ["POST /hermes/api/plugins/nollie-computer/take-over?profile=\(profile)",
-                              "POST /hermes/api/plugins/nollie-computer/hand-back?profile=\(profile)"])
+        #expect(paths.all == ["POST /hermes/api/plugins/nollie-computer/take-over?bot=\(profile)",
+                              "POST /hermes/api/plugins/nollie-computer/hand-back?bot=\(profile)"])
     }
 
     @Test func refusalsAndLostAnswersLeaveItUncertain() async throws {

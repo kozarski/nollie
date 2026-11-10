@@ -704,7 +704,7 @@ private final class LiveWatchPreviewStub: URLProtocol {
 
     override func startLoading() {
         let profile = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }?
-            .queryItems?.first { $0.name == "profile" }?.value
+            .queryItems?.first { $0.name == "bot" }?.value
         let answer = Self.state.withLock { state in
             if profile == state.profile { state.requests += 1 }
             return state.answer
