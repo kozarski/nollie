@@ -31,6 +31,7 @@ public final class GatewayRuntime {
         didSet {
             guard oldValue, !isAway else { return }
             registry.all.forEach { $0.cameBack() }
+            schedules.lookSoon()
             // Coming back, check the socket now; if it died unnoticed while away, we learn it here instead of at the next heartbeat.
             Task { [socket] in await socket?.checkAlive() }
         }
@@ -138,6 +139,8 @@ public final class GatewayRuntime {
     public var restartRequired: String? = nil
     public let projects = ProjectsStore()
     public let kanban = KanbanStore()
+    /// Which schedules are running on the gateway, wherever they were started.
+    public let schedules = ScheduleStore()
 
     var globalEventTask: Task<Void, Never>? = nil
     /// Replacement for the socket on this runtime's calls. Always nil in the app. Tests set it to
@@ -219,6 +222,7 @@ public final class GatewayRuntime {
         managedLifecycleGeneration = UUID()
         projects.attach(self)
         kanban.attach(self)
+        schedules.attach(self)
         awaitingManagedStartup = managedEndpointResolver != nil
         guard socketEnabled else {
             await loadProfilesAndCapabilities()
@@ -253,6 +257,7 @@ public final class GatewayRuntime {
     public func stop() async {
         kanban.stopActivityUpdates()
         kanban.stopEvents()
+        schedules.stop()
         globalEventTask?.cancel()
         awaitingManagedStartup = false
         managedLifecycleGeneration = UUID()

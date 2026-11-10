@@ -141,8 +141,21 @@ extension DemoGateway {
         case "pause": job["enabled"] = false; job["state"] = "paused"
         case "resume": job["enabled"] = true; job["state"] = "active"
         case "trigger": job["last_status"] = "ok"
+        case "cancel":
+            // Stop on the run in flight, as Hermes answers it: the run ends, the schedule stays.
+            let live = job["live_execution"] ?? nil
+            guard !live.isNull else {
+                return (200, ["success": true, "cancelled": false, "execution_id": nil, "job_id": .string(ref),
+                              "detail": "No run of this job is in flight — nothing to cancel."])
+            }
+            job["live_execution"] = nil
+            job["last_status"] = "cancelled"
+            schedules[at] = .object(job)
+            return (200, ["success": true, "cancelled": true, "execution_id": live["id"] ?? nil, "status": live["status"] ?? nil,
+                          "pid": 4242, "job_id": .string(ref), "detail": "Cancel requested; the run stops at its next cancel check."])
         default:
-            for (key, value) in body.objectValue ?? [:] { job[key] = value }
+            // The dashboard sends `{"updates": {...}}`; older callers sent the fields bare.
+            for (key, value) in (body["updates"] ?? body).objectValue ?? [:] { job[key] = value }
         }
         schedules[at] = .object(job)
         return (200, .object(job))

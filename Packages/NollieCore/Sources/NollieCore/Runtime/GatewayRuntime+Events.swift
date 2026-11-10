@@ -34,6 +34,7 @@ extension GatewayRuntime {
             Task { await projects.refresh() }
         case (nil, "cron.changed"):
             announce(.hermesCronChanged)
+            schedules.lookSoon()
         default:
             break
         }

@@ -45,6 +45,7 @@ extension GatewayRuntime {
     private func refreshPlugins() async {
         await projects.refresh()
         await kanban.probe()
+        schedules.follow()
     }
 
     func learnProfileHome() async {
