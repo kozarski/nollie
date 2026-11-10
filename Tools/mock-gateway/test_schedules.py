@@ -84,6 +84,47 @@ class ScheduleFixtureTests(unittest.TestCase):
         for key, value in before.items():
             self.assertEqual(saved[key], value)
 
+    def test_a_run_in_flight_is_listed_and_stop_ends_only_that_run(self):
+        job = mock._cron_job("morning-brief")
+        job["live_execution"] = mock._live_execution("morning-brief", 1_800_000_000)
+        _, listed = self.request("/api/cron/jobs")
+        running = [j["job_id"] for j in listed["jobs"] if j.get("live_execution")]
+        self.assertEqual(running, ["morning-brief"])
+        self.assertEqual(listed["jobs"][0]["live_execution"]["status"], "running")
+
+        status, answer = self.request("/api/cron/jobs/morning-brief/cancel?profile=default", "POST")
+        self.assertEqual(status, 200)
+        self.assertEqual(answer["cancelled"], True)
+        self.assertEqual(answer["execution_id"], "exec-morning-brief-1800000000")
+        self.assertEqual(answer["job_id"], "morning-brief")
+        # The schedule stays on; only the run ended.
+        self.assertTrue(job["enabled"])
+        self.assertEqual(job["state"], "active")
+        self.assertIsNone(job["live_execution"])
+
+        status, again = self.request("/api/cron/jobs/morning-brief/cancel", "POST")
+        self.assertEqual(status, 200)
+        self.assertEqual(again["cancelled"], False)
+        self.assertIsNone(again["execution_id"])
+
+    def test_a_flow_can_start_and_end_a_run(self):
+        status, job = self.request("/api/_mock/schedule-run", "POST", {"job_id": "morning-brief", "seconds_ago": 60})
+        self.assertEqual(status, 200)
+        self.assertEqual(job["live_execution"]["status"], "running")
+        _, job = self.request("/api/_mock/schedule-run", "POST", {"job_id": "morning-brief", "running": False})
+        self.assertIsNone(job["live_execution"])
+
+    def test_stop_for_another_bot_or_a_missing_job_is_refused(self):
+        self.assertEqual(self.request("/api/cron/jobs/morning-brief/cancel?profile=work", "POST")[0], 404)
+        self.assertEqual(self.request("/api/cron/jobs/nope/cancel", "POST")[0], 404)
+        self.assertEqual(mock.CRON_JOBS, self.original)
+
+    def test_the_missed_run_rule_is_saved_and_checked(self):
+        status, saved = self.request("/api/cron/jobs/morning-brief?profile=default", "PUT", {"updates": {"catch_up": False}})
+        self.assertEqual(status, 200)
+        self.assertIs(saved["catch_up"], False)
+        self.assertEqual(self.request("/api/cron/jobs/morning-brief", "PUT", {"updates": {"catch_up": "yes"}})[0], 400)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -32,6 +32,8 @@ struct CronJobDetailView: View {
     @State private var picker = ScheduleDraft()
     /// When the Mac slept around a late run, from Nollie's add-on.
     @State private var sleepGaps: [ConversationPost.SleepGap] = []
+    /// Stop pressed for the run in progress, until Hermes answers.
+    @State private var stoppingRun = false
 
     init(runtime: GatewayRuntime, job: CronJob, raw: JSONValue, onChange: @escaping () -> Void) {
         _runtime = State(initialValue: runtime)
@@ -104,6 +106,24 @@ struct CronJobDetailView: View {
         return name
     }
 
+    /// The run in progress, as the gateway's list showed it last. While the app follows the
+    /// schedules that look is the truth; otherwise the record this page holds is.
+    private var liveRun: ScheduleActivity.Run? { runtime.schedules.activity.run(job: job.identity) }
+    private var isRunningNow: Bool {
+        if runtime.schedules.activity.isFresh() { return liveRun != nil }
+        return CronRun.isRunning(record) || CronRun.isRunning(raw)
+    }
+
+    /// Whether a run missed while the Mac slept happens once when it wakes. Hermes's own rule when
+    /// the job doesn't say: a one-off is skipped, and so is a repeat with its own late limit; other
+    /// repeats catch up (the gateway-wide `cron.catch_up_missed`, on unless changed in Hermes).
+    static func catchesUp(_ record: JSONValue) -> Bool {
+        if let chosen = record["catch_up"]?.boolValue { return chosen }
+        if record["schedule"]?["kind"]?.stringValue == "once" { return false }
+        if let grace = record["grace_minutes"], !grace.isNull { return false }
+        return true
+    }
+
     // MARK: Body
 
     var body: some View {
@@ -114,6 +134,7 @@ struct CronJobDetailView: View {
             } else {
                 summary
                 actions
+                catchUpSection
                 Section {
                     if OnYourMac.applies(runtime.connection) {
                         OnYourMacNote(words: OnYourMac.editThis)
@@ -142,7 +163,10 @@ struct CronJobDetailView: View {
             actions: { Button("Delete task", role: .destructive, action: asTask(deleteTask)) },
             message: { Text("Future checks will stop. Previous results stay in the chat.") })
         .task { await firstLoad() }
-        .onAppear { isOnScreen = true }
+        .onAppear {
+            isOnScreen = true
+            runtime.schedules.lookSoon(after: .zero)
+        }
         .onDisappear { isOnScreen = false }
         .onChange(of: model.runtime.map(ObjectIdentifier.init)) { _, _ in
             if model.runtime !== runtime { dismiss() }
@@ -194,8 +218,14 @@ struct CronJobDetailView: View {
             if let task = current.prompt ?? current.promptPreview, !task.isEmpty {
                 Text(task).lineLimit(3).testID("schedules.taskSummary")
             }
-            LabeledContent("Status", value: ScheduledWork.status(current, raw: record))
+            LabeledContent("Status", value: isRunningNow ? ScheduledWork.runningWord : ScheduledWork.status(current, raw: record))
                 .testID("schedules.status")
+            if let liveRun {
+                TimelineView(.periodic(from: .now, by: 30)) { context in
+                    LabeledContent("Running for", value: HelperAtWorkWords.elapsed(since: liveRun.startedAt, now: context.date))
+                }
+                .testID("schedules.runningFor")
+            }
             LabeledContent("When", value: scheduleSummary)
             LabeledContent("Next check", value: ScheduledWork.next(current))
             LabeledContent("Last check", value: lastCheckSummary)
@@ -211,8 +241,26 @@ struct CronJobDetailView: View {
         }
     }
 
+    /// One switch for the missed-run rule behind "Your Mac was asleep". Changing it is a change to
+    /// the schedule, so a linked iPhone shows it and leaves the change to the Mac.
+    @ViewBuilder private var catchUpSection: some View {
+        if !ScheduledWork.completed(current) {
+            let onYourMac = OnYourMac.applies(runtime.connection)
+            Section {
+                Toggle("Run when your Mac wakes", isOn: Binding(get: { Self.catchesUp(record) }, set: { on in Task { await setCatchUp(on) } }))
+                    .disabled(onYourMac || isChanging || confirmed == nil)
+                    .testID("schedules.catchUp")
+            } footer: {
+                Text(onYourMac ? OnYourMac.editThis
+                     : Self.catchesUp(record) ? String(localized: "Missed while your Mac was asleep? It runs once when it wakes.")
+                     : String(localized: "Missed while your Mac was asleep? It waits for the next time."))
+            }
+        }
+    }
+
     private var actions: some View {
         Section {
+            if isRunningNow { stopRunButton }
             if !ScheduledWork.completed(current) {
                 let isPaused = ScheduledWork.paused(current)
                 Button(isPaused ? "Resume checks" : "Pause checks", systemImage: isPaused ? "play.circle" : "pause.circle") {
@@ -236,8 +284,19 @@ struct CronJobDetailView: View {
         }
     }
 
+    /// Ends the run in progress and nothing more: the schedule stays on, so there is nothing to confirm.
+    private var stopRunButton: some View {
+        let asked = stoppingRun || runtime.schedules.stopping.contains(job.identity)
+        return Button(role: .destructive, action: asTask(stopThisRun)) {
+            Label(asked ? ScheduleStopWords.stopping : ScheduleStopWords.stopLabel, systemImage: "stop.circle")
+        }
+        .disabled(asked || isChanging)
+        .accessibilityHint(ScheduleStopWords.hint)
+        .testID("schedules.stopRun")
+    }
+
     private var runButton: some View {
-        let blocked = isChanging || run.isBusy || CronRun.isRunning(record)
+        let blocked = isChanging || run.isBusy || isRunningNow
             || ScheduledWork.paused(current) || ScheduledWork.completed(current)
         let icon: AnyView = run.symbol.map { AnyView(Image(systemName: $0)) } ?? AnyView(ProgressView().controlSize(.small))
         return Button(action: asTask(runNow)) {
@@ -473,6 +532,39 @@ struct CronJobDetailView: View {
         }
     }
 
+    private func stopThisRun() async {
+        guard allowed, !stoppingRun else { return }
+        stoppingRun = true
+        feedback = nil
+        defer { stoppingRun = false }
+        let line = await ScheduleStopWords.stop(jobID: job.identity, profile: owner, on: runtime)
+        guard allowed else { return }
+        feedback = line
+        feedbackIsProblem = line == ScheduleStopWords.notStopped
+        onChange()
+    }
+
+    /// Sets the missed-run rule, and believes it only when Hermes's reply carries it.
+    private func setCatchUp(_ on: Bool) async {
+        guard allowed, !isChanging, confirmed != nil, Self.catchesUp(record) != on else { return }
+        isChanging = true
+        feedback = nil
+        defer { isChanging = false }
+        do {
+            let reply: JSONValue = try await runtime.api.send(
+                "PUT", "/api/cron/jobs/\(job.identity)", profile: owner,
+                json: .object(["updates": .object(["catch_up": .bool(on)])]))
+            guard allowed else { return }
+            guard ScheduledWork.confirms(reply, jobID: job.identity, profile: owner), reply["catch_up"]?.boolValue == on else {
+                throw ScheduleConfirmationError()
+            }
+            take(reply)
+            onChange()
+        } catch {
+            failed(error)
+        }
+    }
+
     /// Adopts a fresh record from the gateway; the JSON editor follows it unless it was edited.
     private func take(_ reply: JSONValue) {
         let wasFollowing = !jsonChanged
@@ -507,7 +599,7 @@ struct CronJobDetailView: View {
     /// tapped. Afterwards "Started" or "Finished" appears briefly, or else a plain-language error.
     private func runNow() async {
         guard allowed, !isChanging, !ScheduledWork.paused(current), !ScheduledWork.completed(current),
-              !CronRun.isRunning(record)
+              !isRunningNow
         else { return }
 
         let key = runKey

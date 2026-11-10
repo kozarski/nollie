@@ -2352,6 +2352,24 @@ CRON_JOBS = [
      prompt_preview="Run the dependency audit and report what our code can reach.",
      deliver="local", enabled=False, state="paused", last_status="ok", profile="work"),
 ]
+# Hermes 0.23 lists each job's run in flight (a claimed or running attempt whose process is alive)
+# as live_execution, null when nothing runs; Stop on the run is POST .../cancel.
+for _job in CRON_JOBS:
+    _job.setdefault("live_execution", None)
+
+# --schedule-demo: the morning brief is four minutes into a run the schedule started (for pictures
+# of who is working and of Stop on a run).
+SCHEDULE_DEMO = "--schedule-demo" in sys.argv
+
+
+def _live_execution(job_id: str, started: float, source: str = "scheduler") -> dict:
+    stamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(started))
+    return dict(id=f"exec-{job_id}-{int(started)}", job_id=job_id, source=source, status="running", pid=4242,
+                claimed_at=stamp, started_at=stamp, finished_at=None, error=None)
+
+
+if SCHEDULE_DEMO:
+    CRON_JOBS[0]["live_execution"] = _live_execution(CRON_JOBS[0]["job_id"], time.time() - 245)
 
 
 def _once_schedule(stamp: str):
@@ -2373,7 +2391,7 @@ def _cron_create(profile: str, payload):
         return refuse(400, "A prompt and schedule are required.")
     job = dict(job_id=f"demo-cron-{uuid.uuid4().hex[:10]}", name=fields.get("name", ""), profile=profile,
            prompt=texts["prompt"], schedule=texts["schedule"], deliver=fields.get("deliver", "local"),
-           enabled=True, state="active")
+           enabled=True, state="active", live_execution=None)
     if re.match(r"\d{4}-\d{2}-\d{2}T", texts["schedule"]):
         block = _once_schedule(texts["schedule"])
         if block is None:
@@ -2409,7 +2427,7 @@ def _cron_job(ref: str) -> dict | None:
     return None
 
 
-_CRON_EDITABLE = {"name", "prompt", "schedule", "deliver"}
+_CRON_EDITABLE = {"name", "prompt", "schedule", "deliver", "catch_up"}
 
 
 def cron_update(ref, method, payload, action=None, profile=None):
@@ -2425,8 +2443,27 @@ def cron_update(ref, method, payload, action=None, profile=None):
         return refuse(400, "Unsupported change")
     if set(edits) - _CRON_EDITABLE:
         return refuse(400, "Unsupported fixture field")
+    if "catch_up" in edits and edits["catch_up"] not in (True, False, None):
+        return refuse(400, "catch_up must be true, false, or null (use the default).")
     job.update(edits)
     return ok(job)
+
+
+def cron_cancel(ref, profile=None):
+    """Stop on the job's run in flight, answered as Hermes 0.23 does: the run ends, the schedule stays."""
+    job = _cron_job(ref)
+    if job is None or (profile and job.get("profile", "default") != profile):
+        return refuse(404, "Job not found")
+    live = job.get("live_execution")
+    if not live:
+        return ok(dict(success=True, cancelled=False, execution_id=None, job_id=job["job_id"],
+                       detail="No run of this job is in flight — nothing to cancel."))
+    job["live_execution"] = None
+    job.pop("fire_claim", None)
+    job["last_status"] = "cancelled"
+    job["last_run_at"] = _utc_now_text()
+    return ok(dict(success=True, cancelled=True, execution_id=live["id"], status=live["status"], pid=live.get("pid"),
+                   job_id=job["job_id"], detail="Cancel requested; the run stops at its next cancel check."))
 
 
 def _utc_now_text() -> str:
@@ -2441,12 +2478,18 @@ async def cron_trigger(ref: str) -> tuple[int, object]:
     if job.get("fire_claim"):
         return refuse(409, "Job is running already, or another scheduler holds its claim")
 
-    # The claim is held for the length of the pretend run.
+    # The claim is held for the length of the pretend run, and the run is listed as in flight.
     job["fire_claim"] = dict(at=_utc_now_text(), by="mock")
+    live = _live_execution(job["job_id"], time.time(), source="manual")
+    job["live_execution"] = live
     try:
         await asyncio.sleep(CRON_RUN_SECONDS)
     finally:
         job.pop("fire_claim", None)
+    if job.get("live_execution") is not live:
+        # Stopped part way: Hermes answers the trigger with the cancelled run.
+        return ok(job)
+    job["live_execution"] = None
     job["last_run_at"] = _utc_now_text()
     job["last_status"] = "ok"
     return ok(job)
@@ -3525,8 +3568,21 @@ def _expire_everything():
     return ok({"ok": True})
 
 
+def _start_schedule_run(payload) -> tuple[int, object]:
+    """Puts a schedule part way through a run the scheduler started, or ends it with {"running": false}."""
+    fields = payload if isinstance(payload, dict) else {}
+    job = _cron_job(str(fields.get("job_id") or "morning-brief"))
+    if job is None:
+        return refuse(404, "Job not found")
+    running = fields.get("running", True) is not False
+    ago = float(fields.get("seconds_ago") or 245)
+    job["live_execution"] = _live_execution(job["job_id"], time.time() - ago) if running else None
+    return ok(job)
+
+
 # Controls that work whether or not the password gate is on: path -> (method it needs or None, handler).
 _AUTH_CONTROLS = {
+    "/api/_mock/schedule-run": ("POST", lambda query, payload: _start_schedule_run(payload)),
     "/api/_mock/password-auth": ("POST", lambda query, payload: _configure_password_auth(payload)),
     "/api/_mock/expire-sessions": ("POST", lambda query, payload: _expire_everything()),
     "/api/_mock/auth-log": (None, lambda query, payload: ok({"log": AUTH_LOG})),
@@ -3597,7 +3653,7 @@ def _live_gate(path: str):
     return _json_response(404, dict(detail="Not found")) if unsupported else None
 
 
-_JOB_PATH = re.compile(r"/api/cron/jobs/([^/]+)(?:/(trigger|pause|resume))?")
+_JOB_PATH = re.compile(r"/api/cron/jobs/([^/]+)(?:/(trigger|pause|resume|cancel))?")
 
 
 def _cron_route(method: str, base: str, query: dict, body):
@@ -3617,6 +3673,8 @@ def _cron_route(method: str, base: str, query: dict, body):
             status, answer = await cron_trigger(ref)
             return _json_response(status, answer)
         return after_run()
+    if action == "cancel":
+        return cron_cancel(ref, query.get("profile")) if method == "POST" else None
     if action:
         return cron_update(ref, method, body, action, query.get("profile")) if method == "POST" else None
     if method == "PUT":
@@ -5439,6 +5497,7 @@ def _arguments() -> argparse.Namespace:
         "--activity-demo": "seed Work with a short completed activity run and an inbound message",
         "--notification-activity-demo": "seed a default-dispatched Work task, a live preview, and typed machine history",
         "--silence-demo": "seed quiet automatic replies and literal user markers",
+        "--schedule-demo": "seed the morning brief part way through a scheduled run (Stop ends it)",
         "--no-pdf-tools": "refuse all PDFs, like a gateway without poppler-utils",
     }
     for flag, help_text in switches.items():

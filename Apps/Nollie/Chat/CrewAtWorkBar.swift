@@ -27,11 +27,19 @@ struct CrewAtWorkBar: View {
         model.runtime?.connection.linkedMac != nil || (DemoMode.isOn && model.linkReach != nil)
     }
 
+    /// The one schedule run Stop ends here, when the only helper at work is on a schedule and no Mac
+    /// is linked to take the bigger Stop.
+    private func soleRun(_ members: [CrewAtWork.Member]) -> CrewAtWork.Member? {
+        guard !canStop, members.count == 1, let only = members.first, only.work?.jobID != nil else { return nil }
+        return only
+    }
+
     var body: some View {
         let members = members
         Group {
             if !members.isEmpty || outcome != nil {
-                bar(members)
+                // Each minute the "4 min" moves on.
+                TimelineView(.periodic(from: .now, by: 30)) { context in bar(members, now: context.date) }
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
                     .padding(.bottom, 8)
@@ -42,15 +50,16 @@ struct CrewAtWorkBar: View {
         .animation(.snappy, value: outcome)
     }
 
-    private func bar(_ members: [CrewAtWork.Member]) -> some View {
+    private func bar(_ members: [CrewAtWork.Member], now: Date) -> some View {
         // Side by side; in a narrow column or at the largest text sizes Stop goes under the words, so
         // nothing is cut short, and the corners round more gently than a capsule would into the words.
-        let withStop = canStop && !members.isEmpty
+        let run = soleRun(members)
+        let withStop = (canStop || run != nil) && !members.isEmpty
         let stacked = withStop && (typeSize.isAccessibilitySize || (width > 0 && width < Self.rowWidth))
         let layout = stacked ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10)) : AnyLayout(HStackLayout(spacing: 12))
         return layout {
-            who(members)
-            if withStop { stopButton }
+            who(members, now: now)
+            if let run { runStopButton(run) } else if withStop { stopButton }
         }
         .padding(.leading, stacked ? 16 : 10)
         .padding(.trailing, withStop && !stacked ? 8 : 20)
@@ -62,14 +71,26 @@ struct CrewAtWorkBar: View {
         .accessibilityIdentifier("chats.atWork")
     }
 
-    @ViewBuilder private func who(_ members: [CrewAtWork.Member]) -> some View {
-        let label = whoLabel(members)
+    @ViewBuilder private func who(_ members: [CrewAtWork.Member], now: Date) -> some View {
+        let label = whoLabel(members, now: now)
         if members.count > 1 {
             Menu {
                 ForEach(members) { member in
                     Button { open(member.helper.profile) } label: {
                         Text(member.helper.name)
-                        Text(member.step)
+                        Text(member.line(now: now))
+                    }
+                }
+                // A schedule's run can be stopped on its own from here; the schedule stays on.
+                let runs = members.filter { $0.work?.jobID != nil }
+                if !runs.isEmpty {
+                    Section {
+                        ForEach(runs) { member in
+                            Button(role: .destructive) { stopRun(member) } label: {
+                                Label(ScheduleStopWords.stopNamed(member.work?.title ?? ""), systemImage: "stop.fill")
+                            }
+                            .accessibilityIdentifier("chats.atWork.stopRun." + member.helper.profile)
+                        }
                     }
                 }
             } label: { label }
@@ -83,7 +104,7 @@ struct CrewAtWorkBar: View {
         }
     }
 
-    private func whoLabel(_ members: [CrewAtWork.Member]) -> some View {
+    private func whoLabel(_ members: [CrewAtWork.Member], now: Date) -> some View {
         let headline = members.isEmpty ? outcome.map(Self.short) ?? "" : CrewAtWork.headline(members.map(\.helper))
         // At the largest sizes the faces sit above the words, which get the bar's whole width and
         // break only between words: "2 helpers working", never "work-ing".
@@ -100,10 +121,10 @@ struct CrewAtWorkBar: View {
                 // At the largest text sizes the step is left to the helper's own row above, which
                 // says the same words, so the bar stays one short line over the list.
                 if !members.isEmpty,
-                   let line = outcome.map(Self.short) ?? (members.count == 1 && !typeSize.isAccessibilitySize ? members.first?.step : nil) {
+                   let line = outcome.map(Self.short) ?? (members.count == 1 && !typeSize.isAccessibilitySize ? members.first?.line(now: now) : nil) {
                     Text(line)
                         .font(.subheadline)
-                        .foregroundStyle(outcome == nil ? Ink.text2 : (outcome == MacStopWords.stopped ? Ink.text2 : .orange))
+                        .foregroundStyle(outcome == nil || Self.calm(outcome) ? Ink.text2 : .orange)
                         .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -147,6 +168,37 @@ struct CrewAtWorkBar: View {
         .accessibilityIdentifier("chats.atWork.stop")
     }
 
+    /// Stop for the one schedule run showing: that run ends, the schedule stays.
+    private func runStopButton(_ member: CrewAtWork.Member) -> some View {
+        let stoppingRun = stopping || (member.work?.jobID).map { model.runtime?.schedules.stopping.contains($0) == true } == true
+        return Button { stopRun(member) } label: {
+            Label(stoppingRun ? ScheduleStopWords.stopping : HelperAtWorkWords.stop, systemImage: "stop.fill")
+                .font(.body.weight(.semibold))
+                .padding(.horizontal, 6)
+                .frame(minHeight: 36)
+        }
+        .buttonStyle(NollieGlassButtonStyle(prominent: true))
+        .tint(.red)
+        .disabled(stoppingRun)
+        .accessibilityHint(ScheduleStopWords.hint)
+        .accessibilityIdentifier("chats.atWork.stopRun")
+    }
+
+    private func stopRun(_ member: CrewAtWork.Member) {
+        guard !stopping, let jobID = member.work?.jobID, let runtime = model.runtime else { return }
+        stopping = true
+        Task {
+            let line = await ScheduleStopWords.stop(jobID: jobID, profile: member.helper.profile, on: runtime)
+            stopping = false
+            show(line)
+        }
+    }
+
+    /// A Stop that went as asked, said in grey; anything else in orange.
+    private static func calm(_ outcome: String?) -> Bool {
+        [MacStopWords.stopped, ScheduleStopWords.stopped, ScheduleStopWords.alreadyDone].contains(outcome ?? "")
+    }
+
     private func stop() {
         guard !stopping else { return }
         stopping = true
@@ -166,7 +218,8 @@ struct CrewAtWorkBar: View {
 
     /// How Stop went, short enough for the bar. The full sentence is read out to VoiceOver.
     static func short(_ outcome: String) -> String {
-        outcome == MacStopWords.stopped
+        if [ScheduleStopWords.stopped, ScheduleStopWords.alreadyDone, ScheduleStopWords.notStopped].contains(outcome) { return outcome }
+        return outcome == MacStopWords.stopped
             ? String(localized: "Stopping on your Mac", comment: "Safety: Stop was pressed and the Mac is stopping the helpers' work")
             : HelperAtWorkWords.notReached
     }

@@ -203,7 +203,7 @@ struct NollieLinkDoorTests {
             ("GET", "/api/model/options", false), ("GET", "/api/config/schema", false), ("GET", "/api/media", false),
             ("GET", "/api/cron/jobs", false), ("GET", "/api/cron/jobs/abc", false), ("DELETE", "/api/cron/jobs/abc", false),
             ("POST", "/api/cron/jobs/abc/pause", false), ("POST", "/api/cron/jobs/abc/resume", false),
-            ("POST", "/api/cron/jobs/abc/trigger", false),
+            ("POST", "/api/cron/jobs/abc/trigger", false), ("POST", "/api/cron/jobs/abc/cancel", false),
             ("GET", "/api/plugins/kanban/board", false), ("POST", "/api/plugins/kanban/tasks", false),
             ("GET", "/api/plugins/kanban/events", true), ("GET", "/api/plugins/nollie-workflow/attention", false),
             ("GET", "/api/plugins/nollie-workflow/private-bots", false),
@@ -242,6 +242,9 @@ struct NollieLinkDoorTests {
             // Scheduled tasks: reads and pause, resume, run and delete only.
             ("POST", "/api/cron/jobs", false), ("PUT", "/api/cron/jobs/abc", false), ("POST", "/api/cron/blueprints/instantiate", false),
             ("POST", "/api/cron/fire", false),
+            // Stop on a run is a POST and nothing else; it never reaches bulk or reserved routes.
+            ("GET", "/api/cron/jobs/abc/cancel", false), ("DELETE", "/api/cron/jobs/abc/cancel", false),
+            ("POST", "/api/cron/jobs/active/cancel", false),
             // Sessions: one chat at a time, nothing in bulk.
             ("POST", "/api/sessions", false), ("POST", "/api/sessions/bulk-delete", false), ("POST", "/api/sessions/prune", false),
             ("POST", "/api/sessions/import", false), ("DELETE", "/api/sessions/empty", false), ("GET", "/api/sessions/empty/count", false),

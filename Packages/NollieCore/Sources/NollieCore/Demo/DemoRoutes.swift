@@ -40,18 +40,29 @@ enum DemoRoutes {
 
     // MARK: Schedules
 
-    static func schedules(now: Double) -> [JSONValue] {
+    /// `-nollie-demo-schedule-running`: Scout's price watch is part way through a run the schedule
+    /// started, so the crew bar, the menu bar, the Watch and the schedule's Stop have something to show.
+    static var scheduleRunning: Bool { ProcessInfo.processInfo.arguments.contains("-nollie-demo-schedule-running") }
+
+    static func schedules(now: Double, running: Bool = scheduleRunning) -> [JSONValue] {
         func when(_ offset: Double) -> JSONValue {
             let formatter = ISO8601DateFormatter()
             return .string(formatter.string(from: Date(timeIntervalSince1970: now + offset)))
         }
+        // As Hermes 0.23 lists a run in flight: the attempt, claimed and started four minutes ago.
+        let live: JSONValue = running
+            ? ["id": "demo-run-1", "job_id": "price-watch", "status": "running", "source": "scheduler",
+               "claimed_at": when(-245), "started_at": when(-244), "finished_at": nil, "error": nil]
+            : nil
         return [
             ["job_id": "price-watch", "name": "Watch the Aero 5 price", "schedule": "0 9 * * 1",
              "prompt_preview": "Check the Aero 5 price and tell me if it changes.", "deliver": "local", "enabled": true, "state": "active",
-             "next_run_at": when(2 * 86_400), "last_run_at": when(-5 * 86_400), "last_status": "ok", "profile": "scout"],
+             "next_run_at": when(2 * 86_400), "last_run_at": when(-5 * 86_400), "last_status": "ok", "profile": "scout",
+             "live_execution": live],
             ["job_id": "morning-plan", "name": "Morning plan", "schedule": "0 8 * * 1-5",
              "prompt_preview": "Plan my day from what I told you.", "deliver": "local", "enabled": true, "state": "active",
-             "next_run_at": when(14 * 3600), "last_run_at": when(-10 * 3600), "last_status": "ok", "profile": "wren"],
+             "next_run_at": when(14 * 3600), "last_run_at": when(-10 * 3600), "last_status": "ok", "profile": "wren",
+             "live_execution": nil],
         ]
     }
 

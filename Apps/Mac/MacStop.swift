@@ -2,8 +2,8 @@
 import Foundation
 import NollieCore
 
-/// Stop on the Mac: a task using this Mac ends, every reply in progress stops and schedules pause
-/// until the person resumes them. One path for every Stop the Mac takes: from a linked iPhone
+/// Stop on the Mac: a task using this Mac ends, every reply in progress stops, a schedule's run in
+/// progress stops and schedules pause until the person resumes them. One path for every Stop the Mac takes: from a linked iPhone
 /// (LinkStopWatcher), and from Siri, Shortcuts, Spotlight and the Stop control here (StopMacIntent).
 @MainActor
 enum MacStop {
@@ -27,9 +27,11 @@ enum MacStop {
         guard let list: JSONValue = try? await runtime.api.get("/api/cron/jobs") else { return 0 }
         var paused = 0
         for raw in list["jobs"]?.arrayValue ?? list["items"]?.arrayValue ?? list.arrayValue ?? [] {
-            guard let job = ScheduledWork.decode(raw), !ScheduledWork.paused(job), !ScheduledWork.completed(job) else { continue }
             let owner = ScheduledWork.owner(raw)
             if let owner, PrivateBots.isPrivate(owner, connection: runtime.connection.id) { continue }
+            // A run already going would carry on through a pause, so it is stopped too.
+            if let run = ScheduleActivity.live(raw) { _ = try? await runtime.schedules.cancel(job: run.jobID, profile: owner) }
+            guard let job = ScheduledWork.decode(raw), !ScheduledWork.paused(job), !ScheduledWork.completed(job) else { continue }
             guard let reply: JSONValue = try? await runtime.api.send("POST", "/api/cron/jobs/\(job.identity)/pause", profile: owner, body: EmptyBody()),
                   ScheduledWork.confirms(reply, jobID: job.identity, enabled: false, profile: owner) else { continue }
             paused += 1
