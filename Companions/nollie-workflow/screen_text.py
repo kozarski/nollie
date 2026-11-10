@@ -7,7 +7,10 @@ Three computers, three sources, all read by rules, never by a model:
   screenshot's pixels, so the text under the click is the text in that spot;
 - this Mac through Hermes's ``computer_use``: the element labels from the bot's own latest capture,
   remembered from its result (Hermes keeps none it would share);
-- Hermes's own browser: the accessible names from the bot's latest page snapshot, remembered the same way.
+- Hermes's own browser up to 0.22 (``browser_click`` and friends): the accessible names from the bot's latest
+  page snapshot, remembered the same way. From 0.23 the browser is one tool, ``browser_exec``, whose script opens
+  pages and clicks before anything here could look, so its page is never read: Ask first judges the script
+  itself (``ask_first.browser_exec_action``), and a script forgets the remembered page.
 
 When nothing can be read, the answer is UNREADABLE and Ask first asks. Nothing here keeps a picture: the
 screenshot lives in memory for one reading and is dropped.
@@ -170,7 +173,8 @@ _FORMS_SCRIPT = """(() => {
 
 def read_page_forms(task_id, label):
     """The forms a button with this name belongs to on the bot's own browser page, read by a short script in
-    the page (it only reads): their action and method, and the page's address. None if it can't be read."""
+    the page (it only reads): their action and method, and the page's address. None if it can't be read,
+    as on Hermes 0.23, which has no ``browser_console`` (and no ``browser_click`` that would need it)."""
     if not isinstance(label, str) or not label.strip() or len(label) > 200:
         return None
     try:
@@ -185,6 +189,11 @@ def read_page_forms(task_id, label):
     return {"url": document.get("url") if isinstance(document.get("url"), str) else None,
             "forms": [f for f in document["forms"][:12] if isinstance(f, dict)],
             "matched": document.get("matched")}
+
+
+# Calls after which the remembered page can't be trusted: the old tools that act on it, and 0.23's script tool.
+PAGE_CHANGERS = frozenset(("browser_back", "browser_click", "browser_press", "browser_type", "browser_console",
+                           "browser_exec", "browser_cdp", "browser_dialog", "browser_vault"))
 
 
 class Memory:
@@ -226,8 +235,7 @@ class Memory:
                 elif tool_name == "browser_navigate":
                     with self.lock:
                         self.pages.pop(task_id or "default", None)
-            elif tool_name in ("browser_back", "browser_click", "browser_press", "browser_type", "browser_console",
-                               "browser_exec", "browser_cdp", "browser_dialog"):
+            elif tool_name in PAGE_CHANGERS:
                 # The page may have changed: refs from the last snapshot can't be trusted for the next step.
                 with self.lock:
                     self.pages.pop(task_id or "default", None)
@@ -465,6 +473,10 @@ class HermesScreen:
         return self.bind().page(tool, args)
 
 
+# Browser tools that run a whole script: what is on the page when it presses can't be read beforehand.
+SCRIPTED = frozenset(("browser_exec",))
+
+
 class _Bound:
     def __init__(self, screen, task_id, session_id):
         self.screen, self.task_id, self.session_id = screen, task_id, session_id
@@ -510,6 +522,8 @@ class _Bound:
         if tool == "computer_use":
             seen = self.screen.memory.capture_text(self.session_id)
             return UNREADABLE if seen is None else seen
+        if tool in SCRIPTED:
+            return UNREADABLE  # The script acts first: the page it presses on isn't the one remembered.
         if tool.startswith("browser_"):
             page = self.screen.memory.page(self.task_id)
             return UNREADABLE if not page else page["text"]

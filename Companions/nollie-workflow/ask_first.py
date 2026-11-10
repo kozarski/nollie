@@ -10,8 +10,9 @@ When the rules can't tell what something does (a program they don't know or chos
 script they can't read, another server's tool whose name doesn't say it only looks, an OK or Continue
 whose window they can't read, a click on a spot with no readable label), they ask. Those "unsure" asks
 are the only ones a bot's Ask first switch can turn off; whatever the rules name as sending, buying,
-posting or deleting (replacing a file that was already there counts as deleting it) always asks. What
-they still can't see is listed in Docs/ask-first.md.
+posting or deleting (replacing a file that was already there counts as deleting it) always asks, and so
+does a browser script they can't read at all (``firm``). What they still can't see is listed in
+Docs/ask-first.md and, for browser scripts, Docs/specs/ask-first-browser-exec.md.
 """
 from __future__ import annotations
 
@@ -26,6 +27,8 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlsplit
+
+from . import browser_script
 
 KINDS = ("send", "buy", "post", "delete")
 UNSURE = "unsure"
@@ -53,6 +56,8 @@ class Action:
     summary: str
     button: str | None = None
     has_command: bool = False
+    # Asks whatever the bot's Ask first switch says: a browser script Nollie can't read at all.
+    firm: bool = False
 
     def description(self):
         """The approval card's text: the whole action, then the check line for a labelled button. Only this
@@ -1371,8 +1376,9 @@ def _llm_call(text, match):
     return bool(re.search(r"\bmodel\s*[=:]", after)) or bool(re.search(r"anthropic|openai", text[:2000], re.I))
 
 
-def code_found(code, language="py"):
-    """The first send, buy, post or delete a piece of code does, by pattern. Comments count too."""
+def code_found(code, language="py", clicks=True):
+    """The first send, buy, post or delete a piece of code does, by pattern. Comments count too. ``clicks``
+    off leaves clicks and key presses to the caller, which reads them itself (a browser script)."""
     text = str(code or "")
     if not text.strip():
         return None
@@ -1400,6 +1406,8 @@ def code_found(code, language="py"):
     chosen = RUNS_CHOSEN.search(text)
     if chosen:
         unsure = unsure or Found(UNSURE, "the code runs a program chosen when it runs")
+    if not clicks:
+        return unsure
     target = CLICK_TARGET.search(text)
     if target:
         kind = button_kind(re.sub(r"^(text|button|role)=", "", target.group(2)))
@@ -1903,6 +1911,312 @@ def computer_action(short, tool, args, where, screen):
     return None
 
 
+# Browser scripts (Hermes 0.23's browser_exec) ------------------------------------------------------
+
+@dataclass(frozen=True)
+class _Seen:
+    """One thing a browser script does that needs a yes, or a line for the card that doesn't."""
+
+    line: str
+    kind: str | None = None
+    why: str | None = None
+    button: str | None = None
+    firm: bool = False
+    # An OK or Continue: judged by the page it's on, which a script opens before it presses.
+    neutral: bool = False
+
+
+def _path(url):
+    try:
+        return urlsplit(str(url)).path or "/"
+    except ValueError:
+        return "/"
+
+
+# A page script that clicks, submits or sends key presses.
+JS_PRESSES = re.compile(r"\.\s*(click|dblclick|submit|requestSubmit)\s*\(|\bdispatchEvent\s*\(|"
+                        r"\bnew\s+(Mouse|Keyboard|Pointer|Touch|Submit)Event\b|\bInput\.dispatch", re.I)
+JS_SUBMITS = re.compile(r"\.\s*(submit|requestSubmit)\s*\(|\bdispatchEvent\s*\(|\bnew\s+(Keyboard|Submit)Event\b", re.I)
+# Clicks on the one element whose own text or label is exactly these words.
+EXACT_LABEL = re.compile(r"""(?:textContent|innerText|value|title|ariaLabel|label)\s*(?:\.\s*trim\s*\(\s*\))?\s*"""
+                         r"""===?\s*(['"`])((?:(?!\1)[^\\]){1,80})\1""")
+EXACT_ATTRIBUTE = re.compile(r"""\[\s*(?:aria-label|title|value|alt)\s*=\s*\\?(['"])((?:(?!\1)[^\\]){1,80})\\?\1\s*\]""")
+TEXT_SELECTOR = re.compile(r"""^\s*(?:text\s*=\s*|role=button\[name=)['"]?([^'"\]]{1,80})['"]?\]?\s*$""")
+CONSENT = re.compile(r"(?i)cookie|consent|gdpr|onetrust|didomi|truste|usercentrics|cmp[-_]")
+# CDP methods that only look, wait, or arrange the window and tabs.
+CDP_LOOKS = re.compile(r"^[A-Z][A-Za-z]*\.(get\w*|describe\w*|query\w*|capture\w*|resolve\w*|search\w*|enable|disable|"
+                       r"request(Node|ChildNodes)|highlight\w*|hide\w*|bringToFront|activateTarget|attachToTarget|"
+                       r"detachFromTarget|setDiscoverTargets|setAutoAttach|reload|stopLoading|scrollIntoViewIfNeeded|"
+                       r"focus|setDeviceMetricsOverride|clearDeviceMetricsOverride|setVisibleSize|performSearch|"
+                       r"discardSearchResults|startScreencast|stopScreencast|screencastFrameAck|closeTarget|"
+                       r"setLifecycleEventsEnabled|waitForDebugger|runIfWaitingForDebugger|navigate|createTarget|"
+                       r"navigateToHistoryEntry|setBypassCSP|addScriptToEvaluateOnNewDocument)$")
+CDP_INPUTS = ("Input.dispatchMouseEvent", "Input.dispatchKeyEvent", "Input.insertText", "Input.dispatchTouchEvent",
+              "Input.dispatchDragEvent", "Input.emulateTouchFromMouseEvent", "Input.synthesizeTapGesture",
+              "Input.synthesizeScrollGesture", "Input.synthesizePinchGesture", "Input.imeSetComposition")
+CDP_MODIFIERS = ((1, "alt"), (2, "ctrl"), (4, "cmd"), (8, "shift"))
+STEP_LINES = 8
+WEB_ADDRESS = re.compile(r"https?://[^\s'\"\\)]+", re.I)
+
+
+def _literal_kind(text):
+    """The strongest kind any string in a page script names, as a button would: '#buy', 'Place order'."""
+    best, button = None, None
+    for a, b, c in _STRINGS.findall(text):
+        literal = a or b or c
+        plain = re.sub(r"[#.\[\]_\-=*^$~|>:()\"']+", " ", literal).strip()
+        kind = button_kind(plain) if plain else None
+        if kind and _stronger(best, kind) == kind and kind != best:
+            best, button = kind, literal
+    return best, button
+
+
+def _shown(text, limit=120):
+    return _value(_one_line(text), limit)
+
+
+def _press_kind(mods, key):
+    """What a key press does, as the computer rules read it: (kind, why) or None. Return on a page Nollie can't
+    read asks."""
+    if key == "enter" and mods & {"cmd", "ctrl"}:
+        return "send", "in most apps this sends"
+    if key == "delete" and ("cmd" in mods or mods == {"shift"}):
+        return "delete", "in most apps this deletes"
+    if (key == "d" and mods == {"cmd", "shift"}) or (key == "s" and mods == {"alt"}):
+        return "send", "in Mail and Outlook this sends"
+    if key == "enter" and "shift" not in mods:
+        return UNSURE, "Return can press a Send, Pay, Post or Delete button, and Nollie can't read the page first"
+    return None
+
+
+def _js_seen(text, where):
+    """A page script: what it clicks, submits or sends, by the same rules as any code."""
+    found = code_found(text, "js", clicks=False)
+    if found and found.kind != UNSURE:
+        return _Seen(f"Run a page script: {_shown(text)}", found.kind, found.why)
+    if not JS_PRESSES.search(text):
+        return _Seen(f"Run a page script: {_shown(text)}", found.kind if found else None,
+                     found.why if found else None)
+    kind, literal = _literal_kind(text)
+    exact = [m.group(2) for m in EXACT_LABEL.finditer(text)] + [m.group(2) for m in EXACT_ATTRIBUTE.finditer(text)]
+    if kind:
+        button = exact[0] if len(set(exact)) == 1 and button_kind(exact[0]) == kind else None
+        named = button or literal
+        return _Seen(f"Press “{_button(named)}”" if button else f"Run a page script: {_shown(text)}",
+                     kind, f"the script presses “{_shown(named, 60)}”", button)
+    line = f"Run a page script: {_shown(text)}"
+    if JS_SUBMITS.search(text):
+        return _Seen(line, UNSURE, "the script submits a form or sends key presses, and Nollie can't read what on")
+    clicks = len(re.findall(r"\.\s*(?:click|dblclick)\s*\(", text))
+    if clicks == 1 and len(set(exact)) == 1:
+        label = exact[0]
+        if not neutral_button(label):
+            return _Seen(f"Press “{_button(label)}”")
+        if CONSENT.search(text):
+            return _Seen(f"Press “{_button(label)}” on a cookie notice")
+        return _Seen(f"Press “{_button(label)}”", UNSURE,
+                     f"Nollie can't read what “{_shown(label, 60)}” is for", _button(label), neutral=True)
+    return _Seen(line, UNSURE, "the script clicks, and Nollie can't read which button")
+
+
+def _values_seen(values, judge, unknown_line, unknown_why, *, firm=False):
+    """Each value the code may pass, judged alone; the strongest wins. Unknown values ask."""
+    if values is None:
+        return [_Seen(unknown_line, UNSURE, unknown_why, firm=firm)]
+    return [judge(v) for v in values]
+
+
+def _strongest(seen):
+    kind = _stronger(*(s.kind for s in seen))
+    return next((s for s in seen if s.kind == kind), seen[0]) if seen else None
+
+
+def _key_words(mods, key):
+    """cmd+Return, Delete, a: a key as the card says it."""
+    name = {"enter": "Return", "delete": "Delete"}.get(key, key or "a key")
+    return "+".join(sorted(mods) + [name])
+
+
+def _cdp_key(params):
+    """(modifiers, key) from a CDP key event's fields, or None when the code doesn't say them."""
+    key = ""
+    for name in ("key", "code", "text", "unmodifiedText"):
+        if name in params:
+            value = params[name]
+            if not (isinstance(value, list) and len(value) == 1):
+                return None
+            key = value[0]
+            break
+    code = params.get("windowsVirtualKeyCode", params.get("nativeVirtualKeyCode"))
+    if code == 13:
+        key = "Enter"
+    elif code == 46 or code == 8:
+        key = "Delete"
+    elif code is not None and not isinstance(code, (int, float)):
+        return None
+    modifiers = params.get("modifiers", 0)
+    if not isinstance(modifiers, (int, float)) or isinstance(modifiers, bool):
+        return None
+    mods = {name for bit, name in CDP_MODIFIERS if int(modifiers) & bit}
+    _, plain = parse_keys({"key": key}) if key else (set(), "")
+    return mods, plain
+
+
+def _cdp_seen(step, where):
+    if step.method is None:
+        return [_Seen("Send a command to the browser", UNSURE, "the script picks a browser command while it runs",
+                      firm=True)]
+    seen = []
+    params = step.params or {}
+    for method in step.method:
+        if method in ("Runtime.evaluate", "Runtime.callFunctionOn", "Runtime.compileScript"):
+            source = params.get("expression", params.get("functionDeclaration"))
+            if not step.params_known or not isinstance(source, list):
+                seen.append(_Seen(f"Run a page script ({method})", UNSURE,
+                                  "part of a page script is made while the script runs", firm=True))
+            else:
+                seen.extend(_js_seen(t, where) for t in source)
+        elif method == "Page.handleJavaScriptDialog":
+            accept = params.get("accept")
+            if accept is False:
+                seen.append(_Seen("Say no to a question on the page"))
+            else:
+                seen.append(_Seen("Say yes to a question on the page", UNSURE,
+                                  "pages ask before they send, pay or delete, so Nollie asks first"))
+        elif method == "Input.dispatchMouseEvent":
+            kind = params.get("type")
+            if isinstance(kind, list) and set(kind) <= {"mouseMoved", "mouseWheel"} and step.params_known:
+                seen.append(_Seen("Move or scroll the mouse"))
+            else:
+                seen.append(_Seen("Click on the page", UNSURE, "Nollie couldn't read a label there, so it asks first"))
+        elif method == "Input.dispatchKeyEvent":
+            found = _cdp_key(params) if step.params_known else None
+            if found is None:
+                seen.append(_Seen("Press a key", UNSURE, "Nollie can't read which key the script presses"))
+            else:
+                judged = _press_kind(*found)
+                seen.append(_Seen(f"Press {_key_words(*found)}", *(judged or (None, None))))
+        elif method == "Input.insertText":
+            text = params.get("text")
+            if not step.params_known or not isinstance(text, list):
+                seen.append(_Seen("Type text", UNSURE, "the script types text chosen while it runs"))
+            else:
+                seen.extend(_fill_seen([], t) for t in text)
+        elif method in CDP_INPUTS:
+            seen.append(_Seen(f"Tap or press on the page ({method})", UNSURE,
+                              "Nollie can't read what it presses, so it asks first"))
+        elif CDP_LOOKS.match(method):
+            continue
+        else:
+            seen.append(_Seen(f"Send {_shown(method, 60)} to the browser", UNSURE,
+                              f"the script sends {_shown(method, 60)}, which Nollie doesn't know", firm=True))
+    return seen
+
+
+def _fill_seen(selectors, text):
+    where_typed = f" into {_shown(selectors[0], 60)}" if selectors and len(selectors) == 1 else ""
+    secret = any(browser_script.SECRET_WORDS.search(s) for s in selectors or [])
+    shown = "[hidden]" if secret else f"“{_value(text, 200)}”"
+    if _types_return(text):
+        return _Seen(f"Type {shown}{where_typed} and press Return", UNSURE,
+                     "Return can press a Send, Pay, Post or Delete button, and Nollie can't read the page first")
+    return _Seen(f"Type {shown}{where_typed}")
+
+
+def _step_seen(step, script, where):
+    """What one helper call does, as card lines and the asks it needs."""
+    if step.kind == "open":
+        if step.urls is None:
+            return [_Seen("Open a page chosen while the script runs")]
+        return [_Seen(f"Open {browser_script._page(u) or _shown(u, 120)}") for u in step.urls[:3]]
+    if step.kind in ("wait", "tab"):
+        return []
+    if step.kind == "read":
+        return [_Seen("Read the page")]
+    if step.kind == "unknown":
+        return [_Seen(f"Use {_shown(step.name, 60)}", UNSURE,
+                      f"the script calls {_shown(step.name, 60)}, which Nollie doesn't know", firm=True)]
+    if step.kind == "js":
+        return _values_seen(step.text, lambda t: _js_seen(t, where), "Run a page script",
+                            "part of a page script is made while the script runs", firm=True)
+    if step.kind == "fill":
+        return _values_seen(step.text, lambda t: _fill_seen(step.selector, t), "Type text chosen while the script runs",
+                            "the script types text chosen while it runs, which may press Return")
+    if step.kind == "press":
+        def judge(key):
+            mods, plain = parse_keys({"key": key})
+            found = _press_kind(mods, plain)
+            return _Seen(f"Press {_key_words(mods, plain) if plain else _shown(key, 40)}", *(found or (None, None)))
+        return _values_seen(step.text, judge, "Press a key", "Nollie can't read which key the script presses")
+    if step.kind == "click":
+        if step.point is not None or step.selector is None:
+            said = _stronger(*(button_kind(c) for c in script.comments))
+            at = (f"Click at ({step.point[0]}, {step.point[1]})" if step.point and None not in step.point
+                  else "Click on the page")
+            return [_Seen(at, said or UNSURE, "Nollie couldn't read a label there, so it asks first")]
+
+        def judge(selector):
+            text_label = TEXT_SELECTOR.match(selector)
+            if text_label:
+                label = text_label.group(1).strip()
+                kind = button_kind(label)
+                if kind:
+                    return _Seen(f"Press “{_button(label)}”", kind,
+                                 f"the script presses “{_shown(label, 60)}”", _button(label))
+                if not neutral_button(label):
+                    return _Seen(f"Press “{_button(label)}”")
+                return _Seen(f"Press “{_button(label)}”", UNSURE,
+                             f"Nollie can't read what “{_shown(label, 60)}” is for", _button(label),
+                             neutral=True)
+            kind, _ = _literal_kind(json.dumps(selector))
+            return _Seen(f"Click {_shown(selector, 80)}", kind or UNSURE,
+                         f"the script presses {_shown(selector, 60)}" if kind else
+                         "the script clicks, and Nollie can't read which button")
+        return [judge(s) for s in step.selector]
+    if step.kind == "cdp":
+        return _cdp_seen(step, where)
+    return [_Seen(f"Use {_shown(step.name, 60)}", UNSURE, "Nollie can't read this step", firm=True)]
+
+
+def browser_exec_action(args, where):
+    """A ``browser_exec`` script, judged by everything it does: every click, typed Return, key press, page
+    script and raw browser command in it, with the same rules as one click or key at a time. A script Nollie
+    can't read, or a step it doesn't know, asks whatever the switch says."""
+    code = args.get("code")
+    if code is None or (isinstance(code, str) and not code.strip()):
+        return None  # Hermes runs nothing without code.
+    if args.get("local") is True:
+        where = "your own browser, signed in as you"
+    script = browser_script.parse(code)
+    seen = []
+    if script.problem:
+        seen.append(_Seen("", UNSURE, script.problem, firm=True))
+    for step in script.steps:
+        seen.extend(_step_seen(step, script, where))
+    if any(s.neutral for s in seen) and any(PAY_PATH.search(_path(u)) for u in browser_script.opened(script)):
+        seen.append(_Seen("", "buy", "the page it opens is a checkout", next(s.button for s in seen if s.neutral)))
+    if isinstance(code, str):
+        # The Python around the helpers, by the same rules as any code. A page's address alone does nothing: opening
+        # it is judged above, and a request that sends to it is caught by how it is made.
+        found = code_found(WEB_ADDRESS.sub("https://page", code), "py", clicks=False)
+        if found:
+            seen.append(_Seen("", found.kind, found.why))
+    asks = [s for s in seen if s.kind]
+    if not asks:
+        return None
+    kind = _stronger(*(s.kind for s in asks))
+    firm = kind == UNSURE and any(s.firm for s in asks)
+    button = next((s.button for s in asks if s.kind == kind and s.button), None)
+    lines = list(dict.fromkeys(s.line for s in seen if s.line))
+    shown = lines[:STEP_LINES] + ([f"And {len(lines) - STEP_LINES} more steps."] if len(lines) > STEP_LINES else [])
+    whys = list(dict.fromkeys(s.why for s in asks if s.why and s.kind == kind))[:3]
+    first = f"Press “{button}” on {where}." if button else f"Run a browser script on {where}:"
+    body = (["The script will:"] if button else []) + shown + [f"Why Nollie asks: {w}." for w in whys]
+    if not isinstance(code, str) or not lines:
+        body.append(_value(code if isinstance(code, str) else json.dumps(code, default=str), 600))
+    return Action(kind, _summary(first, body), button, firm=firm)
+
+
 # Buttons that say only "go ahead". What they do is in the window, sheet or page around them.
 NEUTRAL_WORDS = {"ok", "okay", "continue", "done", "confirm", "yes", "next", "proceed", "accept", "agree",
                  "allow", "got", "it", "finish", "go", "sure", "i", "im", "m", "apply", "save", "approve",
@@ -2269,7 +2583,8 @@ def _classify(tool, args, screen, read_file, describe, files):
             has_command = any(a.has_command for a in found)
             return Action(kind, _summary(f"{len(found)} actions at once:", [a.summary for a in found],
                                           limit=None if has_command else SUMMARY_LIMIT),
-                          next((a.button for a in found if a.button), None), has_command=has_command)
+                          next((a.button for a in found if a.button), None), has_command=has_command,
+                          firm=kind == UNSURE and any(a.firm for a in found))
     if tool in EXEMPT or tool in LOOKS or tool in APPLE_DATA or tool in PAYMENTS:
         return None
     screen = screen or NoScreen()
@@ -2336,6 +2651,8 @@ def _classify(tool, args, screen, read_file, describe, files):
             kind = kind_of(words(task), lead=False)
             return Action(kind or UNSURE, _summary(f"Hand a whole task to {where}:", [_value(task, 800),
                                                    "Nollie can't see each step it takes, so it asks first."]))
+        if short == browser_script.TOOL and "code" in args:
+            return browser_exec_action(args, where)
         found = computer_action(short, tool, args, where, screen)
         if found or short in CLICKS | KEYS | TYPES | DIALOGS | SCRIPTS | PRESSES:
             return found
@@ -2461,7 +2778,7 @@ class AskFirst:
         found, read = self.action(tool_name, args, task_id, session_id)
         if found is None:
             return None
-        if read and found.kind == UNSURE and not self._asks_when_unsure():
+        if read and found.kind == UNSURE and not found.firm and not self._asks_when_unsure():
             return None
         summary = plain_lines(self._safe(found.summary))
         try:

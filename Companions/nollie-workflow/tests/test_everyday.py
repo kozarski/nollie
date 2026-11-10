@@ -27,6 +27,11 @@ CHANGES_THAT_ASK = [
     ("mcp__filesystem__create_directory", "unsure"),
     ("mcp__memory__create_entities", "unsure"),
     ("mcp__chrome-devtools__click", "unsure"),  # Asked before too: a click Nollie can't read.
+    # Hermes 0.23's browser scripts open the page before they press, so the words around an OK or Continue, and the
+    # page behind a Return, can't be read first. The same presses with browser_click and browser_press above pass.
+    ("browser_exec", "unsure"),  # Continue
+    ("browser_exec", "unsure"),  # Return after typing a station
+    ("browser_exec", "unsure"),  # OK
 ]
 
 
