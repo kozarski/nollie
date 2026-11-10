@@ -61,6 +61,7 @@ struct AboutView: View {
             UpdateSettingsSection()
             #endif
             GlassStack {
+                WhatsNewAgainButton()
                 GlassLink("Acknowledgements", symbol: "heart.text.square", id: "about.acknowledgements") { AcknowledgementsView() }
                 GlassLink("Diagnostics", symbol: "stethoscope", id: "about.diagnostics") { DiagnosticsView() }
                 GlassLink("Remove Nollie", symbol: "trash", id: "about.remove") { ResetView() }

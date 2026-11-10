@@ -208,6 +208,8 @@ final class AppModel {
         cloudAlerts.startObservingAccountChanges()
         listenForSystemEvents()
         WatchLink.start()
+        // Before any setup screen can add a connection: a new install has nothing "new" to be told about.
+        WhatsNew.launch(hadSetup: saved.connections.isEmpty == false)
     }
 
     /// Things the app reacts to wherever it is: a push registration that needs syncing, and the
