@@ -348,6 +348,14 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual((entry["services"], entry["searches"], entry["pages"], entry["calls"], entry["input_tokens"]),
                          (["xai"], 1, 1, 2, 0))
 
+    def test_a_browser_script_counts_the_pages_it_opens(self):
+        self.model(NOW - 100, "t-1", provider="ollama", base_url="http://localhost:11434", i=10)
+        self.tool(NOW - 90, "browser_exec", "t-1", code="new_tab('https://a.example/')\ngoto_url('https://b.example/')")
+        self.tool(NOW - 80, "browser_exec", "t-1", code="print(page_info())")
+        self.tool(NOW - 70, "browser_exec", "t-1", code="def (")
+        entry = self.read()["entries"][0]
+        self.assertEqual((entry["route"], entry["pages"], entry["calls"]), ("online", 4, 3))
+
     def test_a_network_model_beside_an_online_search_is_named_by_the_search(self):
         self.model(NOW - 100, "t-1", provider="custom", base_url="http://192.168.1.9:8000/v1", model="m", i=500)
         self.tool(NOW - 90, "web_search", "t-1")

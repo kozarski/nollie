@@ -11,6 +11,7 @@ import json
 import re
 from urllib.parse import urlsplit
 
+from . import browser_script
 from .ask_first import HELD as ASK_FIRST_HELD
 
 HIDDEN = "[hidden]"
@@ -130,7 +131,16 @@ def look_only(tool, args):
     if tool == "browser_console":
         expression = args.get("expression")
         return expression is None or (isinstance(expression, str) and not expression.strip())
+    if tool == browser_script.TOOL:
+        return browser_only_looks(args.get("code"))
     return False
+
+
+# A browser script a rehearsal may run: it only reads the page already open, waits or picks a tab, and nothing else.
+# Opening a page or running a page script is never look-only, as browser_navigate and browser_console with an
+# expression weren't.
+def browser_only_looks(code):
+    return browser_script.only_looks(code)
 
 
 def command_words(command):
@@ -171,6 +181,9 @@ def plugin_block(tool, args):
 def target(tool, args, redactor=None):
     """A short scrubbed description of what the call touched."""
     args = args if isinstance(args, dict) else {}
+    if tool == browser_script.TOOL and "code" in args:
+        # What the script did, in plain words ("Opened bbc.co.uk/weather", "Clicked Place order"), never its code.
+        return scrub(browser_script.label(args.get("code")), redactor, TARGET_LIMIT)
     if isinstance(args.get("command"), str):
         return scrub(args["command"], redactor, TARGET_LIMIT)
     for key in ("path", "file_path", "filepath"):

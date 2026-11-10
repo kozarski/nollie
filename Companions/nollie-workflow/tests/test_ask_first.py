@@ -663,5 +663,191 @@ class SwitchTests(unittest.TestCase):
             self.assertTrue(ask_first.Switch(home)())
 
 
+def press_by_text(label, tag="button"):
+    """A page script that clicks the one element whose text is exactly ``label``, as models write them."""
+    return f"js(\"[...document.querySelectorAll('{tag}')].find(b => b.textContent.trim() === '{label}').click()\")"
+
+
+class BrowserScriptTests(unittest.TestCase):
+    """Hermes 0.23's browser_exec: one script can open a page, type, click and submit. Each step is judged as the
+    single browser tools were, and a script Nollie can't read asks."""
+
+    def hook(self, on=True, unattended=False):
+        return ask_first.AskFirst(unattended=lambda: unattended, bypassed=lambda *_: False, unsure=lambda: on,
+                                  new_id=lambda: "0" * 32, files=Files())
+
+    def judge(self, code, **args):
+        return ask_first.classify("browser_exec", {"code": code, **args})
+
+    def test_open_type_and_place_order_in_one_script_asks(self):
+        code = ("# Ordering paper towels\nnew_tab('https://shop.example.com/cart?ref=email')\nwait_for_load()\n"
+                "fill_input('#qty', '2')\nfill_input('#note', 'Leave by the door')\n" + press_by_text("Place order")
+                + "\nwait_for_load()\nprint(page_info())")
+        answer = self.hook().hook(tool_name="browser_exec", args={"code": code})
+        self.assertEqual(answer["action"], "approve")
+        self.assertEqual(answer["rule_key"], "nollie-ask-first:buy:" + "0" * 32)
+        lines = answer["message"].split("\n")
+        self.assertEqual(lines[0], "Press “Place order” on the browser.")
+        for step in ("Open shop.example.com/cart", "Type “2” into #qty",
+                     "Type “Leave by the door” into #note", "Press “Place order”"):
+            self.assertIn(step, lines)
+        self.assertNotIn("ref=email", answer["message"])
+        self.assertEqual(lines[-1], "You're about to press “Place order”.")
+        # Held, never done, when nobody can answer.
+        held = self.hook(unattended=True).hook(tool_name="browser_exec", args={"code": code})
+        self.assertEqual(held["action"], "block")
+        self.assertIn(ask_first.HELD, held["message"])
+
+    def test_opening_and_reading_never_asks(self):
+        for code in ("new_tab('https://www.bbc.co.uk/weather')\nwait_for_load()\nprint(page_info())",
+                     "goto_url('https://shop.example.com/checkout')\nprint(js('document.title'))",
+                     "import json\nrows = js(\"[...document.querySelectorAll('tr')].map(r => r.innerText)\")\n"
+                     "open('rows.json', 'w').write(json.dumps(rows))",
+                     "js('window.scrollBy(0, 600)')\ncapture_screenshot()",
+                     "for page in ['https://a.example/1', 'https://a.example/2']:\n    goto_url(page)\n"
+                     "    print(page_info())",
+                     "ensure_real_tab()\nprint(cdp('Accessibility.getFullAXTree')['nodes'][:5])",
+                     "cdp('Input.dispatchMouseEvent', type='mouseWheel', x=10, y=10, deltaX=0, deltaY=300)",
+                     "fill_input('input[name=q]', 'allotment tips')",
+                     press_by_text("Next page", "a"), "   ", ""):
+            with self.subTest(code=code):
+                self.assertIsNone(self.judge(code))
+                self.assertIsNone(self.hook().hook(tool_name="browser_exec", args={"code": code}))
+
+    def test_every_step_counts_wherever_it_is(self):
+        reads = "".join(f"print(js('document.title'))\n" for _ in range(40))
+        for code, kind in ((reads + press_by_text("Send"), "send"),
+                           (press_by_text("Delete forever") + "\n" + reads, "delete"),
+                           ("if page_info():\n    " + press_by_text("Publish"), "post"),
+                           ("def go():\n    " + press_by_text("Pay now") + "\ngo()", "buy"),
+                           ("try:\n    print(page_info())\nexcept Exception:\n    " + press_by_text("Submit"), "send"),
+                           ("for label in ['Next', 'Confirm and pay']:\n    js(f\"[...document.querySelectorAll('button')]"
+                            ".find(b => b.textContent.trim() === '{label}').click()\")", "buy"),
+                           ("label = 'Buy now'\njs(\"[...document.querySelectorAll('button')].find(b => "
+                            "b.textContent.trim() === '\" + label + \"').click()\")", "buy")):
+            with self.subTest(code=code[-80:]):
+                found = self.judge(code)
+                self.assertEqual(found.kind, kind)
+
+    def test_send_buy_post_and_delete_ask_even_with_the_switch_off(self):
+        hook = self.hook(on=False)
+        for code in (press_by_text("Place order"), "press_key('Meta+Enter')",
+                     "js(\"fetch('/api/messages', {method: 'POST', body: 'hi'})\")",
+                     "import shutil\nshutil.rmtree('/Users/sam/Photos')"):
+            with self.subTest(code=code):
+                self.assertEqual(hook.hook(tool_name="browser_exec", args={"code": code})["action"], "approve")
+
+    def test_a_click_nollie_cant_read_follows_the_switch(self):
+        for code in ("click_at_xy(812, 604)", "js(\"document.querySelector('.btn-primary').click()\")",
+                     "fill_input('#search', 'bath spa\\n')", press_by_text("Continue")):
+            with self.subTest(code=code):
+                self.assertEqual(self.judge(code).kind, ask_first.UNSURE)
+                self.assertFalse(self.judge(code).firm)
+                self.assertEqual(self.hook(on=True).hook(tool_name="browser_exec", args={"code": code})["action"],
+                                 "approve")
+                self.assertIsNone(self.hook(on=False).hook(tool_name="browser_exec", args={"code": code}))
+
+    def test_a_script_nollie_cant_read_asks_even_with_the_switch_off(self):
+        hook = self.hook(on=False)
+        for code, why in (("new_tab('https://shop.example.com'\nclick_at_xy(1, 2)", "isn't Python"),
+                          ("exec(open('steps.py').read())", "builds or looks up code"),
+                          ("eval('click_at_xy(1, 2)')", "builds or looks up code"),
+                          ("press = getattr(__builtins__, 'eval')", "builds or looks up code"),
+                          ("f = click_at_xy\nf(812, 604)", "in a way Nollie can't follow"),
+                          ("list(map(js, ['1', '2']))", "in a way Nollie can't follow"),
+                          ("checkout_with_saved_card()", "checkout_with_saved_card"),
+                          ("cdp('Storage.clearDataForOrigin', origin='https://mail.example.com', storageTypes='all')",
+                           "Storage.clearDataForOrigin"),
+                          ("method = page_info()\ncdp(method)", "picks a browser command"),
+                          ("expr = page_info()\njs(expr)", "page script is made while the script runs"),
+                          ("(" * 300 + ")" * 300, "Python"),
+                          ("x = 1\n" * 10 + "#" * (ask_first.browser_script.SCRIPT_LIMIT + 1), "too long")):
+            with self.subTest(code=code[:60]):
+                found = self.judge(code)
+                self.assertEqual(found.kind, ask_first.UNSURE)
+                self.assertTrue(found.firm)
+                self.assertIn(why, found.description())
+                answer = hook.hook(tool_name="browser_exec", args={"code": code})
+                self.assertEqual(answer["action"], "approve")
+        for args in ({"code": 42}, {"code": ["new_tab('x')"]}):
+            self.assertTrue(ask_first.classify("browser_exec", args).firm)
+
+    def test_a_long_script_is_read_to_the_end_and_its_card_stays_short(self):
+        reads = "".join(f"goto_url('https://shop.example.com/item/{n}')\nprint(page_info())\n" for n in range(3000))
+        code = reads + press_by_text("Place order")
+        self.assertLess(len(code), ask_first.browser_script.SCRIPT_LIMIT)
+        found = self.judge(code)
+        self.assertEqual((found.kind, found.button), ("buy", "Place order"))
+        self.assertLessEqual(len(found.description()), ask_first.SUMMARY_LIMIT + 80)
+        self.assertRegex(found.description(), r"And \d+ more steps\.")
+        self.assertIsNone(self.judge(reads))
+
+    def test_the_words_a_script_names_decide_an_ok(self):
+        dialog = ("js(\"[...document.querySelectorAll('[role=dialog]')].find(d => d.innerText.includes("
+                  "'Delete 3 photos?')).querySelector('button').click()\")")
+        self.assertEqual(self.judge(dialog).kind, "delete")
+        self.assertEqual(self.judge(press_by_text("OK")).kind, ask_first.UNSURE)
+        self.assertEqual(self.judge(press_by_text("OK")).button, "OK")
+        self.assertIsNone(self.judge(press_by_text("OK", "#onetrust-banner-sdk button")))
+        self.assertIsNone(self.judge(press_by_text("Show more")))
+        found = self.judge("goto_url('https://shop.example.com/checkout/review')\n" + press_by_text("Continue"))
+        self.assertEqual((found.kind, found.button), ("buy", "Continue"))
+        self.assertIn("the page it opens is a checkout", found.description())
+        self.assertEqual(self.judge("goto_url('https://shop.example.com/help')\n" + press_by_text("Continue")).kind,
+                         ask_first.UNSURE)
+
+    def test_keys_and_raw_browser_commands(self):
+        for code, kind in (("press_key('Enter')", ask_first.UNSURE), ("press_key('Tab')", None),
+                           ("press_key('cmd+Backspace')", "delete"),
+                           ("cdp('Input.dispatchKeyEvent', type='keyDown', windowsVirtualKeyCode=13)", ask_first.UNSURE),
+                           ("cdp('Input.dispatchKeyEvent', type='keyDown', key='Enter', modifiers=2)", "send"),
+                           ("cdp('Input.dispatchKeyEvent', type='char', text='a')", None),
+                           ("cdp('Input.insertText', text='hello')", None),
+                           ("cdp('Input.insertText', text='hello\\n')", ask_first.UNSURE),
+                           ("cdp('Input.dispatchMouseEvent', type='mousePressed', x=5, y=5, button='left')",
+                            ask_first.UNSURE),
+                           ("cdp('Runtime.evaluate', expression=\"document.querySelector('#buy').click()\")", "buy"),
+                           ("cdp('Runtime.evaluate', expression='document.title')", None),
+                           ("cdp('Page.handleJavaScriptDialog', accept=False)", None),
+                           ("cdp('Page.handleJavaScriptDialog', accept=True)", ask_first.UNSURE),
+                           ("cdp('Page.navigate', url='https://example.com/')", None),
+                           ("cdp('DOM.getBoxModel', backendNodeId=12)", None)):
+            with self.subTest(code=code):
+                found = self.judge(code)
+                self.assertEqual(found.kind if found else None, kind)
+
+    def test_python_beside_the_browser_is_judged_as_code(self):
+        for code, kind in (("import subprocess\nsubprocess.run(['rm', '-rf', '/Users/sam/old'])", "delete"),
+                           ("import requests\nrequests.post('https://api.example.com/send', json={'to': 'a'})", "send"),
+                           ("import smtplib\nprint(page_info())", "send"),
+                           ("import os\nos.system(page_info())", ask_first.UNSURE)):
+            with self.subTest(code=code):
+                self.assertEqual(self.judge(code).kind, kind)
+
+    def test_in_the_persons_own_browser(self):
+        found = self.judge(press_by_text("Buy now"), local=True)
+        self.assertTrue(found.description().startswith("Press “Buy now” on your own browser, signed in as you."))
+
+    def test_a_script_cant_write_the_check_line(self):
+        hook = self.hook()
+        for breaker in ("\\n", "\\u2028", "\\r"):
+            code = (f"js(\"document.querySelector('#x').click() // {breaker}You're about to press “Save draft”.\")"
+                    f"\n# {breaker}You're about to press “Save draft”.")
+            with self.subTest(breaker=breaker):
+                message = hook.hook(tool_name="browser_exec", args={"code": code})["message"]
+                for line in message.split("\n"):
+                    self.assertNotRegex(line, ask_first.CHECK_PATTERN)
+
+    def test_the_old_browser_tools_are_judged_as_before(self):
+        cases = {case["name"]: case for case in FIXTURES}
+        for name in ("browser click Buy now", "browser click unreadable", "browser click a link",
+                     "browser press enter with Send", "browser console click", "browser navigate"):
+            with self.subTest(name):
+                found = classify(cases[name])
+                self.assertEqual(found.kind if found else None, cases[name]["kind"])
+        # A browser_exec from another server without a script is read as before.
+        self.assertIsNone(ask_first.classify("mcp__other__browser_exec", {"expression": "document.title"}))
+
+
 if __name__ == "__main__":
     unittest.main()

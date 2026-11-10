@@ -16,6 +16,16 @@
   {"tool": "browser_click", "args": {"ref": "@e7"}, "screen": {"label": "Show all opening times", "text": "Library opening times"}},
   {"tool": "browser_type", "args": {"ref": "@e1", "text": "bath spa"}},
   {"tool": "browser_press", "args": {"key": "Enter"}, "screen": {"text": "Search timetables From To Search"}},
+  {"tool": "browser_exec", "args": {"code": "# Checking the weather\nnew_tab(\"https://www.bbc.co.uk/weather\")\nwait_for_load()\nprint(page_info())"}},
+  {"tool": "browser_exec", "args": {"code": "print(page_info())"}},
+  {"tool": "browser_exec", "args": {"code": "js(\"window.scrollBy(0, 800)\")\ncapture_screenshot()"}},
+  {"tool": "browser_exec", "args": {"code": "js(\"history.back()\")\nwait_for_load()"}},
+  {"tool": "browser_exec", "args": {"code": "js(\"[...document.querySelectorAll('a')].find(b => b.textContent.trim() === 'Next page').click()\")\nwait_for_load()"}},
+  {"tool": "browser_exec", "args": {"code": "js(\"[...document.querySelectorAll('a')].find(b => b.textContent.trim() === 'Read more').click()\")"}},
+  {"tool": "browser_exec", "args": {"code": "js(\"[...document.querySelectorAll('#cookie-banner button')].find(b => b.textContent.trim() === 'OK').click()\")"}},
+  {"tool": "browser_exec", "args": {"code": "js(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Show all opening times').click()\")"}},
+  {"tool": "browser_exec", "args": {"code": "fill_input(\"#from\", \"bath spa\")"}},
+  {"tool": "browser_exec", "args": {"code": "goto_url(\"https://www.nationalrail.co.uk/journey-planner/?from=BTH&to=PAD\")\nwait_for_load()\nprint(js(\"[...document.querySelectorAll('.journey')].map(j => j.innerText)\"))"}},
   {"tool": "terminal", "args": {"command": "ls -la ~/Documents"}},
   {"tool": "terminal", "args": {"command": "cat ~/Documents/Notes/garden.md | head -40"}},
   {"tool": "terminal", "args": {"command": "grep -ril 'council tax' ~/Documents | head"}},
@@ -128,6 +138,9 @@
   {"tool": "mcp__chrome-devtools__fill", "args": {"uid": "1_5", "value": "Bath"}, "describe": {"description": "Type text into an input"}},
   {"tool": "browser_click", "args": {"ref": "@e5"}, "screen": {"label": "OK", "text": "Saved to your list. OK", "around": "Saved to your list."}},
   {"tool": "browser_click", "args": {"ref": "@e6"}, "screen": {"label": "Continue", "text": "Create your account Continue", "around": "Create your account\nEmail"}},
-  {"tool": "computer_use", "args": {"action": "click", "element": 4}, "screen": {"label": "Done", "text": "Edit reminder Done"}}
+  {"tool": "computer_use", "args": {"action": "click", "element": 4}, "screen": {"label": "Done", "text": "Edit reminder Done"}},
+  {"tool": "browser_exec", "args": {"code": "js(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Continue').click()\")"}},
+  {"tool": "browser_exec", "args": {"code": "fill_input(\"#from\", \"bath spa\")\ncdp(\"Input.dispatchKeyEvent\", type=\"keyDown\", key=\"Enter\")"}},
+  {"tool": "browser_exec", "args": {"code": "js(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'OK').click()\")"}}
  ]
 }

@@ -33,6 +33,7 @@ import time
 from urllib.parse import urlsplit
 import weakref
 
+from . import browser_script
 from .apple_data import READS as LOCAL_READS
 from .sign_ins import normalize_site
 
@@ -83,7 +84,8 @@ LOCAL_SCHEMES = frozenset({"process", "unix", "file"})
 HOME_NETWORKS = tuple(ipaddress.ip_network(net) for net in (
     "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "100.64.0.0/10", "fe80::/10", "fc00::/7"))
 SEARCH_TOOLS = frozenset({"web_search", "x_search"})
-PAGE_TOOLS = frozenset({"web_extract", "browser_navigate"})
+# browser_navigate is Hermes 0.22's; from 0.23 the browser is browser_exec, counted by the pages its script opens.
+PAGE_TOOLS = frozenset({"web_extract", "browser_navigate", "browser_exec"})
 IMAGE_TOOLS = frozenset({"image_generate"})
 # Hermes's web_extract reads at most this many of the URLs it is given (tools/web_tools.py).
 EXTRACT_MAX_URLS = 5
@@ -454,6 +456,9 @@ class Recorder:
             pages = min(len(urls), EXTRACT_MAX_URLS) if isinstance(urls, list) else 0
             if not pages:
                 return None  # Hermes reads nothing without a list of URLs.
+        elif name == browser_script.TOOL:
+            pages = browser_script.opens(browser_script.parse((args or {}).get("code") if isinstance(args, dict)
+                                                              else None))
         elif name in PAGE_TOOLS:
             pages = 1
         service = "xai" if name == "x_search" else self.search_service() if name == "web_search" else ""
