@@ -90,7 +90,12 @@ extension DemoGateway {
 
     private func sessionRoute(_ method: String, _ pieces: [String], _ query: [String: String], _ body: JSONValue) -> (Int, JSONValue) {
         let id = pieces[2]
-        guard let at = chatIndex(id) else { return refuse(404, "session not found") }
+        if pieces.count == 4, pieces[3] == "mutation-snapshot", method == "GET" {
+            // As Hermes 0.23 answers it: an unknown id is a snapshot that says so, not a 404.
+            guard let at = chatIndex(id) else { return (200, ["session_id": .string(id), "exists": false, "runtime_revision": 0, "runtime_generation": .null]) }
+            return (200, ["session_id": .string(id), "exists": true, "runtime_revision": .number(Double(chats[at].revision)), "runtime_generation": 0])
+        }
+        guard let at = chatIndex(id) else { return method == "DELETE" ? (200, ["ok": true, "already_absent": true]) : refuse(404, "session not found") }
         if pieces.count == 4, pieces[3] == "messages" {
             let wanted = Int(query["limit"] ?? "") ?? 60
             let rows = Array(chats[at].rows.suffix(wanted))
@@ -103,7 +108,8 @@ extension DemoGateway {
             if let words = body["title"]?.stringValue, !words.isEmpty { chats[at].title = words }
             if let flag = body["pinned"]?.boolValue { chats[at].pinned = flag }
             if let flag = body["archived"]?.boolValue { chats[at].archived = flag }
-            return (200, ["ok": true, "title": .string(chats[at].title)])
+            chats[at].revision += 1
+            return (200, ["ok": true, "title": .string(chats[at].title), "revision": .number(Double(chats[at].revision))])
         case "DELETE":
             chats.remove(at: at)
             return (200, ["ok": true, "deleted": true])

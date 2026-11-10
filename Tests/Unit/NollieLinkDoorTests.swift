@@ -191,7 +191,7 @@ struct NollieLinkDoorTests {
             ("GET", "/api/status", false), ("GET", "/api/ws", true), ("GET", "/api/sessions", false),
             ("GET", "/api/sessions/search", false),
             ("GET", "/api/sessions/abc", false), ("PATCH", "/api/sessions/abc", false), ("DELETE", "/api/sessions/abc", false),
-            ("GET", "/api/sessions/abc/messages", false),
+            ("GET", "/api/sessions/abc/messages", false), ("GET", "/api/sessions/abc/mutation-snapshot", false),
             ("GET", "/api/profiles", false), ("POST", "/api/profiles", false), ("PATCH", "/api/profiles/scout", false),
             ("GET", "/api/profiles/scout/soul", false), ("PUT", "/api/profiles/scout/soul", false),
             ("PUT", "/api/profiles/scout/model", false), ("PUT", "/api/profiles/scout/description", false),
@@ -242,6 +242,7 @@ struct NollieLinkDoorTests {
             ("POST", "/api/sessions/import", false), ("DELETE", "/api/sessions/empty", false), ("GET", "/api/sessions/empty/count", false),
             ("POST", "/api/sessions/owner-backfill", false), ("GET", "/api/sessions/abc/export", false),
             ("POST", "/api/sessions/abc/messages", false), ("DELETE", "/api/sessions/search", false),
+            ("POST", "/api/sessions/abc/mutation-snapshot", false), ("GET", "/api/sessions/empty/mutation-snapshot", false),
             // Screens the app no longer has: session store statistics, the model page, voice and channels.
             ("GET", "/api/sessions/stats", false), ("GET", "/api/model/auxiliary", false), ("POST", "/api/model/set", false),
             ("POST", "/api/audio/transcribe", false), ("POST", "/api/audio/speak", false), ("GET", "/api/audio/speak-stream", true),

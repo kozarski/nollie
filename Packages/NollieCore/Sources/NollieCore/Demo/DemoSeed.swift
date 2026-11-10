@@ -31,6 +31,8 @@ enum DemoSeed {
         var lastActive: Double
         var pinned = false
         var archived = false
+        /// Hermes 0.23's revision of the chat's title and flags, read before a change.
+        var revision = 0
         var cwd = "/home/demo"
         var rows: [Row]
     }
