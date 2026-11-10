@@ -928,6 +928,20 @@ extension NollieLinkDoorTests {
         }
     }
 
+    /// Hermes 0.23's plugin manager and new owner routes stay shut from a phone: installing, updating or
+    /// turning on unattended plugin updates, and cancelling or locking through routes the door hasn't reviewed.
+    @Test func hermes023PluginAndOwnerRoutesStayShut() {
+        let refused: [(String, String)] = [
+            ("GET", "/api/dashboard/plugins/auto-update"), ("PUT", "/api/dashboard/plugins/auto-update"),
+            ("POST", "/api/dashboard/plugins/update"), ("POST", "/api/dashboard/plugins/install"),
+            ("POST", "/api/plugins/install"), ("PUT", "/api/delegation/backends/profile_routes"),
+            ("GET", "/api/webapp"), ("POST", "/api/profiles/import"), ("POST", "/api/profiles/moss/export"),
+        ]
+        for (method, path) in refused {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .refused, "\(method) \(path)")
+        }
+    }
+
     @Test func memoryAllowsOnlyItsOwnRoutesAndOneBot() {
         let base = "/api/plugins/nollie-workflow/memory"
         let allowed: [(String, String)] = [("GET", base), ("POST", base + "/notes"), ("PUT", base + "/notes"),
