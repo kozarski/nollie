@@ -243,7 +243,7 @@ struct LiveSourceTests {
         let first = try #require(asked.withLock { $0.first }?.url)
         let items = URLComponents(url: first, resolvingAgainstBaseURL: false)?.queryItems ?? []
         #expect(first.path == "/hermes/api/plugins/nollie-computer/preview")
-        #expect(Set(items.map { "\($0.name)=\($0.value ?? "")" }) == ["session_id=chat-1", "fresh=1", "profile=work"])
+        #expect(Set(items.map { "\($0.name)=\($0.value ?? "")" }) == ["session_id=chat-1", "fresh=1", "bot=work"])
         #expect(asked.withLock { $0.first }?.value(forHTTPHeaderField: "X-Hermes-Session-Token") == "live-test-token")
     }
 
