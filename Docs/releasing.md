@@ -29,6 +29,15 @@ The Mac app and the iPhone app share one version number, `MARKETING_VERSION`, th
 The build number, `CURRENT_PROJECT_VERSION`, goes up with every upload. A release is tagged `v` plus the
 version, such as `v1.0`. The release workflow refuses a tag that does not match.
 
+## The note people see in the app
+
+After an update, Nollie shows a What's new note once to anyone who already had it set up
+(`Apps/Nollie/WhatsNew/`). A release that changes something a person would notice adds a note for its
+version at the top of `WhatsNewNotes.swift`: a friendly opening line, then each change with one sentence,
+where it lives, and the longer telling behind More. Only what the version really does. A version with no
+note shows nothing. Add the words to the string catalog, and look at it with `-nollie-demo-whats-new` in
+the demo copy (`WhatsNewUITests` takes the pictures).
+
 ## One command: ship.sh
 
 `Tools/release/ship.sh <version>` makes a whole release, one step at a time, and stops for Corey's yes
