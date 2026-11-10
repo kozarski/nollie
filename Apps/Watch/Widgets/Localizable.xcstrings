@@ -652,7 +652,33 @@
       }
     },
     "Answer on your iPhone." : {
-      "comment" : "Under Board tasks on the Watch"
+      "comment" : "Under Board tasks on the Watch",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Antworte auf deinem iPhone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Responde en tu iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Répondez sur votre iPhone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhoneで答えてください。"
+          }
+        }
+      }
     },
     "Approve on your iPhone" : {
       "comment" : "Safety: this yes needs the iPhone",
@@ -826,7 +852,33 @@
       }
     },
     "Just started" : {
-      "comment" : "A helper began its work under a minute ago"
+      "comment" : "A helper began its work under a minute ago",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gerade gestartet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Acaba de empezar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vient de commencer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "開始したばかり"
+          }
+        }
+      }
     },
     "Last seen" : {
       "localizations" : {
@@ -885,7 +937,33 @@
       }
     },
     "Needs your help" : {
-      "comment" : "Board tasks waiting for the person"
+      "comment" : "Board tasks waiting for the person",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Braucht deine Hilfe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Necesita tu ayuda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "A besoin de vous"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "あなたの助けが必要です"
+          }
+        }
+      }
     },
     "Night shift" : {
       "localizations" : {

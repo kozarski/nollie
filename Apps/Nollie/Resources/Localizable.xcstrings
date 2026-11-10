@@ -9651,7 +9651,33 @@
       }
     },
     "A helper's settings · Apps" : {
-      "comment" : "What's new, 1.4: where to find it"
+      "comment" : "What's new, 1.4: where to find it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Einstellungen eines Helfers · Apps"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustes de un ayudante · Apps"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Réglages d'un assistant · Apps"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ヘルパーの設定 · アプリ"
+          }
+        }
+      }
     },
     "A home for %@." : {
       "localizations" : {
@@ -9822,7 +9848,33 @@
       }
     },
     "A newer engine underneath" : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ein neuerer Motor darunter"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un motor más nuevo por debajo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un moteur plus récent en dessous"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "内部のエンジンが新しく"
+          }
+        }
+      }
     },
     "A prepared component contains an unsupported file." : {
       "localizations" : {
@@ -10196,7 +10248,33 @@
       }
     },
     "A schedule or a Board task running on your Mac now shows on your iPhone, iPad and Watch." : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ein Zeitplan oder eine Board-Aufgabe, die auf deinem Mac läuft, erscheint jetzt auch auf deinem iPhone, iPad und deiner Watch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Una programación o una tarea del Tablero que se ejecuta en tu Mac ahora se ve en tu iPhone, iPad y Watch."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Une planification ou une tâche du Tableau en cours sur votre Mac s'affiche désormais sur votre iPhone, iPad et Watch."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macで実行中のスケジュールやボードのタスクが、iPhone、iPad、Watchにも表示されるようになりました。"
+          }
+        }
+      }
     },
     "A separate setup on this Mac for %@." : {
       "localizations" : {
@@ -20837,7 +20915,33 @@
       }
     },
     "Chats · the bar at the bottom" : {
-      "comment" : "What's new, 1.4: where to find it"
+      "comment" : "What's new, 1.4: where to find it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chats · die Leiste unten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chats · la barra de abajo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Discussions · la barre en bas"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "チャット · 下部のバー"
+          }
+        }
+      }
     },
     "Chats, tasks and tools for your assistant, together." : {
       "localizations" : {
@@ -22813,7 +22917,33 @@
       }
     },
     "Choose whether a schedule runs once when your Mac wakes, or waits for next time." : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wähle, ob ein Zeitplan einmal läuft, wenn dein Mac aufwacht, oder bis zum nächsten Mal wartet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Elige si una programación se ejecuta una vez cuando tu Mac se activa o espera a la próxima vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Choisissez si une planification s'exécute une fois au réveil de votre Mac, ou attend la prochaine fois."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macがスリープから復帰したときにスケジュールを1回実行するか、次の予定まで待つかを選べます。"
+          }
+        }
+      }
     },
     "Choose your Hermes folder" : {
       "localizations" : {
@@ -29132,7 +29262,33 @@
       }
     },
     "Couldn't stop it. Try again." : {
-      "comment" : "Safety: Stop did not reach Hermes"
+      "comment" : "Safety: Stop did not reach Hermes",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Konnte nicht gestoppt werden. Versuch es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se pudo detener. Vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de l'arrêter. Réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "停止できませんでした。もう一度お試しください。"
+          }
+        }
+      }
     },
     "Couldn't turn it on. Try again." : {
       "localizations" : {
@@ -33106,7 +33262,33 @@
       }
     },
     "Each schedule has a switch for this. You change it on your Mac." : {
-      "comment" : "What's new, 1.4: the detail"
+      "comment" : "What's new, 1.4: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jeder Zeitplan hat dafür einen Schalter. Du änderst ihn auf deinem Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cada programación tiene un interruptor para esto. Lo cambias en tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chaque planification a un interrupteur pour cela. Vous le modifiez sur votre Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "スケジュールごとにこのためのスイッチがあります。変更はMacで行います。"
+          }
+        }
+      }
     },
     "Earlier messages summarized" : {
       "localizations" : {
@@ -33929,10 +34111,61 @@
       }
     },
     "Ends this run. The schedule stays on." : {
-      "comment" : "Safety: what Stop on a schedule's run does"
+      "comment" : "Safety: what Stop on a schedule's run does",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Beendet diese Ausführung. Der Zeitplan bleibt an."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Termina esta ejecución. La programación sigue activada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Termine cette exécution. La planification reste activée."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "この実行を終了します。スケジュールはオンのままです。"
+          }
+        }
+      }
     },
     "Engine update didn't finish" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Motor-Update nicht abgeschlossen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La actualización del motor no terminó"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La mise à jour du moteur n'a pas abouti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "エンジンの更新が完了しませんでした"
+          }
+        }
+      }
     },
     "Enter Sign-In…" : {
       "localizations" : {
@@ -37993,7 +38226,33 @@
       }
     },
     "Goes past this chat's limit" : {
-      "comment" : "Safety: a connected app's tool would take the chat past the app's spending limit"
+      "comment" : "Safety: a connected app's tool would take the chat past the app's spending limit",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Überschreitet das Limit dieses Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Supera el límite de este chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dépasse la limite de cette discussion"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャットの上限を超えます"
+          }
+        }
+      }
     },
     "Goes when your Mac is back" : {
       "localizations" : {
@@ -41415,7 +41674,32 @@
       }
     },
     "It can still use them. New ones stay as made." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Er kann sie weiter nutzen. Neue bleiben, wie sie erstellt wurden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Puede seguir usándolas. Las nuevas se quedan como se crearon."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Il peut toujours les utiliser. Les nouvelles restent telles quelles."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "引き続き使えます。新しいものは作られたときのまま保たれます。"
+          }
+        }
+      }
     },
     "It can't click or type in your apps." : {
       "comment" : "Safety: what a hands-off bot cannot do",
@@ -41644,7 +41928,33 @@
       }
     },
     "It had already finished." : {
-      "comment" : "Safety: Stop found no run in progress"
+      "comment" : "Safety: Stop found no run in progress",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sie war bereits beendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ya había terminado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Elle était déjà terminée."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "すでに終わっていました。"
+          }
+        }
+      }
     },
     "It isn't available right now." : {
       "localizations" : {
@@ -42611,7 +42921,33 @@
       }
     },
     "Just started" : {
-      "comment" : "A helper began its work under a minute ago"
+      "comment" : "A helper began its work under a minute ago",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gerade gestartet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Acaba de empezar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vient de commencer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "開始したばかり"
+          }
+        }
+      }
     },
     "Kanban is off on this gateway" : {
       "localizations" : {
@@ -43036,7 +43372,33 @@
       }
     },
     "Keep skills as they are" : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Skills unverändert lassen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mantener las habilidades como están"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Garder les compétences telles quelles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "スキルをそのままに"
+          }
+        }
+      }
     },
     "Keep track of the steps in a piece of work." : {
       "localizations" : {
@@ -46120,7 +46482,33 @@
       }
     },
     "Locked" : {
-      "comment" : "A skill its bot can use but not change"
+      "comment" : "A skill its bot can use but not change",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gesperrt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bloqueada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Verrouillée"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ロック中"
+          }
+        }
+      }
     },
     "Locked with %@" : {
       "comment" : "Face ID or Touch ID",
@@ -47692,13 +48080,89 @@
       }
     },
     "Missed while your Mac was asleep" : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Verpasst, während dein Mac schlief"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Perdida mientras tu Mac estaba en reposo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Manquée pendant la veille de votre Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macのスリープ中に逃した実行"
+          }
+        }
+      }
     },
     "Missed while your Mac was asleep? It runs once when it wakes." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Verpasst, während dein Mac schlief? Dann läuft er einmal, sobald der Mac aufwacht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "¿Se perdió mientras tu Mac estaba en reposo? Se ejecuta una vez cuando se active."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Manquée pendant la veille de votre Mac ? Elle s'exécute une fois à son réveil."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macのスリープ中に実行できなかった場合は、復帰したときに1回実行します。"
+          }
+        }
+      }
     },
     "Missed while your Mac was asleep? It waits for the next time." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Verpasst, während dein Mac schlief? Dann wartet er bis zum nächsten Mal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "¿Se perdió mientras tu Mac estaba en reposo? Espera a la próxima vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Manquée pendant la veille de votre Mac ? Elle attend la prochaine fois."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macのスリープ中に実行できなかった場合は、次の予定まで待ちます。"
+          }
+        }
+      }
     },
     "Missing what it points to" : {
       "localizations" : {
@@ -53341,7 +53805,33 @@
       }
     },
     "Nollie moved your setup to Hermes 0.23 by itself. Your bots, chats and settings came along." : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie hat deine Einrichtung selbst auf Hermes 0.23 umgestellt. Deine Bots, Chats und Einstellungen sind mitgekommen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie pasó tu configuración a Hermes 0.23 por sí solo. Tus bots, chats y ajustes vinieron también."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie a passé votre configuration à Hermes 0.23 tout seul. Vos bots, discussions et réglages ont suivi."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "NollieがセットアップをHermes 0.23に自動で移行しました。ボット、チャット、設定もそのまま引き継がれています。"
+          }
+        }
+      }
     },
     "Nollie needs attention" : {
       "localizations" : {
@@ -57383,7 +57873,33 @@
       }
     },
     "One switch stops a helper rewriting its own skills." : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ein Schalter verhindert, dass ein Helfer seine eigenen Skills umschreibt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un interruptor impide que un ayudante reescriba sus propias habilidades."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un interrupteur empêche un assistant de réécrire ses propres compétences."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "スイッチひとつで、ヘルパーが自分のスキルを書き換えないようにできます。"
+          }
+        }
+      }
     },
     "One that runs on this Mac." : {
       "comment" : "Under 'Needs a model': a model that runs on this Mac",
@@ -58512,7 +59028,33 @@
       }
     },
     "Open a schedule while it runs and tap Stop this run, or use Stop in the bar at the bottom of your chats. Only that one run ends. The next one happens as planned." : {
-      "comment" : "What's new, 1.4: the detail"
+      "comment" : "What's new, 1.4: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Öffne einen Zeitplan, während er läuft, und tippe auf „Diese Ausführung stoppen“, oder nutze „Stoppen“ in der Leiste unten in deinen Chats. Nur diese eine Ausführung endet. Die nächste findet wie geplant statt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre una programación mientras se ejecuta y toca «Detener esta ejecución», o usa «Detener» en la barra de abajo de tus chats. Solo termina esa ejecución. La siguiente se hace según lo previsto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ouvrez une planification pendant qu'elle s'exécute et touchez « Arrêter cette exécution », ou utilisez « Arrêter » dans la barre en bas de vos discussions. Seule cette exécution se termine. La suivante a lieu comme prévu."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "実行中のスケジュールを開いて「この実行を停止」をタップするか、チャットの下部のバーにある「停止」を使ってください。終わるのはその1回の実行だけです。次の実行は予定どおり行われます。"
+          }
+        }
+      }
     },
     "Open an app" : {
       "comment" : "Safety: a screen action on the Mac, starts a sentence",
@@ -68883,7 +69425,32 @@
       }
     },
     "Run when your Mac wakes" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ausführen, wenn dein Mac aufwacht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ejecutar cuando tu Mac se active"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Exécuter au réveil de votre Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macの復帰時に実行"
+          }
+        }
+      }
     },
     "Running" : {
       "comment" : "A Status row's state word\nA step's state\nThe companion is running",
@@ -69058,10 +69625,61 @@
       }
     },
     "Running for" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Läuft seit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En marcha desde hace"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En cours depuis"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "実行時間"
+          }
+        }
+      }
     },
     "Running on schedule" : {
-      "comment" : "A schedule's run is in progress"
+      "comment" : "A schedule's run is in progress",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Läuft nach Zeitplan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En marcha según la programación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Exécution planifiée en cours"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "スケジュールで実行中"
+          }
+        }
+      }
     },
     "Running, version %@" : {
       "localizations" : {
@@ -71192,10 +71810,62 @@
       }
     },
     "Schedules · Run when your Mac wakes" : {
-      "comment" : "What's new, 1.4: where to find it"
+      "comment" : "What's new, 1.4: where to find it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zeitpläne · Ausführen, wenn dein Mac aufwacht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Programaciones · Ejecutar cuando tu Mac se active"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Planifications · Exécuter au réveil de votre Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "スケジュール · Macの復帰時に実行"
+          }
+        }
+      }
     },
     "Schedules · the schedule's page" : {
-      "comment" : "What's new, 1.4: where to find it"
+      "comment" : "What's new, 1.4: where to find it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zeitpläne · die Seite des Zeitplans"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Programaciones · la página de la programación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Planifications · la page de la planification"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "スケジュール · スケジュールのページ"
+          }
+        }
+      }
     },
     "School" : {
       "comment" : "A ready-made helper's name",
@@ -71996,7 +72666,33 @@
       }
     },
     "See who's working" : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sieh, wer gerade arbeitet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mira quién está trabajando"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voyez qui travaille"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "誰が作業中かひと目で"
+          }
+        }
+      }
     },
     "Seeing a test means this %@ can read it, not that an alert arrived." : {
       "localizations" : {
@@ -77427,10 +78123,60 @@
       }
     },
     "Some skills couldn't be locked. Try again." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Einige Skills konnten nicht gesperrt werden. Versuch es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Algunas habilidades no se pudieron bloquear. Vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Certaines compétences n'ont pas pu être verrouillées. Réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "一部のスキルをロックできませんでした。もう一度お試しください。"
+          }
+        }
+      }
     },
     "Some skills couldn't be unlocked. Try again." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Einige Skills konnten nicht entsperrt werden. Versuch es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Algunas habilidades no se pudieron desbloquear. Vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Certaines compétences n'ont pas pu être déverrouillées. Réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "一部のスキルのロックを解除できませんでした。もう一度お試しください。"
+          }
+        }
+      }
     },
     "Someone at home" : {
       "localizations" : {
@@ -79277,7 +80023,33 @@
       }
     },
     "Stop ends a schedule's run that's going right now. The schedule stays on." : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "„Stoppen“ beendet die laufende Ausführung eines Zeitplans. Der Zeitplan bleibt an."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "«Detener» termina la ejecución en curso de una programación. La programación sigue activada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "« Arrêter » termine l'exécution en cours d'une planification. La planification reste activée."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「停止」は、いま実行中のスケジュールの実行を終了します。スケジュールはオンのままです。"
+          }
+        }
+      }
     },
     "Stop ends the job on your Mac, stops replies and pauses schedules. Your iPhone asks to be unlocked first." : {
       "comment" : "Safety: what Stop does",
@@ -79309,7 +80081,33 @@
       }
     },
     "Stop means stop" : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stoppen heißt stoppen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener es detener"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêter, c'est arrêter"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "停止は確実に停止"
+          }
+        }
+      }
     },
     "Stop reading" : {
       "localizations" : {
@@ -79426,7 +80224,33 @@
       }
     },
     "Stop this run" : {
-      "comment" : "Safety: ends one schedule's run in progress; the schedule stays"
+      "comment" : "Safety: ends one schedule's run in progress; the schedule stays",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diese Ausführung stoppen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener esta ejecución"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêter cette exécution"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "この実行を停止"
+          }
+        }
+      }
     },
     "Stop what Papertrail can't see" : {
       "localizations" : {
@@ -79485,7 +80309,33 @@
       }
     },
     "Stop “%@”" : {
-      "comment" : "Safety: ends one schedule's run in progress, named"
+      "comment" : "Safety: ends one schedule's run in progress, named",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "„%@“ stoppen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener «%@»"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêter « %@ »"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「%@」を停止"
+          }
+        }
+      }
     },
     "Stop, pressed in any app that has the chat open, ends the turn with the same words." : {
       "localizations" : {
@@ -79666,7 +80516,33 @@
       }
     },
     "Stopped. The schedule stays on." : {
-      "comment" : "Safety: Hermes is stopping the run"
+      "comment" : "Safety: Hermes is stopping the run",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gestoppt. Der Zeitplan bleibt an."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detenida. La programación sigue activada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêtée. La planification reste activée."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "停止しました。スケジュールはオンのままです。"
+          }
+        }
+      }
     },
     "Stopped: a risky command needs your OK" : {
       "localizations" : {
@@ -79896,7 +80772,33 @@
       }
     },
     "Stopping…" : {
-      "comment" : "Safety: Stop was pressed for a schedule's run"
+      "comment" : "Safety: Stop was pressed for a schedule's run",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wird gestoppt …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Deteniendo…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêt…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "停止中…"
+          }
+        }
+      }
     },
     "Stops reading and listens" : {
       "localizations" : {
@@ -82814,7 +83716,33 @@
       }
     },
     "The amount is an estimate from Hermes. When a model runs on your Mac or comes with your plan, there's nothing to show, so the line stays hidden." : {
-      "comment" : "What's new, 1.4: the detail"
+      "comment" : "What's new, 1.4: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Betrag ist eine Schätzung von Hermes. Wenn ein Modell auf deinem Mac läuft oder in deinem Tarif enthalten ist, gibt es nichts anzuzeigen, und die Zeile bleibt ausgeblendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La cantidad es una estimación de Hermes. Cuando un modelo se ejecuta en tu Mac o viene con tu plan, no hay nada que mostrar, así que la línea no aparece."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le montant est une estimation de Hermes. Quand un modèle fonctionne sur votre Mac ou est inclus dans votre forfait, il n'y a rien à afficher, donc la ligne reste masquée."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "金額はHermesによる推定です。モデルがMac上で動いている場合や、プランに含まれている場合は表示するものがないため、この行は表示されません。"
+          }
+        }
+      }
     },
     "The assistant rejected a background check. The helper will try again." : {
       "localizations" : {
@@ -92411,7 +93339,33 @@
       }
     },
     "Turn it on and the helper can still use every skill it has, but can't change them. New skills it makes are kept as made. You change it on your Mac." : {
-      "comment" : "What's new, 1.4: the detail"
+      "comment" : "What's new, 1.4: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Schalte es ein, und der Helfer kann weiter jeden seiner Skills nutzen, sie aber nicht ändern. Neue Skills, die er erstellt, bleiben, wie sie erstellt wurden. Du änderst es auf deinem Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Actívalo y el ayudante puede seguir usando todas sus habilidades, pero no cambiarlas. Las habilidades nuevas que cree se quedan como las hizo. Lo cambias en tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activez-le et l'assistant peut toujours utiliser toutes ses compétences, mais ne peut plus les modifier. Les nouvelles compétences qu'il crée restent telles quelles. Vous le modifiez sur votre Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "オンにすると、ヘルパーは持っているスキルをすべて使えますが、変更はできません。新しく作ったスキルは作ったときのまま保たれます。設定はMacで変更します。"
+          }
+        }
+      }
     },
     "Turn it on in %@ first." : {
       "localizations" : {
@@ -94647,10 +95601,60 @@
       }
     },
     "Updating Nollie's engine" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollies Motor wird aktualisiert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Actualizando el motor de Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mise à jour du moteur de Nollie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieのエンジンを更新中"
+          }
+        }
+      }
     },
     "Updating Nollie's engine." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollies Motor wird aktualisiert."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Actualizando el motor de Nollie."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mise à jour du moteur de Nollie."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieのエンジンを更新しています。"
+          }
+        }
+      }
     },
     "Updating…" : {
       "localizations" : {
@@ -97254,7 +98258,33 @@
       }
     },
     "Waiting in line" : {
-      "comment" : "What the bot is doing now: a message waits behind a turn running elsewhere"
+      "comment" : "What the bot is doing now: a message waits behind a turn running elsewhere",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wartet in der Schlange"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esperando turno"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En file d'attente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "順番待ち"
+          }
+        }
+      }
     },
     "Waiting to continue" : {
       "comment" : "Where a task stands",
@@ -98503,7 +99533,33 @@
       }
     },
     "What it costs" : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Was es kostet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que cuesta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce que ça coûte"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "かかる費用"
+          }
+        }
+      }
     },
     "What it does" : {
       "localizations" : {
@@ -99270,10 +100326,62 @@
       }
     },
     "When a helper is on a schedule or a Board task, its row says what it's working on, and the bar at the bottom of your chats says for how long. It shows wherever the work started, even if it was on your Mac." : {
-      "comment" : "What's new, 1.4: the detail"
+      "comment" : "What's new, 1.4: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn ein Helfer an einem Zeitplan oder einer Board-Aufgabe arbeitet, zeigt seine Zeile, woran er arbeitet, und die Leiste unten in deinen Chats, wie lange schon. Das erscheint überall, egal wo die Arbeit begonnen hat, auch wenn es auf deinem Mac war."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cuando un ayudante está con una programación o una tarea del Tablero, su fila dice en qué trabaja, y la barra de abajo de tus chats, cuánto tiempo lleva. Se ve dondequiera que empezara el trabajo, aunque fuera en tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Quand un assistant travaille sur une planification ou une tâche du Tableau, sa ligne indique sur quoi il travaille, et la barre en bas de vos discussions depuis combien de temps. Cela s'affiche quel que soit l'endroit où le travail a commencé, même sur votre Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ヘルパーがスケジュールやボードのタスクに取り組んでいるときは、その行に作業内容が、チャットの下部のバーに経過時間が表示されます。どこで始めた作業でも、Macで始めた場合でも表示されます。"
+          }
+        }
+      }
     },
     "When a helper works a web page, Ask first now reads every step before it happens. Private bots stay private. If the update didn't finish, the sidebar says so, and opening Nollie again tries once more." : {
-      "comment" : "What's new, 1.4: the detail"
+      "comment" : "What's new, 1.4: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn ein Helfer eine Webseite bedient, liest „Erst fragen“ jetzt jeden Schritt, bevor er passiert. Private Bots bleiben privat. Wenn das Update nicht abgeschlossen wurde, zeigt die Seitenleiste das an, und beim nächsten Öffnen von Nollie wird es noch einmal versucht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cuando un ayudante usa una página web, «Preguntar primero» ahora lee cada paso antes de que ocurra. Los bots privados siguen siendo privados. Si la actualización no terminó, la barra lateral lo dice, y al volver a abrir Nollie se intenta una vez más."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Quand un assistant utilise une page web, « Demander d'abord » lit désormais chaque étape avant qu'elle ait lieu. Les bots privés restent privés. Si la mise à jour n'a pas abouti, la barre latérale l'indique, et rouvrir Nollie fait un nouvel essai."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ヘルパーがWebページを操作するとき、「先に確認」がすべてのステップを実行前に読み取るようになりました。プライベートのボットはプライベートのままです。更新が完了しなかった場合はサイドバーに表示され、Nollieをもう一度開くと再試行します。"
+          }
+        }
+      }
     },
     "When a task needs your help, your Apple Watch now shows it." : {
       "comment" : "What's new, 1.3.3",
@@ -100260,10 +101368,62 @@
       }
     },
     "Working on the Board" : {
-      "comment" : "A helper is working a Board task"
+      "comment" : "A helper is working a Board task",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arbeitet am Board"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trabajando en el Tablero"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Travaille sur le Tableau"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ボードで作業中"
+          }
+        }
+      }
     },
     "Working on “%@”" : {
-      "comment" : "A helper is busy with a schedule's run or a Board task, named"
+      "comment" : "A helper is busy with a schedule's run or a Board task, named",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arbeitet an „%@“"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trabajando en «%@»"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Travaille sur « %@ »"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「%@」に取り組み中"
+          }
+        }
+      }
     },
     "Working on: %@" : {
       "localizations" : {
@@ -103523,7 +104683,33 @@
       }
     },
     "Your crew got easier to follow. Here's what's new, and where to find it." : {
-      "comment" : "What's new, 1.4: the opening line"
+      "comment" : "What's new, 1.4: the opening line",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Team ist jetzt leichter zu verfolgen. Das ist neu, und hier findest du es."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ahora es más fácil seguir a tu equipo. Esto es lo nuevo y dónde encontrarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre équipe est plus facile à suivre. Voici les nouveautés, et où les trouver."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "チームの様子がわかりやすくなりました。新しい点と、その場所をお知らせします。"
+          }
+        }
+      }
     },
     "Your crew is full." : {
       "localizations" : {
@@ -104767,10 +105953,62 @@
       }
     },
     "Your week · Ask first cards" : {
-      "comment" : "What's new, 1.4: where to find it"
+      "comment" : "What's new, 1.4: where to find it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Deine Woche · „Erst fragen“-Karten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu semana · tarjetas de «Preguntar primero»"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre semaine · cartes « Demander d'abord »"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "今週のまとめ · 先に確認のカード"
+          }
+        }
+      }
     },
     "Your weekly note says about how much went on models, and a paid tool shows its price before you say yes." : {
-      "comment" : "What's new, 1.4"
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Deine Wochennotiz zeigt, wie viel ungefähr für Modelle ausgegeben wurde, und ein kostenpflichtiges Werkzeug zeigt seinen Preis, bevor du Ja sagst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu nota semanal dice más o menos cuánto se fue en modelos, y una herramienta de pago muestra su precio antes de que digas que sí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre note de la semaine indique environ combien est parti en modèles, et un outil payant affiche son prix avant que vous ne donniez votre accord."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "今週のまとめに、モデルにかかったおおよその金額が表示されます。有料のツールは、許可する前に価格を表示します。"
+          }
+        }
+      }
     },
     "Yuanbao" : {
       "comment" : "A bot capability",
@@ -109284,10 +110522,34 @@
     "“%@” was not deleted: %@" : {
       "comment" : "A chat's title in quotes, then the reason",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "„%1$@“ wurde nicht gelöscht: %2$@"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "“%1$@” was not deleted: %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "«%1$@» no se eliminó: %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "« %1$@ » n'a pas été supprimée : %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「%1$@」は削除されませんでした：%2$@"
           }
         }
       }

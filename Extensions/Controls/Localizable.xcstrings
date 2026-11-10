@@ -286,7 +286,33 @@
       }
     },
     "Just started" : {
-      "comment" : "A helper began its work under a minute ago"
+      "comment" : "A helper began its work under a minute ago",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gerade gestartet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Acaba de empezar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vient de commencer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "開始したばかり"
+          }
+        }
+      }
     },
     "Last seen" : {
       "localizations" : {
