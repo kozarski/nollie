@@ -146,6 +146,7 @@ struct ApprovalCardView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 6)
                 .padding(.bottom, 10)
+            if let price = ToolPrice(approval) { priceLine(price) }
             if let commandText { commandBlock(commandText) }
             if approval.smartDenied == true { flagNote }
             // Answers sit side by side, or stack on a narrow phone with big text. The round menu
@@ -177,6 +178,28 @@ struct ApprovalCardView: View {
         if let commandText {
             Button { UIPasteboard.general.string = commandText } label: { Label("Copy command", systemImage: "doc.on.doc") }
         }
+    }
+
+    /// A connected app's tool with a price: what this call costs, small, and the chat's running total under it.
+    /// Hermes says both in its own words, which stay in full in the box below.
+    private func priceLine(_ price: ToolPrice) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label(price.costLine, systemImage: "tag.fill")
+                .font(Ink.chip)
+                .foregroundStyle(price.overLimit ? Ink.warnText : Ink.text)
+                .inset(h: 10, v: 4)
+                .background(price.overLimit ? Ink.warnFill : Ink.code, in: .capsule)
+                .accessibilityIdentifier("approval.price")
+            if price.overLimit {
+                Text("Goes past this chat's limit", comment: "Safety: a connected app's tool would take the chat past the app's spending limit")
+                    .font(Ink.pill).foregroundStyle(Ink.warnText)
+            } else if let spent = price.spendLine {
+                Text(spent).font(Ink.pill).foregroundStyle(Ink.text2)
+                    .accessibilityIdentifier("approval.price.spent")
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.bottom, 10)
     }
 
     /// The whole command is always shown, so what runs is what you read. A long one scrolls in
