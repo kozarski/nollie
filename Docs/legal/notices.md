@@ -29,7 +29,7 @@ Every version here is pinned, with its checksum, in `Tools/pins.json`.
 
 | Component | Version | Licence | Notice shown |
 |---|---|---|---|
-| Hermes Agent by Nous Research | 0.22.2 (pinned commit) | MIT | Acknowledgements; "Built on Hermes Agent by Nous Research. Not affiliated." |
+| Hermes Agent by Nous Research | 0.23.1 (pinned commit) | MIT | Acknowledgements; "Built on Hermes Agent by Nous Research. Not affiliated." |
 | uv by Astral | 0.13.4 | MIT or Apache-2.0 | Acknowledgements |
 | Python (python-build-standalone) | 3.14.8 | PSF-2.0 and bundled licences | Acknowledgements |
 | Hermes's Python packages | locked by hash | Mostly MIT, BSD, Apache-2.0 (listed from the lockfile at release) | Acknowledgements |

@@ -87,7 +87,7 @@ public enum BackupModelConfig {
 /// "Your Claude plan hit its limit, so Nollie is using Llama on your Mac until 3:00 PM."
 ///
 /// Hermes has no event of its own for this. It says so in a `status.update` once the reply is done
-/// (agent/chat_completion_helpers.py and agent/agent_runtime_helpers.py in v0.22.2), and moves back by itself at
+/// (agent/chat_completion_helpers.py and agent/agent_runtime_helpers.py in v0.23.1), and moves back by itself at
 /// the start of the next turn after the time it gives, or of the next turn when it gives none.
 public enum BackupSwitch: Equatable, Sendable {
     case switched(from: BackupRoute, to: BackupRoute, reason: Reason, retryAt: Date?)
@@ -102,7 +102,7 @@ public enum BackupSwitch: Equatable, Sendable {
         case other
     }
 
-    /// Hermes's words, or nil for any other status. They are, from Hermes v0.22.2:
+    /// Hermes's words, or nil for any other status. They are, from Hermes v0.23.1:
     /// - "⚠️ Model fallback: {model} via {provider} unavailable ({reason}); using {model} via {provider}." and, when
     ///   it waits before trying the main one again, " Primary retry eligible in ~{n} s; recovery is not guaranteed."
     /// - "⚠️ Provider fallback: {provider/model} unavailable; using {provider/model} for this response."

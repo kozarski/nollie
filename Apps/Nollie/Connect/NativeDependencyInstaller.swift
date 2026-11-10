@@ -21,7 +21,7 @@ enum NativeSetupPlan {
         #endif
     }
     // Every pin below is listed in Tools/pins.json; Tools/dev/check-latest.py --local checks they agree.
-    static let hermesCommit = "d923a5eb487a17c0a68801bba9ef0f56c81040a8"
+    static let hermesCommit = "3b421578588243f920886e6fe79a6faa87ea026e"
     static let pythonVersion = "3.14.8"
     static let pythonKey = "cpython-3.14.8-macos-aarch64-none"
     /// SHA-256 of Services/Runtime/HermesOverlay/overlay.json: Nollie's reviewed changes to this Hermes.
@@ -38,9 +38,9 @@ enum NativeSetupPlan {
     static let uv = Artifact(id: "uv", version: "0.13.4",
         url: URL(string: "https://github.com/astral-sh/uv/releases/download/0.13.4/uv-aarch64-apple-darwin.tar.gz")!,
         sha256: "e0b1d4743ce64c55d9f0f4a444afa6b81125680070ee04e853fcd0f6c1ebf8f1", bytes: 14_326_193)
-    static let hermes = Artifact(id: "hermes", version: "0.22.2",
+    static let hermes = Artifact(id: "hermes", version: "0.23.1",
         url: URL(string: "https://codeload.github.com/NousResearch/hermes-agent/tar.gz/" + hermesCommit)!,
-        sha256: "616649f8ac7e3bb186999d000d77511e733b3930bd2b5921be4a85673320ef8b", bytes: 81_466_389)
+        sha256: "2525046f165880c22f177f2214c8da3e26c58cb0aeab5bd09aad940556538897", bytes: 91_372_324)
     /// The preparation steps, in order. "addons" is Nollie's own add-ons; the service needs only the first four.
     static let preparationSteps = ["uv", "python", "hermes", "dependencies", "addons"]
     static let runtimeSteps = ["uv", "python", "hermes", "dependencies"]

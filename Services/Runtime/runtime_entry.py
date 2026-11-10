@@ -39,7 +39,8 @@ MODEL_PROBE_SOURCE_HASHES = {
 }
 
 PROFILE_SOURCE_HASHES = {
-    "hermes_cli/profiles.py": "f65320d57dfe6bd670c139b5b2c394eb6150cf67b9536b8a82e95f0ea0180f14",
+    "hermes_cli/profiles.py": "88112265f41b1393cc518f74856488d22af88fad11600330f2f83ee9d990a19c",
+    "hermes_cli/profiles_initialization.py": "31f2d005acf3f01b4e8997855b7a6dea35e11c017cedc686116ace631d2dd59e",
 }
 
 KEY_SOURCE_HASHES = {
@@ -431,10 +432,13 @@ def _note_cloned_keys(keys, home):
     return note
 
 
-def _scope_profile_workflow(profiles, addons, home, clone_keys=None):
-    """Finish Ask first inside Hermes's hidden staging folder, before a bot can be served."""
+def _scope_profile_workflow(profiles, layout, addons, home, clone_keys=None):
+    """Finish Ask first inside Hermes's hidden staging folder, before a bot can be served.
+
+    ``layout`` is ``hermes_cli.profiles_initialization``: ``create_profile`` imports its
+    ``finish_profile_layout`` when it runs, so the wrapped one is the one it calls."""
     original_create = profiles.create_profile
-    original_finish = profiles._finish_profile_layout
+    original_finish = layout.finish_profile_layout
     creating = contextvars.ContextVar("nollie_creating_profile", default=None)
 
     def require_public(name):
@@ -474,7 +478,7 @@ def _scope_profile_workflow(profiles, addons, home, clone_keys=None):
         return result
 
     profiles.create_profile = create
-    profiles._finish_profile_layout = finish
+    layout.finish_profile_layout = finish
 
 
 def _prepare_profile_workflow(source, keys):
@@ -490,10 +494,13 @@ def _prepare_profile_workflow(source, keys):
         addons.ensure_workflow(home)
     except (KeyError, addons.Refused, OSError, ValueError):
         raise SystemExit(78) from None
-    from hermes_cli import profiles
-    if Path(profiles.__file__).resolve(strict=True) != Path(source).resolve(strict=True) / "hermes_cli/profiles.py":
-        raise SystemExit(78)
-    _scope_profile_workflow(profiles, addons, home, _note_cloned_keys(keys, home))
+    from hermes_cli import profiles, profiles_initialization
+    root = Path(source).resolve(strict=True)
+    for module, relative in ((profiles, "hermes_cli/profiles.py"),
+                             (profiles_initialization, "hermes_cli/profiles_initialization.py")):
+        if Path(module.__file__).resolve(strict=True) != root / relative:
+            raise SystemExit(78)
+    _scope_profile_workflow(profiles, profiles_initialization, addons, home, _note_cloned_keys(keys, home))
 
 
 # Papertrail's door. Nollie Runtime starts Hermes with every proxy variable pointing at its door on

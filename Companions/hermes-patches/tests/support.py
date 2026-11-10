@@ -14,14 +14,16 @@ import tempfile
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[3]
-SOURCE = Path(os.environ.get("NOLLIE_HERMES_SOURCE", ROOT.parent / "hermes-v0.22.2"))
+PINNED = json.loads((ROOT / "Tools/pins.json").read_text())
+HERMES_VERSION = next(c["version"] for c in PINNED["components"] if c["id"] == "hermes")
+SOURCE = Path(os.environ.get("NOLLIE_HERMES_SOURCE", ROOT.parent / f"hermes-v{HERMES_VERSION}"))
 OVERLAY = ROOT / "Services/Runtime/HermesOverlay"
 
 
 def checked_files(source=SOURCE):
     manifest = json.loads((OVERLAY / "overlay.json").read_text())
     if not (source / "hermes_cli/plugins.py").is_file():
-        raise RuntimeError("Set NOLLIE_HERMES_SOURCE to the pinned Hermes v0.22.2 checkout.")
+        raise RuntimeError(f"Set NOLLIE_HERMES_SOURCE to the pinned Hermes v{HERMES_VERSION} checkout.")
     git = ["git", "-C", str(source)]
     commit = subprocess.run([*git, "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
     if commit != manifest["hermes"]["commit"] or subprocess.run(

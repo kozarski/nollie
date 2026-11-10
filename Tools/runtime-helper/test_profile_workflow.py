@@ -37,7 +37,7 @@ class ProfileWorkflowTests(unittest.TestCase):
             try:
                 config = {"model": "fixture-model", "plugins": {"enabled": list(self.clone_plugins)}}
                 (staging / "config.yaml").write_text(json.dumps(config))
-                self.profiles._finish_profile_layout(staging)
+                self.layout.finish_profile_layout(staging)
                 staging.rename(destination)
                 self.events.append("published")
                 return destination
@@ -55,8 +55,9 @@ class ProfileWorkflowTests(unittest.TestCase):
             config["plugins"]["enabled"].append("nollie-workflow")
             (path / "config.yaml").write_text(json.dumps(config))
 
-        self.profiles = SimpleNamespace(create_profile=create, _finish_profile_layout=finish,
+        self.profiles = SimpleNamespace(create_profile=create,
                                         _canon_valid=str.lower, get_active_profile_name=lambda: "default")
+        self.layout = SimpleNamespace(finish_profile_layout=finish)
         policy = SimpleNamespace(excluded=lambda name, private: name in private)
         self.addons = SimpleNamespace(WORKFLOW="nollie-workflow", ensure_profile_workflow=ensure,
                                       workflow_privacy=lambda *_: (policy, self.private))
@@ -67,7 +68,7 @@ class ProfileWorkflowTests(unittest.TestCase):
             self.events.append("keys")
             self.cloned.append((source, keep_channels))
 
-        entry._scope_profile_workflow(self.profiles, self.addons, self.home, clone_keys)
+        entry._scope_profile_workflow(self.profiles, self.layout, self.addons, self.home, clone_keys)
 
     def test_new_and_cloned_bots_get_rules_before_publication(self):
         for name, options, events in (("fresh", {}, ["create", "layout", "ask-first", "published"]),
@@ -117,7 +118,7 @@ class ProfileWorkflowTests(unittest.TestCase):
 
     def test_layout_outside_creation_cannot_enable_an_existing_bot(self):
         with self.assertRaises(ValueError):
-            self.profiles._finish_profile_layout(self.home / "profiles" / "existing")
+            self.layout.finish_profile_layout(self.home / "profiles" / "existing")
         self.assertEqual(self.events, [])
 
 
