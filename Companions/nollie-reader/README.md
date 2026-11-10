@@ -40,8 +40,9 @@ When a site says no, the bot hands the link to a person instead of finding a way
 reCAPTCHA, hCaptcha, Turnstile, DataDome, PerimeterX, Imperva and similar), come back as
 `This site wants a person: ...` with `blocked_by_policy` set. Hermes never sends a
 `blocked_by_policy` result to its keyless rescue, so the page is not tried through Exa,
-Parallel, Firecrawl or Keenable. For the next hour `browser_navigate` to that site is blocked
-too, with a message asking the bot to share the link. Robots, `ai.txt`, `noai` and private-address
+Parallel, Firecrawl or Keenable. For the next hour the browser is kept off that site too, with a
+message asking the bot to share the link: a `browser_exec` script (Hermes 0.23) or `browser_cdp` call
+with its address written in it, and `browser_navigate` on Hermes 0.22. Robots, `ai.txt`, `noai` and private-address
 refusals also carry `blocked_by_policy`. A `429` or `503` rests the site for every bot, for its
 `Retry-After` or ten minutes.
 
