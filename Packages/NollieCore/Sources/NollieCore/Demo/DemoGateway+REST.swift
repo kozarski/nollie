@@ -177,7 +177,7 @@ extension DemoGateway {
             let live = job["live_execution"] ?? nil
             guard !live.isNull else {
                 return (200, ["success": true, "cancelled": false, "execution_id": nil, "job_id": .string(ref),
-                              "detail": "No run of this job is in flight — nothing to cancel."])
+                              "detail": "No run of this job is in flight, so there is nothing to cancel."])
             }
             job["live_execution"] = nil
             job["last_status"] = "cancelled"
