@@ -53,18 +53,16 @@
 
 - **Mac:** the zip or DMG from the [latest release](https://github.com/kozarski/nollie/releases/latest).
   Signed and notarized by Apple, and it updates itself (always asking first).
-- **iPhone and iPad:** on TestFlight now. Get the invite at [nollie.app](https://nollie.app).
-- **You need:** an Apple silicon Mac on macOS 26 or later, and iOS or iPadOS 26 or later for the phone app.
+- **iPhone, iPad and Apple Watch:** [on the App Store](https://apps.apple.com/app/nollie-app/id6825756639).
+- **You need:** an Apple silicon Mac on macOS 26 or later, iOS or iPadOS 26 or later for the phone app, and
+  watchOS 26 or later for the Watch app.
   First setup downloads about 180 MB, more if you pick a local model.
 
 ## Coming Soon
 
 - Homebrew: `brew install --cask kozarski/nollie/nollie`
-- iPhone and iPad on the App Store
 - Stop from anywhere, not only when your phone can reach your Mac
-- Calendar, Reminders and Contacts for your helpers
 - A family chat with your crew
-- Talking to Nollie with your voice
 
 ## Privacy
 
