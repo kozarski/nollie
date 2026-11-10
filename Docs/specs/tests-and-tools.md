@@ -22,13 +22,13 @@ Every required scenario has an expected result and a deadline. A missing depende
 
 ## Reference and boundary
 
-The read-only Hermes checkout is a checkout of Hermes Agent at tag `v0.22.2`.
+The read-only Hermes checkout is a checkout of Hermes Agent at tag `v0.23.1`.
 
 | Evidence | Pinned source |
 | :--- | :--- |
-| Hermes revision | `d923a5eb487a17c0a68801bba9ef0f56c81040a8` |
+| Hermes revision | `3b421578588243f920886e6fe79a6faa87ea026e` |
 | Gateway contract | `apps/shared/src/gateway-contract.openrpc.json` |
-| Contract SHA-256 | `8848b394df533af8b37afd3cdccfc48b3e3d6ca1ce4037ebaf38653e33ed832e` |
+| Contract SHA-256 | `c2f48466a3e4fa98babceb066ab5d053d1573f0202146cd6e6fdb319ddd81f19` |
 | Scripted model server | `tests/fakes/fake_llm_provider.py` |
 | Real server lifecycle and socket test reference | `tests/e2e/core/terminal/_gateway_client.py` |
 | Isolated multi-profile HTTP test reference | `tests/e2e/core/dashboard/_helpers.py` |
