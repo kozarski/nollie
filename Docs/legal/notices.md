@@ -5,7 +5,7 @@ release DMG carry this list. Check it against every bundled or downloaded binary
 
 ## Inside the app
 - **Cua Driver by Cua AI, Inc., as "Nollie Computer"** (Direct Mac edition only), tag
-  `cua-driver-rs-v0.36.0`, unmodified, MIT. Credit: "Nollie includes Cua Driver by Cua AI, Inc., used
+  `cua-driver-rs-v0.46.1`, unmodified, MIT. Credit: "Nollie includes Cua Driver by Cua AI, Inc., used
   under the MIT License." It links 332 Rust crates under permissive licences plus six unmodified
   MPL-2.0 UniFFI crates (source at https://github.com/mozilla/uniffi-rs). The build writes every
   licence text; the app carries them in `Contents/Resources/Notices/Nollie Computer/` (`NOTICE.txt`,
