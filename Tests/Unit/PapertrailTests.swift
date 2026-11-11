@@ -89,6 +89,8 @@ import Testing
                 == "A program Nollie started connected to a.example.")
         #expect(Papertrail.connectionLine(kind: "direct", host: "a.example", bot: "Nollie")
                 == "A program Nollie started reached a.example directly.")
+        #expect(Papertrail.connectionLine(kind: "computer", host: "a.example", bot: "Scout")
+                == "Scout's own computer connected to a.example.")
     }
 
     @Test func notesForTheIPhoneThroughICloudAreNamedAndNotCountedAsOnline() throws {

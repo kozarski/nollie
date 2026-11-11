@@ -113,7 +113,14 @@ enum OwnedSetupFiles {
     static func read(_ url: URL, maximum: Int) throws -> Data {
         let parent = try directory(url.deletingLastPathComponent())
         defer { close(parent) }
-        let fd = openat(parent, url.lastPathComponent, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        return try read(in: parent, name: url.lastPathComponent, maximum: maximum)
+    }
+
+    /// Reads one file of a folder already opened with `directory`, so a walk over thousands of files opens
+    /// each folder once instead of walking down from the root for every file.
+    static func read(in parent: Int32, name: String, maximum: Int) throws -> Data {
+        guard !name.isEmpty, name != ".", name != "..", !name.contains("/") else { throw failure(String(localized: "The setup path is invalid.")) }
+        let fd = openat(parent, name, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
         guard fd >= 0 else { throw failure(String(localized: "A setup file is missing or unsafe.")) }
         let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
         defer { try? handle.close() }
@@ -142,7 +149,13 @@ enum OwnedSetupFiles {
         return fd
     }
 
-    static func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+    static func hash(_ data: Data) -> String {
+        let digits = Array("0123456789abcdef".utf8)
+        var text = [UInt8]()
+        text.reserveCapacity(64)
+        for byte in SHA256.hash(data: data) { text.append(digits[Int(byte >> 4)]); text.append(digits[Int(byte & 15)]) }
+        return String(decoding: text, as: UTF8.self)
+    }
     private static func failure(_ text: String) -> ConfigurationBackup.Failure { .init(text) }
 }
 #endif

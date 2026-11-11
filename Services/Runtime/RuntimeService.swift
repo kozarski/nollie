@@ -52,7 +52,7 @@ actor RuntimeService {
     private var linkToken: (installationID: UUID, token: String)?
 
     init(supervisor: any RuntimeServiceSupervising, credentials: any RuntimeCredentialStoring,
-         consent: any RuntimeConsentStoring, deadline: Duration = .seconds(60)) {
+         consent: any RuntimeConsentStoring, deadline: Duration = .seconds(180)) {
         self.supervisor = supervisor
         self.credentials = credentials
         self.consent = consent

@@ -66,8 +66,6 @@
 	<string>Nollie lets the helpers you choose see your reminders. Nothing changes without your yes.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Nollie lets the helpers you choose find people in your contacts. Nothing changes without your yes.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Take a photo to attach to a chat with your Hermes agent.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_nollie._tcp</string>

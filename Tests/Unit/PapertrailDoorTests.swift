@@ -101,6 +101,57 @@ struct PapertrailDoorTests {
         #expect(lines(home.appendingPathComponent("profiles/wren")).isEmpty)
     }
 
+    // MARK: Helpers' own computers, through the exit relay
+
+    @Test func aComputerIsPlacedOnlyWithItsOwnBotsKey() throws {
+        let (home, cleanup) = try setup()
+        defer { cleanup() }
+        let key = String(repeating: "ab", count: 32)
+        let folder = home.appendingPathComponent("profiles/scout/nollie-computer")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data((key + "\n").utf8).write(to: folder.appendingPathComponent("relay-key"))
+        let book = PapertrailDoorBook(home: home)
+        #expect(book.computerKey(bot: "scout") == key)
+        #expect(book.computerKey(bot: "wren") == nil)
+        #expect(book.computerKey(bot: "../scout") == nil)
+
+        let log = ExitRelayPapertrailLog()
+        #expect(log.bot(user: "scout", key: key) == nil, "no book yet")
+        log.use(book)
+        #expect(log.bot(user: "scout", key: key) == "scout")
+        #expect(log.bot(user: "scout", key: String(repeating: "cd", count: 32)) == nil)
+        #expect(log.bot(user: "wren", key: key) == nil)
+        #expect(log.bot(user: "Scout", key: key) == nil)
+        #expect(log.bot(user: "scout", key: "") == nil)
+
+        // A key that is a link, or not a key, places nobody.
+        try FileManager.default.removeItem(at: folder.appendingPathComponent("relay-key"))
+        try Data("not a key".utf8).write(to: folder.appendingPathComponent("relay-key"))
+        #expect(book.computerKey(bot: "scout") == nil)
+        let elsewhere = home.deletingLastPathComponent().appendingPathComponent("key")
+        try Data(key.utf8).write(to: elsewhere)
+        try FileManager.default.removeItem(at: folder.appendingPathComponent("relay-key"))
+        try FileManager.default.createSymbolicLink(at: folder.appendingPathComponent("relay-key"), withDestinationURL: elsewhere)
+        #expect(book.computerKey(bot: "scout") == nil)
+    }
+
+    @Test func aComputersConnectionIsAWordlessComputerLineAndNeverForAPrivateBot() throws {
+        let (home, cleanup) = try setup()
+        defer { cleanup() }
+        let book = PapertrailDoorBook(home: home)
+        let log = ExitRelayPapertrailLog(book: book)
+        log.note(bot: "scout", target: ExitRelayTarget(host: .name("github.com"), port: 443))
+        log.note(bot: "moss", target: ExitRelayTarget(host: .name("github.com"), port: 443))
+        book.flush()
+        let written = lines(home.appendingPathComponent("profiles/scout"))
+        #expect(written.count == 1)
+        #expect(written.first?["kind"] as? String == "computer")
+        #expect(written.first?["host"] as? String == "github.com")
+        #expect(written.first?["source"] as? String == "door")
+        #expect(Set(written.first?.keys.map { $0 } ?? []) == ["v", "at", "route", "source", "kind", "host", "port"])
+        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent("profiles/moss/nollie-workflow").path))
+    }
+
     @Test func aLinkedFolderIsNeverWrittenThrough() throws {
         let (home, cleanup) = try setup()
         defer { cleanup() }

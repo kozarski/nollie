@@ -17,6 +17,8 @@ from .workflow_core import atomic_write, file_lock, private_identity
 
 SETTINGS_NAME = "night-shift.json"
 SETTINGS_LOCK = "night-shift.lock"
+# What no settings file means: off. Setups made from 1.4 on get a file with Night shift on when they are set up
+# (workflow_core.start_night_shift), so a setup that never chose keeps what it had.
 DEFAULTS = {"version": 1, "night_shift": False, "rehearsals": False, "morning_hour": 7}
 RECEIPTS = "receipts"
 RECORDERS = "recorders"

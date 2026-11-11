@@ -316,17 +316,14 @@ actor NativeDependencyInstaller {
         }.sorted { $0.path < $1.path }
     }
 
-    private func record(_ file: URL, relativeTo root: URL) throws -> FileRecord {
-        guard file.path.hasPrefix(root.path + "/") else { throw NativeSetupPlan.failure(String(localized: "A prepared file escaped its setup folder.")) }
-        let bytes = try OwnedSetupFiles.read(file, maximum: 100_000_000)
-        return FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: bytes.count, sha256: OwnedSetupFiles.hash(bytes))
-    }
-
     func inventory(_ root: URL, allowInternalLinks: Bool = false) throws -> [FileRecord] {
         let fd = try OwnedSetupFiles.directory(root)
         close(fd)
         var records: [FileRecord] = []
         func visit(_ folder: URL) throws {
+            // Opened once per folder, without following links, and every file in it is read through it.
+            let opened = try OwnedSetupFiles.directory(folder)
+            defer { close(opened) }
             for file in try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]) {
                 let values = try file.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
                 if values.isSymbolicLink == true {
@@ -346,7 +343,11 @@ actor NativeDependencyInstaller {
                     records.append(FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: 0,
                                               sha256: OwnedSetupFiles.hash(Data(target.utf8)), linkTarget: target))
                 } else if values.isDirectory == true { try visit(file) }
-                else if values.isRegularFile == true { records.append(try record(file, relativeTo: root)) }
+                else if values.isRegularFile == true {
+                    guard file.path.hasPrefix(root.path + "/") else { throw NativeSetupPlan.failure(String(localized: "A prepared file escaped its setup folder.")) }
+                    let bytes = try OwnedSetupFiles.read(in: opened, name: file.lastPathComponent, maximum: 100_000_000)
+                    records.append(FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: bytes.count, sha256: OwnedSetupFiles.hash(bytes)))
+                }
                 else { throw NativeSetupPlan.failure(String(localized: "A prepared component contains an unsupported file.")) }
                 guard records.count < 100_000 else { throw NativeSetupPlan.failure(String(localized: "A prepared component has too many files.")) }
             }

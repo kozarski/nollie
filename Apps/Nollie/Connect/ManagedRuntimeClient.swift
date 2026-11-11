@@ -76,7 +76,8 @@ enum ManagedRuntimeOperation: Sendable {
     case cuaSetupStart, cuaSetupStatus, cuaWake, prepareRemoval
     var timeout: Duration {
         switch self {
-        case .start: .seconds(75)
+        // Checking every file of the setup and then starting Hermes can take over a minute on a busy Mac.
+        case .start: .seconds(195)
         case .cuaWake: .seconds(30)
         case .prepareRemoval: .seconds(120)
         case .stop: .seconds(15)
@@ -259,6 +260,8 @@ final class ManagedRuntimeClient {
     @ObservationIgnored private let verify: (URL, String) async throws -> Bool
     @ObservationIgnored private let isPackaged: () -> Bool
     let isAvailable: Bool
+    /// How long to wait before asking a busy service again.
+    @ObservationIgnored var busyWait: Duration = .seconds(2)
 
     var canConnect: Bool { state == .ready && endpoint != nil && sessionToken != nil }
 
@@ -304,12 +307,23 @@ final class ManagedRuntimeClient {
         state = .starting; message = String(localized: "Starting your assistant's background service.")
         guard isPackaged() else { missingPackage(); return }
         do {
+            let wasOn = service.status() == .enabled
             if service.status() != .enabled && service.status() != .requiresApproval { try service.register() }
             let registration = service.status()
             isRegistered = registration == .enabled || registration == .requiresApproval
             guard registration == .enabled else { applyRegistration(registration); return }
-            let reply = try await request(.start(installationID))
-            let response = try Self.decode(reply)
+            if wasOn { await reviveIfSilent() }
+            var reply = try await request(.start(installationID))
+            var response = try Self.decode(reply)
+            // Busy means a start is already under way (Nollie brings the assistant back by itself at
+            // launch). That is a wait, not a failure: ask again until that start has finished.
+            var waits = 0
+            while response.error == .busy, waits < 100 {
+                waits += 1
+                try await Task.sleep(for: busyWait)
+                reply = try await request(.start(installationID))
+                response = try Self.decode(reply)
+            }
             try Task.checkCancellation()
             guard response.error == nil, response.snapshot.phase == .ready,
                   response.snapshot.installationID == installationID,
@@ -329,6 +343,22 @@ final class ManagedRuntimeClient {
             clearConnection(); state = .needsVerification; message = String(localized: "Setup continues in the background. Check the connection when you're ready.")
         } catch {
             fail(String(localized: "Your assistant didn't answer when Nollie checked. Try again."))
+        }
+    }
+
+    /// The service is on in Login Items, yet nothing answers: macOS can lose track of it when Nollie.app is
+    /// replaced by a newer copy. Registering it again brings it back, and the service then starts the
+    /// assistant it was keeping. Nothing is done while the service answers, or while it is off.
+    func reviveIfSilent() async {
+        guard isAvailable, isPackaged(), service.status() == .enabled else { return }
+        if (try? await request(.status)) != nil { return }
+        let unregister = service.unregister
+        _ = try? await ManagedRuntimeDeadline<Void>.run(after: .seconds(15)) { try await unregister() }
+        try? service.register()
+        // Give the fresh service a moment to come up before anyone asks it anything.
+        for _ in 0..<10 {
+            if (try? await request(.status)) != nil { return }
+            try? await Task.sleep(for: .milliseconds(500))
         }
     }
 

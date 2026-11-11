@@ -539,6 +539,22 @@ class DoorLineTests(unittest.TestCase):
         self.assertNotIn("why", alone[0])
         self.assertEqual(answer["stayed"]["window"], 1, "the reply itself stayed on this Mac")
 
+    def test_a_helpers_own_computer_joins_the_reply_and_keeps_its_why(self):
+        # Lines the exit relay writes for a bot's own computer: placed by time like the door's, so the
+        # reply's own Why (what started it) explains them too.
+        self.recorder.context = lambda: {"origin": "schedule", "job": "job-1"}
+        self.model(NOW - 600, "t-4", provider=SUBSCRIPTION, base_url=f"process://{SUBSCRIPTION}")
+        self.door(NOW - 598, "github.com", kind="computer")
+        self.door(NOW - 30, "example.org", kind="computer")
+        answer = self.read()
+        joined = next(entry for entry in answer["entries"] if entry["id"] == "t-4")
+        self.assertEqual(joined["connections"],
+                         [{"host": "github.com", "port": 443, "kind": "computer", "route": "online", "count": 1}])
+        self.assertEqual(joined["why"]["origin"], "schedule")
+        alone = next(entry for entry in answer["entries"] if entry["id"].startswith("w-"))
+        self.assertEqual(alone["connections"][0]["kind"], "computer")
+        self.assertNotIn("why", alone)
+
     def test_damaged_and_local_door_lines_are_skipped(self):
         self.door(NOW - 100, "localhost", route="mac")
         self.door(NOW - 99, "bad host!")

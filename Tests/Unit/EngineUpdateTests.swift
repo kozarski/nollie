@@ -45,5 +45,22 @@ struct EngineUpdateTests {
         verified["uv"] = false; verified["hermes"] = false
         #expect(EngineUpdate.stepsToRedo(verified: verified, hasReceipt: receipts).isEmpty)
     }
+
+    @Test func anUpdateCutShortCarriesOnThoughItsReceiptsWereMovedAway() {
+        var verified = ready, receipts = all
+        verified["hermes"] = false; verified["dependencies"] = false; verified["addons"] = false
+        receipts["hermes"] = false
+        #expect(EngineUpdate.stepsToRedo(verified: verified, hasReceipt: receipts, unfinished: true) == ["hermes", "dependencies", "addons"])
+        #expect(EngineUpdate.stepsToRedo(verified: ready, hasReceipt: all, unfinished: true).isEmpty)
+    }
+
+    @Test func hermesStartsAgainOnlyWhenTheServiceIsOnAndEverythingChecksOut() {
+        #expect(EngineUpdate.shouldResume(serviceOn: true, hermesStopped: true, verified: ready))
+        #expect(!EngineUpdate.shouldResume(serviceOn: false, hermesStopped: true, verified: ready))
+        #expect(!EngineUpdate.shouldResume(serviceOn: true, hermesStopped: false, verified: ready))
+        var verified = ready
+        verified["addons"] = false
+        #expect(!EngineUpdate.shouldResume(serviceOn: true, hermesStopped: true, verified: verified))
+    }
 }
 #endif
