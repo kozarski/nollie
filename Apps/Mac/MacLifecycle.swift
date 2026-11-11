@@ -21,6 +21,8 @@ enum MacAppearance {
 /// Work done once, before any scene exists.
 enum MacLaunch {
     @MainActor static func prepare() {
+        // A unit test run leaves the app's preferences as it found them.
+        TestRunPreferences.keepAsFound()
         NollieLogFiles.start(.app)
         #if DEBUG
         // The demo copy has its own bundle id and keeps credentials in memory only.
