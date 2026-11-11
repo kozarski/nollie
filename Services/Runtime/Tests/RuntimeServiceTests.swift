@@ -44,6 +44,43 @@ struct RuntimeServiceTests {
         #expect(!text.contains(token))
     }
 
+    /// Swift concurrency threads block SIGCHLD and SIGTERM, and a child started there kept that mask:
+    /// Hermes ignored SIGTERM and a uv it ran never saw its helpers exit, so the engine install hung.
+    @Test func aChildStartsWithNoSignalsBlockedWhateverTheStartingThreadBlocks() throws {
+        var ends = [Int32](repeating: -1, count: 6)
+        for index in stride(from: 0, to: 6, by: 2) {
+            #expect(ends.withUnsafeMutableBufferPointer { pipe($0.baseAddress! + index) } == 0)
+        }
+        defer { ends.forEach { close($0) } }
+        let spawned = DispatchSemaphore(value: 0)
+        let started = SpawnedPID()
+        let thread = Thread { [ends] in
+            var blocked = sigset_t()
+            sigemptyset(&blocked)
+            sigaddset(&blocked, SIGTERM)
+            sigaddset(&blocked, SIGCHLD)
+            pthread_sigmask(SIG_BLOCK, &blocked, nil)
+            started.value = RuntimeSpawn.start(executable: "/bin/sleep", arguments: ["30"], environment: [:], directory: "/",
+                                         output: ends[1], owner: ends[2], keys: ends[4])
+            spawned.signal()
+        }
+        thread.start()
+        spawned.wait()
+        let pid = try #require(started.value)
+        #expect(getpgid(pid) == pid)
+        #expect(kill(pid, SIGTERM) == 0)
+        var status: Int32 = 0
+        var reaped: pid_t = 0
+        for _ in 0..<60 {
+            reaped = waitpid(pid, &status, WNOHANG)
+            if reaped == pid { break }
+            usleep(50_000)
+        }
+        if reaped != pid { kill(pid, SIGKILL); waitpid(pid, &status, 0) }
+        #expect(reaped == pid)
+        #expect(status & 0x7f == SIGTERM)
+    }
+
     #if NOLLIE_DIRECT
     @Test func gatewayReadinessRequiresRecentHeartbeatFromThisLaunch() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
@@ -356,6 +393,8 @@ private final class ServiceFixtureCredentials: RuntimeCredentialStoring, @unchec
         return value
     }
 }
+/// Set on the starting thread before it signals, read after the wait.
+private final class SpawnedPID: @unchecked Sendable { var value: pid_t? }
 private final class ServiceFixtureConsent: RuntimeConsentStoring, @unchecked Sendable {
     private let lock = NSLock()
     private var value: UUID?

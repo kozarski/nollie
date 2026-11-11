@@ -148,30 +148,9 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         }
         for fd in output + owner + handoff { _ = fcntl(fd, F_SETFD, FD_CLOEXEC) }
         _ = fcntl(output[0], F_SETFL, O_NONBLOCK)
-        var actions: posix_spawn_file_actions_t?
-        var attributes: posix_spawnattr_t?
-        guard posix_spawn_file_actions_init(&actions) == 0, posix_spawnattr_init(&attributes) == 0 else {
-            throw Contract.Failure.launchFailed
-        }
-        defer { posix_spawn_file_actions_destroy(&actions); posix_spawnattr_destroy(&attributes) }
-        let settings = [
-            posix_spawn_file_actions_addopen(&actions, STDIN_FILENO, "/dev/null", O_RDONLY, 0),
-            posix_spawn_file_actions_adddup2(&actions, output[1], STDOUT_FILENO),
-            posix_spawn_file_actions_addopen(&actions, STDERR_FILENO, "/dev/null", O_WRONLY, 0),
-            posix_spawn_file_actions_adddup2(&actions, owner[0], Contract.ownerDescriptor),
-            posix_spawn_file_actions_adddup2(&actions, handoff[0], Contract.keysDescriptor),
-            posix_spawn_file_actions_addchdir(&actions, plan.source.path),
-            // Its own process group, so everything Hermes starts (an installer, a model server) can be stopped
-            // with it. Left behind, such a process keeps a lock and the next start waits on it for ever.
-            posix_spawnattr_setpgroup(&attributes, 0),
-            posix_spawnattr_setflags(&attributes, Int16(POSIX_SPAWN_CLOEXEC_DEFAULT | POSIX_SPAWN_SETPGROUP))
-        ]
-        guard settings.allSatisfy({ $0 == 0 }) else { throw Contract.Failure.launchFailed }
-        var argv = ([plan.executable.path] + plan.arguments(for: role)).map { strdup($0) } + [nil]
-        var environment = plan.environment(for: role, token: token).sorted { $0.key < $1.key }.map { strdup($0.key + "=" + $0.value) } + [nil]
-        defer { argv.forEach { free($0) }; environment.forEach { free($0) } }
-        var pid: pid_t = 0
-        guard posix_spawn(&pid, plan.executable.path, &actions, &attributes, &argv, &environment) == 0 else {
+        guard let pid = RuntimeSpawn.start(executable: plan.executable.path, arguments: plan.arguments(for: role),
+                                           environment: plan.environment(for: role, token: token), directory: plan.source.path,
+                                           output: output[1], owner: owner[0], keys: handoff[0]) else {
             throw Contract.Failure.launchFailed
         }
         let handle = Contract.Child(id: UUID(), pid: pid, role: role)
