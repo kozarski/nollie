@@ -120,8 +120,10 @@ travel), and plain `http://` requests in absolute form, passed on in origin form
 target, `Proxy-*` and hop-by-hop headers dropped, and `Connection: close`. The head is read like the Link door's:
 CRLF only, ASCII only, at most 16 KiB, 64 headers and 8 KiB per line, HTTP/1.0 or 1.1. Names are plain DNS
 names; userinfo, escapes, zones and disguised addresses (`127.1`, `2130706433`, `0177.0.0.1`) are refused.
-SOCKS5: no authentication (the listener is reachable from the VM network only), CONNECT only; BIND and
-UDP ASSOCIATE are refused.
+SOCKS5: CONNECT only; BIND and UDP ASSOCIATE are refused. "No authentication" and "user name and password"
+(RFC 1929) are both accepted; the user name and password are only the computer's label for Papertrail (below),
+never a lock, since the listener is reachable from the VM network only. HTTP clients send the same label as
+`Proxy-Authorization`, which is read and never passed on.
 
 **Where it may go.** Names are resolved on the Mac (5 seconds). The whole request is refused if any address
 is not on the public internet: loopback, unspecified, private (10/8, 172.16/12, 192.168/16), link-local
@@ -136,10 +138,25 @@ connection. Upstream connections may not use the loopback interface.
 Refusing the rest keeps them from sending mail (25, 465, 587), using SSH, or reaching other services from the
 Mac's address, which is what an exit node shows the world.
 
+**Papertrail.** Each connection the relay makes for a computer it can place with a bot is one line in that
+bot's Papertrail, written before connecting, by the same book as the door (`PapertrailDoorBook`, kind
+`computer`): time, host, port, route. Never a URL, path, header, size or byte. How a computer is placed: the
+computer add-on gives each computer a fresh 64-hex key when it points it at the relay (turning on, reset),
+kept in the bot's own home (`<bot home>/nollie-computer/relay-key`, 0600) and in the computer's snippet as
+`http://<bot>:<key>@<Mac>:47610`. A label whose key matches that file places the connection, and the
+computer's address with it: later connections from that address with no label (a desktop browser that drops
+the proxy's user name) go to the same bot until another valid label comes from it or the relay stops. A wrong
+key proves nothing. A connection that can't be placed is passed on as before, counted (`unplaced`) and not
+written. Lines go to the book of the setup Hermes last ran from (`ExitRelayPapertrailLog`, handed over by
+`NativeRuntimeBackend` when it opens the door); before Hermes has run since the helper started, nothing is
+written. Private bots never get a line (the book's own rule), and a refused destination is not one: nothing
+connected.
+
 **Limits and what is kept.** 128 connections, 96 from one VM; 15 seconds from accepting to a connected
 upstream (10 to connect); 5 minutes without a byte either way closes a connection. Bytes pass through
-unread. Nothing is logged: hosts, addresses, URLs and sizes are never written anywhere. Only counts are kept,
-in memory (open, served, refused sources, busy, refused destinations, malformed, upstream failures). Three
+unread. Apart from Papertrail's lines, hosts, addresses, URLs and sizes are never written anywhere. Counts are
+kept in memory (open, served, refused sources, busy, refused destinations, malformed, upstream failures,
+noted, unplaced). Three
 failed upstream connections in a row, with none getting through since, count as `failed` (the exit node may
 be offline), and the card shows.
 
@@ -148,7 +165,9 @@ addresses, names with mixed public and private answers, the port list, the bindi
 fixtures, the source rule, both parsers (a malformed corpus, every partial read, oversized heads, seeded
 random and mutated input), and the whole relay on loopback in front of a fake website: CONNECT by address
 and by name, plain HTTP forwarding, SOCKS5 including one byte at a time, refused destinations that never open
-a connection, the Mac's own address turned away, timeouts, the connection cap and the failing state. Only
+a connection, the Mac's own address turned away, timeouts, the connection cap and the failing state, and
+Papertrail: a labelled CONNECT and SOCKS5 connection noted for its bot only, a wrong key placing nobody, an
+unlabelled connection following its address once the address has proved whose it is. Only
 Debug builds have the test allowance (loopback clients, and one exact loopback address and port as the
 fake website); release builds don't contain it. `RuntimeExitRelayTests` in `run-tests.py` covers turning it on
 and off, a network it can't listen on, the state file and when the card shows.
