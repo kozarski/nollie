@@ -13,6 +13,9 @@ struct MarkdownTableView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var more = MarkdownTableMetrics.Overflow()
     @State private var showingFull = false
+    /// The full screen button's drawn circle, growing with the text size.
+    @ScaledMetric(relativeTo: .caption2) private var buttonFace: CGFloat = 22
+    private let buttonInset: CGFloat = 4
 
     @ViewBuilder private var shown: some View {
         if !typeSize.isAccessibilitySize {
@@ -65,13 +68,19 @@ struct MarkdownTableView: View {
             .mask { edgeMask.animation(.easeOut(duration: 0.15), value: more) }
     }
 
+    /// The full screen button's small round face, inside a full fingertip square that is the button
+    /// itself (a button takes clicks and taps only inside its own frame). The square reaches a
+    /// little past the card's corner, so the face stays where it was drawn.
     private var fullButton: some View {
-        PlainButton { showingFull = true } label: {
+        let reach = Ink.target(face: buttonFace)
+        return PlainButton { showingFull = true } label: {
             Glyph("arrow.up.left.and.arrow.down.right", .caption2.weight(.semibold), .secondary)
-                .padding(5)
+                .frame(square: buttonFace)
                 .background(.thinMaterial, in: .circle)
+                .frame(square: reach.side)
+                .contentShape(.rect)
         }
-        .padding(4)
+        .offset(x: reach.overhang - buttonInset, y: buttonInset - reach.overhang)
         .accessibilityLabel("Open the table full screen")
         .help("Open Table")
     }

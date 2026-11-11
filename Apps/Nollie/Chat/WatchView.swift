@@ -11,8 +11,12 @@ struct WatchPill: View {
     @Environment(AppModel.self) private var model
 
     private var held: Bool { ComputerHandoff.shared.isHeld(chat.runtime, chat.profileName) }
-    private var shown: Bool {
-        WatchPolicy.showsWatch(active: BotComputerActivity.isActive(runtime: chat.runtime, profile: chat.profileName), held: held,
+    private var shown: Bool { Self.isShown(for: chat) }
+
+    /// Whether the pill shows in this chat's header right now.
+    static func isShown(for chat: ChatSession) -> Bool {
+        WatchPolicy.showsWatch(active: BotComputerActivity.isActive(runtime: chat.runtime, profile: chat.profileName),
+                               held: ComputerHandoff.shared.isHeld(chat.runtime, chat.profileName),
                                isPrivate: PrivateBots.isPrivate(chat.profileName, connection: chat.runtime.connection.id))
     }
 
