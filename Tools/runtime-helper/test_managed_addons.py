@@ -121,8 +121,9 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.assertIn("--require-hashes", install)
         self.assertIn("--no-build", install)
         marker = self.home / "nollie-reader/venv/nollie-lock.sha256"
-        self.assertEqual(marker.read_text(), digest((self.kit / "nollie-reader/requirements.txt").read_bytes()) + "\n"
-                         + "/fixture/python3.14\n")
+        # The app checks this marker byte for byte against the lock's checksum; the Python goes beside it.
+        self.assertEqual(marker.read_text(), digest((self.kit / "nollie-reader/requirements.txt").read_bytes()) + "\n")
+        self.assertEqual(marker.with_name("nollie-python.path").read_text(), "/fixture/python3.14\n")
 
     def test_a_second_run_changes_nothing(self):
         self.assertEqual(self.install(), 0)
