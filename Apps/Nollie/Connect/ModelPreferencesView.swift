@@ -686,7 +686,10 @@ enum ModelReadiness: Equatable {
         if ModelPlace.isLocal(slug) {
             let entry = local.flatMap { LocalModelDownload.entry(for: model, in: $0) }
             let name = LocalModelDownload.name(for: model, in: local)
-            guard mode != .cloud else { return .notYet(String(localized: "\(name) runs on this Mac. Online was chosen.", comment: "%@ is a model name")) }
+            guard mode != .cloud else {
+                return .notYet(ModelPlace.sentence(mac: String(localized: "\(name) is on this Mac, not online.", comment: "%@ is a model name"),
+                                                   phone: String(localized: "\(name) is on your Mac, not online.", comment: "%@ is a model name")))
+            }
             if entry?.downloaded == true { return .ready(name) }
             // A catalog that couldn't be read says nothing about the download: never claim it is missing.
             guard let local, local.catalogIssue == nil, !local.models.isEmpty else {

@@ -97,7 +97,7 @@ enum NativeSetupPlan {
 
     /// Said as it is on the setup screen: the person can act on it.
     static var lowDiskMessage: String {
-        String(localized: "Your Mac needs at least 6 GB free to get Nollie ready. Free up some space, then try again.")
+        String(localized: "This Mac needs at least 6 GB free to get Nollie ready. Free up some space, then try again.")
     }
 }
 

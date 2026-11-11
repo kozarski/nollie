@@ -144,7 +144,7 @@ enum SetupTrail {
         case "addons": String(localized: "Nollie's add-ons")
         default: String(localized: "a part of Nollie")
         }
-        return String(localized: "Couldn't finish getting \(part). Nothing else on your Mac changed. Check your internet connection, then try again.",
+        return String(localized: "Couldn't finish getting \(part). Nothing else on this Mac changed. Check your internet connection, then try again.",
                       comment: "%@ is a part of the setup, such as Hermes")
     }
 

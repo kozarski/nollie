@@ -399,7 +399,7 @@ enum LocalModelFailure: Equatable {
         case .network: String(localized: "Couldn't reach the download. Check your internet, then try again.")
         case .disk: ModelPlace.sentence(mac: String(localized: "This Mac ran out of space. Free some up, then try again."),
                                         phone: String(localized: "Your Mac ran out of space. Free some up, then try again."))
-        case .checksum: String(localized: "The download didn't check out. Try again for a fresh copy.")
+        case .checksum: String(localized: "The download was damaged. Try again for a fresh copy.")
         case .other: String(localized: "Downloaded parts are kept. Try again to carry on.")
         }
     }

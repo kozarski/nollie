@@ -44,6 +44,12 @@ struct ModelReadinessTests {
         #expect(!ModelReadiness.read(chosen, mode: .local, local: nil).isReady, "Not yet known is not ready")
         #expect(ModelReadiness.read(chosen, mode: .both, local: try local(downloaded: true)).isReady)
         #expect(!ModelReadiness.read(chosen, mode: .cloud, local: try local(downloaded: true)).isReady)
+        // Online chosen with a model on the Mac: the Mac says this Mac, an iPhone never does.
+        #if os(macOS)
+        #expect(ModelReadiness.read(chosen, mode: .cloud, local: try local(downloaded: true)).detail == "Qwen3.8 27B is on this Mac, not online.")
+        #else
+        #expect(ModelReadiness.read(chosen, mode: .cloud, local: try local(downloaded: true)).detail == "Qwen3.8 27B is on your Mac, not online.")
+        #endif
     }
 
     @Test func noModelSaysSoSteadily() {
