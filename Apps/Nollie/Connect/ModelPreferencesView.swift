@@ -632,3 +632,63 @@ private struct ModelsDetailRow: View {
         if selectable { text.textSelection(.enabled) } else { text }
     }
 }
+
+/// Whether the model the setup step shows can really answer, for the choice made on that step:
+/// a green check and Continue only then. A model on this Mac counts once it is downloaded and
+/// chosen; an online model only with a working sign-in or key, and never while On this Mac is the
+/// choice (Hermes's untouched default would otherwise pass for a model that answers).
+enum ModelReadiness: Equatable {
+    case ready(String)
+    case needsSignIn(String)
+    /// Chosen, but it can't answer yet. The words say what is missing.
+    case notYet(String)
+    case none
+
+    static func read(_ options: ModelOptionsResult, mode: ModelSetupMode, local: LocalModelSetupSnapshot?) -> Self {
+        guard let model = options.model?.trimmingCharacters(in: .whitespacesAndNewlines), !model.isEmpty,
+              let slug = ModelPlace.provider(options) else { return .none }
+        if ModelPlace.isLocal(slug) {
+            let entry = local.flatMap { LocalModelDownload.entry(for: model, in: $0) }
+            let name = entry?.displayName ?? ModelPlace.friendlyName(model)
+            guard mode != .cloud else { return .notYet(String(localized: "\(name) runs on this Mac. Online was chosen.", comment: "%@ is a model name")) }
+            return entry?.downloaded == true ? .ready(name) : .notYet(String(localized: "\(name) isn't downloaded yet.", comment: "%@ is a model name"))
+        }
+        let name = ModelPlace.friendlyName(model)
+        guard mode != .local else {
+            return .notYet(ModelPlace.sentence(mac: String(localized: "No model on this Mac yet."), phone: String(localized: "No model on your Mac yet.")))
+        }
+        let provider = options.providers.first { $0.slug == slug }
+        switch provider?.authenticated {
+        case true where provider?.warning?.isEmpty != false: return .ready(name)
+        case false: return .needsSignIn(name)
+        default: return .notYet(String(localized: "\(name) isn't signed in yet.", comment: "%@ is a model name"))
+        }
+    }
+
+    var isReady: Bool { if case .ready = self { return true }; return false }
+
+    /// The row's words: the model's friendly name when it answers, else what is missing.
+    var detail: String {
+        switch self {
+        case .ready(let name): name
+        case .needsSignIn(let name): String(localized: "\(name) needs sign-in.", comment: "%@ is a model name")
+        case .notYet(let words): words
+        case .none: String(localized: "No model selected yet")
+        }
+    }
+}
+
+extension ModelPlace {
+    /// A model's name as people say it: "anthropic/claude-sonnet-4.6" is "Claude Sonnet 4.6",
+    /// "openai/gpt-5.1-mini" is "GPT 5.1 Mini".
+    static func friendlyName(_ model: String) -> String {
+        let last = model.split(separator: "/").last.map(String.init) ?? model
+        let words = last.split(whereSeparator: { $0 == "-" || $0 == "_" || $0 == " " }).map { word -> String in
+            let lower = word.lowercased()
+            if ["gpt", "glm", "ai"].contains(lower) { return lower.uppercased() }
+            if lower.first?.isNumber == true || word.contains(where: \.isUppercase) { return String(word) }
+            return lower.prefix(1).uppercased() + lower.dropFirst()
+        }
+        return words.isEmpty ? model : words.joined(separator: " ")
+    }
+}

@@ -105,7 +105,7 @@ final class LocalModelDownload {
     }
 
     /// The model the setup selected, as the catalog names it.
-    static func entry(for selected: String?, in snapshot: LocalModelSetupSnapshot) -> LocalModelCatalogEntry? {
+    nonisolated static func entry(for selected: String?, in snapshot: LocalModelSetupSnapshot) -> LocalModelCatalogEntry? {
         guard let selected else { return nil }
         return snapshot.models.first { $0.modelId == selected || $0.downloadedModelId == selected || $0.id == selected }
     }
