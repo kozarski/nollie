@@ -356,6 +356,9 @@ struct OnboardingView: View {
             .scrollIndicators(.hidden)
             // On an iPad the page sits in the middle of the tall screen rather than at its top.
             .defaultScrollAnchor(widthClass == .regular ? .center : .top, for: .alignment)
+            // At the largest sizes the page scrolls; the words soften under the bar and the clock
+            // instead of running into the back button.
+            .scrollEdgeEffectStyle(.soft, for: .top)
             .id(progress.step)
             .background { background }
             .safeAreaInset(edge: .bottom, spacing: 0) { if !typeSize.isAccessibilitySize { controls } }
