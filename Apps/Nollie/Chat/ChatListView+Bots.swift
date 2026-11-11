@@ -305,7 +305,10 @@ extension ChatListView {
                 ToolbarItem(placement: .topBarTrailing) { BoardToolbarButton() }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
-            ToolbarItem(placement: .topBarTrailing) { NewBotButton() }
+            // With nothing connected a new bot has nowhere to live, so + would do nothing.
+            if runtime != nil {
+                ToolbarItem(placement: .topBarTrailing) { NewBotButton() }
+            }
         }
     }
     #endif
