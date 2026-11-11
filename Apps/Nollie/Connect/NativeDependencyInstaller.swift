@@ -54,8 +54,7 @@ enum NativeSetupPlan {
         .init(id: "hermes", title: "Hermes Agent", detail: String(localized: "Hermes 0.23.1 at a fixed revision, a 91.4 MB verified download, with Nollie's reviewed changes for Board notes and safe scheduled checks."), state: .notChecked, optional: false),
         .init(id: "dependencies", title: String(localized: "Runtime libraries"), detail: String(localized: "The exact versions in Hermes's lockfile, each checked against its recorded hash. About 40 MB."), state: .notChecked, optional: false),
         .init(id: "addons", title: String(localized: "Nollie add-ons"), detail: String(localized: "Board follow-through, Papertrail and the Night shift, the crew, the page reader, computer previews and using apps on this Mac. The reader's own libraries are about 20 MB, each checked against its recorded hash."), state: .notChecked, optional: false),
-        .init(id: "service", title: String(localized: "Background service"), detail: String(localized: "Keeps your assistant running while this Mac is awake, even after Nollie closes. Starting it is a separate step, with your permission."), state: .notChecked, optional: false),
-        .init(id: "computer", title: String(localized: "Computer access"), detail: String(localized: "Optional. Needs a packaged computer adapter and your macOS permission approval. No permissions are copied."), state: .blocked, optional: true)
+        .init(id: "service", title: String(localized: "Background service"), detail: String(localized: "Keeps your assistant running while this Mac is awake, even after Nollie closes. Starting it is a separate step, with your permission."), state: .notChecked, optional: false)
     ] }
 
     static func environment(installation: URL) -> [String: String] {
@@ -95,6 +94,11 @@ enum NativeSetupPlan {
     }
 
     static func failure(_ message: String) -> ConfigurationBackup.Failure { .init(message) }
+
+    /// Said as it is on the setup screen: the person can act on it.
+    static var lowDiskMessage: String {
+        String(localized: "Your Mac needs at least 6 GB free to get Nollie ready. Free up some space, then try again.")
+    }
 }
 
 /// Stores preparation receipts separately from runtime readiness. A downloaded dependency
@@ -119,7 +123,7 @@ actor NativeDependencyInstaller {
 
     func inspect() -> [NativeDependencyStep] {
         var steps = NativeSetupPlan.steps
-        for index in steps.indices where !["service", "computer"].contains(steps[index].id) {
+        for index in steps.indices where steps[index].id != "service" {
             let id = steps[index].id
             if !NativeSetupPlan.directAvailable {
                 steps[index].state = .blocked
@@ -323,7 +327,7 @@ actor NativeDependencyInstaller {
     private func prepareDirectories() throws {
         let values = try installation.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         guard let available = values.volumeAvailableCapacityForImportantUsage, available > 6_000_000_000 else {
-            throw NativeSetupPlan.failure(String(localized: "Keep at least 6 GB free before preparing the runtime. Model downloads need more space."))
+            throw NativeSetupPlan.failure(NativeSetupPlan.lowDiskMessage)
         }
         // The service creates and owns this root before a runner can write into it.
         let marker = try OwnedSetupFiles.read(installation.appendingPathComponent("ownership.json"), maximum: 4096)

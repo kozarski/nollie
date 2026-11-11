@@ -122,6 +122,23 @@ struct OnboardingProgress: Codable, Equatable, Sendable {
     mutating func skip() { completion = .skipped }
 }
 
+#if os(macOS)
+extension OnboardingProgress {
+    /// The steps the Mac header counts: those after the path is chosen, before Ready. Counted only once a
+    /// path is chosen, so the total never changes under someone.
+    var countedSteps: [Step] {
+        guard route != nil, ![.welcome, .home, .ready].contains(step) else { return [] }
+        return steps.filter { ![.welcome, .home, .ready].contains($0) }
+    }
+
+    /// "Step 2 of 6", or nil where the header shows no count.
+    var stepCount: (index: Int, total: Int)? {
+        guard let index = countedSteps.firstIndex(of: step) else { return nil }
+        return (index + 1, countedSteps.count)
+    }
+}
+#endif
+
 enum OnboardingModelStatus: Equatable {
     case notConfigured
     case needsSignIn(model: String)
