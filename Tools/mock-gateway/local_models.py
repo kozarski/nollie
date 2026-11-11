@@ -24,6 +24,9 @@ FIXTURE = json.loads((Path(__file__).with_name("fixtures") / "local-models.json"
 SCENARIOS = ("flow", "downloading", "paused", "failed-network", "failed-disk", "failed-checksum", "ready")
 REPLY = "Hi! Ready when you are."
 ENGINE_BYTES = 12_201_717
+# The optional draft each catalog entry downloads last (hermes_cli/local_runtime/catalog.json in 0.23.1). Hermes
+# counts the model's own files first, then starts the count again for the draft, as a real quick start shows.
+DRAFT_BYTES = {"qwen3.8-27b": 1_143_006_816}
 FLOW_SECONDS = 40.0
 # Hermes's own error words (pm/downloader.py and the OS), as the job's "error" carries them.
 ERRORS = {
@@ -103,7 +106,15 @@ def _view(job: dict) -> dict:
     elif scenario == "flow" and fraction < 0.06:
         view.update(phase="downloading-runtime", detail="Downloading the local engine", total_bytes=ENGINE_BYTES,
                     done_bytes=int(ENGINE_BYTES * fraction / 0.06))
-    elif scenario == "flow" and fraction >= 1:
+    elif scenario in ("flow", "downloading") and fraction < 1 and entry["id"] in DRAFT_BYTES:
+        draft = DRAFT_BYTES[entry["id"]]
+        files = total - draft
+        if fraction < files / total:
+            view.update(detail=f"Downloading {entry['display_name']}", total_bytes=files, done_bytes=int(total * fraction))
+        else:
+            view.update(detail="Downloading the draft model that speeds up generation", total_bytes=draft,
+                        done_bytes=int(total * fraction) - files)
+    if scenario == "flow" and fraction >= 1:
         if job["status"] == "running" and time.time() - job["started_at"] - job["paused_seconds"] < FLOW_SECONDS + 3:
             view.update(phase="starting-server", detail="Starting the local server", done_bytes=total)
         else:

@@ -58,7 +58,9 @@ struct ModelReadinessTests {
         #expect(ModelPlace.friendlyName("anthropic/claude-sonnet-4.6") == "Claude Sonnet 4.6")
         #expect(ModelPlace.friendlyName("openai/gpt-5.1-mini") == "GPT 5.1 Mini")
         #expect(ModelPlace.friendlyName("nous/hermes-4-70b") == "Hermes 4 70b")
-        #expect(ModelPlace.friendlyName("Qwen3.8-27B-UD-Q4_K_M") == "Qwen3.8 27B UD Q4 K M")
+        #expect(ModelPlace.friendlyName("Qwen3.8-27B-UD-Q4_K_M") == "Qwen3.8 27B", "Never the build's quant")
+        #expect(ModelPlace.friendlyName("Qwen3.8-Flash-Next-UD-IQ4_XS") == "Qwen3.8 Flash Next")
+        #expect(ModelPlace.friendlyName("NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB") == "NVIDIA Nemotron 3.5 Bolt 74B A9B")
         #expect(ModelPlace.friendlyName("") == "")
     }
 }

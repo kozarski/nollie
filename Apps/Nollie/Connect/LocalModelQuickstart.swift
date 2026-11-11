@@ -67,6 +67,8 @@ final class LocalModelQuickstart {
     private let persistence: LocalModelInstallPersistence
     private let wait: @Sendable () async throws -> Void
     private let freeDisk: @MainActor () -> UInt64?
+    /// Says hello the moment the model is chosen, whether or not a page is open to ask.
+    var autoHello = false
     private var generation = UUID()
     @ObservationIgnored private var operation: Task<Void, Never>?
 
@@ -83,13 +85,17 @@ final class LocalModelQuickstart {
 
     #if DEBUG
     /// Inert rendering data. Every action remains denied even if a preview receives input.
-    static func picture(state: State, job: LocalModelJob, selectedModel: String? = nil, reply: String? = nil) -> LocalModelQuickstart {
+    static func picture(state: State, job: LocalModelJob, selectedModel: String? = nil, reply: String? = nil,
+                        catalogID: String? = nil) -> LocalModelQuickstart {
         let result = LocalModelQuickstart(api: .init { _, _, _ in throw CancellationError() },
             scope: .init(installationID: UUID(), connectionID: UUID(), profile: "default"),
             persistence: .init(load: { nil }, save: { _ in }),
             inspect: { throw CancellationError() }, isCurrent: { false },
             checkReply: { _ in throw CancellationError() })
         result.state = state; result.job = job; result.selectedModel = selectedModel; result.reply = reply
+        if let catalogID {
+            result.receipt = .init(scope: result.scope, catalogID: catalogID, variantID: selectedModel ?? catalogID, requestedAt: .now, jobID: job.jobId)
+        }
         return result
     }
     #endif
@@ -192,22 +198,25 @@ final class LocalModelQuickstart {
     }
 
     func testReply() {
-        guard !busy, let selectedModel, [.selected, .ready].contains(state), isCurrent() else { return }
+        guard !busy, selectedModel != nil, [.selected, .ready].contains(state), isCurrent() else { return }
+        run { id in await self.sayHello(id) }
+    }
+
+    private func sayHello(_ id: UUID) async {
+        guard let selectedModel else { return }
         state = .checkingReply; message = nil; reply = nil
-        run { id in
-            do {
-                let current = try await self.api.selectedModel()
-                try self.check(id)
-                guard current.provider == "llamacpp", current.model == selectedModel else { throw LocalModelCheckFailure.changed }
-                let answer = try await self.checkReply(selectedModel)
-                try self.check(id)
-                guard !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw LocalModelCheckFailure.incomplete }
-                self.reply = answer; self.state = .ready
-            } catch {
-                guard self.current(id) else { return }
-                self.state = .selected
-                self.message = String(localized: "The model is selected, but its reply wasn't verified. You can try again.")
-            }
+        do {
+            let current = try await api.selectedModel()
+            try check(id)
+            guard current.provider == "llamacpp", current.model == selectedModel else { throw LocalModelCheckFailure.changed }
+            let answer = try await checkReply(selectedModel)
+            try check(id)
+            guard !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw LocalModelCheckFailure.incomplete }
+            reply = answer; state = .ready
+        } catch {
+            guard current(id) else { return }
+            state = .selected
+            message = String(localized: "The model is selected, but its reply wasn't verified. You can try again.")
         }
     }
 
@@ -262,6 +271,7 @@ final class LocalModelQuickstart {
             return
         }
         selectedModel = selected; state = .selected; message = nil
+        if autoHello { await sayHello(id) }
     }
 
     private func current(_ id: UUID) -> Bool { !Task.isCancelled && generation == id && isCurrent() }
