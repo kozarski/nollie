@@ -236,6 +236,12 @@ struct OnboardingView: View {
                 previewProgress.route = .new
                 previewProgress.step = step
             }
+            // `-nollie-demo-onboarding-sheet models|link` opens that sheet over the step, a moment after it shows.
+            if DemoMode.isOn, let at = ProcessInfo.processInfo.arguments.firstIndex(of: "-nollie-demo-onboarding-sheet"),
+               ProcessInfo.processInfo.arguments.indices.contains(at + 1),
+               let sheet = Destination(rawValue: ProcessInfo.processInfo.arguments[at + 1]) {
+                Task { try? await Task.sleep(for: .seconds(3)); destination = sheet }
+            }
             #endif
             if workingPreview || installStepPreview {
                 previewProgress.route = .new

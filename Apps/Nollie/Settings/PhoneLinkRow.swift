@@ -26,6 +26,14 @@ struct PhoneLinkRow: View {
             devices = await Self.ownDevices()
         }
         .sheet(isPresented: $showLink) { NollieLinkSheet().withAppModel() }
+        #if DEBUG
+        .task {
+            // For pictures: `-nollie-demo-phone-sheet` opens the code sheet from this row.
+            guard DemoMode.isOn, ProcessInfo.processInfo.arguments.contains("-nollie-demo-phone-sheet") else { return }
+            try? await Task.sleep(for: .seconds(3))
+            showLink = true
+        }
+        #endif
     }
 
     static var title: String { String(localized: "iPhone & iPad", comment: "A Settings row: use Nollie on an iPhone or iPad") }
