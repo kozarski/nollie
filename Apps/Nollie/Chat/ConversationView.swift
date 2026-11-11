@@ -115,6 +115,7 @@ struct ConversationView: View {
         }
         #if os(macOS)
         .toolbar { ConversationToolbar(chat: chat, actions: actions) }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { MacChatRoom.shared.columnWidth = $0 }
         #endif
     }
 
