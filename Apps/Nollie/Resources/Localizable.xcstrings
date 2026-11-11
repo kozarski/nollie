@@ -63863,30 +63863,30 @@
         }
       }
     },
-    "Python 3.14.8. A 26.7 MB verified download. A separate runtime for Nollie, without changing your existing Python." : {
+    "Python 3.14.10. A 26.8 MB verified download. A separate runtime for Nollie, without changing your existing Python." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Python 3.14.8. Ein geprüfter Download mit 26,7 MB. Eine eigene Runtime für Nollie, ohne dein vorhandenes Python zu ändern."
+            "value" : "Python 3.14.10. Ein geprüfter Download mit 26,8 MB. Eine eigene Runtime für Nollie, ohne dein vorhandenes Python zu ändern."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Python 3.14.8. Una descarga verificada de 26,7 MB. Un entorno de ejecución aparte para Nollie, sin cambiar tu Python actual."
+            "value" : "Python 3.14.10. Una descarga verificada de 26,8 MB. Un entorno de ejecución aparte para Nollie, sin cambiar tu Python actual."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Python 3.14.8. Un téléchargement vérifié de 26,7 Mo. Un environnement séparé pour Nollie, sans modifier votre Python existant."
+            "value" : "Python 3.14.10. Un téléchargement vérifié de 26,8 Mo. Un environnement séparé pour Nollie, sans modifier votre Python existant."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Python 3.14.8。26.7MBの検証済みダウンロード。既存のPythonを変更しない、Nollie専用のランタイムです。"
+            "value" : "Python 3.14.10。26.8MBの検証済みダウンロード。既存のPythonを変更しない、Nollie専用のランタイムです。"
           }
         }
       }
@@ -110107,30 +110107,30 @@
         }
       }
     },
-    "uv 0.13.4. A 14.3 MB verified download, kept inside Nollie's setup folder." : {
+    "uv 0.13.7. A 14.3 MB verified download, kept inside Nollie's setup folder." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "uv 0.13.4. Ein geprüfter Download mit 14,3 MB, der im Einrichtungsordner von Nollie bleibt."
+            "value" : "uv 0.13.7. Ein geprüfter Download mit 14,3 MB, der im Einrichtungsordner von Nollie bleibt."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "uv 0.13.4. Una descarga verificada de 14,3 MB, guardada dentro de la carpeta de configuración de Nollie."
+            "value" : "uv 0.13.7. Una descarga verificada de 14,3 MB, guardada dentro de la carpeta de configuración de Nollie."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "uv 0.13.4. Un téléchargement vérifié de 14,3 Mo, gardé dans le dossier de configuration de Nollie."
+            "value" : "uv 0.13.7. Un téléchargement vérifié de 14,3 Mo, gardé dans le dossier de configuration de Nollie."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "uv 0.13.4。14.3MBの検証済みダウンロードで、Nollieの設定フォルダ内に保存されます。"
+            "value" : "uv 0.13.7。14.3MBの検証済みダウンロードで、Nollieの設定フォルダ内に保存されます。"
           }
         }
       }

@@ -22,7 +22,7 @@ release DMG carry this list. Check it against every bundled or downloaded binary
 ## Linked into the Direct Mac edition
 | Component | Version | Licence | Notice shown |
 |---|---|---|---|
-| Sparkle by the Sparkle Project | 2.10.0 | MIT, with BSD-style and zlib-style notices for a few bundled parts | `LICENSE`, Acknowledgements, and `Contents/Resources/Notices/Sparkle/LICENSE` inside the app. Code as released; its sandbox-only helper services are left out and it is signed by Nollie's Developer ID. Not in the App Store edition |
+| Sparkle by the Sparkle Project | 2.10.1 | MIT, with BSD-style and zlib-style notices for a few bundled parts | `LICENSE`, Acknowledgements, and `Contents/Resources/Notices/Sparkle/LICENSE` inside the app. Code as released; its sandbox-only helper services are left out and it is signed by Nollie's Developer ID. Not in the App Store edition |
 
 ## Downloaded during setup, never bundled
 Every version here is pinned, with its checksum, in `Tools/pins.json`.
@@ -30,8 +30,8 @@ Every version here is pinned, with its checksum, in `Tools/pins.json`.
 | Component | Version | Licence | Notice shown |
 |---|---|---|---|
 | Hermes Agent by Nous Research | 0.23.1 (pinned commit) | MIT | Acknowledgements; "Built on Hermes Agent by Nous Research. Not affiliated." |
-| uv by Astral | 0.13.4 | MIT or Apache-2.0 | Acknowledgements |
-| Python (python-build-standalone) | 3.14.8 | PSF-2.0 and bundled licences | Acknowledgements |
+| uv by Astral | 0.13.7 | MIT or Apache-2.0 | Acknowledgements |
+| Python (python-build-standalone) | 3.14.10 | PSF-2.0 and bundled licences | Acknowledgements |
 | Hermes's Python packages | locked by hash | Mostly MIT, BSD, Apache-2.0 (listed from the lockfile at release) | Acknowledgements |
 | Trafilatura, pypdf and their dependencies | locked by hash | Apache-2.0, BSD, MIT, MPL | Acknowledgements; only in the page reader's own environment |
 | Local models | per model | Shown before download (for example Apache-2.0) | The download screen |

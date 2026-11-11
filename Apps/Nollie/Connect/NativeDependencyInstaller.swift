@@ -22,8 +22,8 @@ enum NativeSetupPlan {
     }
     // Every pin below is listed in Tools/pins.json; Tools/dev/check-latest.py --local checks they agree.
     static let hermesCommit = "3b421578588243f920886e6fe79a6faa87ea026e"
-    static let pythonVersion = "3.14.8"
-    static let pythonKey = "cpython-3.14.8-macos-aarch64-none"
+    static let pythonVersion = "3.14.10"
+    static let pythonKey = "cpython-3.14.10-macos-aarch64-none"
     /// SHA-256 of Services/Runtime/HermesOverlay/overlay.json: Nollie's reviewed changes to this Hermes.
     static let hermesOverlayDigest = "ef18f0b69d3e2fb138e289f9e2574ac71b51354465d17816851175775d75061d"
     /// What a prepared Hermes receipt records: the release plus the exact reviewed changes on top.
@@ -35,9 +35,9 @@ enum NativeSetupPlan {
         let sha256: String
         let bytes: Int
     }
-    static let uv = Artifact(id: "uv", version: "0.13.4",
-        url: URL(string: "https://github.com/astral-sh/uv/releases/download/0.13.4/uv-aarch64-apple-darwin.tar.gz")!,
-        sha256: "e0b1d4743ce64c55d9f0f4a444afa6b81125680070ee04e853fcd0f6c1ebf8f1", bytes: 14_326_193)
+    static let uv = Artifact(id: "uv", version: "0.13.7",
+        url: URL(string: "https://github.com/astral-sh/uv/releases/download/0.13.7/uv-aarch64-apple-darwin.tar.gz")!,
+        sha256: "81b811b57e4624df7ed3aac148e0359100d9962f3d9dce00aec533dc2e086731", bytes: 14_347_867)
     static let hermes = Artifact(id: "hermes", version: "0.23.1",
         url: URL(string: "https://codeload.github.com/NousResearch/hermes-agent/tar.gz/" + hermesCommit)!,
         sha256: "2525046f165880c22f177f2214c8da3e26c58cb0aeab5bd09aad940556538897", bytes: 91_372_324)
@@ -49,8 +49,8 @@ enum NativeSetupPlan {
     static let diskMegabytes = 800
 
     static var steps: [NativeDependencyStep] { [
-        .init(id: "uv", title: String(localized: "Download manager"), detail: String(localized: "uv 0.13.4. A 14.3 MB verified download, kept inside Nollie's setup folder."), state: .notChecked, optional: false),
-        .init(id: "python", title: String(localized: "Python runtime"), detail: String(localized: "Python 3.14.8. A 26.7 MB verified download. A separate runtime for Nollie, without changing your existing Python."), state: .notChecked, optional: false),
+        .init(id: "uv", title: String(localized: "Download manager"), detail: String(localized: "uv 0.13.7. A 14.3 MB verified download, kept inside Nollie's setup folder."), state: .notChecked, optional: false),
+        .init(id: "python", title: String(localized: "Python runtime"), detail: String(localized: "Python 3.14.10. A 26.8 MB verified download. A separate runtime for Nollie, without changing your existing Python."), state: .notChecked, optional: false),
         .init(id: "hermes", title: "Hermes Agent", detail: String(localized: "Hermes 0.23.1 at a fixed revision, a 91.4 MB verified download, with Nollie's reviewed changes for Board notes and safe scheduled checks."), state: .notChecked, optional: false),
         .init(id: "dependencies", title: String(localized: "Runtime libraries"), detail: String(localized: "The exact versions in Hermes's lockfile, each checked against its recorded hash. About 40 MB."), state: .notChecked, optional: false),
         .init(id: "addons", title: String(localized: "Nollie add-ons"), detail: String(localized: "Board follow-through, Papertrail and the Night shift, the crew, the page reader, computer previews and using apps on this Mac. The reader's own libraries are about 20 MB, each checked against its recorded hash."), state: .notChecked, optional: false),

@@ -953,8 +953,10 @@ from hermes_cli import plugins
 plugins.discover_plugins()
 manager = plugins.get_plugin_manager()
 loaded = {key: (bool(p.enabled), p.error and type(p.error).__name__) for key, p in manager._plugins.items()}
-hooks = sorted(name for name in ("post_api_request", "api_request_error", "post_auxiliary_call", "post_tool_call")
-               if plugins.has_hook(name))
+# Papertrail's own hooks, the recorder's. Ask first hooks into every bot, private ones too, and keeps nothing.
+hooks = sorted(name for name in ("post_api_request", "api_request_error", "post_auxiliary_call", "post_tool_call",
+                                 "post_approval_response")
+               if any(type(getattr(hook, "__self__", None)).__name__ == "Recorder" for hook in manager._hooks.get(name, [])))
 
 # The real call sites, so the keyword arguments are Hermes's own.
 from agent.api_request_hooks import ApiRequestHooksMixin
@@ -996,10 +998,12 @@ while time.time() < deadline and len([l for f in root.glob("*.jsonl") for l in f
 text = "".join(f.read_text() for f in root.glob("*.jsonl")) if root.is_dir() else ""
 answer = None
 if root.is_dir():
-    spec_path = bot_home / "plugins" / "nollie-workflow" / "papertrail.py"
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("papertrail_reader_check", spec_path)
-    reader = importlib.util.module_from_spec(spec); spec.loader.exec_module(reader)
+    # Read back the way the add-on's own route does: papertrail.py as part of its package.
+    import importlib
+    entry = (bot_home / "plugins" / "nollie-workflow" / "__init__.py").resolve()
+    package = next(name for name, module in list(sys.modules.items())
+                   if getattr(module, "__file__", None) and Path(module.__file__).resolve() == entry)
+    reader = importlib.import_module(package + ".papertrail")
     answer = reader.read(bot_home, profile, 7)
 print(json.dumps({"loaded": loaded, "hooks": hooks, "lines": [json.loads(l) for l in text.splitlines()],
                   "text": text, "answer": answer, "folder": root.is_dir()}))

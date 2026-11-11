@@ -365,7 +365,7 @@ class ManagedAddOnsTests(unittest.TestCase):
             target = self.home / "plugins/nollie-mac" / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes((source / name).read_bytes())
-        python = self.installation / "python/cpython-3.14.8-macos-aarch64-none/bin/python3.14"
+        python = self.installation / "python/cpython-3.14.10-macos-aarch64-none/bin/python3.14"
         python.parent.mkdir(parents=True, exist_ok=True)
         python.write_bytes(b"#!fixture\n")
         return python.resolve()
