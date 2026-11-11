@@ -6,7 +6,7 @@ public enum DevicePairingError: LocalizedError, Equatable, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .invalidInvitation: String(localized: "This is not an Nollie pairing code.", table: "Core")
+        case .invalidInvitation: String(localized: "This isn't a Nollie pairing code. Make a new code on your Mac and scan it.", table: "Core")
         case .expired: String(localized: "This code has expired. Create a new one on your Mac.", table: "Core")
         case .secureConnectionRequired: String(localized: "Pairing needs a secure address your iPhone can reach.", table: "Core")
         case .setupRequired: String(localized: "iPhone pairing is not set up on this connection yet.", table: "Core")
