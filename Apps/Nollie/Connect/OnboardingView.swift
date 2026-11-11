@@ -243,6 +243,7 @@ struct OnboardingView: View {
                 if workingPreview { return }
             }
             syncModelPreference()
+            suggestModelModeForThisMac()
             if skipWelcome, progress.step == .welcome { update { $0.step = .home } }
             if !isPreview {
                 let matchingConnection = progress.connectionID.map { id in model.store.connections.contains { $0.id == id } } ?? model.hasConnections
@@ -902,9 +903,14 @@ struct OnboardingView: View {
         case .cloud: String(localized: "Uses your ChatGPT or Claude plan.")
         case .both: String(localized: "This Mac first, online when it helps.")
         }
+        // Under 16 GB, the reason a plan comes first ("This Mac has 8 GB. A plan will feel faster.").
+        let memoryLine = preference == .local ? macMemoryLine : nil
         return Button {
             savedModelMode = preference.rawValue
-            update(animated: false) { $0.preferences.modelMode = preference }
+            update(animated: false) {
+                $0.preferences.modelMode = preference
+                $0.preferences.modelModeChosen = true
+            }
         } label: {
             let layout = stacked ? AnyLayout(HStackLayout(spacing: 14)) : AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
             layout {
@@ -915,6 +921,13 @@ struct OnboardingView: View {
                     Text(preference.title).font(.title3.weight(.semibold)).foregroundStyle(.primary)
                     Text(detail).font(.subheadline).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let memoryLine {
+                        Label(memoryLine, systemImage: "memorychip")
+                            .font(.footnote).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 2)
+                            .accessibilityIdentifier("onboarding.modelPreference.memory")
+                    }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(18)
@@ -931,7 +944,8 @@ struct OnboardingView: View {
             RoundedRectangle(cornerRadius: Ink.cardRadius, style: .continuous).strokeBorder(selected ? Color.blue : .clear, lineWidth: 2)
                 .allowsHitTesting(false)
         }
-        .accessibilityLabel(String(localized: "\(preference.title). \(detail)", comment: "A choice's name, then its line"))
+        .accessibilityLabel(memoryLine.map { String(localized: "\(preference.title). \(detail) \($0)", comment: "A choice's name, its line, then a note on this Mac's memory") }
+                            ?? String(localized: "\(preference.title). \(detail)", comment: "A choice's name, then its line"))
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("onboarding.modelPreference.\(preference.rawValue)")
@@ -1440,8 +1454,33 @@ struct OnboardingView: View {
         if UserDefaults.standard.object(forKey: ModelPreferenceStore.key) == nil {
             savedModelMode = progress.preferences.modelMode.rawValue
         } else if let mode = ModelSetupMode(rawValue: savedModelMode), mode != progress.preferences.modelMode {
-            update(animated: false) { $0.preferences.modelMode = mode }
+            // Chosen elsewhere (Settings, the models sheet): that is the person's choice now.
+            update(animated: false) {
+                $0.preferences.modelMode = mode
+                $0.preferences.modelModeChosen = true
+            }
         }
+    }
+
+    /// This Mac's memory note for the On this Mac card, only on a Mac under 16 GB.
+    private var macMemoryLine: String? {
+        #if os(macOS)
+        ModelMemoryGuidance.line(ModelMemoryGuidance.thisMac)
+        #else
+        nil
+        #endif
+    }
+
+    /// A Mac under 16 GB starts the model step on a plan, until the person picks.
+    private func suggestModelModeForThisMac() {
+        #if os(macOS)
+        guard !isFixture else { return }
+        var next = progress
+        guard next.preferences.suggestModelMode(memoryBytes: ModelMemoryGuidance.thisMac) else { return }
+        // A preview (the demo's pictures) shows the suggestion without saving it.
+        if !isPreview { savedModelMode = next.preferences.modelMode.rawValue }
+        update(animated: false) { $0.preferences = next.preferences }
+        #endif
     }
 
     private func update(animated: Bool = true, _ change: (inout OnboardingProgress) -> Void) {
