@@ -16,6 +16,8 @@ final class WeeklyNoteModel {
     static let liveAtKey = "nollie.weekly.liveAt"
     /// The switch or day changed here and the gateway hasn't confirmed it yet.
     static let unsentKey = "nollie.weekly.unsent"
+    /// When this device first read a gateway's week, by gateway: with Papertrail's first day, how old the setup is.
+    static let firstReadKey = "nollie.weekly.firstRead."
 
     /// The note, once read. Nil before, for a member, and with no gateway.
     private(set) var note: WeeklyNote?
@@ -39,10 +41,22 @@ final class WeeklyNoteModel {
     /// Whether this device may show the note: the owner's own, with the note on.
     static func shows(_ model: AppModel) -> Bool { isOn && !model.family.isMember(model) && model.runtime != nil }
 
-    /// The card at the top of the main chat: from the note's time until the person puts it away.
+    /// The card at the top of the main chat: from the note's time until the person puts it away, once the setup is a
+    /// few days old and a helper did something (`WeeklyNoteTiming.worthACard`).
     func cardShows(_ model: AppModel, now: Date = Date()) -> Bool {
-        guard Self.shows(model), let note, !note.isQuiet || !note.quiet.isEmpty else { return false }
+        guard Self.shows(model), let note, let gateway = model.runtime?.connection.id,
+              WeeklyNoteTiming.worthACard(note, firstReadHere: Self.firstRead(gateway), now: now) else { return false }
         return Self.timing.cardShows(now: now, putAwayAt: putAwayAt)
+    }
+
+    /// When this device first read the week from a gateway, kept per gateway.
+    static func firstRead(_ gateway: UUID, defaults: UserDefaults = .standard) -> Date? {
+        defaults.object(forKey: firstReadKey + gateway.uuidString) as? Date
+    }
+
+    static func noteFirstRead(_ gateway: UUID, now: Date = Date(), defaults: UserDefaults = .standard) {
+        guard firstRead(gateway, defaults: defaults) == nil else { return }
+        defaults.set(now, forKey: firstReadKey + gateway.uuidString)
     }
 
     func putAway(now: Date = Date()) {
@@ -94,6 +108,7 @@ final class WeeklyNoteModel {
                               macOn: SystemControl.shared.state(profile.name, runtime),
                               muted: HelperMute.isMuted(profile.name, connection: gateway), spend: spends[profile.name])
         }
+        Self.noteFirstRead(gateway)
         note = WeeklyNote.build(inputs, isPrivate: { PrivateBots.isPrivate($0, connection: gateway) })
         if readFrom?.gateway != gateway { done = [:] }
         readFrom = (gateway, Date())

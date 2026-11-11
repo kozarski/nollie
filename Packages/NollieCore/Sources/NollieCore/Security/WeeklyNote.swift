@@ -376,6 +376,9 @@ public struct WeeklyNote: Equatable, Sendable {
     public var filter: String?
     /// What the helpers' models cost this week, when Hermes priced any of it.
     public var spend: Double? = nil
+    /// The first day Papertrail kept for any helper here: how long this setup has been in use, as far as the
+    /// records go. Nil when nothing was kept.
+    public var recordingSince: Date? = nil
 
     /// "This week: about $4.20 on models". Nil when nothing was priced.
     public var spendLine: String? { spend.map(WeeklyWords.weekSpend) }
@@ -478,10 +481,12 @@ public struct WeeklyNote: Equatable, Sendable {
         var filter: String?
         var since: Double?
         var spend: Double?
+        var recording: Double?
         for input in inputs where !isPrivate(input.profile) && !PrivateBots.carriedOver.contains(PrivateBots.key(input.profile)) {
             if let dollars = input.spend?.dollars { spend = (spend ?? 0) + dollars }
             guard let record = input.record, record.bot == input.profile else { unread.append(input.name); continue }
             since = since.map { min($0, record.since) } ?? record.since
+            if let first = record.recordingSince { recording = recording.map { min($0, first) } ?? first }
             if filter == nil { filter = WeeklyWords.filter(record.filter) }
             let helper = part(for: input, record: record)
             news += helper.did.filter(\.isNew).map { WeeklyWords.news($0, helper: input.name) }
@@ -495,7 +500,7 @@ public struct WeeklyNote: Equatable, Sendable {
         helpers.sort { ($0.weight, $1.name) > ($1.weight, $0.name) }
         let start = since.map { Date(timeIntervalSince1970: $0) } ?? Calendar.current.date(byAdding: .day, value: -6, to: Calendar.current.startOfDay(for: now))!
         return WeeklyNote(since: start, until: now, news: news, helpers: helpers, quiet: quiet, unread: unread, filter: filter,
-                          spend: spend)
+                          spend: spend, recordingSince: recording.map { Date(timeIntervalSince1970: $0) })
     }
 
     private static func part(for input: WeeklyHelperInput, record: WeekRecord) -> Helper {
@@ -804,6 +809,18 @@ public struct WeeklyNoteTiming: Equatable, Sendable {
         let next = calendar.nextDate(after: now, matching: DateComponents(hour: hour, minute: 0, weekday: weekday),
                                      matchingPolicy: .nextTime, direction: .backward) ?? now
         return next
+    }
+
+    /// How old a setup is before its card shows: a weekly note has nothing true to say about a setup made minutes ago.
+    public static let settlingIn: TimeInterval = 3 * 86_400
+
+    /// Whether the note has earned its card: something is in it (a helper did something), and the setup is a few days
+    /// old. The age is the earliest of what Papertrail kept and when this device first read the week; with neither
+    /// known (an older setup that kept nothing) it doesn't hold the card back.
+    public static func worthACard(_ note: WeeklyNote, firstReadHere: Date?, now: Date) -> Bool {
+        guard !note.isQuiet else { return false }
+        guard let start = [note.recordingSince, firstReadHere].compactMap({ $0 }).min() else { return true }
+        return now.timeIntervalSince(start) >= settlingIn
     }
 
     /// The card shows from the note's time until the person puts it away.

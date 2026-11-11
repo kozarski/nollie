@@ -404,6 +404,31 @@ import Testing
         #expect(WeeklyNoteTiming(weekday: 9).weekday == 1)
     }
 
+    @Test func aBrandNewSetupHasNoWeekToTellOfYet() throws {
+        let busy = record(places: [WeekRecord.Place(kind: "model", count: 2, firstAt: Self.since, provider: "anthropic")],
+                          answers: .init(once: 1))
+        let built = note([WeeklyHelperInput(profile: "career", name: "Scout", record: busy)])
+        #expect(!built.isQuiet)
+        #expect(built.recordingSince == Date(timeIntervalSince1970: Self.since - 4 * 7 * Self.day), "The earliest Papertrail kept")
+        // Papertrail started this morning: minutes after setup, the card waits, whatever this device knows.
+        var fresh = built
+        fresh.recordingSince = Self.now.addingTimeInterval(-600)
+        #expect(!WeeklyNoteTiming.worthACard(fresh, firstReadHere: nil, now: Self.now))
+        #expect(!WeeklyNoteTiming.worthACard(fresh, firstReadHere: Self.now.addingTimeInterval(-60), now: Self.now))
+        #expect(!WeeklyNoteTiming.worthACard(fresh, firstReadHere: nil, now: Self.now.addingTimeInterval(2 * Self.day)))
+        #expect(WeeklyNoteTiming.worthACard(fresh, firstReadHere: nil, now: Self.now.addingTimeInterval(3 * Self.day)))
+        // A phone linked today to a Mac in use for weeks: the Mac's record speaks for the setup.
+        #expect(WeeklyNoteTiming.worthACard(built, firstReadHere: Self.now.addingTimeInterval(-60), now: Self.now))
+        // Nothing kept by Papertrail: this device's first read of the week counts.
+        fresh.recordingSince = nil
+        #expect(!WeeklyNoteTiming.worthACard(fresh, firstReadHere: Self.now.addingTimeInterval(-3600), now: Self.now))
+        #expect(WeeklyNoteTiming.worthACard(fresh, firstReadHere: Self.now.addingTimeInterval(-4 * Self.day), now: Self.now))
+        // Nothing in it: no card, however old the setup.
+        let quiet = note([WeeklyHelperInput(profile: "career", name: "Scout", record: record())])
+        #expect(quiet.isQuiet)
+        #expect(!WeeklyNoteTiming.worthACard(quiet, firstReadHere: nil, now: Self.now))
+    }
+
     @Test func daysAndRangesReadNaturally() {
         let from = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 28))!
         let to = Calendar.current.date(from: DateComponents(year: 2026, month: 11, day: 3))!
