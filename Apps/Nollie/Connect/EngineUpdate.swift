@@ -85,6 +85,7 @@ final class EngineUpdate {
               let installation = MacHermesSetup.selectedInstallation(),
               let id = UUID(uuidString: installation.lastPathComponent) else { return }
         let runtime = ManagedRuntimeClient()
+        await runtime.reviveIfSilent()
         await runtime.refresh(installationID: id)
         guard runtime.state == .stopped else { return }
         let installer = NativeDependencyInstaller(installation: installation)
