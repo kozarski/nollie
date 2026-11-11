@@ -421,7 +421,7 @@ struct GatewayFormView: View {
         Button(action: { Task { await signInWithBrowser() } }) {
             HStack {
                 Label(signedIn ? "Signed in" : "Sign in with browser",
-                      systemImage: signedIn ? "checkmark.circle.fill" : "safari")
+                      systemImage: signedIn ? "checkmark.circle.fill" : "globe")
                 Spacer()
                 if isSigningIn { ProgressView() }
             }

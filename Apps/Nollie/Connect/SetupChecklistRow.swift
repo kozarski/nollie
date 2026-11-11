@@ -495,7 +495,7 @@ struct NativeSetupChecklistView: View {
             .buttonStyle(OnboardingPrimaryButtonStyle())
             .accessibilityIdentifier("onboarding.install.connectExisting")
         }
-        Link(destination: URL(string: "https://nollie.app")!) { Label("Open nollie.app", systemImage: "safari") }
+        Link(destination: URL(string: "https://nollie.app")!) { Label("Open nollie.app", systemImage: "globe") }
             .buttonStyle(.nollieGlass)
             .accessibilityIdentifier("onboarding.install.getNollie")
     }
