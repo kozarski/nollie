@@ -40,7 +40,7 @@ struct LocalModelChoicesTests {
         #expect(!choices.canStart(best))
         #expect(LocalModelDisk.shortfall(best, free: choices.freeDisk)?.contains("104 GB") == true)
         #expect(LocalModelDisk.shortfall(best, free: choices.freeDisk)?.contains("88 GB") == true)
-        #expect(choices.chosen("qwen3.8-flash-next")?.id == "qwen3.8-27b", "A model that can't start is never the one picked")
+        #expect(choices.chosen("qwen3.8-flash-next")?.id == "qwen3.6-35b-a3b", "A model that can't start is never the one picked")
         #expect(choices.chosen("qwen3.8-27b")?.id == "qwen3.8-27b")
         #expect(choices.chosen("")?.id == "qwen3.6-35b-a3b")
     }
