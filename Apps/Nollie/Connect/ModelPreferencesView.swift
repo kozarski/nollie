@@ -116,7 +116,7 @@ struct ModelPreferencesView: View {
     let showsPreference: Bool
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(ModelPreferenceStore.key) private var savedMode = ModelMemoryGuidance.suggestedMode(ModelMemoryGuidance.thisMac).rawValue
+    @AppStorage(ModelPreferenceStore.key) private var savedMode = ModelSetupMode.local.rawValue
     @State private var check = ModelCheck()
     @State private var download = LocalModelDownload()
 
@@ -130,7 +130,7 @@ struct ModelPreferencesView: View {
     private var isSetupSheet: Bool { !showsPreference }
     private var localScope: LocalModelInstallScope? { LocalModelQuickstartSection.scope(for: runtime) }
     /// The memory of the computer the model would run on: Hermes's count when it has one, else this Mac's.
-    private var memory: UInt64? { check.local?.hardware?.ramTotalBytes ?? ModelMemoryGuidance.thisMac }
+    private var memory: UInt64? { ModelMemoryGuidance.memory(hermes: check.local?.hardware?.ramTotalBytes) }
     private var identity: String { "\(runtime?.connection.id.uuidString ?? "")/\(runtime?.selectedProfile ?? "default")/\(runtime?.socketState.isOpen == true)" }
     private var currentProvider: String? { check.options.flatMap(ModelPlace.provider) }
 
@@ -444,7 +444,7 @@ struct ModelsAdvancedView: View {
     var showsPreference = true
     var refresh: () -> Void
     @Environment(AppModel.self) private var model
-    @AppStorage(ModelPreferenceStore.key) private var savedMode = ModelMemoryGuidance.suggestedMode(ModelMemoryGuidance.thisMac).rawValue
+    @AppStorage(ModelPreferenceStore.key) private var savedMode = ModelSetupMode.local.rawValue
     @State private var keysInKeychain = false
 
     private var mode: ModelSetupMode { ModelSetupMode(rawValue: savedMode) ?? .local }

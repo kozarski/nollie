@@ -10,7 +10,7 @@ enum LocalModelStage: Equatable {
         case .idle: return nil
         case .starting, .installing: self = .getting(name)
         case .checkingSelection: self = .finishing
-        case .paused: self = .paused(LocalModelDownload.progressWords(setup.job) ?? name)
+        case .paused: self = .paused(name)
         case .failed: self = .didntFinish(setup.failure?.line ?? LocalModelFailure.other.line)
         case .interrupted: self = .didntFinish(LocalModelFailure.other.line)
         case .uncertain: self = .unsure
@@ -145,7 +145,7 @@ struct LocalModelQuickstartSection: View {
     let snapshot: LocalModelSetupSnapshot
     let download: LocalModelDownload
     var onModelChanged: () -> Void = {}
-    /// Shown as Done once the model has answered, when the section sits in setup's sheet.
+    /// Shown as Continue once the model has answered, when the section sits in setup's sheet.
     var onFinished: (() -> Void)? = nil
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
@@ -175,8 +175,9 @@ struct LocalModelQuickstartSection: View {
         #if DEBUG
         if LocalModelDemo.isOn {
             let profile = runtime.selectedProfile ?? "default"
+            // The demo makes its connection afresh at each launch; a fixed one lets a download outlive a relaunch.
             return profile == "default" ? LocalModelInstallScope(installationID: LocalModelDemo.installationID,
-                                                                  connectionID: runtime.connection.id, profile: profile) : nil
+                                                                  connectionID: LocalModelDemo.installationID, profile: profile) : nil
         }
         let demo = DemoMode.isOn
         #else
@@ -230,7 +231,7 @@ struct LocalModelQuickstartSection: View {
         let chosen = download.chosen(in: snapshot)
         let retrying = [.failed, .interrupted].contains(state) && chosen != nil && chosen?.id == setup?.receipt?.catalogID
         return VStack(spacing: 12) {
-            if let quick = choices.quickStart {
+            if let quick = choices.quickStart ?? choices.smallestShort {
                 choice(quick, kicker: String(localized: "Quick start"), symbol: "bolt.fill", choices: choices, chosen: chosen)
                     .testID("models.local.quickStart")
             }
@@ -244,22 +245,21 @@ struct LocalModelQuickstartSection: View {
                 }
             }
             if choices.quickStart == nil { PageNote(.verbatim(noneFits(choices)), id: "models.local.none") }
-            if [.failed, .interrupted].contains(state), let setup {
-                PageNote(.verbatim(setup.failure?.line ?? setup.message ?? LocalModelFailure.other.line),
-                         symbol: "exclamationmark.circle.fill", tint: .orange, id: "models.local.failure")
-            } else if let message = setup?.message {
+            // A download that stopped says why once, at the top; any other note goes here.
+            if ![.failed, .interrupted].contains(state), let message = setup?.message {
                 PageNote(.verbatim(message), id: "models.local.message")
             }
-            Button {
-                if let chosen { setup?.install(chosen) }
+            // With nothing that can start, the line above is the last word, not a dead button.
+            if let chosen { Button {
+                setup?.install(chosen)
             } label: {
                 PageActionLabel(retrying ? "Try again" : "Download and use",
                                 symbol: retrying ? "arrow.clockwise" : "arrow.down.circle.fill")
             }
             .buttonStyle(LocalModelActionStyle())
-            .disabled(setup?.canBegin != true || chosen == nil)
+            .disabled(setup?.canBegin != true)
             .padding(.top, 8)
-            .testID("models.local.install")
+            .testID("models.local.install") }
         }
     }
 
@@ -348,7 +348,7 @@ struct LocalModelQuickstartSection: View {
 
     // MARK: Ready
 
-    /// The model it chose, its first hello, and Done once it has answered.
+    /// The model it chose, its first hello, and Continue once it has answered.
     @ViewBuilder private func done(_ setup: LocalModelQuickstart) -> some View {
         let entry = LocalModelDownload.entry(for: setup.selectedModel, in: snapshot)
         let line: String = switch setup.state {
@@ -378,10 +378,10 @@ struct LocalModelQuickstartSection: View {
                 .disabled(setup.busy).opacity(setup.busy ? 0.5 : 1)
         }
         if setup.state == .ready, let onFinished {
-            Button(action: onFinished) { PageActionLabel("Done", symbol: "checkmark") }
+            Button(action: onFinished) { PageActionLabel("Continue", symbol: "arrow.right") }
                 .buttonStyle(LocalModelActionStyle())
                 .padding(.top, 8)
-                .testID("models.local.done")
+                .testID("models.local.continue")
         }
     }
 
@@ -420,7 +420,7 @@ struct LocalModelMoreModels: View {
             PageHero(symbol: "square.stack.3d.up", title: "More models", tint: .blue, id: "models.local.more.hero")
             VStack(spacing: 12) {
                 ForEach(choices.all) { entry in
-                    let kicker: String? = entry.id == choices.quickStart?.id ? String(localized: "Quick start")
+                    let kicker: String? = entry.id == (choices.quickStart ?? choices.smallestShort)?.id ? String(localized: "Quick start")
                         : entry.id == choices.best?.id ? String(localized: "Best for this Mac") : nil
                     VStack(spacing: 8) {
                         Button { download.selectedID = entry.id; dismiss() } label: {

@@ -73,6 +73,10 @@ struct LocalModelChoicesTests {
         #expect(choices.quickStart == nil)
         #expect(choices.chosen("qwen3.8-27b") == nil)
         #expect(!choices.all.isEmpty, "They stay visible with what they need")
+        #expect(choices.smallestShort?.id == "qwen3.8-27b", "The smallest shows what it needs, as Quick start would")
+        #expect(LocalModelDisk.shortfall(try #require(choices.smallestShort), free: choices.freeDisk)?.hasPrefix("Needs 24 GB.") == true)
+        #expect(!choices.more.contains { $0.id == "qwen3.8-27b" })
+        #expect(LocalModelChoices(Self.snapshot(try Self.entries(), free: 88_000_000_000)).smallestShort == nil)
         let unknown = LocalModelChoices(Self.snapshot(try Self.entries(), free: nil))
         #expect(unknown.quickStart?.id == "qwen3.8-27b", "Unknown free space is not a reason to refuse")
     }

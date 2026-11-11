@@ -269,6 +269,8 @@ struct LocalModelChoices: Equatable {
 
     var quickStart: LocalModelCatalogEntry?
     var best: LocalModelCatalogEntry?
+    /// When nothing fits the free space: the smallest model, shown with what it needs, never picked.
+    var smallestShort: LocalModelCatalogEntry?
     var more: [LocalModelCatalogEntry]
     var freeDisk: UInt64?
 
@@ -294,12 +296,14 @@ struct LocalModelChoices: Equatable {
         let better = recommended.flatMap { $0.isInstallableCandidate && $0.id != quick?.id ? $0 : nil }
         quickStart = quick
         best = better
-        let shown = Set([quick?.id, better?.id].compactMap { $0 })
+        let short = quick == nil ? installable.filter { $0.id != better?.id }.min(by: { size($0) < size($1) }) : nil
+        smallestShort = short
+        let shown = Set([quick?.id, better?.id, short?.id].compactMap { $0 })
         more = installable.filter { !shown.contains($0.id) }.sorted { size($0) < size($1) }
     }
 
     /// Every model on offer, in the order shown.
-    var all: [LocalModelCatalogEntry] { [quickStart, best].compactMap { $0 } + more }
+    var all: [LocalModelCatalogEntry] { [quickStart, smallestShort, best].compactMap { $0 } + more }
 
     func canStart(_ entry: LocalModelCatalogEntry) -> Bool {
         entry.isInstallableCandidate && LocalModelDisk.fits(entry, free: freeDisk)

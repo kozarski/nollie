@@ -76,7 +76,7 @@ def _progress(job: dict) -> float:
     """How far the job has come, 0 to 1, by the clock and the scenario."""
     scenario = job["scenario"]
     if scenario in ("downloading", "paused"):
-        return 0.42 + (0.0004 * (time.time() - job["started_at"]) if scenario == "downloading" else 0)
+        return 0.42 + (0.0005 * (time.time() - job["started_at"]) if scenario == "downloading" else 0)
     if scenario.startswith("failed-"):
         return 0.31
     elapsed = time.time() - job["started_at"] - job["paused_seconds"]
@@ -113,7 +113,7 @@ def _view(job: dict) -> dict:
             view.update(status="done", phase="done", done_bytes=total, detail=f"{entry['display_name']} is ready — new chats use it")
     running = view["status"] == "running"
     if running and view["phase"] == "downloading":
-        rate = 1_100_000.0 if scenario == "downloading" else total / FLOW_SECONDS
+        rate = total * 0.0005 if scenario == "downloading" else total / FLOW_SECONDS
         view.update(bytes_per_sec=rate, eta_seconds=round((view["total_bytes"] - view["done_bytes"]) / rate))
     view.update(can_pause=running and view["phase"] in ("downloading", "downloading-runtime"),
                 can_resume=view["status"] == "paused", pause_requested=False,

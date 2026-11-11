@@ -59,6 +59,15 @@ enum ModelMemoryGuidance {
             phone: String(localized: "Your Mac has \(memory). A plan will feel faster.", comment: "%@ is the Mac's memory, such as 8 GB"))
     }
 
+    /// The memory of the computer a local model would run on: Hermes's own count when it has one,
+    /// else this Mac's.
+    static func memory(hermes: UInt64?) -> UInt64? {
+        #if DEBUG
+        if let demo = LocalModelDemo.memoryBytes { return demo }
+        #endif
+        return hermes.flatMap { $0 > 0 ? $0 : nil } ?? thisMac
+    }
+
     /// This Mac's memory, when Nollie runs on a Mac.
     static var thisMac: UInt64? {
         #if DEBUG
