@@ -15,6 +15,10 @@ final class WhatsNewUITests: DemoCase {
         XCTAssertTrue(find("whatsNew.more.who-is-working").waitForExistence(timeout: 5), "More did not open the detail")
         shot("whats-new-more")
 
+        // The last change the iPhone has a part in, at the end of the note.
+        _ = scrollTo("whatsNew.item.listen")
+        shot("whats-new-end")
+
         tap("whatsNew.done")
         XCTAssertFalse(find("whatsNew.title").waitForExistence(timeout: 2), "Got it did not close the note")
 

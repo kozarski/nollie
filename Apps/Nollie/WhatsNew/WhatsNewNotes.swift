@@ -59,7 +59,7 @@ extension WhatsNew {
                           more: String(localized: "Nollie checks the free space first, so a model that won't fit is never started. A download shows the time left, and you can pause and resume it. With less than 16 GB of memory, a plan is suggested instead, as it will feel faster.",
                                        comment: "What's new, 1.4: the detail"),
                           macOnly: true),
-                    .init(id: "steady", symbol: "heart.text.square",
+                    .init(id: "steady", symbol: "arrow.clockwise.heart",
                           title: String(localized: "Your assistant looks after itself", comment: "What's new, 1.4"),
                           line: String(localized: "It comes back by itself after Nollie updates, and a busy moment no longer restarts it.", comment: "What's new, 1.4"),
                           more: String(localized: "Stopping it now stops everything it started. While it starts, Nollie says Starting your assistant… and offers Try again only if it doesn't come back.",
