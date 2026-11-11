@@ -314,4 +314,10 @@ struct OnboardingProgressTests {
         #expect(OnboardingProgress.parse(raw).step == .connection)
         #expect(OnboardingProgress.shouldPresent(hasConnections: true, raw: raw))
     }
+
+    @Test func aSetupNoLongerOnThisMacHasItsOwnLine() {
+        #expect(AssistantWait.line(.missing) != nil)
+        #expect(AssistantWait.line(.missing) != AssistantWait.line(.unreachable))
+        #expect(AssistantWait.line(.none) == nil)
+    }
 }

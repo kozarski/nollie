@@ -34,8 +34,12 @@ extension ChatListView {
 
     /// When this device is signed out, the banner above already says so and offers the button.
     /// The gateway's red "session expired" message under it would only say the same thing again.
+    /// The assistant on this Mac, while it isn't connected, says where it stands instead.
     @ViewBuilder var failureLine: some View {
-        if let errorText, model.needsSignIn == nil {
+        let wait = AssistantWait.state(runtime)
+        if wait != .none {
+            AssistantWaitNotice(wait: wait)
+        } else if let errorText, model.needsSignIn == nil {
             Text(errorText).quiet(.footnote, .red)
         }
     }

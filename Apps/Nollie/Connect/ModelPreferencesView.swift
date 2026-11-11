@@ -144,7 +144,7 @@ struct ModelPreferencesView: View {
             switch AssistantWait.state(runtime) {
             case .starting: return .starting
             case .unreachable: return .unreachable
-            case .none: return .notConnected
+            case .none, .missing: return .notConnected
             }
         }
         // A download on this Mac says where it stands while the page shows it.

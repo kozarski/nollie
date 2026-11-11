@@ -30,6 +30,13 @@ struct GatewaysView: View {
             }
         }
         guard let runtime else { return .unreachable(away: false) }
+        // The assistant on this Mac: starting, can't be reached, or no longer here. Never an endless "Connecting".
+        switch AssistantWait.state(runtime) {
+        case .missing: return .missing
+        case .starting: return .starting
+        case .unreachable: return .assistantUnreachable
+        case .none: break
+        }
         switch runtime.socketState {
         case .open: return .connected(name: runtime.connection.name)
         case .connecting, .reconnecting: return .connecting
@@ -57,11 +64,15 @@ struct GatewaysView: View {
                     GlassLink("Models", symbol: "cpu", value: place, id: "settings.connection.models") {
                         ModelPreferencesView().untitledPage()
                     }
-                    if model.hasConnections { setupButton }
-                    phoneRow
-                    if let runtime, !runtime.socketState.isOpen, rejected == nil {
+                    if model.hasConnections, hero != .missing { setupButton }
+                    if hero != .missing { phoneRow }
+                    if let runtime, !runtime.socketState.isOpen, rejected == nil, hero != .missing {
                         GlassButton("Reconnect", symbol: "arrow.clockwise", id: "settings.reconnect") {
-                            Task { await runtime.reconnectNow() }
+                            // The assistant on this Mac is also asked to start, as Try again does.
+                            Task {
+                                if runtime.connection.managedInstallationID != nil { await model.retryAssistant() }
+                                else { await runtime.reconnectNow() }
+                            }
                         }
                     }
                 }
@@ -103,6 +114,8 @@ struct GatewaysView: View {
             .buttonBorderShape(.capsule)
             .controlSize(.large)
             .testID("settings.setup")
+        } else if hero == .missing {
+            AssistantSetUpAgainButton(prominent: true)
         } else if rejected != nil {
             Button { signInAgain = rejected } label: {
                 Text("Sign in again").fullWidthLabel()
@@ -149,13 +162,17 @@ struct ConnectionHero: View {
     enum State: Equatable {
         case setUp, connected(name: String), linked(macName: String?, tailnet: Bool), connecting, signIn
         case unreachable(away: Bool)
+        /// The assistant on this Mac: on its way, can't be reached after the whole wait, or its setup is gone.
+        case starting, assistantUnreachable, missing
 
         var symbol: String {
             switch self {
             case .setUp: "sparkles"
             case .connected: "checkmark.circle.fill"
             case .linked: "laptopcomputer.and.iphone"
-            case .connecting: "arrow.triangle.2.circlepath"
+            case .connecting, .starting: "arrow.triangle.2.circlepath"
+            case .assistantUnreachable: "wifi.exclamationmark"
+            case .missing: "questionmark.folder"
             case .signIn: "person.badge.key.fill"
             case .unreachable(let away): away ? "airplane" : "wifi.exclamationmark"
             }
@@ -165,7 +182,9 @@ struct ConnectionHero: View {
             case .setUp: String(localized: "Let's set up Nollie")
             case .connected: String(localized: "Connected")
             case .linked: String(localized: "Linked to your Mac")
-            case .connecting: String(localized: "Connecting")
+            case .connecting, .starting: String(localized: "Connecting")
+            case .assistantUnreachable: String(localized: "Can't connect")
+            case .missing: String(localized: "Not on this Mac any more")
             case .signIn: String(localized: "Sign in again")
             case .unreachable:
                 #if os(macOS)
@@ -183,6 +202,9 @@ struct ConnectionHero: View {
                 tailnet ? String(localized: "Connected through Tailscale.")
                     : name.map { String(localized: "\($0) is ready.") } ?? String(localized: "Everything works.")
             case .connecting: String(localized: "Nollie keeps trying by itself.")
+            case .starting: AssistantWait.line(.starting) ?? ""
+            case .assistantUnreachable: AssistantWait.line(.unreachable) ?? ""
+            case .missing: String(localized: "Set it up again to carry on.")
             case .signIn: String(localized: "Your sign-in ended.")
             case .unreachable(let away):
                 #if os(macOS)
@@ -196,8 +218,9 @@ struct ConnectionHero: View {
             switch self {
             case .setUp: .blue
             case .connected, .linked: .green
-            case .connecting, .signIn: .orange
+            case .connecting, .signIn, .starting, .missing: .orange
             case .unreachable(let away): away ? .orange : .red
+            case .assistantUnreachable: .red
             }
         }
     }

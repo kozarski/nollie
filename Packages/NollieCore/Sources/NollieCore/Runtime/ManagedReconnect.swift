@@ -8,6 +8,9 @@ public enum ManagedWait: Equatable, Sendable {
     case starting
     /// Still nothing after the whole wait. Nollie keeps asking, more slowly, and offers Try again.
     case unreachable
+    /// The setup this connection belongs to is no longer on this Mac, so waiting can't help. Only the
+    /// app can tell this; the runtime never reports it.
+    case missing
 }
 
 /// How a connection to the assistant Nollie runs on this Mac comes back by itself.
