@@ -318,11 +318,12 @@ struct PhoneDevicePairingView: View {
     @State private var localNetworkOff = false
 
     init(initialInvitation: DevicePairingInvitation? = nil, initialLinkOffer: NollieLinkOffer? = nil,
-         replacing: GatewayConnection? = nil, onConnected: ((GatewayConnection) -> Void)? = nil) {
+         initialIssue: String? = nil, replacing: GatewayConnection? = nil, onConnected: ((GatewayConnection) -> Void)? = nil) {
         self.onConnected = onConnected
         self.replacing = replacing
         _invitation = State(initialValue: initialInvitation)
         _linkOffer = State(initialValue: initialLinkOffer)
+        _issue = State(initialValue: initialIssue)
     }
 
     var body: some View {
@@ -337,9 +338,9 @@ struct PhoneDevicePairingView: View {
                              : savedConnection.linkedMac != nil ? "Linked to \(savedConnection.name)" : "You're connected")
                             .font(.title2.bold()).multilineTextAlignment(.center)
                             .accessibilityIdentifier("pairing.connected")
-                        Text(savedConnection.linkedMac?.sharedBy != nil ? "Your helpers are ready on this iPhone."
-                             : savedConnection.linkedMac != nil ? "Nollie on this iPhone now uses your Mac's assistant."
-                             : "\(savedConnection.name) is ready on this iPhone.")
+                        Text(savedConnection.linkedMac?.sharedBy != nil ? "Your helpers are ready on \(DeviceWords.this)."
+                             : savedConnection.linkedMac != nil ? "Nollie on \(DeviceWords.this) now uses your Mac's assistant."
+                             : "\(savedConnection.name) is ready on \(DeviceWords.this).")
                             .foregroundStyle(.secondary).multilineTextAlignment(.center)
                         Button("Continue") { dismiss() }
                             .buttonStyle(.nollieGlassProminent).controlSize(.large)
@@ -355,21 +356,23 @@ struct PhoneDevicePairingView: View {
                             linkConfirmation(name: linkOffer.macName)
                         }
                         localNetworkNote
+                        issueLine
                         if busy {
                             ProgressView(phase).accessibilityIdentifier("pairing.progress")
                         } else {
                             Button { link() } label: {
-                                Text(pendingConnection != nil ? "Try again" : linkOffer.invite == nil ? "Link" : "Join")
+                                Text(pendingConnection != nil || issue != nil ? "Try again" : linkOffer.invite == nil ? "Link" : "Join")
                                     .frame(maxWidth: .infinity).padding(.vertical, 5)
                             }
                             .buttonStyle(.nollieGlassProminent).controlSize(.large)
                             .accessibilityIdentifier("link.confirm")
-                            Button("Scan a different code") { reset() }
+                            Button { reset() } label: { Text("Scan a different code").frame(minHeight: 44) }
                                 .accessibilityIdentifier("pairing.rescan")
                         }
                     } else if let invitation {
                         confirmation(name: invitation.displayName, address: invitation.gateway.description)
                         if Self.reachesLocalNetwork(invitation.gateway) { localNetworkNote }
+                        issueLine
                         if busy {
                             ProgressView(phase).accessibilityIdentifier("pairing.progress")
                         } else {
@@ -379,7 +382,7 @@ struct PhoneDevicePairingView: View {
                             }
                             .buttonStyle(.nollieGlassProminent).controlSize(.large)
                             .accessibilityIdentifier("pairing.confirm")
-                            Button("Scan a different code") { reset() }
+                            Button { reset() } label: { Text("Scan a different code").frame(minHeight: 44) }
                                 .accessibilityIdentifier("pairing.rescan")
                         }
                     } else if DevicePairingPreview.isEnabled {
@@ -392,21 +395,24 @@ struct PhoneDevicePairingView: View {
                             Text("Scanner preview. The camera is off.").foregroundStyle(.secondary)
                                 .accessibilityIdentifier("pairing.preview")
                         }
-                    } else if issue == nil {
-                        Text(replacing.map { String(localized: "Reconnect to \($0.name)") } ?? String(localized: "Scan the code on your Mac")).font(.title2.bold())
-                        Text("On your Mac, open Nollie's Settings and show the code for your iPhone.")
+                    } else {
+                        // The heading stays when a code couldn't be used, so the reason below reads as part of a page.
+                        Text(replacing.map { String(localized: "Reconnect to \($0.name)") } ?? String(localized: "Scan the code on your Mac"))
+                            .font(.title2.bold()).multilineTextAlignment(.center)
+                            .accessibilityAddTraits(.isHeader)
+                        Text("On your Mac, open Nollie's Settings and show the code for \(DeviceWords.your).",
+                             comment: "%@ is your iPhone or your iPad")
                             .foregroundStyle(.secondary).multilineTextAlignment(.center)
-                        PairingScanner(onCode: receive).id(scannerID)
-                        Text("Camera images stay on this iPhone.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                    }
-                    if let issue {
-                        Label(issue, systemImage: "exclamationmark.circle")
-                            .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("pairing.issue")
-                        if invitation == nil && linkOffer == nil {
-                            Button("Scan again") { reset() }.buttonStyle(.nollieGlassProminent)
+                        if issue == nil {
+                            PairingScanner(onCode: receive).id(scannerID)
+                            Text("Camera images stay on \(DeviceWords.this).", comment: "%@ is this iPhone or this iPad")
+                                .font(.footnote).foregroundStyle(.secondary)
                         }
+                    }
+                    if issue != nil && invitation == nil && linkOffer == nil {
+                        issueLine
+                        Button("Scan again") { reset() }.buttonStyle(.nollieGlassProminent)
+                            .accessibilityIdentifier("pairing.scanAgain")
                     }
                     if savedConnection == nil && !busy && replacing == nil && !model.lock.isLocked {
                         Button("Connect manually") { showManual = true }
@@ -414,6 +420,8 @@ struct PhoneDevicePairingView: View {
                     }
                 }
                 .frame(maxWidth: 440).padding(24).frame(maxWidth: .infinity)
+                // Pills a finger can hit: 44 points or more.
+                .controlSize(.large)
             }
             .navigationTitle("Connect to your Mac")
             .navigationBarTitleDisplayMode(.inline)
@@ -448,12 +456,21 @@ struct PhoneDevicePairingView: View {
         }
     }
 
+    /// What went wrong, above the button that tries again, so the reason is read before the way on.
+    @ViewBuilder private var issueLine: some View {
+        if let issue {
+            Label(issue, systemImage: "exclamationmark.circle")
+                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("pairing.issue")
+        }
+    }
+
     /// Why the phone is about to ask about the local network, before it does. If it was refused,
     /// the way to turn it on.
     @ViewBuilder private var localNetworkNote: some View {
         let state = model.permissions.state(.localNetwork)
         if state == .notAsked {
-            Label("Your iPhone will ask about the local network. Say Allow, so Nollie can reach your Mac.",
+            Label("\(DeviceWords.This) will ask about the local network. Say Allow, so Nollie can reach your Mac.",
                   systemImage: "wifi")
                 .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -584,9 +601,10 @@ struct PhoneDevicePairingView: View {
             defer { if operationID == operation { busy = false } }
             do {
                 if pendingConnection == nil {
+                    // Said before the system's local network question, so the spinner is never wordless.
+                    phase = String(localized: "Finding your Mac…")
                     guard await localNetworkAllowed() else { return }
                     try Task.checkCancellation()
-                    phase = String(localized: "Finding your Mac…")
                     let candidate = LinkedMac(macName: offer.macName, pin: offer.pin, port: offer.port, hosts: offer.hosts,
                                               installTag: offer.installTag, deviceID: UUID())
                     guard let host = await NollieLinkResolver().resolve(candidate, lastGood: nil) else { throw NollieLinkError.unreachable }
@@ -646,6 +664,7 @@ struct PhoneDevicePairingView: View {
                 if pendingConnection == nil {
                     let connection = try DevicePairingRecovery.connection(for: invitation, replacing: replacing)
                     if Self.reachesLocalNetwork(invitation.gateway) {
+                        phase = String(localized: "Pairing with your Mac…")
                         guard await localNetworkAllowed() else { return }
                         try Task.checkCancellation()
                     }

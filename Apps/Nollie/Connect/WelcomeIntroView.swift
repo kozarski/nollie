@@ -26,12 +26,13 @@ struct WelcomeIntroView: View {
                 .allowsHitTesting(false)
         }
         .frame(width: size.width, height: size.height)
-        .background {
-            #if os(iOS)
-            Color(.systemGroupedBackground)
-            #endif
-        }
+        #if os(iOS)
+        // Edge to edge on the welcome page's own backdrop, so launch, intro and welcome read as one
+        // picture: no card inside the safe area, and only the character changes as the intro fades.
+        .background { OnboardingBackdrop() }
+        #else
         .clipped()
+        #endif
         #if os(macOS)
         .contentShape(.rect)
         .gesture(WindowDragGesture())

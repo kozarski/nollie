@@ -308,7 +308,8 @@ struct GatewayFormView: View {
 
     private var addressNotes: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(Self.addressIntro)
+            // Read as Markdown, so `hermes serve` shows as code rather than with its backticks.
+            Text((try? AttributedString(markdown: Self.addressIntro)) ?? AttributedString(Self.addressIntro))
             addressVerdict
         }
     }

@@ -126,6 +126,9 @@ final class AppModel {
     var pendingDevicePairing: DevicePairingInvitation?
     /// A Nollie Link code opened as a link (https://nollie.app/pair#...) waiting to be confirmed.
     var pendingLinkOffer: NollieLinkOffer?
+    /// Why a pairing code opened as a link can't be used (run out, already spent), shown in the
+    /// pairing sheet with a way to scan again.
+    var pendingPairingIssue: String?
     var devicePairingFlowActive = false
 
     var boardChatContext: BoardChatContext?

@@ -116,13 +116,18 @@ private struct ColumnRule: View {
 
 /// What the chat side shows before a bot is picked.
 private struct ChatsEmptyState: View {
+    @Environment(AppModel.self) private var model
+
     var body: some View {
         VStack(spacing: 14) {
             // Idle, the guide holds still; it only plays while something is working.
             CharacterView(look: .main, state: BotAmbient.shared.decorativeActive ? .listening : .idle,
                           size: 96, seed: CharacterLookID.seed("nollie-wide-empty"))
                 .accessibilityHidden(true)
-            Text("Pick a bot").font(Ink.headerName).foregroundStyle(Ink.text2)
+            // With nothing connected there are no bots to pick; the list beside says what to do.
+            if model.runtime != nil {
+                Text("Pick a bot").font(Ink.headerName).foregroundStyle(Ink.text2)
+            }
         }
         // On the stack's own background, the same as behind a chat.
         .frame(maxWidth: .infinity, maxHeight: .infinity)

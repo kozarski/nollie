@@ -21,3 +21,17 @@ extension View {
             .nollieGlass(.regular, in: .rect(cornerRadius: corner, style: continuous ? .continuous : .circular))
     }
 }
+
+#if os(iOS)
+/// The setup pages' backdrop, edge to edge: grouped grey with a breath of blue from the top corner.
+/// The launch screen's colour (LaunchBackground) is the same grey, so opening the app shows no flash.
+struct OnboardingBackdrop: View {
+    var body: some View {
+        ZStack {
+            Color(.systemGroupedBackground)
+            LinearGradient(colors: [Color.blue.opacity(0.08), .clear], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+        .ignoresSafeArea()
+    }
+}
+#endif

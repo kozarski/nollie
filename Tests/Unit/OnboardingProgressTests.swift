@@ -233,4 +233,37 @@ struct OnboardingProgressTests {
         #expect(!SetupTrailProgress.shouldCelebrate(wasReady: true, isReady: true, observedWork: true))
     }
 
+
+    @Test func aMacUnder16GBStartsOnAPlanUntilThePersonChooses() throws {
+        let gib: UInt64 = 1 << 30
+        var small = OnboardingPreferences()
+        let changed = small.suggestModelMode(memoryBytes: 8 * gib)
+        #expect(changed)
+        #expect(small.modelMode == .cloud)
+        let again = small.suggestModelMode(memoryBytes: 8 * gib)
+        #expect(!again, "suggesting twice changes nothing")
+
+        var roomy = OnboardingPreferences()
+        let roomyChanged = roomy.suggestModelMode(memoryBytes: 16 * gib)
+        #expect(!roomyChanged)
+        #expect(roomy.modelMode == .local)
+
+        // Memory unknown: nothing is assumed.
+        var unknown = OnboardingPreferences()
+        let unknownChanged = unknown.suggestModelMode(memoryBytes: nil)
+        #expect(!unknownChanged)
+        #expect(unknown.modelMode == .local)
+
+        // Chosen on the model step or in Settings: setup leaves it, on any Mac.
+        var chosen = OnboardingPreferences(modelMode: .local, modelModeChosen: true)
+        let chosenChanged = chosen.suggestModelMode(memoryBytes: 8 * gib)
+        #expect(!chosenChanged)
+        #expect(chosen.modelMode == .local)
+
+        // The choice survives a relaunch; setup progress saved before this reads as not chosen.
+        let restored = try JSONDecoder().decode(OnboardingPreferences.self, from: JSONEncoder().encode(chosen))
+        #expect(restored.modelModeChosen)
+        let older = Data(#"{"assistantName":"Juniper","modelMode":"local"}"#.utf8)
+        #expect(try JSONDecoder().decode(OnboardingPreferences.self, from: older).modelModeChosen == false)
+    }
 }

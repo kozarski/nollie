@@ -127,12 +127,30 @@ struct ChatListView: View {
             ContentUnavailableView {
                 Label("Make yourself at home", systemImage: "bubble.left.and.bubble.right")
             } description: {
-                Text(model.activationError ?? String(localized: "Connect Hermes when you're ready to start chatting."))
+                Text(model.activationError ?? Self.notConnectedLine)
             } actions: {
+                #if os(iOS)
+                // Pills a finger can hit, the way on first.
+                Button("Set up Nollie", action: restartSetup)
+                    .buttonStyle(.nollieGlassProminent).controlSize(.large)
+                    .accessibilityIdentifier("chats.setUp")
+                Button("Open Settings") { model.selectedTab = .settings }
+                    .buttonStyle(.nollieGlass).controlSize(.large)
+                #else
                 Button("Set up Nollie", action: restartSetup)
                 Button("Open Settings") { model.selectedTab = .settings }
+                #endif
             }
         }
+    }
+
+    /// Under "Make yourself at home". The phone reaches the Mac, so it names the Mac, not the engine.
+    private static var notConnectedLine: String {
+        #if os(iOS)
+        String(localized: "Connect to your Mac when you're ready to start chatting.")
+        #else
+        String(localized: "Connect Hermes when you're ready to start chatting.")
+        #endif
     }
 
     private func restartSetup() {

@@ -7,19 +7,37 @@ struct OnboardingPreferences: Codable, Equatable, Sendable {
     var assistantName = "Nollie"
     var includeHelpers = false
     var modelMode: ModelSetupMode = .local
+    /// The person picked where Nollie thinks (on the model step or in Settings), so setup never
+    /// changes it for them.
+    var modelModeChosen = false
 
-    init(assistantName: String = "Nollie", includeHelpers: Bool = false, modelMode: ModelSetupMode = .local) {
+    init(assistantName: String = "Nollie", includeHelpers: Bool = false, modelMode: ModelSetupMode = .local,
+         modelModeChosen: Bool = false) {
         self.assistantName = assistantName
         self.includeHelpers = includeHelpers
         self.modelMode = modelMode
+        self.modelModeChosen = modelModeChosen
     }
 
-    private enum CodingKeys: String, CodingKey { case assistantName, includeHelpers, modelMode }
+    private enum CodingKeys: String, CodingKey { case assistantName, includeHelpers, modelMode, modelModeChosen }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         assistantName = try values.decodeIfPresent(String.self, forKey: .assistantName) ?? "Nollie"
         includeHelpers = try values.decodeIfPresent(Bool.self, forKey: .includeHelpers) ?? false
         modelMode = try values.decodeIfPresent(ModelSetupMode.self, forKey: .modelMode) ?? .local
+        modelModeChosen = try values.decodeIfPresent(Bool.self, forKey: .modelModeChosen) ?? false
+    }
+
+    /// Starts the model step on what suits the Mac: a plan on one with less memory than a model on
+    /// the Mac wants (ModelMemoryGuidance), on this Mac otherwise. Once the person has chosen, their
+    /// choice stays. True when the choice changed.
+    @discardableResult
+    mutating func suggestModelMode(memoryBytes: UInt64?) -> Bool {
+        guard !modelModeChosen, memoryBytes != nil else { return false }
+        let suggested = ModelMemoryGuidance.suggestedMode(memoryBytes)
+        guard suggested != modelMode else { return false }
+        modelMode = suggested
+        return true
     }
 
     var resolvedAssistantName: String {
