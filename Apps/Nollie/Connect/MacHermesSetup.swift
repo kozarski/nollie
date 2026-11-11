@@ -25,6 +25,8 @@ final class MacHermesSetup {
     private(set) var error: String?
     /// The exact reason the last step stopped, for "What's installed". `error` says it in plain words.
     private(set) var errorDetail: String?
+    /// The preparation step being looked at before any work, if it may already be in place.
+    private(set) var checkingStep: String?
     private(set) var isBusy = false
     private(set) var canConnect = false
     private(set) var gatewayURL: String?
@@ -143,9 +145,13 @@ final class MacHermesSetup {
         error = nil
         errorDetail = nil
         dependencies[index].state = .installing
+        // "Checking" until the step is known to need work, so a part already there isn't shown downloading.
+        checkingStep = id
+        defer { checkingStep = nil }
         do {
             let directory = try prepareOwnedHome(preferences: preferences)
             let installer = NativeDependencyInstaller(installation: directory)
+            if (try? await installer.verified(id)) != true { checkingStep = nil }
             try await installer.install(id)
             dependencies = await installer.inspect()
             applyRuntimeState()

@@ -101,6 +101,45 @@ enum NativeSetupPlan {
     }
 }
 
+/// Lets one preparation step run at a time for each setup folder, across every installer in this app.
+/// Callers wait their turn in order.
+actor NativeInstallGate {
+    static let shared = NativeInstallGate()
+    private var busy: Set<String> = []
+    private var waiting: [String: [CheckedContinuation<Void, Never>]] = [:]
+
+    func serialized<Value: Sendable>(_ key: String, _ work: @Sendable () async throws -> Value) async throws -> Value {
+        await acquire(key)
+        do {
+            let value = try await work()
+            release(key)
+            return value
+        } catch {
+            release(key)
+            throw error
+        }
+    }
+
+    /// True while a step for this folder runs or waits.
+    func isBusy(_ key: String) -> Bool { busy.contains(key) }
+
+    private func acquire(_ key: String) async {
+        guard busy.contains(key) else { busy.insert(key); return }
+        await withCheckedContinuation { waiting[key, default: []].append($0) }
+    }
+
+    private func release(_ key: String) {
+        if var queue = waiting[key], !queue.isEmpty {
+            // Handed straight to the next caller; the folder stays busy.
+            let next = queue.removeFirst()
+            waiting[key] = queue.isEmpty ? nil : queue
+            next.resume()
+        } else {
+            busy.remove(key)
+        }
+    }
+}
+
 /// Stores preparation receipts separately from runtime readiness. A downloaded dependency
 /// never implies an installed background service or a working gateway connection.
 actor NativeDependencyInstaller {
@@ -135,7 +174,16 @@ actor NativeDependencyInstaller {
         return steps
     }
 
+    /// One step at a time per setup folder, whichever installer asks: the launch-time add-on update,
+    /// an engine update and the setup screen each make their own installer. The step is checked again
+    /// once it is this caller's turn, so work another caller just finished is kept, never redone.
     func install(_ id: String) async throws {
+        try await NativeInstallGate.shared.serialized(installation.standardizedFileURL.path) {
+            try await self.installNow(id)
+        }
+    }
+
+    private func installNow(_ id: String) async throws {
         #if NOLLIE_DIRECT
         guard NativeSetupPlan.preparationSteps.contains(id) else {
             throw NativeSetupPlan.failure(String(localized: "This step needs a packaged, signed native service before it can run."))
@@ -176,15 +224,36 @@ actor NativeDependencyInstaller {
             let envPython = installation.appendingPathComponent("environment/bin/python")
             // The bundled installer copies the checked add-ons, keeps dated copies of older ones, builds the
             // reader's hash-locked environment and lists the add-ons in Hermes's config, with a dated backup.
-            _ = try await run(envPython, ["-I", "-B", kit.installer.path, "--kit", kit.root.path,
-                                          "--installation", installation.path, "--uv", uvPath.path,
-                                          "--python", pythonPath.path], timeout: 900)
+            // Exit 3 means another add-on update holds the installer's own lock (another copy of Nollie,
+            // say). That is a wait, not a failure: look again until it finishes, then trust what it did.
+            var attempts = 0
+            while true {
+                do {
+                    _ = try await run(envPython, ["-I", "-B", kit.installer.path, "--kit", kit.root.path,
+                                                  "--installation", installation.path, "--uv", uvPath.path,
+                                                  "--python", pythonPath.path], timeout: 900)
+                    break
+                } catch where NativeDependencyInstaller.isBusy(error) && attempts < 150 {
+                    attempts += 1
+                    try await Task.sleep(for: .seconds(2))
+                    if (try? verified("addons")) == true { return }
+                }
+            }
             try saveAddOnsReceipt(kit)
         default: break
         }
         #endif
         #else
         throw NativeSetupPlan.failure(String(localized: "Local installation is available in the direct Mac edition."))
+        #endif
+    }
+
+    /// The add-on installer's "another update is running" (its exit status 3).
+    nonisolated static func isBusy(_ error: Error) -> Bool {
+        #if NOLLIE_DIRECT
+        (error as? NativeSetupProcess.Failure)?.status == 3
+        #else
+        false
         #endif
     }
 

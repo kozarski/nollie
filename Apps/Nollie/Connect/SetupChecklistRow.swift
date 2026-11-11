@@ -632,6 +632,9 @@ struct NativeSetupChecklistView: View {
         switch dependency.state {
         case .ready: return String(localized: "Everything your assistant needs is in place.")
         case .installing:
+            if let current = preparation.first(where: { $0.state == .installing }), setup.checkingStep == current.id, !isPreview {
+                return String(localized: "Checking what's already here. \(preparedCount) of \(total) parts ready.")
+            }
             if let current = preparation.first(where: { $0.state == .installing }), let words = SetupTrail.partWords(current.id) {
                 return String(localized: "\(words). \(preparedCount) of \(total) parts ready.", comment: "First what is happening, such as Downloading Hermes, 91 MB")
             }
