@@ -9,12 +9,31 @@ enum AssistantWait {
     /// A setup that is no longer on this Mac is said as it is: no wait brings it back.
     @MainActor static func state(_ runtime: GatewayRuntime?) -> ManagedWait {
         guard let runtime else { return .none }
+        #if DEBUG
+        if let demo = demoWait, !runtime.socketState.isOpen { return demo }
+        #endif
         #if os(macOS)
         if !runtime.socketState.isOpen, ManagedSetupPresence.isMissing(runtime.connection.managedInstallationID) { return .missing }
         if runtime.managedWait == .unreachable, EngineUpdate.shared.phase == .updating { return .starting }
         #endif
         return runtime.managedWait
     }
+
+    #if DEBUG
+    /// Pictures: `-nollie-demo-assistant-wait starting|unreachable|missing` has the demo copy, pointed at a
+    /// gateway that doesn't answer, wait as the assistant on this Mac would.
+    private static let demoWait: ManagedWait? = {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard DemoMode.isOn, let at = arguments.firstIndex(of: "-nollie-demo-assistant-wait"),
+              arguments.indices.contains(at + 1) else { return nil }
+        switch arguments[at + 1] {
+        case "starting": return .starting
+        case "unreachable": return .unreachable
+        case "missing": return .missing
+        default: return nil
+        }
+    }()
+    #endif
 
     static func line(_ wait: ManagedWait) -> String? {
         switch wait {
@@ -62,9 +81,9 @@ struct AssistantSetUpAgainButton: View {
                 .accessibilityIdentifier("assistant.setUpAgain")
         } else {
             Button(action: setUpAgain) {
-                Text("Set up again").font(.body.weight(.semibold)).padding(.horizontal, 8)
+                Text("Set up again").font(.body.weight(.semibold)).foregroundStyle(.primary).padding(.horizontal, 8)
             }
-            .buttonStyle(.nollieGlass)
+            .buttonStyle(.nollieGlass).tint(.primary)
             .accessibilityIdentifier("assistant.setUpAgain")
         }
     }

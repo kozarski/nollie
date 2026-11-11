@@ -110,6 +110,9 @@ struct SettingsView: View {
     /// A word on the right of a row, when it says something worth knowing at a glance.
     private func word(for category: SettingsCategory) -> String? {
         guard category == .connection, let socket = model.runtime?.socketState else { return nil }
+        if AssistantWait.state(model.runtime) == .missing {
+            return String(localized: "Set up again", comment: "The connection's state beside its Settings row: Nollie's own assistant isn't on this Mac any more")
+        }
         switch socket {
         case .open: return String(localized: "Connected", comment: "The connection's state beside its Settings row")
         case .connecting, .reconnecting: return String(localized: "Connecting", comment: "The connection's state beside its Settings row")
