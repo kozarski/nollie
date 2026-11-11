@@ -573,6 +573,9 @@ class Ship:
 
         last = self.last_tag()
         revisions = [f"{last}..HEAD"] if last else ["HEAD"]
+        # What main on GitHub already holds was checked when it went out, and can't be changed now.
+        if self.git("rev-parse", "--verify", "--quiet", "origin/main", check=False):
+            revisions.append("^origin/main")
         commits = self.commits(revisions)
         name, email = self.git("config", "user.name", check=False), self.git("config", "user.email", check=False)
         problems = commit_problems(commits)
