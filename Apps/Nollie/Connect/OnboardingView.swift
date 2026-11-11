@@ -422,17 +422,19 @@ struct OnboardingView: View {
                 QuickAnswerButton(place: .macSetup)
             }
             Spacer()
-            if progress.step != .welcome {
+            if let count = progress.stepCount {
                 VStack(alignment: .trailing, spacing: 7) {
-                    Text(stepLabel).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                    Text("Step \(count.index) of \(count.total)").font(.caption.weight(.medium)).foregroundStyle(.secondary)
                     HStack(spacing: 4) {
-                        ForEach(progress.steps.filter { $0 != .welcome && $0 != .ready }, id: \.self) { step in
+                        ForEach(progress.countedSteps, id: \.self) { step in
                             Capsule().fill(step == progress.step ? Color.blue : Color.primary.opacity(0.12))
                                 .frame(width: step == progress.step ? 22 : 6, height: 6)
                         }
                     }
                     .accessibilityHidden(true)
                 }
+            } else if progress.step == .ready {
+                Text("Ready when you are").font(.caption.weight(.medium)).foregroundStyle(.secondary)
             }
             Button { dismissWindow(id: MacWindow.main) } label: {
                 Image(systemName: "xmark")
@@ -448,9 +450,14 @@ struct OnboardingView: View {
         }
         .frame(minHeight: 32)
         .padding(.horizontal, 24).padding(.top, 16).padding(.bottom, 4)
-        .contentShape(.rect)
-        .gesture(WindowDragGesture())
-        .allowsWindowActivationEvents()
+        // The empty strip moves the window; each button keeps its own hit area and accessibility frame.
+        .background {
+            Color.clear.contentShape(.rect)
+                .gesture(WindowDragGesture())
+                .allowsWindowActivationEvents()
+                .accessibilityHidden(true)
+        }
+        .accessibilityElement(children: .contain)
     }
     #endif
 
@@ -754,7 +761,8 @@ struct OnboardingView: View {
                                      connect: connectManagedAssistant,
                                      isConnecting: managedConnectionRequest != nil, isLocked: model.lock.isLocked,
                                      containedInGlass: true,
-                                     previewWorking: workingPreview, compact: compactDesktop)
+                                     previewWorking: workingPreview, compact: compactDesktop,
+                                     connectExisting: { update { $0.route = .existing; $0.step = .connection } })
             #else
             VStack(alignment: .leading, spacing: 20) {
                 feature("Start on a Mac", "Open Nollie on your Mac and choose Start new.", symbol: "desktopcomputer")
@@ -930,20 +938,20 @@ struct OnboardingView: View {
                 .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
                 .accessibilityIdentifier("onboarding.skip")
                 #else
+                // One pill, the same size on every step, so nothing under the main button moves.
                 if [.model, .computer, .permissions].contains(progress.step) {
-                    Button(progress.step == .permissions ? "Not now" : "Set up later") { update { $0.advance(deferStep: true) } }
-                        .buttonStyle(OutlinePillStyle())
+                    Button { update { $0.advance(deferStep: true) } } label: {
+                        Text(progress.step == .permissions ? "Not now" : "Set up later")
+                            .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
+                    }
+                        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
                         .accessibilityIdentifier("onboarding.later")
-                } else if [.welcome, .home, .howItWorks].contains(progress.step) || showsInstallerCharacter {
+                } else {
                     Button { update { $0.skip() } } label: {
                         Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
                             .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
                     }
                         .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
-                        .accessibilityIdentifier("onboarding.skip")
-                } else {
-                    Button(progress.step == .welcome ? "Skip setup" : "Finish setup later") { update { $0.skip() } }
-                        .buttonStyle(OutlinePillStyle())
                         .accessibilityIdentifier("onboarding.skip")
                 }
                 #endif

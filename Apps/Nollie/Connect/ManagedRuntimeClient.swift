@@ -293,7 +293,7 @@ final class ManagedRuntimeClient {
             try Task.checkCancellation()
             apply(response, installationID: installationID)
         } catch is CancellationError { return }
-        catch { fail(String(localized: "Could not check the background service. Try again.")) }
+        catch { fail(String(localized: "Nollie couldn't reach its background service. Try again.")) }
     }
 
     func start(installationID: UUID) async {
@@ -317,7 +317,7 @@ final class ManagedRuntimeClient {
                   let endpoint = response.snapshot.endpoint, Self.isAllowedEndpoint(endpoint),
                   let token = reply.token, NollieRuntimeContract.validToken(token) else {
                 apply(response, installationID: installationID)
-                if state != .failed { fail(String(localized: "The service has not returned a verified connection yet. Check again or retry.")) }
+                if state != .failed { fail(String(localized: "Your assistant started but didn't answer yet. Try again in a moment.")) }
                 return
             }
             message = String(localized: "Checking the secure connection.")
@@ -328,7 +328,7 @@ final class ManagedRuntimeClient {
         } catch is CancellationError {
             clearConnection(); state = .needsVerification; message = String(localized: "Setup continues in the background. Check the connection when you're ready.")
         } catch {
-            fail(String(localized: "The background connection could not be verified. Check its status, then try again."))
+            fail(String(localized: "Your assistant didn't answer when Nollie checked. Try again."))
         }
     }
 
@@ -397,7 +397,7 @@ final class ManagedRuntimeClient {
 
     private func apply(_ response: NollieRuntimeIPCResponse, installationID: UUID) {
         let snapshot = response.snapshot
-        guard response.error == nil, snapshot.phase != .failed else { fail(String(localized: "The background service needs attention. Retry after checking the setup files.")); return }
+        guard response.error == nil, snapshot.phase != .failed else { fail(String(localized: "Your assistant stopped with a problem. Try again.")); return }
         if let selected = snapshot.installationID, selected != installationID {
             fail(String(localized: "Another Nollie setup is running. Turn off its background service before starting this one.")); return
         }
@@ -423,7 +423,7 @@ final class ManagedRuntimeClient {
         clearConnection()
         switch status {
         case .requiresApproval:
-            state = .requiresApproval; message = String(localized: "Allow Nollie Runtime in System Settings > General > Login Items, then check again.")
+            state = .requiresApproval; message = SetupTrail.approvalSteps
         case .notFound, .notRegistered:
             state = .off; message = String(localized: "Background service is ready to start.")
         default:
