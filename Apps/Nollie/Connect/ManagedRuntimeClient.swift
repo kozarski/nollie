@@ -260,6 +260,8 @@ final class ManagedRuntimeClient {
     @ObservationIgnored private let verify: (URL, String) async throws -> Bool
     @ObservationIgnored private let isPackaged: () -> Bool
     let isAvailable: Bool
+    /// How long to wait before asking a busy service again.
+    @ObservationIgnored var busyWait: Duration = .seconds(2)
 
     var canConnect: Bool { state == .ready && endpoint != nil && sessionToken != nil }
 
@@ -311,8 +313,17 @@ final class ManagedRuntimeClient {
             isRegistered = registration == .enabled || registration == .requiresApproval
             guard registration == .enabled else { applyRegistration(registration); return }
             if wasOn { await reviveIfSilent() }
-            let reply = try await request(.start(installationID))
-            let response = try Self.decode(reply)
+            var reply = try await request(.start(installationID))
+            var response = try Self.decode(reply)
+            // Busy means a start is already under way (Nollie brings the assistant back by itself at
+            // launch). That is a wait, not a failure: ask again until that start has finished.
+            var waits = 0
+            while response.error == .busy, waits < 100 {
+                waits += 1
+                try await Task.sleep(for: busyWait)
+                reply = try await request(.start(installationID))
+                response = try Self.decode(reply)
+            }
             try Task.checkCancellation()
             guard response.error == nil, response.snapshot.phase == .ready,
                   response.snapshot.installationID == installationID,

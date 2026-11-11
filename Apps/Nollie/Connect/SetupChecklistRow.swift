@@ -369,6 +369,14 @@ struct NativeSetupChecklistView: View {
         .modifier(SetupGlassCard(enabled: !containedInGlass, opaque: reduceTransparency || contrast == .increased))
         .sheet(isPresented: $showDetails) { details.withAppModel() }
         .task { if !isPreview { await setup.inspectDependencies() } }
+        // Nollie may be bringing the assistant back by itself in the background. While the service row
+        // says it didn't start, or is starting, look again every few seconds so the row tells the truth.
+        .task(id: setup.managedRuntime.state) {
+            guard !isPreview, [.failed, .starting, .stopped].contains(setup.managedRuntime.state) else { return }
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled, !isWorking, !setup.managedRuntime.isBusy else { return }
+            await setup.inspectDependencies()
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active, !isPreview, !isWorking {
                 Task { await setup.inspectDependencies() }

@@ -133,6 +133,23 @@ struct ManagedRuntimeClientTests {
         #expect(service.unregistered == 0 && service.registered == 0)
     }
 
+    @Test func aStartThatFindsTheServiceBusyWaitsForItInsteadOfFailing() async {
+        let id = UUID(), service = Service()
+        service.status = .enabled
+        var starts = 0
+        let client = ManagedRuntimeClient(service: service.control, request: { operation in
+            guard case .start = operation else { return reply(id, phase: .starting) }
+            starts += 1
+            if starts < 3 {
+                return .init(data: NollieRuntimeIPCResponse(snapshot: .init(phase: .starting, installationID: id), error: .busy).encoded(), token: nil)
+            }
+            return reply(id, endpoint: endpoint, token: token)
+        }, verify: { _, _ in true }, isPackaged: { true }, isAvailable: true)
+        client.busyWait = .milliseconds(1)
+        await client.start(installationID: id)
+        #expect(starts == 3 && client.state == .ready && client.canConnect)
+    }
+
     @Test func inspectionNeverRegistersOrStartsAService() async {
         let service = Service()
         var requests = 0
