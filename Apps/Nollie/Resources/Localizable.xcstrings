@@ -1596,6 +1596,64 @@
         }
       }
     },
+    "%@ is on this Mac, not online." : {
+      "comment" : "%@ is a model name",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ ist auf diesem Mac, nicht online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ está en este Mac, no en línea."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ est sur ce Mac, pas en ligne."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@はこのMac上にあり、オンラインではありません。"
+          }
+        }
+      }
+    },
+    "%@ is on your Mac, not online." : {
+      "comment" : "%@ is a model name",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ ist auf deinem Mac, nicht online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ está en tu Mac, no en línea."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ est sur votre Mac, pas en ligne."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@はお使いのMac上にあり、オンラインではありません。"
+          }
+        }
+      }
+    },
     "%@ is over 200 MB, which is too big to attach." : {
       "localizations" : {
         "de" : {
@@ -2718,35 +2776,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@が返信しました。"
-          }
-        }
-      }
-    },
-    "%@ runs on this Mac. Online was chosen." : {
-      "comment" : "%@ is a model name",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ läuft auf diesem Mac. Gewählt ist Online."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ funciona en este Mac. Está elegido En línea."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ fonctionne sur ce Mac. Le choix actuel est En ligne."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@はこのMac上で動きます。オンラインが選ばれています。"
           }
         }
       }
@@ -6554,6 +6583,35 @@
         }
       }
     },
+    "%lld linked" : {
+      "comment" : "How many iPhones and iPads use Nollie on this Mac",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld verknüpft"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld vinculados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld liés"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld台をリンク済み"
+          }
+        }
+      }
+    },
     "%lld messages" : {
       "localizations" : {
         "de" : {
@@ -10009,6 +10067,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "このMac上のモデルがクリック操作を行います。"
+          }
+        }
+      }
+    },
+    "A model on this Mac, made simple" : {
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ein Modell auf diesem Mac, ganz einfach"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un modelo en este Mac, muy fácil"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un modèle sur ce Mac, en toute simplicité"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMacでモデルをかんたんに"
           }
         }
       }
@@ -21166,6 +21253,35 @@
         }
       }
     },
+    "Chats · a reply's menu" : {
+      "comment" : "What's new, 1.4: where to find it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chats · das Menü einer Antwort"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chats · el menú de una respuesta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Discussions · le menu d'une réponse"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "チャット · 返信のメニュー"
+          }
+        }
+      }
+    },
     "Chats · the bar at the bottom" : {
       "comment" : "What's new, 1.4: where to find it",
       "localizations" : {
@@ -28618,31 +28734,31 @@
         }
       }
     },
-    "Couldn't finish getting %@. Nothing else on your Mac changed. Check your internet connection, then try again." : {
+    "Couldn't finish getting %@. Nothing else on this Mac changed. Check your internet connection, then try again." : {
       "comment" : "%@ is a part of the setup, such as Hermes",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Konnte nicht fertig geladen werden: %@. Sonst hat sich auf deinem Mac nichts geändert. Prüfe deine Internetverbindung und versuch es dann erneut."
+            "value" : "Konnte nicht fertig geladen werden: %@. Sonst hat sich auf diesem Mac nichts geändert. Prüfe deine Internetverbindung und versuch es dann erneut."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "No se pudo terminar de descargar %@. No ha cambiado nada más en tu Mac. Comprueba tu conexión a internet y vuelve a intentarlo."
+            "value" : "No se pudo terminar de descargar %@. No ha cambiado nada más en este Mac. Comprueba tu conexión a internet y vuelve a intentarlo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Téléchargement inachevé : %@. Rien d'autre n'a changé sur votre Mac. Vérifiez votre connexion Internet, puis réessayez."
+            "value" : "Téléchargement inachevé : %@. Rien d'autre n'a changé sur ce Mac. Vérifiez votre connexion Internet, puis réessayez."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "%@を最後まで取得できませんでした。Macのほかの部分は変わっていません。インターネット接続を確認してから、もう一度お試しください。"
+            "value" : "%@を最後まで取得できませんでした。このMacのほかの部分は変わっていません。インターネット接続を確認してから、もう一度お試しください。"
           }
         }
       }
@@ -34902,6 +35018,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "毎日%@"
+          }
+        }
+      }
+    },
+    "Every finished reply can be read aloud, not just the last one." : {
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jede fertige Antwort kann vorgelesen werden, nicht nur die letzte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cualquier respuesta terminada se puede leer en voz alta, no solo la última."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Chaque réponse terminée peut être lue à voix haute, pas seulement la dernière."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "最後の返信だけでなく、完了したすべての返信を読み上げられます。"
           }
         }
       }
@@ -42360,6 +42505,35 @@
         }
       }
     },
+    "It comes back by itself after Nollie updates, and a busy moment no longer restarts it." : {
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Er kommt nach einem Update von Nollie von selbst zurück, und ein kurzer Engpass startet ihn nicht mehr neu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vuelve solo después de que Nollie se actualiza, y un momento de mucha carga ya no lo reinicia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Il revient tout seul après une mise à jour de Nollie, et un moment chargé ne le redémarre plus."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieの更新後は自動で戻り、一時的に忙しいだけで再起動することもなくなりました。"
+          }
+        }
+      }
+    },
     "It comes back when Nollie is in front." : {
       "localizations" : {
         "de" : {
@@ -46546,6 +46720,35 @@
         }
       }
     },
+    "Linking your iPhone" : {
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein iPhone verknüpfen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vincular tu iPhone"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lier votre iPhone"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhoneとのリンク"
+          }
+        }
+      }
+    },
     "Linking…" : {
       "localizations" : {
         "de" : {
@@ -46683,6 +46886,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "読み上げ"
+          }
+        }
+      }
+    },
+    "Listen to any reply" : {
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jede Antwort anhören"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Escucha cualquier respuesta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Écouter n'importe quelle réponse"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "どの返信も読み上げ"
           }
         }
       }
@@ -53855,6 +54087,35 @@
         }
       }
     },
+    "Nollie checks the free space first, so a model that won't fit is never started. A download shows the time left, and you can pause and resume it. With less than 16 GB of memory, a plan is suggested instead, as it will feel faster." : {
+      "comment" : "What's new, 1.4: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie prüft zuerst den freien Speicher, damit ein Modell, das nicht passt, gar nicht erst startet. Ein Download zeigt die verbleibende Zeit, und du kannst ihn pausieren und fortsetzen. Mit weniger als 16 GB Arbeitsspeicher wird stattdessen ein Plan vorgeschlagen, weil er schneller wirkt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie comprueba primero el espacio libre, así que nunca se empieza un modelo que no cabe. Una descarga muestra el tiempo que falta, y puedes pausarla y reanudarla. Con menos de 16 GB de memoria, se sugiere un plan, porque se notará más rápido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie vérifie d'abord l'espace libre, pour qu'un modèle qui ne tient pas ne soit jamais lancé. Un téléchargement affiche le temps restant, et vous pouvez le mettre en pause et le reprendre. Avec moins de 16 Go de mémoire, un abonnement est plutôt suggéré, car il semblera plus rapide."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieは最初に空き容量を確認するので、入りきらないモデルのダウンロードが始まることはありません。ダウンロード中は残り時間が表示され、一時停止と再開もできます。メモリが16GB未満の場合は、より速く感じられるプランをおすすめします。"
+          }
+        }
+      }
+    },
     "Nollie checks the total is on screen first. %@ never sees the card number." : {
       "localizations" : {
         "de" : {
@@ -56207,6 +56468,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "まだ記録なし"
+          }
+        }
+      }
+    },
+    "Not linked" : {
+      "comment" : "No iPhone or iPad uses Nollie on this Mac yet",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nicht verknüpft"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin vincular"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Non lié"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "未リンク"
           }
         }
       }
@@ -62584,6 +62874,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "写真に保存できませんでした：%@"
+          }
+        }
+      }
+    },
+    "Pick Quick start or Best for this Mac, with the size and the time first." : {
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wähle „Schnellstart“ oder „Am besten für diesen Mac“, mit Größe und Dauer vorab."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Elige «Inicio rápido» o «Lo mejor para este Mac», con el tamaño y el tiempo por adelantado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Choisissez « Démarrage rapide » ou « Idéal pour ce Mac », avec la taille et la durée affichées d'abord."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「クイックスタート」か「このMacに最適」を選べます。サイズと所要時間も先に表示されます。"
           }
         }
       }
@@ -72472,6 +72791,35 @@
         }
       }
     },
+    "Scan your Mac's code with the iPhone's Camera, and it opens in Nollie." : {
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Scanne den Code deines Mac mit der Kamera des iPhone, und er öffnet sich in Nollie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Escanea el código de tu Mac con la Cámara del iPhone y se abre en Nollie."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Scannez le code de votre Mac avec l'Appareil photo de l'iPhone : il s'ouvre dans Nollie."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "MacのコードをiPhoneのカメラでスキャンすると、Nollieで開きます。"
+          }
+        }
+      }
+    },
     "Scanner preview. The camera is off." : {
       "localizations" : {
         "de" : {
@@ -75164,6 +75512,64 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "設定には個人的な情報が含まれる場合があります。コピーはこのMac内にとどまります。"
+          }
+        }
+      }
+    },
+    "Settings on your Mac · iPhone & iPad" : {
+      "comment" : "What's new, 1.4: where to find it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Einstellungen auf deinem Mac · iPhone & iPad"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustes en tu Mac · iPhone y iPad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Réglages sur votre Mac · iPhone et iPad"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Macの設定 · iPhoneとiPad"
+          }
+        }
+      }
+    },
+    "Settings · Connection · Models" : {
+      "comment" : "What's new, 1.4: where to find it",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Einstellungen · Verbindung · Modelle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustes · Conexión · Modelos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Réglages · Connexion · Modèles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "設定 · 接続 · モデル"
           }
         }
       }
@@ -81867,6 +82273,35 @@
         }
       }
     },
+    "Stopping it now stops everything it started. While it starts, Nollie says Starting your assistant… and offers Try again only if it doesn't come back." : {
+      "comment" : "What's new, 1.4: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn du ihn stoppst, stoppt jetzt auch alles, was er gestartet hat. Während er startet, zeigt Nollie „Dein Assistent startet …“ und bietet „Erneut versuchen“ nur an, wenn er nicht zurückkommt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Al detenerlo, ahora se detiene todo lo que inició. Mientras se inicia, Nollie muestra «Iniciando tu asistente…» y solo ofrece «Reintentar» si no vuelve."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'arrêter arrête désormais tout ce qu'il a lancé. Pendant qu'il démarre, Nollie affiche « Démarrage de votre assistant… » et ne propose « Réessayer » que s'il ne revient pas."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "停止すると、アシスタントが始めたものもすべて止まるようになりました。起動中は「アシスタントを起動中…」と表示され、戻らなかったときだけ「再試行」が表示されます。"
+          }
+        }
+      }
+    },
     "Stopping on your Mac" : {
       "comment" : "Safety: Stop was pressed and the Mac is stopping the helpers' work",
       "localizations" : {
@@ -86159,34 +86594,6 @@
         }
       }
     },
-    "The download didn't check out. Try again for a fresh copy." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Der Download hat die Prüfung nicht bestanden. Versuch es erneut, um eine frische Kopie zu laden."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La descarga no pasó la comprobación. Vuelve a intentarlo para obtener una copia nueva."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le téléchargement n'a pas passé la vérification. Réessayez pour obtenir une nouvelle copie."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "ダウンロードの確認に失敗しました。もう一度試して、新しいコピーを取得してください。"
-          }
-        }
-      }
-    },
     "The download failed checksum verification." : {
       "localizations" : {
         "de" : {
@@ -86324,6 +86731,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ネットワークエラー%@でダウンロードが停止しました。このステップを再試行できます。"
+          }
+        }
+      }
+    },
+    "The download was damaged. Try again for a fresh copy." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Download war beschädigt. Versuch es erneut, um eine frische Kopie zu laden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La descarga estaba dañada. Vuelve a intentarlo para obtener una copia nueva."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le téléchargement était endommagé. Réessayez pour obtenir une nouvelle copie."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ダウンロードしたファイルが破損していました。もう一度試して、新しいコピーを取得してください。"
           }
         }
       }
@@ -90218,6 +90653,34 @@
         }
       }
     },
+    "This Mac needs at least 6 GB free to get Nollie ready. Free up some space, then try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieser Mac braucht mindestens 6 GB freien Speicher, um Nollie vorzubereiten. Gib etwas Platz frei und versuch es dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este Mac necesita al menos 6 GB libres para preparar Nollie. Libera algo de espacio y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce Mac a besoin d'au moins 6 Go libres pour préparer Nollie. Libérez de l'espace, puis réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieを準備するには、このMacに6GB以上の空き容量が必要です。容量を空けてから、もう一度お試しください。"
+          }
+        }
+      }
+    },
     "This Mac ran out of space. Free some up, then try again." : {
       "localizations" : {
         "de" : {
@@ -93519,6 +93982,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Touch IDで確認すると、このサインインが表示され変更できます。"
+          }
+        }
+      }
+    },
+    "Touch and hold a reply, or Control-click it on your Mac, and choose Listen. On your Mac, play also shows when you point at a reply." : {
+      "comment" : "What's new, 1.4: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Halte eine Antwort gedrückt oder klicke sie auf deinem Mac bei gedrückter Ctrl-Taste an und wähle „Anhören“. Auf deinem Mac erscheint die Wiedergabetaste auch, wenn du auf eine Antwort zeigst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mantén pulsada una respuesta, o haz clic en ella con la tecla Control en tu Mac, y elige «Escuchar». En tu Mac, el botón de reproducir también aparece al señalar una respuesta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Touchez une réponse de manière prolongée, ou cliquez dessus en maintenant la touche Contrôle sur votre Mac, puis choisissez « Écouter ». Sur votre Mac, le bouton de lecture apparaît aussi quand vous pointez une réponse."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "返信を長押しするか、MacではControlキーを押しながらクリックして、「読み上げ」を選びます。Macでは、返信にポインタを合わせると再生ボタンも表示されます。"
           }
         }
       }
@@ -101394,31 +101886,31 @@
         }
       }
     },
-    "When a helper works a web page, Ask first now reads every step before it happens. Private bots stay private. If the update didn't finish, the sidebar says so, and opening Nollie again tries once more." : {
+    "When a helper works a web page, Ask first now reads every step before it happens. Private bots stay private. If the update didn't finish, the sidebar says so, and the next time Nollie opens it carries on from where it stopped." : {
       "comment" : "What's new, 1.4: the detail",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Wenn ein Helfer eine Webseite bedient, liest „Erst fragen“ jetzt jeden Schritt, bevor er passiert. Private Bots bleiben privat. Wenn das Update nicht abgeschlossen wurde, zeigt die Seitenleiste das an, und beim nächsten Öffnen von Nollie wird es noch einmal versucht."
+            "value" : "Wenn ein Helfer eine Webseite bedient, liest „Erst fragen“ jetzt jeden Schritt, bevor er passiert. Private Bots bleiben privat. Wenn das Update nicht abgeschlossen wurde, zeigt die Seitenleiste das an, und beim nächsten Öffnen von Nollie macht es dort weiter, wo es aufgehört hat."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Cuando un ayudante usa una página web, «Preguntar primero» ahora lee cada paso antes de que ocurra. Los bots privados siguen siendo privados. Si la actualización no terminó, la barra lateral lo dice, y al volver a abrir Nollie se intenta una vez más."
+            "value" : "Cuando un ayudante usa una página web, «Preguntar primero» ahora lee cada paso antes de que ocurra. Los bots privados siguen siendo privados. Si la actualización no terminó, la barra lateral lo dice, y la próxima vez que abras Nollie continúa desde donde se quedó."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Quand un assistant utilise une page web, « Demander d'abord » lit désormais chaque étape avant qu'elle ait lieu. Les bots privés restent privés. Si la mise à jour n'a pas abouti, la barre latérale l'indique, et rouvrir Nollie fait un nouvel essai."
+            "value" : "Quand un assistant utilise une page web, « Demander d'abord » lit désormais chaque étape avant qu'elle ait lieu. Les bots privés restent privés. Si la mise à jour n'a pas abouti, la barre latérale l'indique, et au prochain lancement de Nollie, elle reprend là où elle s'était arrêtée."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "ヘルパーがWebページを操作するとき、「先に確認」がすべてのステップを実行前に読み取るようになりました。プライベートのボットはプライベートのままです。更新が完了しなかった場合はサイドバーに表示され、Nollieをもう一度開くと再試行します。"
+            "value" : "ヘルパーがWebページを操作するとき、「先に確認」がすべてのステップを実行前に読み取るようになりました。プライベートのボットはプライベートのままです。更新が完了しなかった場合はサイドバーに表示され、次にNollieを開いたときに中断したところから続きを行います。"
           }
         }
       }
@@ -104823,34 +105315,6 @@
         }
       }
     },
-    "Your Mac needs at least 6 GB free to get Nollie ready. Free up some space, then try again." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dein Mac braucht mindestens 6 GB freien Speicher, um Nollie vorzubereiten. Gib etwas Platz frei und versuch es dann erneut."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tu Mac necesita al menos 6 GB libres para preparar Nollie. Libera algo de espacio y vuelve a intentarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Votre Mac a besoin d'au moins 6 Go libres pour préparer Nollie. Libérez de l'espace, puis réessayez."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nollieを準備するには、Macに6GB以上の空き容量が必要です。容量を空けてから、もう一度お試しください。"
-          }
-        }
-      }
-    },
     "Your Mac needs to stay awake and online." : {
       "localizations" : {
         "de" : {
@@ -105408,6 +105872,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "アシスタントはまだ確認中です。終わると前回の結果が更新されます。"
+          }
+        }
+      }
+    },
+    "Your assistant looks after itself" : {
+      "comment" : "What's new, 1.4",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Assistent kümmert sich um sich selbst"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu asistente se cuida solo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre assistant prend soin de lui-même"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "アシスタントが自分で立て直します"
           }
         }
       }
@@ -106338,6 +106831,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "iPhoneがペアリングされました"
+          }
+        }
+      }
+    },
+    "Your iPhone needs Nollie 1.4 for this. A code that ran out now says why, with Scan again. On some Macs the code couldn't be made at all. That's fixed." : {
+      "comment" : "What's new, 1.4: the detail",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dafür braucht dein iPhone Nollie 1.4. Ein abgelaufener Code sagt jetzt, warum, mit „Erneut scannen“. Auf manchen Macs konnte gar kein Code erstellt werden. Das ist behoben."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu iPhone necesita Nollie 1.4 para esto. Un código caducado ahora dice por qué, con «Volver a escanear». En algunos Mac no se podía crear el código. Ya está arreglado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre iPhone a besoin de Nollie 1.4 pour cela. Un code expiré indique maintenant pourquoi, avec « Scanner à nouveau ». Sur certains Mac, le code ne pouvait pas du tout être créé. C'est corrigé."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "これにはiPhoneにNollie 1.4が必要です。期限切れのコードは理由を表示し、「もう一度スキャン」を選べるようになりました。一部のMacではコードをまったく作成できませんでしたが、修正されました。"
           }
         }
       }
@@ -108864,6 +109386,35 @@
         }
       }
     },
+    "iPhone & iPad" : {
+      "comment" : "A Settings row: use Nollie on an iPhone or iPad",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone & iPad"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone y iPad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone et iPad"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhoneとiPad"
+          }
+        }
+      }
+    },
     "install something in %@: %@" : {
       "comment" : "Safety: confirm card; finishes '<Bot> wants to …'; the app, then the menu command a shortcut runs",
       "localizations" : {
@@ -108930,6 +109481,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%1$@で%2$@をクリックして何かをインストールする"
+          }
+        }
+      }
+    },
+    "iphone ipad phone pair link qr code scan mobile" : {
+      "comment" : "Settings search words, not shown",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iphone ipad telefon handy koppeln verknüpfen qr code scannen mobil"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iphone ipad teléfono móvil emparejar vincular código qr escanear"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iphone ipad téléphone portable associer lier code qr scanner mobile"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhone iPad 電話 スマホ ペアリング リンク QRコード スキャン モバイル"
           }
         }
       }
