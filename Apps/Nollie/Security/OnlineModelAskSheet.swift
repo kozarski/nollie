@@ -68,7 +68,13 @@ struct OnlineModelAskSheet: View {
                 Button { answer(true) } label: { Text("Allow", comment: "Privacy: lets words go to an online model's company").fullWidthLabel() }
                     .buttonStyle(.nollieGlassProminent)
                     .accessibilityIdentifier("onlineModel.allow")
-                Button { answer(false) } label: { Text("Not now", comment: "Privacy: sends nothing to an online model's company") }
+                Button { answer(false) } label: {
+                    Text("Not now", comment: "Privacy: sends nothing to an online model's company")
+                        #if os(iOS)
+                        // A full finger's height, though it reads as quiet text.
+                        .frame(minWidth: 88, minHeight: 44).contentShape(.rect)
+                        #endif
+                }
                     .small(.subheadline)
                     .accessibilityIdentifier("onlineModel.notNow")
             }
