@@ -266,7 +266,9 @@ def main():
             old = next(p for p in args.home_from.iterdir() if (p / "home").is_dir()) / "home"
             shutil.rmtree(installation / "home")
             shutil.copytree(old, installation / "home", symlinks=True)
-            return f"home from {old.parent.name}: " + ", ".join(sorted(p.name for p in (installation / "home/profiles").iterdir()))
+            profiles = installation / "home/profiles"
+            bots = sorted(p.name for p in profiles.iterdir()) if profiles.is_dir() else []
+            return f"home from {old.parent.name}: main bot" + "".join(", " + name for name in bots)
         step("home", carry_home)
 
     def addons():
