@@ -53,6 +53,13 @@ class WeeklyFixtureTests(unittest.TestCase):
         self.assertGreaterEqual(work["schedules"][0]["created_at"], work["since"], "a schedule made this week")
         self.assertTrue(work["schedules"][0]["paused"])
 
+    def test_a_setup_made_today_has_kept_nothing_before_this_morning(self):
+        self.assertEqual(self.request("/api/_mock/week", "POST", {"state": "new"})[0], 200)
+        _, body, _ = self.request(ROUTE + "?bot=default")
+        self.assertGreater(body["recording_since"], body["since"], "nothing kept before today")
+        self.assertLessEqual(body["recording_since"], body["now"])
+        self.assertTrue(body["places"], "still a busy day")
+
     def test_a_paused_schedule_shows_paused(self):
         self.assertEqual(self.request("/api/cron/jobs/morning-brief/pause?profile=default", "POST")[0], 200)
         _, body, _ = self.request(ROUTE + "?bot=default")

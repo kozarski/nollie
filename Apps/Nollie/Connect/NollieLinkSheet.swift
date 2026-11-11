@@ -59,7 +59,9 @@ struct NollieLinkSheet: View {
     @State private var linkedName: String?
     @State private var devices: [NollieLinkIPCDevice] = []
     @State private var issue: String?
-    @State private var hidden = false
+    /// Nollie isn't the front app. Starts from the app's real state: a sheet opened while Nollie is behind
+    /// another app never hears a resign notification.
+    @State private var hidden = !NSApplication.shared.isActive
     @State private var screenLocked = false
     @State private var loading = true
     @State private var requestID = UUID()
@@ -79,7 +81,14 @@ struct NollieLinkSheet: View {
         DistributedNotificationCenter.default().publisher(for: Notification.Name(name))
     }
 
-    private var mayShow: Bool { !model.lock.isLocked && !hidden && !screenLocked && scenePhase == .active }
+    private var mayShow: Bool {
+        Self.mayShow(locked: model.lock.isLocked, appActive: !hidden, screenLocked: screenLocked, sceneActive: scenePhase == .active)
+    }
+
+    /// The code shows only while Nollie is unlocked and in front, on an unlocked screen.
+    static func mayShow(locked: Bool, appActive: Bool, screenLocked: Bool, sceneActive: Bool) -> Bool {
+        !locked && appActive && !screenLocked && sceneActive
+    }
 
     var body: some View {
         NavigationStack {
@@ -100,6 +109,7 @@ struct NollieLinkSheet: View {
         }
         .frame(minWidth: 440, idealWidth: 480, minHeight: 600)
         .task(id: requestID) { await showAndWatch() }
+        .onAppear { hidden = !NSApplication.shared.isActive }
         .onDisappear { withdraw() }
         .onChange(of: mayShow) { _, show in
             if show { requestID = UUID() } else { withdraw() }
@@ -124,8 +134,12 @@ struct NollieLinkSheet: View {
     }
 
     private var codeState: NollieLinkPanel.CodeState {
-        if linkedName != nil { return .linked }
-        if model.lock.isLocked { return .locked }
+        Self.codeState(linked: linkedName != nil, locked: model.lock.isLocked, mayShow: mayShow, code: code, loading: loading, issue: issue)
+    }
+
+    static func codeState(linked: Bool, locked: Bool, mayShow: Bool, code: String?, loading: Bool, issue: String?) -> NollieLinkPanel.CodeState {
+        if linked { return .linked }
+        if locked { return .locked }
         if !mayShow { return .hidden }
         if let code { return .code(code) }
         if loading { return .loading }

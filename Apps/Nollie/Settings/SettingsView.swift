@@ -67,6 +67,10 @@ struct SettingsView: View {
     @ViewBuilder private var categoryRows: some View {
         let visible = SettingsCategory.visible(developerMode: developerMode, away: showsAway,
                                                weekly: !model.family.isMember(model), matching: search)
+        // Using Nollie on an iPhone or iPad, first: on the Mac with its own assistant.
+        #if os(macOS)
+        if showsPhoneRow { PhoneLinkRow() }
+        #endif
         ForEach(settingsGroups.indices, id: \.self) { index in
             let members = settingsGroups[index].filter(visible.contains)
             if !members.isEmpty {
@@ -83,7 +87,15 @@ struct SettingsView: View {
                 }
             }
         }
-        if visible.isEmpty { PageNote("Nothing matches \u{201C}\(search)\u{201D}.", id: "settings.noMatch") }
+        if visible.isEmpty && !showsPhoneRow { PageNote("Nothing matches \u{201C}\(search)\u{201D}.", id: "settings.noMatch") }
+    }
+
+    private var showsPhoneRow: Bool {
+        #if os(macOS)
+        PhoneLinkRow.shows(available: DemoMode.isOn || NollieLinkMacClient.isAvailable(for: model.runtime?.connection), search: search)
+        #else
+        false
+        #endif
     }
 
     /// Away from home: on the Direct Mac's own assistant, and on a phone linked to such a Mac.

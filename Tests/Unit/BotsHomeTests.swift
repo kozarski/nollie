@@ -151,3 +151,69 @@ import Testing
         #expect(SystemControl.withoutScreenRules(["rm -r", "cua:click:background", "cua:launch_app:background", "git push"]) == ["rm -r", "git push"])
     }
 }
+
+/// A linked phone reads the Mac's main chat for each bot: the same Hermes, the same Bot Chat. A read the
+/// gateway didn't answer (the link still opening) must not hold the list back, nor say there is no chat.
+@MainActor
+@Suite(.serialized) struct BotsHomeLinkedPhoneTests {
+    private func runtime() throws -> GatewayRuntime {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MainChatStub.self]
+        let connection = GatewayConnection(name: "mac", gateway: try GatewayURL.normalize("https://mac.invalid"), authMode: .sessionToken)
+        let rt = GatewayRuntime(connection: connection, store: ConnectionStore(),
+                                backend: GatewayBackend(urlSession: URLSession(configuration: configuration)))
+        rt.profiles = [ProfileInfo(name: "default"), ProfileInfo(name: "fresh")]
+        return rt
+    }
+
+    private static let listing: JSONValue = ["profiles": [
+        ["name": "default", "canonical_session": ["id": "botchat1", "resolved_id": "botchat1", "title": "Bot Chat"]],
+        ["name": "fresh", "canonical_session": nil],
+    ]]
+
+    @Test func aFirstReadThatFailedDoesNotHoldBackTheNextOne() async throws {
+        let rt = try runtime()
+        var open = false
+        rt.gatewayStandIn = { method, _ in
+            guard method == "profiles.list" else { throw SocketError.notConnected }
+            guard open else { throw SocketError.notConnected }
+            return Self.listing
+        }
+        let home = BotsHome()
+        await home.refresh(rt, force: true)
+        #expect(home.entry(rt, "default").storedID == nil)
+        #expect(!home.entry(rt, "default").noMainChat, "Not answered is not no chat: no Say hello")
+        // The link opens a moment later, and the row learns the Mac's chat without waiting 15 seconds.
+        open = true
+        await home.refresh(rt)
+        #expect(home.entry(rt, "default").storedID == "botchat1")
+        #expect(home.entry(rt, "default").lastText == "Done. Your week is planned.", "The Mac's exchange, read on the phone")
+        #expect(home.entry(rt, "fresh").noMainChat, "The gateway said this bot has no chat yet: Say hello is true")
+        // Once answered, the usual 15 seconds apply.
+        open = false
+        await home.refresh(rt)
+        #expect(home.entry(rt, "default").storedID == "botchat1")
+    }
+}
+
+private final class MainChatStub: URLProtocol, @unchecked Sendable {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        let path = request.url?.path ?? ""
+        let found = path == "/api/sessions/botchat1/messages"
+        let json: [String: Any] = found ? ["messages": [
+            ["role": "user", "content": "Plan my week", "timestamp": 1_794_000_000],
+            ["role": "assistant", "content": "Done. Your week is planned.", "timestamp": 1_794_000_060],
+        ]] : ["detail": "Not found"]
+        let data = (try? JSONSerialization.data(withJSONObject: json)) ?? Data()
+        let response = HTTPURLResponse(url: request.url!, statusCode: found ? 200 : 404, httpVersion: "HTTP/1.1",
+                                       headerFields: ["Content-Type": "application/json"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
+}

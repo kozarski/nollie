@@ -31,16 +31,43 @@ struct LocalModelChoicesTests {
 
     @Test func theRealCatalogOnThisMacOffersAQuickStartThatFitsAndExplainsTheBestOne() throws {
         let choices = LocalModelChoices(Self.snapshot(try Self.entries(), free: 88_000_000_000))
-        #expect(choices.quickStart?.id == "qwen3.8-27b", "Nothing is 10 GB or less, so the smallest that fits is quickest")
+        #expect(choices.quickStart?.id == "qwen3.6-35b-a3b",
+                "3B active answers sooner than the dense 27B, and is within 10 GB of the smallest download")
         #expect(choices.best?.id == "qwen3.8-flash-next")
-        #expect(choices.more.map(\.id) == ["qwen3.6-35b-a3b", "nemotron-3.5-bolt-74b-a9b", "deepseek-v4-flash"])
+        #expect(choices.more.map(\.id) == ["qwen3.8-27b", "nemotron-3.5-bolt-74b-a9b", "deepseek-v4-flash"])
+        #expect(choices.detail(try #require(choices.quickStart)).hasPrefix("23.6 GB · about"), "Quick start, with its size and time")
         let best = try #require(choices.best)
         #expect(!choices.canStart(best))
         #expect(LocalModelDisk.shortfall(best, free: choices.freeDisk)?.contains("104 GB") == true)
         #expect(LocalModelDisk.shortfall(best, free: choices.freeDisk)?.contains("88 GB") == true)
-        #expect(choices.chosen("qwen3.8-flash-next")?.id == "qwen3.8-27b", "A model that can't start is never the one picked")
-        #expect(choices.chosen("qwen3.6-35b-a3b")?.id == "qwen3.6-35b-a3b")
-        #expect(choices.chosen("")?.id == "qwen3.8-27b")
+        #expect(choices.chosen("qwen3.8-flash-next")?.id == "qwen3.6-35b-a3b", "A model that can't start is never the one picked")
+        #expect(choices.chosen("qwen3.8-27b")?.id == "qwen3.8-27b")
+        #expect(choices.chosen("")?.id == "qwen3.6-35b-a3b")
+    }
+
+    @Test func aMixtureWithFewActiveParametersLeadsWhenItIsNotMuchBigger() throws {
+        let catalog = try Self.entries()
+        #expect(LocalModelChoices.activeBillions(catalog.first { $0.id == "qwen3.6-35b-a3b" }!) == 3)
+        #expect(LocalModelChoices.activeBillions(catalog.first { $0.id == "nemotron-3.5-bolt-74b-a9b" }!) == 9)
+        #expect(LocalModelChoices.activeBillions(catalog.first { $0.id == "qwen3.8-27b" }!) == nil, "Dense")
+        #expect(LocalModelChoices.activeBillions(catalog.first { $0.id == "qwen3.8-flash-next" }!) == nil, "Its name doesn't say")
+        // More than 10 GB over the smallest download: the smallest stays Quick start.
+        let dense = try Self.entry("dense-8b", gb: 5), moe = try Self.entry("moe-30b-a3b", gb: 17)
+        #expect(LocalModelChoices(Self.snapshot([dense, moe], free: 500_000_000_000)).quickStart?.id == "dense-8b")
+        // Within 10 GB: the mixture leads, even over a small recommendation.
+        let near = try Self.entry("moe-20b-a2b", gb: 12), rec = try Self.entry("rec", gb: 6, recommended: true)
+        let choices = LocalModelChoices(Self.snapshot([dense, near, rec], free: 500_000_000_000))
+        #expect(choices.quickStart?.id == "moe-20b-a2b")
+        #expect(choices.best?.id == "rec", "Hermes's pick stays beside it")
+        // Many active parameters are not quick: the usual rule.
+        let heavy = try Self.entry("moe-235b-a22b", gb: 9)
+        #expect(LocalModelChoices(Self.snapshot([dense, heavy], free: 500_000_000_000)).quickStart?.id == "moe-235b-a22b",
+                "the largest of 10 GB or less, as before")
+        #expect(LocalModelChoices.quickestToAnswer([dense, heavy]) == nil)
+        // A model already on the Mac still comes first, and one that doesn't fit the disk never leads.
+        let here = try Self.entry("here", gb: 4, downloaded: true)
+        #expect(LocalModelChoices(Self.snapshot([here, near], free: 500_000_000_000)).quickStart?.id == "here")
+        #expect(LocalModelChoices(Self.snapshot([dense, near], free: 11_000_000_000)).quickStart?.id == "dense-8b")
     }
 
     @Test func quickStartPrefersASmallRecommendationThenTheLargestSmallOne() throws {
@@ -78,7 +105,7 @@ struct LocalModelChoicesTests {
         #expect(!choices.more.contains { $0.id == "qwen3.8-27b" })
         #expect(LocalModelChoices(Self.snapshot(try Self.entries(), free: 88_000_000_000)).smallestShort == nil)
         let unknown = LocalModelChoices(Self.snapshot(try Self.entries(), free: nil))
-        #expect(unknown.quickStart?.id == "qwen3.8-27b", "Unknown free space is not a reason to refuse")
+        #expect(unknown.quickStart?.id == "qwen3.6-35b-a3b", "Unknown free space is not a reason to refuse")
     }
 
     @Test func diskNeedsTheModelPlusRoomToSpare() throws {

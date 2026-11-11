@@ -18,6 +18,9 @@ final class BotsHome {
         /// prompt or a tool's, minutes old at most): work started elsewhere (Signal, a phone, the
         /// terminal) still shows as working here.
         var busy = false
+        /// The gateway said outright that the bot has no main chat yet (its canonical session is empty), so
+        /// "Say hello" is true. Unknown until it has answered.
+        var noMainChat = false
     }
 
     /// Per gateway and bot. Kept between appearances, so a row never comes back blank.
@@ -99,15 +102,21 @@ final class BotsHome {
         let gateway = runtime.connection.id
         if !force, let at = refreshedAt[gateway], Date().timeIntervalSince(at) < 15 { return }
         refreshing = true
-        defer { refreshing = false; refreshedAt[gateway] = Date() }
+        // A read the gateway didn't answer (a phone's link still opening, a slow restart) doesn't count as fresh:
+        // the next try, such as the one when the connection opens, goes through instead of waiting 15 seconds.
+        var listed = false
+        defer { refreshing = false; if listed { refreshedAt[gateway] = Date() } }
         if runtime.profiles.isEmpty { await runtime.loadProfiles() }
         let names = runtime.profiles.map(\.name)
         guard !names.isEmpty else { return }
         var ids: [String: String] = [:]
+        var none = Set<String>()
         if let r = try? await runtime.rpc("profiles.list", timeout: 15), let rows = r["profiles"]?.arrayValue {
+            listed = true
             for row in rows {
-                guard let name = row["name"]?.stringValue, let cs = row["canonical_session"], !cs.isNull,
-                      let id = cs["resolved_id"]?.stringValue ?? cs["id"]?.stringValue, !id.isEmpty else { continue }
+                guard let name = row["name"]?.stringValue, let cs = row["canonical_session"] else { continue }
+                if cs.isNull { none.insert(name); continue }
+                guard let id = cs["resolved_id"]?.stringValue ?? cs["id"]?.stringValue, !id.isEmpty else { continue }
                 ids[name] = id
             }
         }
@@ -123,6 +132,7 @@ final class BotsHome {
         for name in names {
             let k = Self.key(gateway, name)
             var e = Entry(storedID: ids[name] ?? entries[k]?.storedID)
+            e.noMainChat = e.storedID == nil && none.contains(name)
             if let sid = e.storedID, let last = await Self.lastReply(runtime, storedID: sid, profile: name) {
                 // Mid-turn with nothing said yet: the row keeps the last thing it did say.
                 e.lastText = last.text.isEmpty ? entries[k]?.lastText : last.text

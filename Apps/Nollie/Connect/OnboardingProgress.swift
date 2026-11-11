@@ -140,6 +140,20 @@ struct OnboardingProgress: Codable, Equatable, Sendable {
     mutating func skip() { completion = .skipped }
 }
 
+extension OnboardingProgress.Step {
+    /// The Mac's setup steps with a second pill under Continue that means something else: the model,
+    /// where Continue waits for one that answers and Set up later goes on without it, and permissions'
+    /// Not now. The computer step is optional, so its Continue already goes on with the switch off.
+    var hasLaterPill: Bool { self == .model || self == .permissions }
+
+    /// Continue on an optional step works whatever is chosen: off means go on without it.
+    var continueAlwaysWorks: Bool { self == .computer || self == .permissions }
+
+    /// Finish setup later, on the Mac steps without a pill of their own. The computer step has none:
+    /// Continue is its one way on.
+    var hasSkipPill: Bool { !hasLaterPill && self != .computer }
+}
+
 #if os(macOS)
 extension OnboardingProgress {
     /// The steps the Mac header counts: those after the path is chosen, before Ready. Counted only once a

@@ -573,8 +573,9 @@ def papertrail_rest(method: str, base: str, query: dict, payload) -> tuple[int, 
 # POST .../week/remove-app takes a seeded app out for good and keeps it as a change the person made.
 # GET .../mutes and PUT .../mutes/<bot> keep each helper's mute for every device; GET/PUT .../weekly-note the note's
 # switch and day; POST .../weekly-note/live is the Mac saying it sends the note itself.
-# POST /api/_mock/week {"state": "busy"|"quiet"} empties every bot's week; "reset" restores the switches, the removed
-# apps, the mutes and the note's settings.
+# POST /api/_mock/week {"state": "busy"|"quiet"} empties every bot's week; "new" is a busy week on a setup made today
+# (Papertrail kept nothing before this morning); "reset" restores the switches, the removed apps, the mutes and the
+# note's settings.
 WEEK = dict(state="busy")
 WEEK_SWITCHES: dict = {}
 WEEK_REMOVED: list = []
@@ -633,7 +634,8 @@ def week_view(bot: str, now: float | None = None) -> dict:
             if app["name"] not in removed]
     changes = [dict(at=change["at"], kind="app_removed", name=change["name"])
                for change in reversed(WEEK_REMOVED) if change["bot"] == bot]
-    return dict(bot=bot, days=7, now=int(now), since=midnight(6), recording_since=midnight(30), papertrail=True,
+    return dict(bot=bot, days=7, now=int(now), since=midnight(6),
+                recording_since=midnight(0) if WEEK["state"] == "new" else midnight(30), papertrail=True,
                 replies=dict(stayed=0, left=0, online=0) if quiet else seed["replies"], places=places,
                 places_more=0, answers=dict(once=0, session=0, always=0, deny=0) if quiet else seed["answers"],
                 asks={} if quiet else seed["asks"], earlier_answers=seed["earlier_answers"], schedules=schedules,
@@ -651,10 +653,10 @@ def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object
             WEEK_MUTED.clear()
             WEEK_NOTE.update(on=True, weekday=1, live_at=None, saved=False)
             WEEK["state"] = "busy"
-        elif state in ("busy", "quiet"):
+        elif state in ("busy", "quiet", "new"):
             WEEK["state"] = state
         else:
-            return refuse(422, "Send a state: busy, quiet or reset.")
+            return refuse(422, "Send a state: busy, quiet, new or reset.")
         return ok(dict(state=WEEK["state"]))
     settings = weekly_settings_rest(method, base, query, payload)
     if settings is not None:

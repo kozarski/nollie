@@ -276,13 +276,47 @@ enum LocalModelTime {
 /// Which models the setup offers, from what Hermes says about this Mac.
 ///
 /// Quick start is the model a person can be chatting with soonest: one already on the Mac first;
-/// else Hermes's recommendation when it is small (10 GB or less); else the largest model of 10 GB
-/// or less; else the smallest that fits. Best for this Mac is Hermes's recommendation (its best
+/// else the model likely to answer fastest (`quickestToAnswer`); else Hermes's recommendation when
+/// it is small (10 GB or less); else the largest model of 10 GB or less; else the smallest that fits.
+/// Best for this Mac is Hermes's recommendation (its best
 /// quality that runs well here), offered beside it when it differs. Every other model that fits
 /// waits under More models. A model that needs more free space than the Mac has is never the
 /// default and never starts.
 struct LocalModelChoices: Equatable {
     static let quickStartLimit: UInt64 = 10_000_000_000
+    /// How much bigger than the smallest download a quicker-answering model may be and still lead.
+    static let quickerAnswerAllowance: UInt64 = 10_000_000_000
+    /// Active parameters, in billions, that count as few: a 35B-A3B answers about as fast as a 3B model.
+    static let fewActiveBillions = 10.0
+
+    /// A mixture-of-experts model's active parameters, in billions, from the size its name gives
+    /// ("Qwen3.6-35B-A3B" is 3). Nil for a dense model, or a mixture whose name doesn't say.
+    static func activeBillions(_ entry: LocalModelCatalogEntry) -> Double? {
+        for name in [entry.id, entry.modelId, entry.displayName].compactMap({ $0 }) {
+            guard let match = name.range(of: #"\d+(\.\d+)?[bB][-_ ][aA](\d+(\.\d+)?)[bB]"#, options: .regularExpression) else { continue }
+            let tag = name[match]
+            guard let a = tag.lastIndex(where: { $0 == "a" || $0 == "A" }) else { continue }
+            if let active = Double(tag[tag.index(after: a)...].dropLast()) { return active }
+        }
+        return nil
+    }
+
+    /// The catalog carries no speed, so this is a rule of thumb: a reply takes time in proportion to
+    /// the parameters each token uses, and a dense 27B read 17,500 tokens of a first chat in 75 seconds
+    /// on a Mac Studio. A mixture-of-experts model with few active parameters, that fits memory and
+    /// disk and is at most 10 GB bigger than the smallest download, answers much sooner for the wait.
+    /// Fewest active parameters first, then the smaller download.
+    static func quickestToAnswer(_ ready: [LocalModelCatalogEntry]) -> LocalModelCatalogEntry? {
+        let size: (LocalModelCatalogEntry) -> UInt64 = { $0.sizeBytes ?? .max }
+        guard let smallest = ready.map(size).min() else { return nil }
+        let limit = smallest.addingReportingOverflow(quickerAnswerAllowance)
+        let candidates = ready.compactMap { entry -> (LocalModelCatalogEntry, Double)? in
+            guard let active = activeBillions(entry), active <= fewActiveBillions,
+                  limit.overflow || size(entry) <= limit.partialValue else { return nil }
+            return (entry, active)
+        }
+        return candidates.min { ($0.1, size($0.0)) < ($1.1, size($1.0)) }?.0
+    }
 
     var quickStart: LocalModelCatalogEntry?
     var best: LocalModelCatalogEntry?
@@ -305,6 +339,8 @@ struct LocalModelChoices: Equatable {
             quick = recommended
         } else if let biggest = downloaded.max(by: { size($0) < size($1) }) {
             quick = biggest
+        } else if let quickest = Self.quickestToAnswer(ready) {
+            quick = quickest
         } else if let recommended, small.contains(recommended) {
             quick = recommended
         } else {

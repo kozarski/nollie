@@ -236,6 +236,12 @@ struct OnboardingView: View {
                 previewProgress.route = .new
                 previewProgress.step = step
             }
+            // `-nollie-demo-onboarding-sheet models|link` opens that sheet over the step, a moment after it shows.
+            if DemoMode.isOn, let at = ProcessInfo.processInfo.arguments.firstIndex(of: "-nollie-demo-onboarding-sheet"),
+               ProcessInfo.processInfo.arguments.indices.contains(at + 1),
+               let sheet = Destination(rawValue: ProcessInfo.processInfo.arguments[at + 1]) {
+                Task { try? await Task.sleep(for: .seconds(3)); destination = sheet }
+            }
             #endif
             if workingPreview || installStepPreview {
                 previewProgress.route = .new
@@ -262,6 +268,10 @@ struct OnboardingView: View {
         }
         .task(id: "\(checkIdentity)/\(progress.step.rawValue)") {
             await refreshChecks()
+        }
+        .onChange(of: progress.step, initial: true) { _, step in
+            // Setup's own notifications row is on screen: the Stay in the loop sheet waits a few days.
+            if step == Self.notificationStep, !isPreview { NotificationAskPause.noteOffered() }
         }
         .task(id: introActive) {
             guard introActive, demoIntroTime == nil else { return }
@@ -869,6 +879,13 @@ struct OnboardingView: View {
                     LocalModelDownload.shared.prepare(runtime: rt, app: model, scope: scope).restore()
                 }
             }
+            // No answer from Hermes yet (it restarted, or is starting): ask again every few seconds while this shows.
+            .task(id: modelStepRetrying) {
+                while modelStepRetrying, !Task.isCancelled {
+                    do { try await Task.sleep(for: ModelStepRetry.interval) } catch { return }
+                    await recheckModel()
+                }
+            }
             // The download chose its model in Hermes while the sheet was closed: read it again.
             .onChange(of: LocalModelDownload.shared.setup(for: LocalModelQuickstartSection.scope(for: runtime))?.selectedModel) { _, chosen in
                 if chosen != nil { Task { await refreshChecks() } }
@@ -1014,15 +1031,15 @@ struct OnboardingView: View {
                     // After the main path, never instead of it.
                     tryDemoButton
                 }
-                // One pill, the same size on every step, so nothing under the main button moves.
-                if [.model, .computer, .permissions].contains(progress.step) {
+                // One pill, the same size on every step that has one, so nothing under the main button moves.
+                if progress.step.hasLaterPill {
                     Button { update { $0.advance(deferStep: true) } } label: {
                         Text(progress.step == .permissions ? "Not now" : "Set up later")
                             .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
                     }
                         .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
                         .accessibilityIdentifier("onboarding.later")
-                } else {
+                } else if progress.step.hasSkipPill {
                     Button { update { $0.skip() } } label: {
                         Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
                             .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
@@ -1151,7 +1168,7 @@ struct OnboardingView: View {
             return false
             #endif
         case .model: return !connected || modelStatus?.isReady != true
-        case .computer: return !connected || !(computerSwitchOn || computerConfigured == true)
+        case .computer, .permissions: return !progress.step.continueAlwaysWorks
         case .ready: return checking && modelStatus == nil
         default: return false
         }
@@ -1394,6 +1411,15 @@ struct OnboardingView: View {
             .accessibilityIdentifier("onboarding.reconnect")
     }
 
+    /// The step that shows the notifications row: Allow a few things on the Mac, Ready on the iPhone.
+    private static var notificationStep: OnboardingProgress.Step {
+        #if os(macOS)
+        .permissions
+        #else
+        .ready
+        #endif
+    }
+
     private var notificationsAllowed: Bool {
         model.push.authorization == .authorized || model.push.authorization == .provisional
     }
@@ -1437,6 +1463,29 @@ struct OnboardingView: View {
         case false: return computerSwitchOn ? String(localized: "Getting ready") : String(localized: "Not set up yet. You can turn it on in Bot settings.")
         case nil: return String(localized: "Not checked yet")
         }
+    }
+
+    private var modelStepRetrying: Bool {
+        progress.step == .model && !isFixture
+            && ModelStepRetry.shouldRetry(status: modelStatus, checking: checking, checkFailed: checkError != nil, connected: connected)
+    }
+
+    /// Reads the model again without clearing what the step shows, so the row doesn't flicker between tries.
+    private func recheckModel() async {
+        #if os(macOS)
+        guard progress.step == .model, let rt = runtime, connected, !checking else { return }
+        let identity = checkIdentity
+        guard let options: ModelOptionsResult = try? await rt.api.get("/api/model/options", profile: focusProfile),
+              checkIdentity == identity, !Task.isCancelled else { return }
+        var local: LocalModelSetupSnapshot?
+        if ModelPlace.isLocal(ModelPlace.provider(options)) {
+            local = try? await LocalModelSetupClient(api: rt.api).inspect()
+            guard checkIdentity == identity, !Task.isCancelled else { return }
+        }
+        modelOptions = options
+        if let local { modelLocal = local }
+        checkError = nil
+        #endif
     }
 
     private func refreshChecks() async {
