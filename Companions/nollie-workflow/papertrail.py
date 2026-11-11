@@ -10,7 +10,8 @@ model answered, and the person's approval answers in the same turn.
 
 Nollie Runtime's door writes "door" lines into the same files: one per connection Hermes or a program it
 started made, with the host, port, time and kind of program (``hermes``, ``terminal``, ``code``, ``mcp``,
-``model``, ``reader``, ``program``). The reader puts each with the reply it happened in, by time.
+``model``, ``reader``, ``program``), and one per connection the bot's own computer made through Nollie
+Runtime's exit relay (``computer``). The reader puts each with the reply it happened in, by time.
 """
 from __future__ import annotations
 
@@ -55,8 +56,9 @@ CHANGES = frozenset({"app_removed"})
 CHANGE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}\Z")
 MAX_CHANGES = 50
 # What kind of program made a connection through the door.
-# "direct": a connection the network filter saw going around the door.
-DOOR_KINDS = frozenset({"hermes", "terminal", "code", "mcp", "model", "reader", "program", "direct"})
+# "direct": a connection the network filter saw going around the door. "computer": one the exit relay
+# passed on from the bot's own computer (a Cua VM).
+DOOR_KINDS = frozenset({"hermes", "terminal", "code", "mcp", "model", "reader", "program", "direct", "computer"})
 # A connection this close to a reply's own calls belongs to that reply; otherwise it stands alone,
 # with the others of its bot in the same hour.
 DOOR_SLACK = 5

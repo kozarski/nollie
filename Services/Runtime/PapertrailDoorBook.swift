@@ -9,8 +9,9 @@ import Foundation
 /// nothing written. Connections that stay on this Mac (loopback) are not lines at all.
 final class PapertrailDoorBook: @unchecked Sendable {
     /// What a connection's label may say it came from. Anything else is a program.
-    /// `direct` is a connection the network filter saw going around the door.
-    static let kinds: Set<String> = ["hermes", "terminal", "code", "mcp", "model", "reader", "program", "direct"]
+    /// `direct` is a connection the network filter saw going around the door; `computer` one the
+    /// exit relay passed on from a helper's own computer.
+    static let kinds: Set<String> = ["hermes", "terminal", "code", "mcp", "model", "reader", "program", "direct", "computer"]
     static let keepDays = 35
     /// Bots that were private before the list existed. They always count, as in the add-on.
     static let carriedOverPrivate: Set<String> = ["private", "moss"]
@@ -119,6 +120,42 @@ final class PapertrailDoorBook: @unchecked Sendable {
         }
         privateSeen = (signature, names)
         return names
+    }
+
+    /// Where the computer add-on keeps the key it gave a bot's computer, in that bot's home.
+    static let computerKeyFolder = "nollie-computer"
+    static let computerKeyFile = "relay-key"
+
+    /// The key a bot's own computer proves itself with at the exit relay: 64 hex characters, from
+    /// `<bot home>/nollie-computer/relay-key`. Nil when there is none, or it is a link, not this
+    /// account's, or not exactly a key.
+    func computerKey(bot: String) -> String? {
+        guard Self.botName(Substring(bot)) == bot else { return nil }
+        let botHome = bot == "default" ? home : home.appendingPathComponent("profiles", isDirectory: true).appendingPathComponent(bot)
+        let base = open(botHome.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard base >= 0 else { return nil }
+        defer { close(base) }
+        let folder = openat(base, Self.computerKeyFolder, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard folder >= 0 else { return nil }
+        defer { close(folder) }
+        let fd = openat(folder, Self.computerKeyFile, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { return nil }
+        defer { close(fd) }
+        var info = stat()
+        guard fstat(fd, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG, info.st_uid == getuid(), info.st_size <= 128 else { return nil }
+        var bytes = [UInt8](repeating: 0, count: 128)
+        let count = read(fd, &bytes, bytes.count)
+        guard count > 0 else { return nil }
+        let key = String(decoding: bytes[..<count], as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard key.utf8.count == 64, key.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }) else { return nil }
+        return key
+    }
+
+    /// Two keys compared in constant time.
+    static func sameKey(_ a: String, _ b: String) -> Bool {
+        let x = Array(a.utf8), y = Array(b.utf8)
+        guard x.count == y.count, !x.isEmpty else { return false }
+        return zip(x, y).reduce(0) { $0 | ($1.0 ^ $1.1) } == 0
     }
 
     // MARK: Writing (on the book's queue)

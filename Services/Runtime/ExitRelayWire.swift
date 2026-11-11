@@ -157,9 +157,9 @@ enum ExitRelayHTTP {
     }
 }
 
-/// The SOCKS5 side of the relay (RFC 1928): no authentication, CONNECT only. The listener is
-/// reachable from the VM network alone, so a password would add nothing. BIND and UDP ASSOCIATE
-/// are refused.
+/// The SOCKS5 side of the relay (RFC 1928): CONNECT only. BIND and UDP ASSOCIATE are refused. The
+/// listener is reachable from the VM network alone, so nothing is kept out by a password; a user
+/// name and password (RFC 1929), when a computer offers one, is only its label for Papertrail.
 enum ExitRelaySOCKS {
     static let version: UInt8 = 5
 
@@ -170,9 +170,9 @@ enum ExitRelaySOCKS {
         case addressType
     }
 
-    /// The client's greeting: how many bytes it took, and whether "no authentication" was offered.
-    /// Nil until it has all arrived.
-    static func greeting(_ data: Data) throws(Failure) -> (length: Int, noAuthentication: Bool)? {
+    /// The client's greeting: how many bytes it took, and whether "no authentication" and "user name
+    /// and password" were offered. Nil until it has all arrived.
+    static func greeting(_ data: Data) throws(Failure) -> (length: Int, noAuthentication: Bool, usernamePassword: Bool)? {
         let bytes = [UInt8](data.prefix(258))
         guard let first = bytes.first else { return nil }
         guard first == version else { throw .malformed }
@@ -180,7 +180,26 @@ enum ExitRelaySOCKS {
         let count = Int(bytes[1])
         guard count >= 1 else { throw .malformed }
         guard bytes.count >= 2 + count else { return nil }
-        return (2 + count, bytes[2..<(2 + count)].contains(0))
+        let methods = bytes[2..<(2 + count)]
+        return (2 + count, methods.contains(0), methods.contains(2))
+    }
+
+    /// The user name and password after the greeting (RFC 1929: version 1, then each with its length).
+    /// Nil until it has all arrived.
+    static func credentials(_ data: Data) throws(Failure) -> (user: String, password: String, length: Int)? {
+        let bytes = [UInt8](data.prefix(513))
+        guard let first = bytes.first else { return nil }
+        guard first == 1 else { throw .malformed }
+        guard bytes.count >= 2 else { return nil }
+        let userLength = Int(bytes[1])
+        guard userLength >= 1 else { throw .malformed }
+        guard bytes.count >= 2 + userLength + 1 else { return nil }
+        let passwordLength = Int(bytes[2 + userLength])
+        let end = 3 + userLength + passwordLength
+        guard bytes.count >= end else { return nil }
+        let user = bytes[2..<(2 + userLength)], password = bytes[(3 + userLength)..<end]
+        guard user.allSatisfy({ (33...126).contains($0) }), password.allSatisfy({ (33...126).contains($0) }) else { throw .malformed }
+        return (String(decoding: user, as: UTF8.self), String(decoding: password, as: UTF8.self), end)
     }
 
     /// The CONNECT request after the greeting. Nil until it has all arrived.
@@ -235,6 +254,9 @@ enum ExitRelaySOCKS {
     }
 
     static let chooseNoAuthentication = Data([version, 0])
+    static let chooseUsernamePassword = Data([version, 2])
+    /// RFC 1929's "success": every label is let through; one that proves nothing just isn't one.
+    static let labelAccepted = Data([1, 0])
     static let noAcceptableMethod = Data([version, 0xFF])
 
     /// A reply with an empty IPv4 bound address: the client has no use for the relay's own.

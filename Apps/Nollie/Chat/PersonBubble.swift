@@ -3,7 +3,7 @@ import NollieCore
 
 /// What the context menu of a bubble offers, as titles with their symbols.
 enum BubbleAction {
-    case copy, select, edit, reply, share
+    case copy, select, edit, reply, share, listen, stopListening
 
     var title: String {
         switch self {
@@ -12,6 +12,8 @@ enum BubbleAction {
         case .edit: String(localized: "Edit & resend")
         case .reply: String(localized: "Reply", comment: "A menu item that replies to a message")
         case .share: String(localized: "Share", comment: "A menu item that shares a message")
+        case .listen: String(localized: "Listen", comment: "A menu item that reads a reply aloud")
+        case .stopListening: String(localized: "Stop Reading", comment: "A menu item that stops reading a reply aloud")
         }
     }
 
@@ -22,6 +24,8 @@ enum BubbleAction {
         case .edit: "pencil"
         case .reply: "arrowshape.turn.up.left"
         case .share: "square.and.arrow.up"
+        case .listen: "play.fill"
+        case .stopListening: "stop.fill"
         }
     }
 

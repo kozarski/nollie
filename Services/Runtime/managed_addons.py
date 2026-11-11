@@ -13,7 +13,7 @@ is on in every bot, Private ones too, and stays on: the person's Ask first switc
 (nollie-workflow/ask-first.json) and covers only what Nollie can't read, so an add-on an older Nollie
 switched off comes back on with that switch off. Every bot's use of this Mac starts off: a bot with
 no desktop lease gets a person's (bot-desktop/lease.json), since Hermes reads no lease as the bot's.
-Other disabled add-ons stay disabled. Board follow-through starts on the first install only.
+Other disabled add-ons stay disabled. Board follow-through and Night shift start on the first install only.
 nollie-mac (a bot asking Nollie Computer to use apps on this Mac) is copied into every bot that is not
 private but is listed, with its MCP server on Nollie's own Python, only in bots whose desktop lease is
 the agent's (This Mac on); turning This Mac off takes both out again at the next start.
@@ -181,6 +181,8 @@ def start_workflow(home):
         state = core.initial_state()
         state["enabled"] = True
         core.atomic_write(root / "state.json", state)
+    # A new setup starts with Night shift on, so the first morning has its card. A setup made before keeps its choice.
+    core.start_night_shift(root)
     return "started"
 
 
