@@ -37,3 +37,33 @@ struct MacModelHardware: Equatable, Sendable {
     }
     #endif
 }
+
+/// Memory guidance, as the site puts it: 16 GB of memory suggested for a model on your Mac; 8 GB is
+/// fine with a ChatGPT or Claude plan. Under 16 GB a plan is the suggested choice; from 16 GB nothing changes.
+enum ModelMemoryGuidance {
+    static let suggestedBytes: UInt64 = 16 << 30
+
+    static func suggestsPlan(_ memoryBytes: UInt64?) -> Bool {
+        guard let memoryBytes, memoryBytes > 0 else { return false }
+        return memoryBytes < suggestedBytes
+    }
+
+    static func suggestedMode(_ memoryBytes: UInt64?) -> ModelSetupMode { suggestsPlan(memoryBytes) ? .cloud : .local }
+
+    /// "This Mac has 8 GB. A plan will feel faster.", only under 16 GB.
+    static func line(_ memoryBytes: UInt64?) -> String? {
+        guard suggestsPlan(memoryBytes), let memoryBytes else { return nil }
+        let memory = ByteCountFormatter.string(fromByteCount: Int64(clamping: memoryBytes), countStyle: .memory)
+        return ModelPlace.sentence(
+            mac: String(localized: "This Mac has \(memory). A plan will feel faster.", comment: "%@ is this Mac's memory, such as 8 GB"),
+            phone: String(localized: "Your Mac has \(memory). A plan will feel faster.", comment: "%@ is the Mac's memory, such as 8 GB"))
+    }
+
+    /// This Mac's memory, when Nollie runs on a Mac.
+    static var thisMac: UInt64? {
+        #if DEBUG
+        if let demo = LocalModelDemo.memoryBytes { return demo }
+        #endif
+        return MacModelHardware.current()?.totalMemoryBytes
+    }
+}
