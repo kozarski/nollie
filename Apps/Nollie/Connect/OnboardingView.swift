@@ -18,6 +18,8 @@ struct OnboardingView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @ScaledMetric(relativeTo: .largeTitle) private var desktopTitleSize: CGFloat = 38
     @ScaledMetric(relativeTo: .body) private var desktopBodySize: CGFloat = 17
+    /// The column for a feature's symbol grows with the text, so at the largest sizes it never spills left.
+    @ScaledMetric(relativeTo: .title3) private var featureIconWidth: CGFloat = 28
     @AppStorage(OnboardingProgress.storageKey) private var savedProgress = ""
     @AppStorage(WelcomeIntroTimeline.seenKey) private var welcomeIntroSeen = false
     @AppStorage(ModelPreferenceStore.key) private var savedModelMode = ModelSetupMode.local.rawValue
@@ -698,7 +700,7 @@ struct OnboardingView: View {
                     Label("Get the Mac app", systemImage: "square.and.arrow.up")
                 }
                 .buttonStyle(.nollieGlass)
-                .padding(.leading, 42)
+                .padding(.leading, featureIconWidth + 14)
                 .accessibilityIdentifier("onboarding.getMacApp")
             }
             feature("Pair \(DeviceWords.this)", "On your Mac, open Settings and show the code.", symbol: "qrcode.viewfinder")
@@ -1450,7 +1452,7 @@ struct OnboardingView: View {
     private func feature(_ title: LocalizedStringKey, _ detail: LocalizedStringKey, symbol: String) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: symbol).font(.title3).foregroundStyle(.blue)
-                .frame(width: 28).accessibilityHidden(true)
+                .frame(width: featureIconWidth).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.headline)
                 Text(detail).font(.subheadline).foregroundStyle(.secondary)
