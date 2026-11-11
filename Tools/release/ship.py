@@ -705,10 +705,22 @@ class Ship:
         self.state["commit"] = commit
         self.done("bump", commit=commit)
 
+    def check_env(self):
+        """The full check's environment. The Hermes tests look for the pinned Hermes beside the repository; a dry
+        run's throwaway checkout has nothing beside it, so it is pointed at the one beside the real repository."""
+        env = self.clean_env()
+        if self.dry and not env.get("NOLLIE_HERMES_SOURCE"):
+            pins = json.loads((self.root / "Tools" / "pins.json").read_text())
+            version = next((c["version"] for c in pins.get("components", []) if c.get("id") == "hermes"), None)
+            source = self.root.parent / f"hermes-v{version}"
+            if version and source.is_dir():
+                env["NOLLIE_HERMES_SOURCE"] = str(source)
+        return env
+
     def step_check(self):
         stages = self.args.check_stages or list(CHECK_STAGES)
         print(f"\n== Full check: {' '.join(stages)}")
-        self.run(self.locked([sys.executable, "Tools/dev/verify.py", *stages]), env=self.clean_env())
+        self.run(self.locked([sys.executable, "Tools/dev/verify.py", *stages]), env=self.check_env())
         self.done("check", stages=stages)
 
     def notary_env(self):

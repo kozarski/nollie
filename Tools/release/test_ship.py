@@ -324,6 +324,19 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual(git(self.root, "tag"), "")
         git(self.root, "worktree", "remove", "--force", str(release.work))
 
+    def test_a_dry_runs_check_finds_the_pinned_hermes_beside_the_real_repository(self):
+        (self.root / "Tools").mkdir()
+        (self.root / "Tools" / "pins.json").write_text('{"components": [{"id": "hermes", "version": "9.9.9"}]}')
+        source = self.root.parent / "hermes-v9.9.9"
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("NOLLIE_HERMES_SOURCE", None)
+            self.assertNotIn("NOLLIE_HERMES_SOURCE", self.make("--dry-run").check_env(), "nothing there, nothing set")
+            source.mkdir()
+            self.assertEqual(self.make("--dry-run").check_env()["NOLLIE_HERMES_SOURCE"], str(source))
+            self.assertNotIn("NOLLIE_HERMES_SOURCE", self.make().check_env(), "a real run checks the repository itself")
+            os.environ["NOLLIE_HERMES_SOURCE"] = "/chosen"
+            self.assertEqual(self.make("--dry-run").check_env()["NOLLIE_HERMES_SOURCE"], "/chosen")
+
     def test_a_checkpoint_without_a_terminal_stops_and_with_approve_goes_on(self):
         release = self.make()
         release.step = "publish"
