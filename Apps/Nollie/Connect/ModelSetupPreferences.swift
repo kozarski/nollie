@@ -6,7 +6,7 @@ enum ModelSetupMode: String, Codable, CaseIterable, Identifiable, Sendable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .local: String(localized: "On your Mac", comment: "Where the model runs, as a title")
+        case .local: ModelPlace.here
         case .cloud: String(localized: "Online", comment: "Where the model runs")
         case .both: String(localized: "Both", comment: "The model runs on your Mac and online")
         }
