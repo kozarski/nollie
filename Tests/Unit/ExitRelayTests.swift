@@ -270,8 +270,18 @@ struct ExitRelayTests {
         #expect(try ExitRelaySOCKS.greeting(Data()) == nil)
         #expect(try ExitRelaySOCKS.greeting(Data([5])) == nil)
         #expect(try ExitRelaySOCKS.greeting(Data([5, 2, 0])) == nil)
-        #expect(try ExitRelaySOCKS.greeting(Data([5, 2, 2, 0]))! == (4, true))
-        #expect(try ExitRelaySOCKS.greeting(Data([5, 1, 2]))! == (3, false))
+        #expect(try ExitRelaySOCKS.greeting(Data([5, 2, 2, 0]))! == (4, true, true))
+        #expect(try ExitRelaySOCKS.greeting(Data([5, 1, 2]))! == (3, false, true))
+        #expect(try ExitRelaySOCKS.greeting(Data([5, 1, 0]))! == (3, true, false))
+
+        // RFC 1929: version 1, the user name and the password, each with its length.
+        let label = Data([1, 5] + Array("scout".utf8) + [3] + Array("key".utf8))
+        for cut in 0..<label.count { #expect(try ExitRelaySOCKS.credentials(label.prefix(cut)) == nil, "\(cut) bytes") }
+        let credentials = try #require(try ExitRelaySOCKS.credentials(label + Data([5])))
+        #expect(credentials == ("scout", "key", label.count))
+        do throws(ExitRelaySOCKS.Failure) { _ = try ExitRelaySOCKS.credentials(Data([2, 1, 65, 0])); Issue.record("version 2 read") } catch {}
+        do throws(ExitRelaySOCKS.Failure) { _ = try ExitRelaySOCKS.credentials(Data([1, 0, 0])); Issue.record("empty user read") } catch {}
+        do throws(ExitRelaySOCKS.Failure) { _ = try ExitRelaySOCKS.credentials(Data([1, 1, 32, 0])); Issue.record("space read") } catch {}
 
         let domain = Data([5, 1, 0, 3, 11] + Array("example.com".utf8) + [1, 187])
         for cut in 0..<domain.count { #expect(try ExitRelaySOCKS.request(domain.prefix(cut)) == nil, "\(cut) bytes") }
@@ -385,9 +395,58 @@ struct ExitRelayTests {
         #expect(Array(bind) == [5, 0, 5, 7, 0, 1, 0, 0, 0, 0, 0, 0])
         let udp = try await RelayClient.exchangeBytes(fixture.port, Data([5, 1, 0, 5, 3, 0, 1, 1, 1, 1, 1, 0, 80]), count: 12)
         #expect(Array(udp) == [5, 0, 5, 7, 0, 1, 0, 0, 0, 0, 0, 0])
-        let password = try await RelayClient.exchangeBytes(fixture.port, Data([5, 1, 2]), count: 2)
-        #expect(Array(password) == [5, 0xFF])
+        let gssapi = try await RelayClient.exchangeBytes(fixture.port, Data([5, 1, 1]), count: 2)
+        #expect(Array(gssapi) == [5, 0xFF])
         #expect(fixture.upstream.connections == 2)
+    }
+
+    // MARK: Papertrail
+
+    @Test func aLabelledComputersConnectionsAreNotedForItsBotOnly() async throws {
+        let papertrail = FakePapertrail(keys: ["scout": "good"])
+        let fixture = try await RelayFixture.start(papertrail: papertrail)
+        defer { fixture.stop() }
+        let port = fixture.upstream.port
+        let hi = UInt8(port >> 8), lo = UInt8(port & 0xFF)
+        // HTTP, with the computer's name and key as the proxy's user name and password.
+        let basic = Data("scout:good".utf8).base64EncodedString()
+        let connect = try await RelayClient.exchange(fixture.port, Data("CONNECT 127.0.0.1:\(port) HTTP/1.1\r\nProxy-Authorization: Basic \(basic)\r\n\r\nping".utf8),
+                                                     until: "HTTP/1.1 200 Connection established\r\n\r\nping")
+        #expect(connect.hasSuffix("ping"))
+        // SOCKS5 with a user name and password (RFC 1929), by name.
+        let socks = try await RelayClient.exchangeBytes(fixture.port, Data([5, 1, 2, 1, 5] + Array("scout".utf8) + [4] + Array("good".utf8)
+                                                                            + [5, 1, 0, 3, 13] + Array("upstream.test".utf8) + [hi, lo]), count: 14)
+        #expect(Array(socks) == [5, 2, 1, 0, 5, 0, 0, 1, 0, 0, 0, 0, 0, 0])
+        // A refused destination connects to nothing, so it is no line.
+        let refused = try await RelayClient.exchange(fixture.port, Data("CONNECT private.test:443 HTTP/1.1\r\nProxy-Authorization: Basic \(basic)\r\n\r\n".utf8))
+        #expect(refused.hasPrefix("HTTP/1.1 403 "))
+        #expect(papertrail.notes == [Note(bot: "scout", host: "127.0.0.1", port: port), Note(bot: "scout", host: "upstream.test", port: port)])
+        #expect(fixture.relay.counts.noted == 2)
+    }
+
+    @Test func aWrongKeyProvesNothingAndAnUnlabelledComputerFollowsItsAddress() async throws {
+        let papertrail = FakePapertrail(keys: ["scout": "good"])
+        let fixture = try await RelayFixture.start(papertrail: papertrail)
+        defer { fixture.stop() }
+        let port = fixture.upstream.port
+        let request = "CONNECT 127.0.0.1:\(port) HTTP/1.1\r\n"
+        let established = "HTTP/1.1 200 Connection established\r\n\r\n"
+        // Before any computer proved itself from this address: passed on, no line.
+        _ = try await RelayClient.exchange(fixture.port, Data((request + "\r\n").utf8), until: established)
+        let forged = Data("wren:good".utf8).base64EncodedString()
+        _ = try await RelayClient.exchange(fixture.port, Data((request + "Proxy-Authorization: Basic \(forged)\r\n\r\n").utf8), until: established)
+        #expect(papertrail.notes.isEmpty)
+        #expect(fixture.relay.counts.unplaced == 2)
+        // Once it has, its unlabelled connections (a browser that drops the user name) are its bot's.
+        let basic = Data("scout:good".utf8).base64EncodedString()
+        _ = try await RelayClient.exchange(fixture.port, Data((request + "Proxy-Authorization: Basic \(basic)\r\n\r\n").utf8), until: established)
+        _ = try await RelayClient.exchange(fixture.port, Data((request + "\r\n").utf8), until: established)
+        let plainSocks = try await RelayClient.exchangeBytes(fixture.port, Data([5, 1, 0, 5, 1, 0, 1, 127, 0, 0, 1, UInt8(port >> 8), UInt8(port & 0xFF)]), count: 12)
+        #expect(Array(plainSocks) == [5, 0, 5, 0, 0, 1, 0, 0, 0, 0, 0, 0])
+        #expect(papertrail.notes.map(\.bot) == ["scout", "scout", "scout"])
+        // A relay that stops forgets every address.
+        fixture.relay.stop()
+        #expect(fixture.relay.counts.unplaced == 2)
     }
 
     @Test func malformedAndOversizedRequestsAreAnsweredAndClosed() async throws {
@@ -474,7 +533,7 @@ private struct RelayFixture {
     let upstream: FakeWebsite
     let port: Int
 
-    static func start(loopbackClients: Bool = true, upstreamOpen: Bool = true,
+    static func start(loopbackClients: Bool = true, upstreamOpen: Bool = true, papertrail: ExitRelayPapertrail? = nil,
                       tune: (inout ExitRelay.Configuration) -> Void = { _ in }) async throws -> RelayFixture {
         let upstream = try await FakeWebsite.start()
         if !upstreamOpen { upstream.stop() }
@@ -489,7 +548,8 @@ private struct RelayFixture {
             "private.test": [[192, 168, 1, 1]],
             "localhost.test": [Array(IPv6Address("::1")!.rawValue), [127, 0, 0, 1]],
         ]
-        let relay = ExitRelay(configuration: configuration, resolver: { name, _ in names[name] }, ownAddresses: { [] })
+        let relay = ExitRelay(configuration: configuration, resolver: { name, _ in names[name] }, ownAddresses: { [] },
+                              papertrail: papertrail)
         let port = try await relay.start()
         return RelayFixture(relay: relay, upstream: upstream, port: Int(port))
     }
@@ -497,6 +557,24 @@ private struct RelayFixture {
     func stop() {
         relay.stop()
         upstream.stop()
+    }
+}
+
+private struct Note: Equatable {
+    var bot: String
+    var host: String
+    var port: Int
+}
+
+/// Papertrail as the relay sees it: fixed keys, and the lines it was handed.
+private final class FakePapertrail: ExitRelayPapertrail, @unchecked Sendable {
+    private let keys: [String: String]
+    private let written = RelayBox([Note]())
+    init(keys: [String: String]) { self.keys = keys }
+    var notes: [Note] { written.withLock { $0 } }
+    func bot(user: String, key: String) -> String? { keys[user] == key ? user : nil }
+    func note(bot: String, target: ExitRelayTarget) {
+        written.withLock { $0.append(Note(bot: bot, host: target.recordedHost, port: Int(target.port))) }
     }
 }
 

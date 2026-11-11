@@ -20,6 +20,8 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
     private let session: URLSession
     /// Papertrail's door: open while Hermes runs, so every connection it makes is noted.
     private var door: PapertrailDoor?
+    /// The exit relay's Papertrail: helpers' own computers are noted in this run's book too.
+    private let computersPapertrail: ExitRelayPapertrailLog?
     /// Papertrail's network filter link, while Hermes runs and the switch is on.
     private var filter: RuntimeNetworkFilter?
     /// Rereads the filter's switch while Hermes runs, so turning it on or off needs no restart.
@@ -34,10 +36,12 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         var port: Int?
         var exitCode: Int32?
     }
-    init(installations: URL, entrypoint: URL, keys: any RuntimeKeyStoring = RuntimeKeychainKeys()) {
+    init(installations: URL, entrypoint: URL, keys: any RuntimeKeyStoring = RuntimeKeychainKeys(),
+         computersPapertrail: ExitRelayPapertrailLog? = nil) {
         self.installations = installations
         self.entrypoint = entrypoint
         self.keys = keys
+        self.computersPapertrail = computersPapertrail
         let config = URLSessionConfiguration.ephemeral
         config.httpCookieStorage = nil
         config.urlCredentialStorage = nil
@@ -307,6 +311,7 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         let made = PapertrailDoor(configuration: configuration, book: book)
         guard let port = try? await made.start() else { made.stop(); door = nil; return nil }
         door = made
+        computersPapertrail?.use(book)
         apply(state, book: book)
         switchWatch?.cancel()
         switchWatch = Task { [weak self] in

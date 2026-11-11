@@ -25,11 +25,12 @@ actor RuntimeExitRelay {
     private(set) var state: NollieExitRelayState = .off
     private var written: NollieExitRelayState?
 
-    init(directory: URL?, networks: @escaping Networks = { await ExitRelayNetworks.current() },
-         make: @escaping Make = { ExitRelay(configuration: .init(network: $0)) }) {
+    /// `papertrail`: where each relay it starts notes the connections it passes on.
+    init(directory: URL?, papertrail: ExitRelayPapertrail? = nil,
+         networks: @escaping Networks = { await ExitRelayNetworks.current() }, make: Make? = nil) {
         self.directory = directory
         self.networks = networks
-        self.make = make
+        self.make = make ?? { ExitRelay(configuration: .init(network: $0), papertrail: papertrail) }
     }
 
     /// Checks now and then every 5 seconds, until `close`.
