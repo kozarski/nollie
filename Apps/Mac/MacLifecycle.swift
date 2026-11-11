@@ -75,6 +75,8 @@ struct MacLifecycle: ViewModifier {
         #if NOLLIE_DIRECT
         // A newer Nollie may carry newer add-ons for the managed setup. They go in without asking.
         // A newer Nollie may carry a newer Hermes; the engine update brings the add-ons along with it.
+        // Never from a test run: the tests open this app, and they must not touch a real setup on this Mac.
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
         Task {
             await EngineUpdate.shared.runIfNeeded()
             await MacHermesSetup.updateAddOnsIfNeeded()
