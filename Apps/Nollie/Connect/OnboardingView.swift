@@ -197,6 +197,15 @@ struct OnboardingView: View {
         #endif
     }
 
+    /// Only the Direct download can import a copy of Hermes.
+    private var importAvailable: Bool {
+        #if os(macOS) && NOLLIE_DIRECT
+        true
+        #else
+        false
+        #endif
+    }
+
     /// The connection step's path. On the Mac a setup saved without one shows Start new's card, so it is
     /// Start new all through that step (`settleRoute` saves the right path as soon as setup opens).
     private var connectionRoute: OnboardingProgress.Route? {
@@ -807,9 +816,6 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 18) {
                 feature("Preview before copying", "Choose the original folder, review the files, then decide.", symbol: "doc.text.magnifyingglass")
                 feature("Your original stays put", "Copies its instructions and settings. Chats, bots and schedules stay where they are.", symbol: "checkmark.shield")
-                Button("Review the import") { destination = .importReview }
-                    .buttonStyle(.nollieGlassProminent).controlSize(.large)
-                    .accessibilityIdentifier("onboarding.import.review")
             }
             #else
             VStack(alignment: .leading, spacing: 18) {
@@ -827,8 +833,11 @@ struct OnboardingView: View {
                     .buttonStyle(.nollieGlass).accessibilityIdentifier("onboarding.connectManually")
                 #else
                 feature("Your setup stays yours", "Nollie only saves how to reach it. Your files stay as they are.", symbol: "checkmark.shield")
-                Button { destination = .backup } label: { Label("Back up first", systemImage: "externaldrive.badge.timemachine") }
-                    .buttonStyle(.nollieGlass)
+                Button { destination = .backup } label: {
+                    Label("Back up first", systemImage: "externaldrive.badge.timemachine")
+                        .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
+                }
+                    .buttonStyle(.nollieGlass).tint(.primary)
                     .accessibilityIdentifier("onboarding.backup")
                 #endif
             }
@@ -1134,7 +1143,8 @@ struct OnboardingView: View {
         #else
         if progress.step == .home { return false }
         if progress.step == .connection {
-            if connectionRoute == .importCopy { return false }
+            // Review the import is the main button, where every other step has its own.
+            if connectionRoute == .importCopy { return importAvailable }
             #if os(macOS)
             // Start new's card has its own main button; another here would only say the same.
             if connectionRoute == .new { return false }
@@ -1152,7 +1162,9 @@ struct OnboardingView: View {
         case .welcome: return String(localized: "Get started")
         case .home, .howItWorks, .team: return String(localized: "Continue")
         case .connection:
-            if connectionRoute == .importCopy { return String(localized: "Import is not available yet") }
+            if connectionRoute == .importCopy {
+                return importAvailable ? String(localized: "Review the import") : String(localized: "Import is not available yet")
+            }
             #if os(iOS)
             return String(localized: "Scan QR code")
             #else
@@ -1176,7 +1188,7 @@ struct OnboardingView: View {
         #else
         switch progress.step {
         case .connection:
-            if connectionRoute == .importCopy { return true }
+            if connectionRoute == .importCopy { return !importAvailable || model.lock.isLocked }
             #if os(macOS)
             return model.lock.isLocked || (connectionRoute == .new &&
                 (!localSetup.canConnect || localSetup.isBusy || managedConnectionRequest != nil))
@@ -1200,7 +1212,10 @@ struct OnboardingView: View {
         case .home: break
         case .howItWorks, .team: update { $0.advance() }
         case .connection:
-            guard connectionRoute != .importCopy else { return }
+            guard connectionRoute != .importCopy else {
+                if importAvailable { destination = .importReview }
+                return
+            }
             #if os(macOS)
             if connectionRoute == .existing { destination = .gateway }
             else { connectManagedAssistant() }

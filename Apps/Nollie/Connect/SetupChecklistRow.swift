@@ -479,10 +479,13 @@ struct NativeSetupChecklistView: View {
                 .accessibilityIdentifier("onboarding.install.start")
             }
         }
+        // A quiet pill, as Finish setup later is: without its own tint it took setup's blue and, in a
+        // window in front, drew as a filled blue button beside the main one.
         Button { showDetails = true } label: {
             Label("What's installed", systemImage: "info.circle")
+                .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
         }
-        .buttonStyle(.nollieGlass)
+        .buttonStyle(.nollieGlass).tint(.primary)
         .accessibilityLabel("Installation details")
     }
 
