@@ -92,12 +92,45 @@ Then in the project:
   Hermes's. The names Hermes's programs look up leave the Mac unrecorded (only the name, not what follows).
 - **Programs that leave the tree.** A process that detaches and is re-parented to `launchd` (a double fork, a
   `launchctl` job, an app opened through Launch Services such as a browser) no longer has Nollie Runtime above it.
-- **Work done for Hermes by something else.** Another app told to act (Mail asked to send by AppleScript), system
-  services (background downloads, iCloud) and helpers' own computers (Cua's virtual machines) show as theirs.
+- **Work done for Hermes by something else.** Another app told to act (Mail asked to send by AppleScript) and system
+  services (background downloads, iCloud) show as theirs.
+- **Helpers' own computers.** See below: Refuse does not reach them.
 - **Not Hermes:** Nollie.app's own connections (update checks, iCloud alerts).
 - **Not proven:** that a sandboxed filter may read other processes' start-time environment and check their
   signatures (if not, the bot falls back to none and the flow is counted, not written), and the filter's cost on a
   busy Mac.
+
+## Helpers' own computers
+
+Papertrail records what a helper's computer (a Cua VM) sends through the exit relay
+([Papertrail](papertrail.md#helpers-own-computers-the-exit-relay)). "Stop what Papertrail can't see" does **not**
+hold for these computers, because the relay is not their only way out (checked 11 Nov 2026 against the code):
+
+1. **Apple's VM network gives them their own route.** A computer sits on Apple's NAT bridge (`bridge100` with a
+   `vmenet` member); without an exit node, macOS forwards its traffic to the internet itself. That is why the relay
+   was needed only for exit nodes ([A computer of its own](../helper-computers.md)): the exit node is what takes the
+   NAT route away.
+2. **The relay is opt-in inside the computer.** The add-on's snippet only sets `http_proxy`, `https_proxy` and
+   `all_proxy` in login shells, and only while the relay answers (`own_computer.relay_snippet`). A program that
+   ignores those variables, a shell that is not a login shell, UDP, QUIC and the computer's own DNS go straight out
+   through the NAT route. If Cua can't run the snippet, the computer keeps its own network entirely.
+3. **The filter can't see them.** It judges socket flows by the process that opened them, and only processes below
+   Nollie Runtime. A VM's packets are forwarded by macOS's NAT, not opened by a socket of a Hermes process, so they
+   never reach it (not proven on a real computer, but nothing in the design would catch them).
+
+What it would take, none of it built:
+
+- A network for the computers with no route out but the relay: either Apple's host-only VM mode (Cua's
+  `spaces create` has no network option in its public docs, and Nollie never changes Cua's code) or a packet
+  filter rule on the VM bridge that drops everything from the VM subnet except the relay's port on the Mac's own
+  bridge address. `pf` needs root; Nollie Runtime runs as the person, so this needs a privileged helper the
+  person approves, and its own tests.
+- With no other route, name lookups must go through the relay too: `socks5h` already resolves names on the Mac,
+  but plain `http_proxy` clients resolve nothing themselves, so the computer would need no other DNS server.
+- The relay's switch: refuse a connection it can't place (like the door's `refuseUnplaced`) when Refuse is on,
+  once every computer has been pointed with a key.
+
+Until then, Settings may say Papertrail lists what helpers' computers send through Nollie, not everything they send.
 
 ## Tests
 

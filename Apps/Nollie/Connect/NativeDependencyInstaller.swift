@@ -54,8 +54,7 @@ enum NativeSetupPlan {
         .init(id: "hermes", title: "Hermes Agent", detail: String(localized: "Hermes 0.23.1 at a fixed revision, a 91.4 MB verified download, with Nollie's reviewed changes for Board notes and safe scheduled checks."), state: .notChecked, optional: false),
         .init(id: "dependencies", title: String(localized: "Runtime libraries"), detail: String(localized: "The exact versions in Hermes's lockfile, each checked against its recorded hash. About 40 MB."), state: .notChecked, optional: false),
         .init(id: "addons", title: String(localized: "Nollie add-ons"), detail: String(localized: "Board follow-through, Papertrail and the Night shift, the crew, the page reader, computer previews and using apps on this Mac. The reader's own libraries are about 20 MB, each checked against its recorded hash."), state: .notChecked, optional: false),
-        .init(id: "service", title: String(localized: "Background service"), detail: String(localized: "Keeps your assistant running while this Mac is awake, even after Nollie closes. Starting it is a separate step, with your permission."), state: .notChecked, optional: false),
-        .init(id: "computer", title: String(localized: "Computer access"), detail: String(localized: "Optional. Needs a packaged computer adapter and your macOS permission approval. No permissions are copied."), state: .blocked, optional: true)
+        .init(id: "service", title: String(localized: "Background service"), detail: String(localized: "Keeps your assistant running while this Mac is awake, even after Nollie closes. Starting it is a separate step, with your permission."), state: .notChecked, optional: false)
     ] }
 
     static func environment(installation: URL) -> [String: String] {
@@ -95,6 +94,50 @@ enum NativeSetupPlan {
     }
 
     static func failure(_ message: String) -> ConfigurationBackup.Failure { .init(message) }
+
+    /// Said as it is on the setup screen: the person can act on it.
+    static var lowDiskMessage: String {
+        String(localized: "Your Mac needs at least 6 GB free to get Nollie ready. Free up some space, then try again.")
+    }
+}
+
+/// Lets one preparation step run at a time for each setup folder, across every installer in this app.
+/// Callers wait their turn in order.
+actor NativeInstallGate {
+    static let shared = NativeInstallGate()
+    private var busy: Set<String> = []
+    private var waiting: [String: [CheckedContinuation<Void, Never>]] = [:]
+
+    func serialized<Value: Sendable>(_ key: String, _ work: @Sendable () async throws -> Value) async throws -> Value {
+        await acquire(key)
+        do {
+            let value = try await work()
+            release(key)
+            return value
+        } catch {
+            release(key)
+            throw error
+        }
+    }
+
+    /// True while a step for this folder runs or waits.
+    func isBusy(_ key: String) -> Bool { busy.contains(key) }
+
+    private func acquire(_ key: String) async {
+        guard busy.contains(key) else { busy.insert(key); return }
+        await withCheckedContinuation { waiting[key, default: []].append($0) }
+    }
+
+    private func release(_ key: String) {
+        if var queue = waiting[key], !queue.isEmpty {
+            // Handed straight to the next caller; the folder stays busy.
+            let next = queue.removeFirst()
+            waiting[key] = queue.isEmpty ? nil : queue
+            next.resume()
+        } else {
+            busy.remove(key)
+        }
+    }
 }
 
 /// Stores preparation receipts separately from runtime readiness. A downloaded dependency
@@ -119,7 +162,7 @@ actor NativeDependencyInstaller {
 
     func inspect() -> [NativeDependencyStep] {
         var steps = NativeSetupPlan.steps
-        for index in steps.indices where !["service", "computer"].contains(steps[index].id) {
+        for index in steps.indices where steps[index].id != "service" {
             let id = steps[index].id
             if !NativeSetupPlan.directAvailable {
                 steps[index].state = .blocked
@@ -131,7 +174,16 @@ actor NativeDependencyInstaller {
         return steps
     }
 
+    /// One step at a time per setup folder, whichever installer asks: the launch-time add-on update,
+    /// an engine update and the setup screen each make their own installer. The step is checked again
+    /// once it is this caller's turn, so work another caller just finished is kept, never redone.
     func install(_ id: String) async throws {
+        try await NativeInstallGate.shared.serialized(installation.standardizedFileURL.path) {
+            try await self.installNow(id)
+        }
+    }
+
+    private func installNow(_ id: String) async throws {
         #if NOLLIE_DIRECT
         guard NativeSetupPlan.preparationSteps.contains(id) else {
             throw NativeSetupPlan.failure(String(localized: "This step needs a packaged, signed native service before it can run."))
@@ -172,15 +224,36 @@ actor NativeDependencyInstaller {
             let envPython = installation.appendingPathComponent("environment/bin/python")
             // The bundled installer copies the checked add-ons, keeps dated copies of older ones, builds the
             // reader's hash-locked environment and lists the add-ons in Hermes's config, with a dated backup.
-            _ = try await run(envPython, ["-I", "-B", kit.installer.path, "--kit", kit.root.path,
-                                          "--installation", installation.path, "--uv", uvPath.path,
-                                          "--python", pythonPath.path], timeout: 900)
+            // Exit 3 means another add-on update holds the installer's own lock (another copy of Nollie,
+            // say). That is a wait, not a failure: look again until it finishes, then trust what it did.
+            var attempts = 0
+            while true {
+                do {
+                    _ = try await run(envPython, ["-I", "-B", kit.installer.path, "--kit", kit.root.path,
+                                                  "--installation", installation.path, "--uv", uvPath.path,
+                                                  "--python", pythonPath.path], timeout: 900)
+                    break
+                } catch where NativeDependencyInstaller.isBusy(error) && attempts < 150 {
+                    attempts += 1
+                    try await Task.sleep(for: .seconds(2))
+                    if (try? verified("addons")) == true { return }
+                }
+            }
             try saveAddOnsReceipt(kit)
         default: break
         }
         #endif
         #else
         throw NativeSetupPlan.failure(String(localized: "Local installation is available in the direct Mac edition."))
+        #endif
+    }
+
+    /// The add-on installer's "another update is running" (its exit status 3).
+    nonisolated static func isBusy(_ error: Error) -> Bool {
+        #if NOLLIE_DIRECT
+        (error as? NativeSetupProcess.Failure)?.status == 3
+        #else
+        false
         #endif
     }
 
@@ -243,17 +316,14 @@ actor NativeDependencyInstaller {
         }.sorted { $0.path < $1.path }
     }
 
-    private func record(_ file: URL, relativeTo root: URL) throws -> FileRecord {
-        guard file.path.hasPrefix(root.path + "/") else { throw NativeSetupPlan.failure(String(localized: "A prepared file escaped its setup folder.")) }
-        let bytes = try OwnedSetupFiles.read(file, maximum: 100_000_000)
-        return FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: bytes.count, sha256: OwnedSetupFiles.hash(bytes))
-    }
-
     func inventory(_ root: URL, allowInternalLinks: Bool = false) throws -> [FileRecord] {
         let fd = try OwnedSetupFiles.directory(root)
         close(fd)
         var records: [FileRecord] = []
         func visit(_ folder: URL) throws {
+            // Opened once per folder, without following links, and every file in it is read through it.
+            let opened = try OwnedSetupFiles.directory(folder)
+            defer { close(opened) }
             for file in try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]) {
                 let values = try file.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
                 if values.isSymbolicLink == true {
@@ -273,7 +343,11 @@ actor NativeDependencyInstaller {
                     records.append(FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: 0,
                                               sha256: OwnedSetupFiles.hash(Data(target.utf8)), linkTarget: target))
                 } else if values.isDirectory == true { try visit(file) }
-                else if values.isRegularFile == true { records.append(try record(file, relativeTo: root)) }
+                else if values.isRegularFile == true {
+                    guard file.path.hasPrefix(root.path + "/") else { throw NativeSetupPlan.failure(String(localized: "A prepared file escaped its setup folder.")) }
+                    let bytes = try OwnedSetupFiles.read(in: opened, name: file.lastPathComponent, maximum: 100_000_000)
+                    records.append(FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: bytes.count, sha256: OwnedSetupFiles.hash(bytes)))
+                }
                 else { throw NativeSetupPlan.failure(String(localized: "A prepared component contains an unsupported file.")) }
                 guard records.count < 100_000 else { throw NativeSetupPlan.failure(String(localized: "A prepared component has too many files.")) }
             }
@@ -323,7 +397,7 @@ actor NativeDependencyInstaller {
     private func prepareDirectories() throws {
         let values = try installation.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         guard let available = values.volumeAvailableCapacityForImportantUsage, available > 6_000_000_000 else {
-            throw NativeSetupPlan.failure(String(localized: "Keep at least 6 GB free before preparing the runtime. Model downloads need more space."))
+            throw NativeSetupPlan.failure(NativeSetupPlan.lowDiskMessage)
         }
         // The service creates and owns this root before a runner can write into it.
         let marker = try OwnedSetupFiles.read(installation.appendingPathComponent("ownership.json"), maximum: 4096)

@@ -108,6 +108,48 @@ struct ManagedRuntimeClientTests {
         return .init(data: NollieRuntimeIPCResponse(snapshot: snapshot).encoded(), token: token)
     }
 
+    @Test func aServiceThatIsOnButSilentIsRegisteredAgainOnce() async {
+        let id = UUID(), service = Service()
+        service.status = .enabled
+        var silent = true
+        let client = ManagedRuntimeClient(service: service.control, request: { _ in
+            // It answers only after it has been registered again.
+            if silent && service.registered == 0 { throw ManagedRuntimeFailure.disconnected }
+            silent = false
+            return reply(id)
+        }, verify: { _, _ in true }, isPackaged: { true }, isAvailable: true)
+        await client.reviveIfSilent()
+        #expect(service.unregistered == 1 && service.registered == 1 && !silent)
+        await client.reviveIfSilent()
+        #expect(service.unregistered == 1 && service.registered == 1)
+    }
+
+    @Test func aServiceThatIsOffIsNeverRegisteredByTheRepair() async {
+        let service = Service()
+        service.status = .notRegistered
+        let client = ManagedRuntimeClient(service: service.control, request: { _ in throw ManagedRuntimeFailure.disconnected },
+                                          verify: { _, _ in true }, isPackaged: { true }, isAvailable: true)
+        await client.reviveIfSilent()
+        #expect(service.unregistered == 0 && service.registered == 0)
+    }
+
+    @Test func aStartThatFindsTheServiceBusyWaitsForItInsteadOfFailing() async {
+        let id = UUID(), service = Service()
+        service.status = .enabled
+        var starts = 0
+        let client = ManagedRuntimeClient(service: service.control, request: { operation in
+            guard case .start = operation else { return reply(id, phase: .starting) }
+            starts += 1
+            if starts < 3 {
+                return .init(data: NollieRuntimeIPCResponse(snapshot: .init(phase: .starting, installationID: id), error: .busy).encoded(), token: nil)
+            }
+            return reply(id, endpoint: endpoint, token: token)
+        }, verify: { _, _ in true }, isPackaged: { true }, isAvailable: true)
+        client.busyWait = .milliseconds(1)
+        await client.start(installationID: id)
+        #expect(starts == 3 && client.state == .ready && client.canConnect)
+    }
+
     @Test func inspectionNeverRegistersOrStartsAService() async {
         let service = Service()
         var requests = 0

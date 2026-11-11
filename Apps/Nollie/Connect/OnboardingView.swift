@@ -25,7 +25,8 @@ struct OnboardingView: View {
     @AppStorage(ModelPreferenceStore.key) private var savedModelMode = ModelSetupMode.local.rawValue
     @State private var previewProgress = OnboardingProgress()
     @State private var destination: Destination?
-    @State private var modelStatus: OnboardingModelStatus?
+    @State private var modelOptions: ModelOptionsResult?
+    @State private var modelLocal: LocalModelSetupSnapshot?
     @State private var computerConfigured: Bool?
     /// The computer step's toggle: on means setup is under way or done.
     @State private var computerSwitchOn = false
@@ -437,17 +438,19 @@ struct OnboardingView: View {
                 QuickAnswerButton(place: .macSetup)
             }
             Spacer()
-            if progress.step != .welcome {
+            if let count = progress.stepCount {
                 VStack(alignment: .trailing, spacing: 7) {
-                    Text(stepLabel).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                    Text("Step \(count.index) of \(count.total)").font(.caption.weight(.medium)).foregroundStyle(.secondary)
                     HStack(spacing: 4) {
-                        ForEach(progress.steps.filter { $0 != .welcome && $0 != .ready }, id: \.self) { step in
+                        ForEach(progress.countedSteps, id: \.self) { step in
                             Capsule().fill(step == progress.step ? Color.blue : Color.primary.opacity(0.12))
                                 .frame(width: step == progress.step ? 22 : 6, height: 6)
                         }
                     }
                     .accessibilityHidden(true)
                 }
+            } else if progress.step == .ready {
+                Text("Ready when you are").font(.caption.weight(.medium)).foregroundStyle(.secondary)
             }
             Button { dismissWindow(id: MacWindow.main) } label: {
                 Image(systemName: "xmark")
@@ -463,9 +466,14 @@ struct OnboardingView: View {
         }
         .frame(minHeight: 32)
         .padding(.horizontal, 24).padding(.top, 16).padding(.bottom, 4)
-        .contentShape(.rect)
-        .gesture(WindowDragGesture())
-        .allowsWindowActivationEvents()
+        // The empty strip moves the window; each button keeps its own hit area and accessibility frame.
+        .background {
+            Color.clear.contentShape(.rect)
+                .gesture(WindowDragGesture())
+                .allowsWindowActivationEvents()
+                .accessibilityHidden(true)
+        }
+        .accessibilityElement(children: .contain)
     }
     #endif
 
@@ -803,7 +811,8 @@ struct OnboardingView: View {
                                      connect: connectManagedAssistant,
                                      isConnecting: managedConnectionRequest != nil, isLocked: model.lock.isLocked,
                                      containedInGlass: true,
-                                     previewWorking: workingPreview, compact: compactDesktop)
+                                     previewWorking: workingPreview, compact: compactDesktop,
+                                     connectExisting: { update { $0.route = .existing; $0.step = .connection } })
             #else
             VStack(alignment: .leading, spacing: 20) {
                 feature("Start on a Mac", "Open Nollie on your Mac and choose Start new.", symbol: "desktopcomputer")
@@ -853,14 +862,24 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("onboarding.modelStatus")
-            Button { destination = .models } label: {
-                Text(LocalModelQuickstartSection.scope(for: runtime) != nil && progress.preferences.modelMode != .cloud
-                     ? "Set up your local model" : "Choose a model").font(.body.weight(.semibold))
-                    .padding(.horizontal, 8)
+            let local = LocalModelQuickstartSection.scope(for: runtime) != nil && progress.preferences.modelMode != .cloud
+            // Until a model can answer, setting one up is the next thing to press.
+            if modelStatus?.isReady != true && local {
+                Button { destination = .models } label: {
+                    Label("Set up your local model", systemImage: "arrow.down.circle.fill").font(.headline)
+                }
+                .buttonStyle(LocalModelActionStyle())
+                .disabled(runtime == nil)
+                .accessibilityIdentifier("onboarding.models")
+            } else {
+                Button { destination = .models } label: {
+                    Text(local ? "Set up your local model" : "Choose a model").font(.body.weight(.semibold))
+                        .padding(.horizontal, 8)
+                }
+                .buttonStyle(.nollieGlass).controlSize(.large)
+                .disabled(runtime == nil)
+                .accessibilityIdentifier("onboarding.models")
             }
-            .buttonStyle(.nollieGlass).controlSize(.large)
-            .disabled(runtime == nil)
-            .accessibilityIdentifier("onboarding.models")
         }
     }
 
@@ -969,20 +988,20 @@ struct OnboardingView: View {
                     // After the main path, never instead of it.
                     tryDemoButton
                 }
+                // One pill, the same size on every step, so nothing under the main button moves.
                 if [.model, .computer, .permissions].contains(progress.step) {
-                    Button(progress.step == .permissions ? "Not now" : "Set up later") { update { $0.advance(deferStep: true) } }
-                        .buttonStyle(OutlinePillStyle())
+                    Button { update { $0.advance(deferStep: true) } } label: {
+                        Text(progress.step == .permissions ? "Not now" : "Set up later")
+                            .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
+                    }
+                        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
                         .accessibilityIdentifier("onboarding.later")
-                } else if [.welcome, .home, .howItWorks].contains(progress.step) || showsInstallerCharacter {
+                } else {
                     Button { update { $0.skip() } } label: {
                         Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
                             .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
                     }
                         .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
-                        .accessibilityIdentifier("onboarding.skip")
-                } else {
-                    Button(progress.step == .welcome ? "Skip setup" : "Finish setup later") { update { $0.skip() } }
-                        .buttonStyle(OutlinePillStyle())
                         .accessibilityIdentifier("onboarding.skip")
                 }
                 #endif
@@ -1355,14 +1374,12 @@ struct OnboardingView: View {
     private func readyDetail(_ step: OnboardingProgress.Step, _ detail: String) -> String {
         progress.deferred.contains(step) ? String(localized: "Set up later in Settings") : detail
     }
+    /// Ready only when the chosen model can answer, for the choice made on this step.
+    private var modelStatus: ModelReadiness? {
+        modelOptions.map { ModelReadiness.read($0, mode: progress.preferences.modelMode, local: modelLocal) }
+    }
     private var modelDetail: String {
-        switch modelStatus {
-        case .ready(let model): return model
-        case .needsSignIn: return String(localized: "Needs sign-in")
-        case .unverified(let model): return String(localized: "\(model), not signed in yet")
-        case .notConfigured: return String(localized: "No model selected yet")
-        case nil: return connected ? String(localized: "Not checked yet") : String(localized: "Reconnect to check")
-        }
+        modelStatus?.detail ?? (connected ? String(localized: "Not checked yet") : String(localized: "Reconnect to check"))
     }
     private var computerDetail: String {
         switch computerConfigured {
@@ -1381,7 +1398,8 @@ struct OnboardingView: View {
             lastCheckIdentity = checkIdentity
             currentCheck = nil
             checking = false
-            modelStatus = nil
+            modelOptions = nil
+            modelLocal = nil
             computerConfigured = nil
             checkError = nil
         }
@@ -1392,14 +1410,19 @@ struct OnboardingView: View {
         let profile = focusProfile
         currentCheck = check
         checking = true
-        modelStatus = nil
+        modelOptions = nil
+        modelLocal = nil
         computerConfigured = nil
         checkError = nil
         defer { if currentCheck == check { checking = false } }
         do {
             let options: ModelOptionsResult = try await rt.api.get("/api/model/options", profile: profile)
             guard checkIdentity == identity, currentCheck == check, !Task.isCancelled else { return }
-            modelStatus = .read(options)
+            // A model on this Mac counts once it is downloaded: read the catalog before showing anything.
+            let local = ModelPlace.isLocal(ModelPlace.provider(options)) ? try? await LocalModelSetupClient(api: rt.api).inspect() : nil
+            guard checkIdentity == identity, currentCheck == check, !Task.isCancelled else { return }
+            modelLocal = local
+            modelOptions = options
             // The main helper's own computer, from the computer add-on. Without the add-on: not yet.
             let own: HelperComputerStatus? = try? await rt.api.get(HelperComputerStatus.path,
                                                                     query: [URLQueryItem(name: "profile", value: profile ?? "default")])

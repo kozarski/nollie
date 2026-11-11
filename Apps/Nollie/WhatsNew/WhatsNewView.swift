@@ -160,13 +160,17 @@ private struct WhatsNewRow: View {
 private struct WhatsNewHost: ViewModifier {
     @Environment(AppModel.self) private var model
     @AppStorage(WhatsNew.seenKey) private var seen: String?
+    @AppStorage(OnboardingProgress.storageKey) private var setupSaved = ""
     @State private var showing: [WhatsNewNote] = []
+
+    /// Setup is still on screen: it can hold a connection before it is finished.
+    private var settingUp: Bool { OnboardingProgress.shouldPresent(hasConnections: model.hasConnections, raw: setupSaved) }
 
     private static var underTest: Bool { ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil }
 
     func body(content: Content) -> some View {
         content
-            .task(id: model.lock.isLocked) { await offer() }
+            .task(id: [model.lock.isLocked, settingUp]) { await offer() }
             .sheet(isPresented: Binding(get: { !showing.isEmpty }, set: { if !$0 { close() } })) {
                 WhatsNewSheet(notes: showing).withAppModel()
             }
@@ -182,7 +186,7 @@ private struct WhatsNewHost: ViewModifier {
         }
         #endif
         // Only over the chats of someone already set up, never over the Mac's welcome.
-        guard !DemoMode.isOn, !Self.underTest, model.hasConnections, !model.lock.isLocked, showing.isEmpty else { return }
+        guard !DemoMode.isOn, !Self.underTest, model.hasConnections, !settingUp, !model.lock.isLocked, showing.isEmpty else { return }
         let due = WhatsNew.pending(seen: seen, current: WhatsNew.currentVersion, notes: WhatsNew.notes)
         guard !due.isEmpty else {
             // An update with no note of its own still counts as seen, so an older note never comes back.
@@ -191,7 +195,7 @@ private struct WhatsNewHost: ViewModifier {
         }
         // Let the chats settle first, so the sheet doesn't land on a screen still drawing itself.
         try? await Task.sleep(for: .seconds(1.2))
-        guard !Task.isCancelled, !model.lock.isLocked else { return }
+        guard !Task.isCancelled, !model.lock.isLocked, !settingUp else { return }
         showing = due
     }
 

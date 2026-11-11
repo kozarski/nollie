@@ -120,7 +120,7 @@ struct NativeSetupSafetyTests {
         let unused = URL(fileURLWithPath: "/unavailable/nollie-fixture-" + UUID().uuidString)
         let steps = await NativeDependencyInstaller(installation: unused).inspect()
         #expect(steps.first { $0.id == "service" }?.state == .notChecked)
-        #expect(steps.first { $0.id == "computer" }?.state == .blocked)
+        #expect(!steps.contains { $0.id == "computer" })
         #expect(!steps.contains { $0.state == .ready })
         #expect(NativeSetupPlan.uv.sha256.count == 64)
         #expect(NativeSetupPlan.hermes.sha256.count == 64)

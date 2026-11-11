@@ -17,6 +17,8 @@ It has two sources, both writing the same day files:
   the person's answers (why it went);
 - Nollie Runtime's door (1.2): one line per connection that Hermes, or any program it starts, makes through it, with
   the host, port, time and kind of program. See [The door](#the-door-nollie-runtime).
+- Nollie Runtime's exit relay (1.4): one line per connection a helper's own computer (a Cua VM) makes through it,
+  in that helper's Papertrail. See [Helpers' own computers](#helpers-own-computers-the-exit-relay).
 
 Out of scope for now: costs in money, the plan meter itself, history from before Papertrail was turned on,
 and anything the private bots do (they never record).
@@ -246,6 +248,27 @@ setup the Direct Mac app runs; a Hermes you run yourself has no door.
   ran a command that connected to github.com.") and "Connected to …" lists every place, up to six by name. Advanced
   lists every host.
 
+## Helpers' own computers (the exit relay)
+
+A helper's own computer reaches the web through Nollie Runtime's exit relay ([Nollie Runtime](../../Services/Runtime/README.md#exit-relay-for-helpers-computers)).
+The relay writes the same door line, with kind `computer`, into the helper's own Papertrail:
+`{"v":1,"at":…,"route":"online","source":"door","kind":"computer","host":"github.com","port":443}`. The same rules as
+the door: never a URL, path, header or byte; nothing for a private bot or while the Private list can't be read;
+loopback and refused destinations are not lines.
+
+- **Whose computer.** The computer add-on gives each computer a fresh key when it points it at the relay (on, reset)
+  and keeps it in the helper's own home (`nollie-computer/relay-key`, 0600; Remove deletes it). The computer's proxy
+  settings carry `<helper>:<key>` as the proxy user name and password. The relay writes a line only for a label whose
+  key matches, or for a connection from a computer address that such a label already proved; the rest pass on
+  unwritten and are counted. A computer can't claim another helper without that helper's key, and claiming a private
+  bot gives no line.
+- **Why.** The relay sees only the connection, not what asked for it, so the line carries no `why` of its own. The
+  reader places it like any door line: inside the reply whose own calls span its time (5 s either side), which then
+  explains it with that reply's Why (a chat, a schedule, a Board task). A connection outside any reply (a page the
+  computer's browser keeps loading, a download that outlives the reply) groups by hour and shows no reason, as other
+  door lines do.
+- **The screen.** Unchanged, apart from one line in Why?: "Scout's own computer connected to github.com."
+
 ## What Papertrail still can't see
 
 Said plainly here, not hidden:
@@ -259,8 +282,14 @@ Said plainly here, not hidden:
 - **A connection made in a context with no bot**, or by an HTTP client one bot made and another reuses, is labelled
   with the bot whose home Hermes reports at that moment (the main bot outside any reply). A kept-alive connection is
   one line, however many requests it carries.
-- **Not Hermes:** helpers' own computers (their traffic goes through the exit relay, which logs nothing), Nollie.app's
-  own (iCloud alerts, update checks), remote images in cards, setup downloads.
+- **Helpers' own computers, in part.** Lines come only from connections that go through the exit relay. Without an
+  exit node, Apple's VM network gives a computer its own way out (NAT through the Mac), and only programs that read
+  the proxy settings use the relay; the rest go straight out, unseen (see [Network filter](network-filter.md#helpers-own-computers)).
+  A computer pointed at the relay before 1.4 carries no label until it is reset or turned off and on, and an
+  unlabelled program (a desktop browser) is placed only after a labelled connection from the same computer. If the
+  same VM address is later given to another helper's computer, its unlabelled connections count for the first helper
+  until the new one proves itself. Nothing is written before Hermes has run once since Nollie Runtime started.
+- **Not Hermes:** Nollie.app's own connections (iCloud alerts, update checks), remote images in cards, setup downloads.
 - **A Hermes you run yourself** has the add-on's hooks but no door.
 - Image providers billed per picture are counted as pictures, without tokens.
 
@@ -278,6 +307,11 @@ It waits on the developer portal step.
   counting and the 200 cap; the route's 403/404/422 answers and no-store header; `register` skips private
   bots; door lines join their reply or their hour and keep no words. When `NOLLIE_HERMES_PYTHON` is set, a
   throwaway Hermes home fires the real hooks.
+- Helpers' own computers: `NollieMacTests/ExitRelayTests` (labelled CONNECT and SOCKS5 noted for their bot only, a
+  wrong key places nobody, an unlabelled connection follows its address), `PapertrailDoorTests` (the key file: only
+  this bot's, no links, exactly a key; a `computer` line, none for a private bot), `test_papertrail.py` (a computer's
+  line joins the reply and keeps its Why), `Companions/nollie-computer/tests/test_exit_relay.py` (a fresh 0600 key per
+  pointing, the label in the snippet, Remove forgets it).
 - Door labels (`Tools/runtime-helper/test_runtime_entry.py`): requests and each kind of child carry the bot and kind,
   a program's own proxy is kept, nothing changes without the door.
 - Swift (`Tests/Unit/PapertrailDoorTests.swift`, NollieMacTests): the route rule, labels, the private rule, one

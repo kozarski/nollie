@@ -23,6 +23,8 @@ struct ReplyLine: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.threadWaitsOnYou) private var waitsOnYou
+    /// The pointer is over this reply (Mac): its play button shows on an older reply too.
+    @State private var hovering = false
 
     private var thoughts: String? {
         guard showReasoning, let reasoning, !reasoning.isEmpty else { return nil }
@@ -40,10 +42,34 @@ struct ReplyLine: View {
                 Spacer(minLength: wide ? 0 : 40)
             } else {
                 finished
-                if botShown, let bot { ReplyListenButton(text: text, key: item.id, owner: bot) }
+                listen
                 Spacer(minLength: wide ? 0 : 24)
             }
         }
+        #if os(macOS)
+        .onHover { hovering = $0 }
+        #endif
+    }
+
+    /// The play button. Always beside the last reply of a run; on the Mac also beside an older one while the
+    /// pointer is over it or it is being read. Elsewhere an older reply offers Listen in its menu.
+    @ViewBuilder private var listen: some View {
+        if let bot {
+            let speaking = ReplyVoice.shared.isSpeaking(item.id)
+            if ReplyListenRule.placed(lastOfRun: botShown, onMac: ReplyListenRule.onMac) {
+                let shown = ReplyListenRule.shown(lastOfRun: botShown, hovering: hovering, speaking: speaking)
+                ReplyListenButton(text: text, key: item.id, owner: bot)
+                    .opacity(shown ? 1 : 0)
+                    .allowsHitTesting(shown)
+                    .animation(.easeOut(duration: 0.15), value: shown)
+            }
+        }
+    }
+
+    private var listenStep: [(BubbleAction, () -> Void)] {
+        guard let bot else { return [] }
+        let speaking = ReplyVoice.shared.isSpeaking(item.id)
+        return [(speaking ? .stopListening : .listen, { ReplyVoice.shared.toggle(SpokenReply.plain(text), key: item.id, owner: bot) })]
     }
 
     /// The bot's face in the margin next to a reply. The one live bot is pinned below the thread, so a
@@ -119,7 +145,7 @@ struct ReplyLine: View {
                 (.reply, { onReply(text) }),
                 (.copy, copy),
                 (.select, { onSelect(text) }),
-            ], sharing: true)
+            ] + listenStep, sharing: true)
         }
         #if os(macOS)
         // A copy button on hover, beyond the bubble's trailing edge.
@@ -135,6 +161,23 @@ struct ReplyLine: View {
         UIPasteboard.general.string = text
         #endif
     }
+}
+
+/// Where a reply's play button goes. The last reply of a run always has it; an older one has it on the Mac,
+/// shown only while the pointer is over the reply or it is being read, so the thread stays quiet. Every
+/// finished reply also offers Listen in its menu.
+enum ReplyListenRule {
+    #if os(macOS)
+    static let onMac = true
+    #else
+    static let onMac = false
+    #endif
+
+    /// Whether the row has a play button at all (taking its room even while hidden, so nothing moves).
+    static func placed(lastOfRun: Bool, onMac: Bool) -> Bool { lastOfRun || onMac }
+
+    /// Whether a placed button can be seen and pressed now.
+    static func shown(lastOfRun: Bool, hovering: Bool, speaking: Bool) -> Bool { lastOfRun || hovering || speaking }
 }
 
 extension EnvironmentValues {

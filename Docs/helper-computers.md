@@ -44,6 +44,11 @@ through a Tailscale exit node, so your helpers' computers can't reach the intern
 in Tailscale on this Mac." On the Mac, **Open Tailscale** opens the app; nothing changes Tailscale's
 settings. An exit node on the iPhone doesn't matter and shows nothing.
 
+**Papertrail.** The snippet also carries the helper's name and a key only that computer has, as the proxy's user name
+and password, so the relay writes each connection it makes into that helper's Papertrail (host, port, time; never a
+URL or a byte). The key is made fresh each time a computer is pointed at the relay and kept in the helper's home
+(`nollie-computer/relay-key`). What this does and doesn't cover: [Papertrail](specs/papertrail.md#helpers-own-computers-the-exit-relay).
+
 Cua has no setting of its own for a Space's proxy: `cua spaces create` takes none, and the MIT Hermes plugin
 passes no environment to commands (checked against Cua's public docs and the plugin at the pinned commit,
 21 Oct 2026). Cua's own "hotspot" shares the Mac's network with a Space too, but its docs don't say what it

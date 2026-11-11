@@ -25,7 +25,8 @@ until you pick where.
 
 ## Turn it on or off
 
-Night shift starts off. Turn it on with the **Night shift** switch in **Settings › Night shift**, on your Mac, iPhone
-or iPad. While it's off, the page says **Off**, and there's no morning card.
+Night shift is on when you first set up Nollie, so the first morning already has its card. If you set up Nollie
+before it started on, it stays as you had it. Turn it on or off with the **Night shift** switch in **Settings ›
+Night shift**, on your Mac, iPhone or iPad. While it's off, the page says **Off**, and there's no morning card.
 
 Only you can turn it on or off. Someone you share a helper with never sees the switch.

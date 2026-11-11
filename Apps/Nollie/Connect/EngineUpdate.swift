@@ -26,9 +26,11 @@ final class EngineUpdate {
     /// (a newer download manager, Python or Hermes). Each step is checked against the ones before it, so from
     /// the first that's out of date every later one is run; a step already current is passed over by the
     /// installer. A setup never finished stays with the setup screen.
-    nonisolated static func stepsToRedo(verified: [String: Bool], hasReceipt: [String: Bool]) -> [String] {
+    /// An update that stopped part way (the app quit, the download dropped) has already moved its old
+    /// receipts away, so `unfinished` lets it carry on from where it stopped the next time Nollie opens.
+    nonisolated static func stepsToRedo(verified: [String: Bool], hasReceipt: [String: Bool], unfinished: Bool = false) -> [String] {
         let steps = ["uv", "python", "hermes", "dependencies", "addons"]
-        guard steps.allSatisfy({ hasReceipt[$0] == true }) else { return [] }
+        guard unfinished || steps.allSatisfy({ hasReceipt[$0] == true }) else { return [] }
         guard let first = steps.firstIndex(where: { verified[$0] != true }) else { return [] }
         return Array(steps[first...])
     }
@@ -43,12 +45,18 @@ final class EngineUpdate {
             verified[step] = (try? await installer.verified(step)) == true
             receipts[step] = (try? NativeDependencyInstaller.readReceipt(installation: installation, id: step)) != nil
         }
-        let steps = Self.stepsToRedo(verified: verified, hasReceipt: receipts)
-        guard !steps.isEmpty else { return }
+        let defaults = UserDefaults.standard
+        let unfinished = defaults.string(forKey: Self.unfinishedKey) == id.uuidString
+        let steps = Self.stepsToRedo(verified: verified, hasReceipt: receipts, unfinished: unfinished)
+        guard !steps.isEmpty else {
+            if unfinished { defaults.removeObject(forKey: Self.unfinishedKey) }
+            return
+        }
         phase = .updating
         let runtime = ManagedRuntimeClient()
         await runtime.refresh(installationID: id)
         let wasRunning = runtime.isRegistered
+        defaults.set(id.uuidString, forKey: Self.unfinishedKey)
         guard await runtime.pauseForUpdate() else { phase = .failed; return }
         do {
             for step in steps { try await installer.install(step) }
@@ -56,8 +64,36 @@ final class EngineUpdate {
             phase = .failed
             return
         }
+        defaults.removeObject(forKey: Self.unfinishedKey)
         if wasRunning { await runtime.start(installationID: id) }
         phase = wasRunning && runtime.state != .ready ? .failed : .done
+    }
+
+    /// The setup whose update has started and not finished yet.
+    static let unfinishedKey = "nollie.engineUpdate.unfinished.v1"
+
+    /// Whether to start Hermes again at launch: the background service is still on, Hermes is stopped, and
+    /// every part of the setup checks out. Turning the service off in Settings removes it, so a service
+    /// that is on with Hermes stopped only means something paused it and never brought it back.
+    nonisolated static func shouldResume(serviceOn: Bool, hermesStopped: Bool, verified: [String: Bool]) -> Bool {
+        serviceOn && hermesStopped && ["uv", "python", "hermes", "dependencies", "addons"].allSatisfy { verified[$0] == true }
+    }
+
+    /// Runs after the engine and add-on updates at launch.
+    func resumeIfStopped() async {
+        guard phase != .updating, NativeSetupPlan.directAvailable, !DemoMode.isOn,
+              let installation = MacHermesSetup.selectedInstallation(),
+              let id = UUID(uuidString: installation.lastPathComponent) else { return }
+        let runtime = ManagedRuntimeClient()
+        await runtime.reviveIfSilent()
+        await runtime.refresh(installationID: id)
+        guard runtime.state == .stopped else { return }
+        let installer = NativeDependencyInstaller(installation: installation)
+        var verified: [String: Bool] = [:]
+        for step in NativeSetupPlan.preparationSteps { verified[step] = (try? await installer.verified(step)) == true }
+        guard Self.shouldResume(serviceOn: runtime.isRegistered, hermesStopped: true, verified: verified) else { return }
+        await runtime.start(installationID: id)
+        if phase == .failed, runtime.state == .ready { phase = .done }
     }
 }
 #endif

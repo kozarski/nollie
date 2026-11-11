@@ -7,8 +7,9 @@ import Network
 /// Mac's address on Apple's VM network only, takes connections from VMs on that network only,
 /// resolves each name on the Mac and refuses it when any address is private, loopback,
 /// link-local, Tailscale, multicast or this Mac's own, then connects to the vetted address itself
-/// (never the name again). Bytes pass through unread. Nothing is logged: only counts are kept,
-/// in memory.
+/// (never the name again). Bytes pass through unread. Papertrail gets one line per connection
+/// (which bot's computer, host, port, time) when the computer can be placed with a bot; nothing
+/// else is kept, and the counts stay in memory.
 final class ExitRelay: @unchecked Sendable {
     struct Configuration: Sendable {
         var network: ExitRelayPolicy.Network
@@ -39,6 +40,10 @@ final class ExitRelay: @unchecked Sendable {
         var refusedDestinations = 0
         var malformed = 0
         var upstreamFailures = 0
+        /// Connections written into a bot's Papertrail.
+        var noted = 0
+        /// Connections passed on that no bot could be found for: no line.
+        var unplaced = 0
     }
 
     typealias Resolver = @Sendable (_ name: String, _ timeout: TimeInterval) async -> [[UInt8]]?
@@ -47,6 +52,10 @@ final class ExitRelay: @unchecked Sendable {
     let configuration: Configuration
     private let resolver: Resolver
     private let ownAddresses: OwnAddresses
+    private let papertrail: ExitRelayPapertrail?
+    /// Each computer's address, once a connection from it proved whose it is: its connections that
+    /// carry no label (a browser that drops the proxy's user name) go to the same bot.
+    private var placed: [String: String] = [:]
     private let queue = DispatchQueue(label: "com.coreykozarski.nollie.exit-relay")
     private var listener: NWListener?
     private var listeningPort: UInt16?
@@ -57,10 +66,11 @@ final class ExitRelay: @unchecked Sendable {
     private var sweep: DispatchSourceTimer?
 
     init(configuration: Configuration, resolver: @escaping Resolver = ExitRelayResolver.resolve,
-         ownAddresses: @escaping OwnAddresses = ExitRelayResolver.ownAddresses) {
+         ownAddresses: @escaping OwnAddresses = ExitRelayResolver.ownAddresses, papertrail: ExitRelayPapertrail? = nil) {
         self.configuration = configuration
         self.resolver = resolver
         self.ownAddresses = ownAddresses
+        self.papertrail = papertrail
     }
 
     var port: UInt16? { queue.sync { listeningPort } }
@@ -127,6 +137,7 @@ final class ExitRelay: @unchecked Sendable {
             sweep = nil
             for session in sessions.values { session.close() }
             sessions = [:]
+            placed = [:]
         }
     }
 
@@ -196,6 +207,24 @@ final class ExitRelay: @unchecked Sendable {
         if ok { tally.served += 1; failuresInARow = 0 } else { tally.upstreamFailures += 1; failuresInARow += 1 }
     }
 
+    /// The bot a connection belongs to: the one its label and key prove, else the one its computer's
+    /// address last proved. On the relay's queue.
+    fileprivate func place(source: String, label: (user: String, password: String)?) -> String? {
+        if let label, let bot = papertrail?.bot(user: label.user, key: label.password) {
+            placed[source] = bot
+            return bot
+        }
+        return placed[source]
+    }
+
+    /// One line in the bot's Papertrail, before the connection is made. On the relay's queue.
+    fileprivate func note(_ bot: String?, _ target: ExitRelayTarget) {
+        guard let papertrail else { return }
+        guard let bot else { tally.unplaced += 1; return }
+        papertrail.note(bot: bot, target: target)
+        tally.noted += 1
+    }
+
     /// The addresses a target may be reached at, all of them vetted, or why not.
     fileprivate func vet(_ target: ExitRelayTarget) async -> Result<[[UInt8]], ExitRelayPolicy.Refusal> {
         #if DEBUG
@@ -223,6 +252,37 @@ final class ExitRelay: @unchecked Sendable {
     private static func name(_ target: ExitRelayTarget) -> String {
         if case .name(let name) = target.host { return name }
         return ""
+    }
+}
+
+/// Papertrail's side of the relay: which bot a computer's label names, and one line per connection.
+protocol ExitRelayPapertrail: AnyObject, Sendable {
+    /// The bot whose computer this is, when `key` is the key Nollie gave that bot's computer; else nil.
+    func bot(user: String, key: String) -> String?
+    /// One line in that bot's Papertrail. Never throws or blocks for long.
+    func note(bot: String, target: ExitRelayTarget)
+}
+
+/// The relay's Papertrail in Nollie Runtime: the book of the managed setup Hermes last ran from.
+/// Computers keep running after Hermes stops, so the book stays until another takes its place.
+final class ExitRelayPapertrailLog: ExitRelayPapertrail, @unchecked Sendable {
+    private let lock = NSLock()
+    private var book: PapertrailDoorBook?
+
+    init(book: PapertrailDoorBook? = nil) { self.book = book }
+
+    func use(_ book: PapertrailDoorBook) { lock.lock(); self.book = book; lock.unlock() }
+
+    private var current: PapertrailDoorBook? { lock.lock(); defer { lock.unlock() }; return book }
+
+    func bot(user: String, key: String) -> String? {
+        guard let book = current, let bot = PapertrailDoorBook.botName(Substring(user)), bot == user,
+              let kept = book.computerKey(bot: bot), PapertrailDoorBook.sameKey(kept, key) else { return nil }
+        return bot
+    }
+
+    func note(bot: String, target: ExitRelayTarget) {
+        current?.record(bot: bot, kind: "computer", host: target.recordedHost, port: target.port)
     }
 }
 
@@ -353,6 +413,10 @@ private final class ExitRelaySession: @unchecked Sendable {
     private let opened = Date()
     private var lastActivity = Date()
     private var socksGreeted = false
+    /// The client chose to give a user name and password (RFC 1929), and hasn't yet.
+    private var socksAwaitingLabel = false
+    /// Whose computer this is, when known.
+    private var bot: String?
     /// Each direction ends on its own; the connection closes when both have.
     private var clientDone = false
     private var upstreamDone = false
@@ -402,6 +466,8 @@ private final class ExitRelaySession: @unchecked Sendable {
     private func http(complete: Bool) {
         do throws(LinkDoorHTTP.Failure) {
             let request = try ExitRelayHTTP.parse(buffer)
+            let label = PapertrailDoorRequest.basic(try? PapertrailDoorRequest.authorization(buffer))
+            bot = relay?.place(source: source, label: label)
             let early = Data(buffer.dropFirst(request.headLength))
             buffer = Data()
             open(request.target) { [weak self] outcome in
@@ -436,14 +502,30 @@ private final class ExitRelaySession: @unchecked Sendable {
                     if complete { close() } else { readRequest() }
                     return
                 }
-                guard greeting.noAuthentication else {
+                guard greeting.noAuthentication || greeting.usernamePassword else {
                     relay?.countMalformed()
                     answer(ExitRelaySOCKS.noAcceptableMethod)
                     return
                 }
                 socksGreeted = true
+                // A user name and password, when offered: the computer's label for Papertrail.
+                socksAwaitingLabel = greeting.usernamePassword
                 buffer.removeFirst(greeting.length)
-                client.send(content: ExitRelaySOCKS.chooseNoAuthentication, completion: .contentProcessed { _ in })
+                client.send(content: socksAwaitingLabel ? ExitRelaySOCKS.chooseUsernamePassword : ExitRelaySOCKS.chooseNoAuthentication,
+                            completion: .contentProcessed { _ in })
+            }
+            if socksAwaitingLabel {
+                guard let label = try ExitRelaySOCKS.credentials(buffer) else {
+                    if complete { close() } else { readRequest() }
+                    return
+                }
+                socksAwaitingLabel = false
+                buffer.removeFirst(label.length)
+                bot = relay?.place(source: source, label: (label.user, label.password))
+                // Any label is accepted: one that proves nothing is passed on like a connection without one.
+                client.send(content: ExitRelaySOCKS.labelAccepted, completion: .contentProcessed { _ in })
+            } else if bot == nil {
+                bot = relay?.place(source: source, label: nil)
             }
             guard let request = try ExitRelaySOCKS.request(buffer) else {
                 if complete { close() } else { readRequest() }
@@ -491,6 +573,8 @@ private final class ExitRelaySession: @unchecked Sendable {
                     relay.countRefusedDestination()
                     then(.refused)
                 case .success(let addresses):
+                    // Noted before it is tried, like the door: a connection attempted already left.
+                    relay.note(self.bot, target)
                     self.connect(Array(addresses.prefix(4)), port: target.port, then: then)
                 }
             }

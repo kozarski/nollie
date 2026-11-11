@@ -23,6 +23,10 @@ final class MacHermesSetup {
     private(set) var headline = String(localized: "Native setup is being prepared")
     private(set) var detail = String(localized: "This build can connect to an existing setup. Installing a new local runtime needs Nollie's signed setup service.")
     private(set) var error: String?
+    /// The exact reason the last step stopped, for "What's installed". `error` says it in plain words.
+    private(set) var errorDetail: String?
+    /// The preparation step being looked at before any work, if it may already be in place.
+    private(set) var checkingStep: String?
     private(set) var isBusy = false
     private(set) var canConnect = false
     private(set) var gatewayURL: String?
@@ -38,7 +42,11 @@ final class MacHermesSetup {
         }
     }
     var backgroundActionTitle: String {
-        managedRuntime.state == .needsVerification ? String(localized: "Check connection") : String(localized: "Keep it running")
+        switch managedRuntime.state {
+        case .needsVerification: String(localized: "Check connection")
+        case .failed: String(localized: "Try again")
+        default: String(localized: "Keep it running")
+        }
     }
 
     func inspect() async {
@@ -135,10 +143,15 @@ final class MacHermesSetup {
         guard NativeSetupPlan.preparationSteps.contains(id) else { return }
         guard let index = dependencies.firstIndex(where: { $0.id == id }) else { return }
         error = nil
+        errorDetail = nil
         dependencies[index].state = .installing
+        // "Checking" until the step is known to need work, so a part already there isn't shown downloading.
+        checkingStep = id
+        defer { checkingStep = nil }
         do {
             let directory = try prepareOwnedHome(preferences: preferences)
             let installer = NativeDependencyInstaller(installation: directory)
+            if (try? await installer.verified(id)) != true { checkingStep = nil }
             try await installer.install(id)
             dependencies = await installer.inspect()
             applyRuntimeState()
@@ -146,7 +159,9 @@ final class MacHermesSetup {
             detail = String(localized: "Verified files stay in Nollie's own folder. Your existing setup is unchanged.")
         } catch {
             dependencies[index].state = .failed
-            self.error = safeMessage(error, fallback: String(localized: "This preparation step could not finish. Existing files are unchanged."))
+            let reason = safeMessage(error, fallback: String(localized: "This preparation step could not finish. Existing files are unchanged."))
+            self.error = SetupTrail.plainFailure(step: id, reason: reason)
+            errorDetail = reason
         }
     }
 
@@ -155,6 +170,7 @@ final class MacHermesSetup {
         isBusy = true
         defer { isBusy = false }
         error = nil
+        errorDetail = nil
         await managedRuntime.start(installationID: installationID)
         applyRuntimeState()
     }
@@ -190,13 +206,7 @@ final class MacHermesSetup {
         connectionToken = canConnect ? managedRuntime.sessionToken : nil
         guard let index = dependencies.firstIndex(where: { $0.id == "service" }) else { return }
         dependencies[index].detail = managedRuntime.message
-        switch managedRuntime.state {
-        case .ready: dependencies[index].state = .ready
-        case .starting: dependencies[index].state = .installing
-        case .requiresApproval, .unavailable: dependencies[index].state = .blocked
-        case .failed: dependencies[index].state = .failed
-        case .off, .stopped, .needsVerification: dependencies[index].state = .needsInstall
-        }
+        dependencies[index].state = SetupTrail.serviceState(managedRuntime.state)
         if managedRuntime.state == .failed { error = managedRuntime.message }
         if canConnect {
             headline = String(localized: "Connection verified")
@@ -359,7 +369,7 @@ final class MacHermesSetup {
     }
 
     private func unavailable() {
-        error = String(localized: "Native installation is not included in this build yet. Your existing setup is unchanged.")
+        error = String(localized: "Setting up a new assistant needs Nollie from nollie.app. Your existing setup is unchanged.")
     }
 }
 #endif

@@ -37,42 +37,6 @@
         }
       }
     },
-    "NSCameraUsageDescription" : {
-      "comment" : "Info.plist NSCameraUsageDescription: shown by the system when it asks for this permission",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Take a photo to attach to a chat with your Hermes agent."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nimm ein Foto auf, um es an einen Chat mit deinem Hermes-Agenten anzuhängen."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Prenez une photo à joindre à une discussion avec votre agent Hermes."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Haz una foto para adjuntarla a un chat con tu agente de Hermes."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hermesエージェントとのチャットに添付する写真を撮ります。"
-          }
-        }
-      }
-    },
     "NSContactsUsageDescription" : {
       "comment" : "Info.plist NSContactsUsageDescription: shown by the system when it asks for this permission",
       "extractionState" : "extracted_with_value",

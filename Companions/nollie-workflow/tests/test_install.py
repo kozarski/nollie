@@ -10,6 +10,11 @@ spec = importlib.util.spec_from_file_location("workflow_installer", Path(__file_
 installer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(installer)
 
+from night_support import load  # noqa: E402
+
+night_shift = load("night_shift")
+workflow_core = load("workflow_core")
+
 
 class InstallTests(unittest.TestCase):
     def test_plan_has_no_writes_or_commands(self):
@@ -54,6 +59,10 @@ class InstallTests(unittest.TestCase):
             self.assertEqual(list(source.iterdir()), [sentinel])
             self.assertEqual(sentinel.read_text(), "existing source stays untouched\n")
             run.assert_called_once()
+            # A new setup: Night shift starts on, in night shift's own format.
+            settings = json.loads((root / "nollie-workflow/night-shift.json").read_text())
+            self.assertTrue(settings["night_shift"])
+            self.assertEqual(night_shift.parse_settings(settings)["night_shift"], True)
 
     def test_upgrade_retains_cursor_outbox_and_install_boundary(self):
         with TemporaryDirectory() as temporary:
@@ -70,6 +79,21 @@ class InstallTests(unittest.TestCase):
             self.assertEqual(result, state | {"enabled": False})
             self.assertTrue(list(state_path.parent.glob("state.json.bak-install-*")))
             self.assertFalse((home / ".hermes/hermes-agent").exists())
+            # A setup made before that never chose keeps Night shift as it was: no file, off.
+            self.assertFalse((state_path.parent / "night-shift.json").exists())
+
+    def test_night_shift_starts_on_once_and_never_over_a_choice(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertTrue(workflow_core.start_night_shift(root))
+            self.assertEqual(oct((root / "night-shift.json").stat().st_mode & 0o777), "0o600")
+            night_shift.write_settings(root, night_shift=False)
+            self.assertFalse(workflow_core.start_night_shift(root))
+            self.assertFalse(night_shift.read_settings(root)["night_shift"])
+            (root / "night-shift.json").unlink()
+            (root / "night-shift.json").symlink_to(root / "elsewhere.json")
+            self.assertFalse(workflow_core.start_night_shift(root))
+            self.assertFalse((root / "elsewhere.json").exists())
 
     def test_private_main_bot_is_left_alone(self):
         with TemporaryDirectory() as temporary:

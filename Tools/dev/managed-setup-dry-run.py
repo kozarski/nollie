@@ -278,7 +278,18 @@ def main():
                       "--installation", installation, "--uv", installation / "uv/uv", "--python", python_path], installation, 900)
         again = run([installation / "environment/bin/python", "-I", "-B", kit / "add-ons/managed_addons.py", "--kit", kit / "add-ons",
                      "--installation", installation, "--uv", installation / "uv/uv", "--python", python_path], installation, 900)
-        return {"first": output.strip().splitlines(), "second": again.strip().splitlines()}
+        # What the Mac app does next (NativeDependencyInstaller.addOnsRecords): every carried file must sit in
+        # the home exactly as the kit lists it, and the reader's marker must be the lock's checksum and a newline.
+        import hashlib
+        listed = json.loads((kit / "add-ons/kit.json").read_text())
+        expected = {"plugins/" + f["path"]: (f["bytes"], f["sha256"]) for item in listed["items"] for f in item["files"]}
+        marker = (listed["readerLock"]["sha256"] + "\n").encode()
+        expected["nollie-reader/venv/nollie-lock.sha256"] = (len(marker), hashlib.sha256(marker).hexdigest())
+        for path, (size, digest) in expected.items():
+            data = (installation / "home" / path).read_bytes()
+            if len(data) != size or hashlib.sha256(data).hexdigest() != digest:
+                sys.exit(f"The app would refuse this setup: {path} is not as the kit lists it.")
+        return {"first": output.strip().splitlines(), "second": again.strip().splitlines(), "receipt_files": len(expected)}
     step("addons", addons)
     report["seconds_total"] = round(time.time() - started, 1)
     report["bytes_on_disk"] = {name: du(installation / name) for name in

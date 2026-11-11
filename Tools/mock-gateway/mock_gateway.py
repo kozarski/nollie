@@ -29,6 +29,7 @@ import base64
 import copy
 import datetime
 import hashlib
+import importlib.util
 import itertools
 import json
 import os
@@ -37,6 +38,7 @@ import re
 import sys
 import time
 import uuid
+from pathlib import Path
 from urllib.parse import unquote, urlencode
 
 from websockets import http11 as _http11
@@ -3927,6 +3929,11 @@ def _counts_as_config_write(method: str, base: str, body) -> bool:
             and str(body.get("path", "")).endswith("/bot-desktop/lease.json"))
 
 
+_LOCAL_SPEC = importlib.util.spec_from_file_location("mock_local_models", Path(__file__).with_name("local_models.py"))
+LOCAL_MODELS = importlib.util.module_from_spec(_LOCAL_SPEC)
+_LOCAL_SPEC.loader.exec_module(LOCAL_MODELS)
+
+
 def process_request(connection, request):
     path = request.path
     base = path.split("?")[0]
@@ -3951,6 +3958,7 @@ def process_request(connection, request):
     modules = [
         ("normal", lambda: auth_rest(method, base, query, fields, request.headers)),
         ("quiet", lambda: family_rest(method, base, query, body)),
+        ("quiet", lambda: LOCAL_MODELS.local_models_rest(method, base, query, body)),
         ("normal", lambda: profile_creation(method, base, fields)),
         ("normal", lambda: private_bots_rest(method, base, query, body)),
         ("quiet", lambda: bot_looks_rest(method, base, query, body)),
@@ -5611,6 +5619,8 @@ def _arguments() -> argparse.Namespace:
     }
     for flag, help_text in switches.items():
         parser.add_argument(flag, action="store_true", help=help_text)
+    parser.add_argument("--local-models", choices=LOCAL_MODELS.SCENARIOS, default="flow",
+                        help="how a local model download on this Mac goes (see local_models.py)")
     return parser.parse_args()
 
 

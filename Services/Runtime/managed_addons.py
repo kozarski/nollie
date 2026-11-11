@@ -13,7 +13,7 @@ is on in every bot, Private ones too, and stays on: the person's Ask first switc
 (nollie-workflow/ask-first.json) and covers only what Nollie can't read, so an add-on an older Nollie
 switched off comes back on with that switch off. Every bot's use of this Mac starts off: a bot with
 no desktop lease gets a person's (bot-desktop/lease.json), since Hermes reads no lease as the bot's.
-Other disabled add-ons stay disabled. Board follow-through starts on the first install only.
+Other disabled add-ons stay disabled. Board follow-through and Night shift start on the first install only.
 nollie-mac (a bot asking Nollie Computer to use apps on this Mac) is copied into every bot that is not
 private but is listed, with its MCP server on Nollie's own Python, only in bots whose desktop lease is
 the agent's (This Mac on); turning This Mac off takes both out again at the next start.
@@ -45,6 +45,7 @@ MAC = "nollie-mac"
 MAC_FILES = ("__init__.py", "plugin.yaml", "server.py")
 WORKFLOW_INITIALIZED = "ask-first-initialized"
 MARKER = "nollie-lock.sha256"
+PYTHON_MARKER = "nollie-python.path"
 RECORDER_ONLY = "recorder-only"
 RECORDER_NOTE = "Papertrail is off in this bot. A copy made with --papertrail-bots turns it on.\n"
 SWITCH = "ask-first.json"
@@ -180,6 +181,8 @@ def start_workflow(home):
         state = core.initial_state()
         state["enabled"] = True
         core.atomic_write(root / "state.json", state)
+    # A new setup starts with Night shift on, so the first morning has its card. A setup made before keeps its choice.
+    core.start_night_shift(root)
     return "started"
 
 
@@ -192,10 +195,12 @@ def reader_environment(kit, home, uv, python, lock_entry, stamp, run=None):
     state.mkdir(mode=0o700, parents=True, exist_ok=True)
     venv = state / "venv"
     marker = venv / MARKER
-    # The lock and the Python it was built with: a newer Nollie Python moves the old one away, and a venv
-    # still pointing at it would not start.
-    stamp_text = lock_entry["sha256"] + "\n" + str(Path(python).absolute()) + "\n"
-    if marker.is_file() and not marker.is_symlink() and marker.read_text() == stamp_text:
+    # Beside the lock's marker (which the app checks byte for byte), the Python the environment was built
+    # with: a newer Nollie Python moves the old one away, and a venv still pointing at it would not start.
+    built_with = venv / PYTHON_MARKER
+    python_text = str(Path(python).absolute()) + "\n"
+    if (marker.is_file() and not marker.is_symlink() and marker.read_text() == lock_entry["sha256"] + "\n"
+            and built_with.is_file() and not built_with.is_symlink() and built_with.read_text() == python_text):
         return "current"
     for leftover in state.glob("venv.new-*"):
         if leftover.is_dir() and not leftover.is_symlink():
@@ -212,7 +217,9 @@ def reader_environment(kit, home, uv, python, lock_entry, stamp, run=None):
             shutil.rmtree(fresh, ignore_errors=True)
             # Diagnostics stay in the process output, which the app never shows.
             raise Refused("the reader's environment did not build: " + (result.stdout or "")[-2000:])
-    (fresh / MARKER).write_text(stamp_text)
+    (fresh / MARKER).write_text(lock_entry["sha256"] + "\n")
+    (fresh / PYTHON_MARKER).write_text(python_text)
+    (fresh / PYTHON_MARKER).chmod(0o600)
     (fresh / MARKER).chmod(0o600)
     previous = state / "venv.previous"
     if venv.exists():
