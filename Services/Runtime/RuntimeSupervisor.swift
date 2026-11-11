@@ -15,11 +15,15 @@ actor NollieRuntimeSupervisor {
     private var monitor: Task<Void, Never>?
     private var current = Contract.Snapshot()
     private var recentRestarts: [ContinuousClock.Instant] = []
+    private var silentSince: ContinuousClock.Instant?
+    private let unhealthyGrace: Duration
     private var operationActive = false
     private var stopping = false
 
     init(backend: any NollieRuntimeBackend, pollInterval: Duration = .milliseconds(250), startupPolls: Int = 480,
-         monitorInterval: Duration = .seconds(1), restartDelays: [Duration] = [.seconds(1), .seconds(3), .seconds(10)]) {
+         monitorInterval: Duration = .seconds(1), restartDelays: [Duration] = [.seconds(1), .seconds(3), .seconds(10)],
+         unhealthyGrace: Duration = .seconds(45)) {
+        self.unhealthyGrace = unhealthyGrace
         self.backend = backend
         self.pollInterval = pollInterval
         self.startupPolls = startupPolls
@@ -122,13 +126,33 @@ actor NollieRuntimeSupervisor {
             do {
                 try await Task.sleep(for: monitorInterval)
                 try check(epoch)
+                // A process that has gone is restarted at once. One that is only slow to answer (busy with a
+                // big download, say) is left alone: it is restarted only after staying silent for the whole
+                // grace, so a moment's stall never throws away work in progress.
+                var silent = false
                 for child in children {
-                    guard case .ready = try await backend.health(child, plan: plan, token: token) else {
+                    do {
+                        switch try await backend.health(child, plan: plan, token: token) {
+                        case .ready: break
+                        case .starting: silent = true
+                        case .exited: throw Contract.Failure.childExited
+                        }
+                    } catch Contract.Failure.childExited {
                         throw Contract.Failure.childExited
+                    } catch {
+                        silent = true
                     }
                     try check(epoch)
                 }
+                if silent {
+                    let since = silentSince ?? ContinuousClock.now
+                    silentSince = since
+                    if ContinuousClock.now - since >= unhealthyGrace { throw Contract.Failure.childExited }
+                } else {
+                    silentSince = nil
+                }
             } catch {
+                silentSince = nil
                 guard generation == epoch, !Task.isCancelled else { return }
                 current.endpoint = nil
                 await stopChildren()
