@@ -531,18 +531,34 @@ enum NativeSetupProcess {
 
 /// A private session accepts only the pinned project's HTTPS release hosts and bounds
 /// download size before reading the result. Response bodies never enter user-facing logs.
-private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+///
+/// A download that stops moving ends after `stallLimit` without a byte, so Try again shows in about a
+/// minute rather than after the whole allowance. A slow one that keeps moving may take up to an hour.
+final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+    /// Seconds without a byte before a download counts as stalled.
+    static let stallLimit: TimeInterval = 60
+    /// The most a download that keeps moving may take.
+    static let resourceLimit: TimeInterval = 3_600
+
     private let artifact: NativeSetupPlan.Artifact
+    private let stallLimit: TimeInterval
     private var continuation: CheckedContinuation<Data, Error>?
     private var session: URLSession?
     private var cancelled = false
+    private var lastProgress = Date()
+    private var watch: DispatchSourceTimer?
     private let lock = NSLock()
-    private init(_ artifact: NativeSetupPlan.Artifact) { self.artifact = artifact }
-    static func fetch(_ artifact: NativeSetupPlan.Artifact) async throws -> Data {
+    private init(_ artifact: NativeSetupPlan.Artifact, stallLimit: TimeInterval) {
+        self.artifact = artifact
+        self.stallLimit = stallLimit
+    }
+    /// `protocolClasses` lets tests answer without the network.
+    static func fetch(_ artifact: NativeSetupPlan.Artifact, stallLimit: TimeInterval = NativeArtifactDownload.stallLimit,
+                      protocolClasses: [AnyClass]? = nil) async throws -> Data {
         guard NativeArtifactDownloadPolicy.allows(artifact.url) else {
             throw NativeSetupPlan.failure(NativeArtifactDownloadPolicy.redirectFailure)
         }
-        let delegate = NativeArtifactDownload(artifact)
+        let delegate = NativeArtifactDownload(artifact, stallLimit: stallLimit)
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 delegate.lock.lock()
@@ -553,19 +569,43 @@ private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate
                 }
                 delegate.continuation = continuation
                 let configuration = URLSessionConfiguration.ephemeral
-                configuration.timeoutIntervalForRequest = 60
-                configuration.timeoutIntervalForResource = 600
+                configuration.timeoutIntervalForRequest = stallLimit
+                configuration.timeoutIntervalForResource = resourceLimit
                 configuration.httpCookieStorage = nil
                 configuration.urlCredentialStorage = nil
+                if let protocolClasses { configuration.protocolClasses = protocolClasses }
                 let queue = OperationQueue()
                 queue.maxConcurrentOperationCount = 1
                 let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: queue)
                 delegate.session = session
+                delegate.lastProgress = Date()
+                delegate.startWatch()
                 delegate.lock.unlock()
                 session.downloadTask(with: artifact.url).resume()
             }
         } onCancel: { delegate.finish(.failure(CancellationError())) }
     }
+
+    /// Looks a few times per limit for bytes. The session's own request timeout can miss a connection
+    /// that trickles or hangs part way, which once left the first download of Hermes waiting 12 minutes.
+    /// Called with the lock held.
+    private func startWatch() {
+        let timer = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
+        let every = min(5, max(stallLimit / 4, 0.05))
+        timer.schedule(deadline: .now() + every, repeating: every)
+        timer.setEventHandler { [weak self] in self?.checkForStall() }
+        watch = timer
+        timer.resume()
+    }
+
+    private func checkForStall() {
+        lock.lock()
+        let stalled = !cancelled && Date().timeIntervalSince(lastProgress) >= stallLimit
+        lock.unlock()
+        guard stalled else { return }
+        finish(.failure(NativeSetupPlan.failure(NativeArtifactDownloadPolicy.transportFailure(URLError(.timedOut)))))
+    }
+
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
                     newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
         guard let url = request.url, NativeArtifactDownloadPolicy.allows(url) else {
@@ -577,6 +617,9 @@ private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate
     }
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
                     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        lock.lock()
+        lastProgress = Date()
+        lock.unlock()
         if totalBytesWritten > artifact.bytes || totalBytesExpectedToWrite > artifact.bytes {
             finish(.failure(NativeSetupPlan.failure(String(localized: "The download was larger than the reviewed release."))))
         }
@@ -610,7 +653,10 @@ private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate
         continuation = nil
         let active = session
         session = nil
+        let timer = watch
+        watch = nil
         lock.unlock()
+        timer?.cancel()
         pending?.resume(with: result)
         active?.invalidateAndCancel()
     }
