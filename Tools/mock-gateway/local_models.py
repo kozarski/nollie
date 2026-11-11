@@ -14,6 +14,7 @@ The scenario is chosen with `--local-models <name>` or POST /api/_mock/local-mod
   failed-checksum  the engine's download did not match its pinned checksum
   ready            the model is already downloaded and chosen
   restarting       as ready, but Hermes has just restarted: the catalog and hardware answer 503 for 12 seconds
+                   (or {"seconds": n} in the POST)
 """
 import json
 import sys
@@ -143,6 +144,8 @@ def local_models_rest(method: str, base: str, query: dict, body) -> tuple[int, o
         if scenario not in SCENARIOS:
             return 422, dict(detail="unknown scenario")
         reset(scenario)
+        if isinstance(fields.get("seconds"), (int, float)):
+            STATE["restart_seconds"] = float(fields["seconds"])
         return 200, dict(ok=True, scenario=scenario)
     if base == "/api/model/options" and method == "GET" and STATE["selected"]:
         return 200, dict(model=STATE["selected"], provider="llamacpp",
@@ -151,7 +154,7 @@ def local_models_rest(method: str, base: str, query: dict, body) -> tuple[int, o
     if not base.startswith(("/api/local-models", "/api/nollie/local-model")):
         return None
     if (STATE["scenario"] == "restarting" and base in ("/api/local-models/hardware", "/api/local-models/catalog")
-            and time.time() - STATE["since"] < RESTART_SECONDS):
+            and time.time() - STATE["since"] < STATE.get("restart_seconds", RESTART_SECONDS)):
         return 503, dict(detail="Local models are starting")
     if base == "/api/local-models/hardware":
         return 200, FIXTURE["hardware"]
