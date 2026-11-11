@@ -41,6 +41,15 @@ struct OnboardingView: View {
     @State private var managedConnectionRequest: UUID?
     @State private var compactDesktop = true
     @Environment(\.dismissWindow) private var dismissWindow
+    #else
+    /// The height the page has. On shorter iPhones the character shrinks (or, on the steps after the
+    /// welcome, steps aside) and the spacing tightens, so the words and pills sit clear of the buttons.
+    @State private var phoneHeight: CGFloat = 800
+    /// iPhone SE and mini.
+    private var compactPhone: Bool { phoneHeight < 740 }
+    /// Up to the Pro size: the steps after the welcome tighten a little.
+    private var mediumPhone: Bool { phoneHeight < 820 }
+    @Environment(\.horizontalSizeClass) private var widthClass
     #endif
 
     private enum Destination: String, Identifiable {
@@ -157,7 +166,7 @@ struct OnboardingView: View {
         progress.step == .welcome ? (compactDesktop ? 176 : 208)
             : (compactDesktop ? (progress.step == .home ? 44 : 56) : 88)
         #else
-        progress.step == .welcome ? 164 : progress.step == .howItWorks ? 56 : 92
+        progress.step == .welcome ? (compactPhone ? 116 : 164) : progress.step == .howItWorks ? 56 : (mediumPhone ? 64 : 92)
         #endif
     }
 
@@ -165,7 +174,7 @@ struct OnboardingView: View {
         #if os(macOS)
         .system(size: desktopTitleSize * (progress.step == .welcome ? 1.12 : compactDesktop ? 0.76 : 0.9), weight: .bold, design: .rounded)
         #else
-        .system(.largeTitle, design: .rounded, weight: .bold)
+        .system(compactPhone && progress.step != .welcome ? .title : .largeTitle, design: .rounded, weight: .bold)
         #endif
     }
 
@@ -203,7 +212,9 @@ struct OnboardingView: View {
                     WelcomeIntroView(startedAt: introStartedAt, heroFrame: target, size: geometry.size,
                                      fixedTime: demoIntroTime, skip: { finishIntro() })
                 }
+                #if os(macOS)
                 .clipShape(.rect(cornerRadius: 32))
+                #endif
                 .transition(.opacity)
             }
         }
@@ -299,6 +310,7 @@ struct OnboardingView: View {
             .onExitCommand { dismissWindow(id: MacWindow.main) }
         #else
         navigationContent
+            .onGeometryChange(for: CGFloat.self) { $0.size.height.rounded() } action: { phoneHeight = $0 }
         #endif
     }
 
@@ -340,6 +352,8 @@ struct OnboardingView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(.hidden)
+            // On an iPad the page sits in the middle of the tall screen rather than at its top.
+            .defaultScrollAnchor(widthClass == .regular ? .center : .top, for: .alignment)
             .id(progress.step)
             .background { background }
             .safeAreaInset(edge: .bottom, spacing: 0) { if !typeSize.isAccessibilitySize { controls } }
@@ -352,12 +366,8 @@ struct OnboardingView: View {
                         .accessibilityIdentifier("onboarding.back")
                     }
                 }
-                ToolbarItem(placement: .primaryAction) {
-                    if progress.step != .welcome {
-                        Text(stepLabel).font(.caption).foregroundStyle(.secondary)
-                            .accessibilityLabel(stepLabel)
-                    }
-                }
+                // No step label here: the bar would wrap it in a glass pill that looks like a button,
+                // and the page's own title already says where you are.
             }
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -390,7 +400,7 @@ struct OnboardingView: View {
         #if os(macOS)
         compactDesktop ? (progress.step == .home ? 10 : 12) : 20
         #else
-        progress.step == .howItWorks ? 16 : 24
+        progress.step == .howItWorks || compactPhone || (mediumPhone && progress.step != .welcome) ? 16 : 24
         #endif
     }
 
@@ -455,16 +465,31 @@ struct OnboardingView: View {
     #endif
 
     private var background: some View {
+        #if os(iOS)
+        OnboardingBackdrop()
+        #else
         ZStack {
             Color(.systemGroupedBackground)
             LinearGradient(colors: [Color.blue.opacity(0.08), .clear],
                            startPoint: .topLeading, endPoint: .bottomTrailing)
         }
         .ignoresSafeArea()
+        #endif
+    }
+
+    /// On a short iPhone the steps after the welcome leave the character out, so their words and
+    /// buttons fit above Scan QR code; the welcome and Ready keep it.
+    private var showsHeroCharacter: Bool {
+        #if os(iOS)
+        !(compactPhone && progress.step != .welcome && progress.step != .ready)
+        #else
+        true
+        #endif
     }
 
     private var hero: some View {
         VStack(spacing: pageSpacing) {
+            if showsHeroCharacter {
             ZStack {
                 if progress.step == .welcome && !reduceTransparency && contrast != .increased {
                     Circle()
@@ -479,6 +504,7 @@ struct OnboardingView: View {
             }
             .frame(height: heroSize * (progress.step == .welcome ? 1.16 : 1))
             .accessibilityHidden(true)
+            }
             VStack(spacing: 10) {
                 Text(title)
                     .font(headlineFont)
@@ -517,7 +543,8 @@ struct OnboardingView: View {
     private var subtitle: String {
         #if os(iOS)
         if progress.step != .welcome && progress.step != .ready {
-            return String(localized: "Your Mac does the work. Your iPhone keeps you connected.")
+            return String(localized: "Your Mac does the work. \(DeviceWords.This) keeps you connected.",
+                          comment: "%@ is This iPhone or This iPad")
         }
         #endif
         switch progress.step {
@@ -654,14 +681,31 @@ struct OnboardingView: View {
     }
 
     #if os(iOS)
+    private var connectManuallyButton: some View {
+        Button("Connect manually") { destination = .gateway }
+            .buttonStyle(.nollieGlass).accessibilityIdentifier("onboarding.connectManually")
+    }
+
+    /// Where the Mac app comes from.
+    private static let macAppPage = URL(string: "https://nollie.app")!
+
     private var phonePairingStep: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            feature("Start on your Mac", "Install Nollie and set up your assistant.", symbol: "desktopcomputer")
-            feature("Pair your iPhone", "On your Mac, open Settings and show the code.", symbol: "qrcode.viewfinder")
-            Button("Connect manually") { destination = .gateway }
-                .buttonStyle(.nollieGlass).accessibilityIdentifier("onboarding.connectManually")
-            QuickAnswerButton(place: .phoneSetup)
+        VStack(alignment: .leading, spacing: compactPhone ? 14 : 18) {
+            VStack(alignment: .leading, spacing: 10) {
+                feature("Start on your Mac", "Install Nollie and set up your assistant.", symbol: "desktopcomputer")
+                // No Mac app yet: send its page to the Mac (AirDrop, Messages, Mail) from here.
+                ShareLink(item: Self.macAppPage, subject: Text("Nollie for Mac"), message: Text("Get Nollie for Mac.")) {
+                    Label("Get the Mac app", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(.nollieGlass)
+                .padding(.leading, 42)
+                .accessibilityIdentifier("onboarding.getMacApp")
+            }
+            feature("Pair \(DeviceWords.this)", "On your Mac, open Settings and show the code.", symbol: "qrcode.viewfinder")
+            VStack(alignment: .leading, spacing: 10) { connectManuallyButton; QuickAnswerButton(place: .phoneSetup) }
         }
+        // Pills a finger can hit: 44 points or more.
+        .controlSize(.large)
     }
     #endif
 
@@ -913,23 +957,13 @@ struct OnboardingView: View {
                     .disabled(primaryDisabled)
                     .accessibilityIdentifier("onboarding.continue")
                 }
+                #if os(iOS)
+                phoneSecondaryControls
+                #else
                 if [.welcome, .home].contains(progress.step), !isFixture {
                     // After the main path, never instead of it.
-                    Button { Task { await model.startDemo() } } label: {
-                        Text("Try a demo")
-                            .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
-                    }
-                    .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
-                    .accessibilityIdentifier("onboarding.tryDemo")
+                    tryDemoButton
                 }
-                #if os(iOS)
-                Button { update { $0.skip() } } label: {
-                    Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
-                        .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
-                }
-                .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
-                .accessibilityIdentifier("onboarding.skip")
-                #else
                 if [.model, .computer, .permissions].contains(progress.step) {
                     Button(progress.step == .permissions ? "Not now" : "Set up later") { update { $0.advance(deferStep: true) } }
                         .buttonStyle(OutlinePillStyle())
@@ -967,6 +1001,50 @@ struct OnboardingView: View {
             #endif
         }
     }
+
+    private var tryDemoButton: some View {
+        Button { Task { await model.startDemo() } } label: {
+            Text("Try a demo")
+                .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
+        }
+        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
+        .accessibilityIdentifier("onboarding.tryDemo")
+    }
+
+    #if os(iOS)
+    /// Try a demo and putting setup off, after the main path, never instead of it. On the welcome they
+    /// stand one under the other; on the steps after it they share a row when it fits, so the page above
+    /// keeps its room on a small iPhone.
+    @ViewBuilder private var phoneSecondaryControls: some View {
+        let demo = [.welcome, .home].contains(progress.step) && !isFixture
+        // Once connected there is nothing left to put off: Start chatting is the way on.
+        let later = !(progress.step == .ready && connected)
+        if progress.step == .welcome {
+            if demo { tryDemoButton }
+            if later { skipButton }
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    if demo { tryDemoButton }
+                    if later { skipButton }
+                }
+                VStack(spacing: 8) {
+                    if demo { tryDemoButton }
+                    if later { skipButton }
+                }
+            }
+        }
+    }
+
+    private var skipButton: some View {
+        Button { update { $0.skip() } } label: {
+            Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
+                .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
+        }
+        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
+        .accessibilityIdentifier("onboarding.skip")
+    }
+    #endif
 
     private var showsPrimaryControl: Bool {
         #if os(iOS)
