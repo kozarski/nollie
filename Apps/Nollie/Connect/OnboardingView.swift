@@ -1014,15 +1014,15 @@ struct OnboardingView: View {
                     // After the main path, never instead of it.
                     tryDemoButton
                 }
-                // One pill, the same size on every step, so nothing under the main button moves.
-                if [.model, .computer, .permissions].contains(progress.step) {
+                // One pill, the same size on every step that has one, so nothing under the main button moves.
+                if progress.step.hasLaterPill {
                     Button { update { $0.advance(deferStep: true) } } label: {
                         Text(progress.step == .permissions ? "Not now" : "Set up later")
                             .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
                     }
                         .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
                         .accessibilityIdentifier("onboarding.later")
-                } else {
+                } else if progress.step.hasSkipPill {
                     Button { update { $0.skip() } } label: {
                         Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
                             .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
@@ -1151,7 +1151,7 @@ struct OnboardingView: View {
             return false
             #endif
         case .model: return !connected || modelStatus?.isReady != true
-        case .computer: return !connected || !(computerSwitchOn || computerConfigured == true)
+        case .computer, .permissions: return !progress.step.continueAlwaysWorks
         case .ready: return checking && modelStatus == nil
         default: return false
         }

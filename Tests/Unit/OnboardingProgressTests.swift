@@ -5,6 +5,21 @@ import NollieCore
 
 @MainActor
 struct OnboardingProgressTests {
+    @Test func theComputerStepHasOneWayOnAndItAlwaysWorks() {
+        #expect(OnboardingProgress.Step.computer.continueAlwaysWorks, "Off means go on without it")
+        #expect(!OnboardingProgress.Step.computer.hasLaterPill, "Set up later meant the same as Continue")
+        #expect(!OnboardingProgress.Step.computer.hasSkipPill, "Continue is the one button")
+        #expect(OnboardingProgress.Step.model.hasLaterPill, "The model's Continue waits for one that answers")
+        #expect(!OnboardingProgress.Step.model.continueAlwaysWorks)
+        #expect(OnboardingProgress.Step.permissions.hasLaterPill && OnboardingProgress.Step.permissions.continueAlwaysWorks)
+        #expect(OnboardingProgress.Step.welcome.hasSkipPill && OnboardingProgress.Step.connection.hasSkipPill)
+        // Continue with the switch off goes on, and the step is not marked as put off.
+        var progress = OnboardingProgress(step: .computer, route: .new)
+        progress.advance()
+        #expect(progress.step == .permissions)
+        #expect(!progress.deferred.contains(.computer))
+    }
+
     @Test func existingUsersAreNotSentThroughFirstRunAgain() {
         #expect(!OnboardingProgress.shouldPresent(hasConnections: true, raw: ""))
         #expect(OnboardingProgress.shouldPresent(hasConnections: false, raw: ""))
