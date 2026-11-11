@@ -236,8 +236,10 @@ struct BotListRow: View {
 
     private var lastLine: String {
         if let t = entry.lastText, !t.isEmpty { return t }
-        if entry.storedID == nil { return String(localized: "Say hello to start your chat.") }
+        if entry.storedID == nil, entry.noMainChat { return String(localized: "Say hello to start your chat.") }
         if let d = profile.description, !d.isEmpty { return d }
+        // Not known yet (the gateway hasn't answered): claim nothing, and keep the row's height.
+        if entry.storedID == nil { return " " }
         return String(localized: "No messages yet.")
     }
 }
