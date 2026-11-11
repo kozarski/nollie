@@ -161,7 +161,10 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
             posix_spawn_file_actions_adddup2(&actions, owner[0], Contract.ownerDescriptor),
             posix_spawn_file_actions_adddup2(&actions, handoff[0], Contract.keysDescriptor),
             posix_spawn_file_actions_addchdir(&actions, plan.source.path),
-            posix_spawnattr_setflags(&attributes, Int16(POSIX_SPAWN_CLOEXEC_DEFAULT))
+            // Its own process group, so everything Hermes starts (an installer, a model server) can be stopped
+            // with it. Left behind, such a process keeps a lock and the next start waits on it for ever.
+            posix_spawnattr_setpgroup(&attributes, 0),
+            posix_spawnattr_setflags(&attributes, Int16(POSIX_SPAWN_CLOEXEC_DEFAULT | POSIX_SPAWN_SETPGROUP))
         ]
         guard settings.allSatisfy({ $0 == 0 }) else { throw Contract.Failure.launchFailed }
         var argv = ([plan.executable.path] + plan.arguments(for: role)).map { strdup($0) } + [nil]
@@ -268,6 +271,8 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
     func stop(_ handle: Contract.Child) async {
         guard var child = children[handle.id], child.handle == handle else { return }
         if child.owner >= 0 { close(child.owner); child.owner = -1 }
+        // The whole group: Hermes and whatever it started.
+        _ = kill(-handle.pid, SIGTERM)
         if collectExit(&child) == nil { _ = kill(handle.pid, SIGTERM) }
         children[handle.id] = child
         for attempt in 0..<70 {
@@ -276,9 +281,11 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
             if collectExit(&pending) != nil {
                 close(pending.output)
                 children.removeValue(forKey: handle.id)
+                // Hermes has gone. Anything it left running goes too.
+                _ = kill(-handle.pid, SIGKILL)
                 return
             }
-            if attempt == 50 { _ = kill(handle.pid, SIGKILL) }
+            if attempt == 50 { _ = kill(-handle.pid, SIGKILL); _ = kill(handle.pid, SIGKILL) }
             children[handle.id] = pending
             // A caller cancellation must not abandon child cleanup.
             await Task.detached { try? await Task.sleep(for: .milliseconds(100)) }.value
