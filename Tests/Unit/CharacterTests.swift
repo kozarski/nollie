@@ -135,9 +135,9 @@ import NollieCore
     /// Exercise the sidebar's live-view path, rather than the separate reply-image cache.
     @MainActor @Test(.serialized, arguments: CharacterLookID.allCases, [false, true])
     func sidebarCharactersHaveInkAndClearCorners(look: CharacterLookID, working: Bool) async throws {
-        let domain = "nollie.character-tests.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: domain))
-        defer { defaults.removePersistentDomain(forName: domain) }
+        let scratch = ScratchDefaults("character")
+        defer { scratch.throwAway() }
+        let defaults = scratch.defaults
         let profile = "character-test-\(UUID().uuidString)"
         let choices = try JSONEncoder().encode([profile: CharacterChoice.look(look).raw])
         defaults.set(String(decoding: choices, as: UTF8.self), forKey: BotAvatarStore.storageKey)
