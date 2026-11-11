@@ -13,6 +13,7 @@ The scenario is chosen with `--local-models <name>` or POST /api/_mock/local-mod
   failed-disk      the download stops: no space left on the disk
   failed-checksum  the engine's download did not match its pinned checksum
   ready            the model is already downloaded and chosen
+  restarting       as ready, but Hermes has just restarted: the catalog and hardware answer 503 for 12 seconds
 """
 import json
 import sys
@@ -21,7 +22,8 @@ import uuid
 from pathlib import Path
 
 FIXTURE = json.loads((Path(__file__).with_name("fixtures") / "local-models.json").read_text())
-SCENARIOS = ("flow", "downloading", "paused", "failed-network", "failed-disk", "failed-checksum", "ready")
+SCENARIOS = ("flow", "downloading", "paused", "failed-network", "failed-disk", "failed-checksum", "ready", "restarting")
+RESTART_SECONDS = 12.0
 REPLY = "Hi! Ready when you are."
 ENGINE_BYTES = 12_201_717
 # The optional draft each catalog entry downloads last (hermes_cli/local_runtime/catalog.json in 0.23.1). Hermes
@@ -50,8 +52,8 @@ STATE: dict = {}
 
 def reset(scenario: str | None = None) -> None:
     STATE.clear()
-    STATE.update(scenario=scenario or _scenario_from_argv(), jobs={}, selected=None, downloaded=set())
-    if STATE["scenario"] == "ready":
+    STATE.update(scenario=scenario or _scenario_from_argv(), jobs={}, selected=None, downloaded=set(), since=time.time())
+    if STATE["scenario"] in ("ready", "restarting"):
         entry = _entries()[0]
         STATE["downloaded"].add(entry["id"])
         STATE["selected"] = entry["model_id"]
@@ -148,6 +150,9 @@ def local_models_rest(method: str, base: str, query: dict, body) -> tuple[int, o
                                          models=[STATE["selected"]], featured_models=[])])
     if not base.startswith(("/api/local-models", "/api/nollie/local-model")):
         return None
+    if (STATE["scenario"] == "restarting" and base in ("/api/local-models/hardware", "/api/local-models/catalog")
+            and time.time() - STATE["since"] < RESTART_SECONDS):
+        return 503, dict(detail="Local models are starting")
     if base == "/api/local-models/hardware":
         return 200, FIXTURE["hardware"]
     if base == "/api/local-models/catalog":

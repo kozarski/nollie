@@ -94,6 +94,15 @@ class LocalModelsTests(unittest.TestCase):
         self.assertEqual(self.request("/api/local-models/quickstart", "POST", {"model_id": "nope"})[0], 404)
         self.assertEqual(self.request("/api/nollie/local-model/reply-check", "POST")[0], 503)
 
+    def test_restarting_answers_503_until_hermes_is_back(self):
+        LOCAL.reset("restarting")
+        self.assertEqual(self.request("/api/local-models/catalog")[0], 503)
+        self.assertEqual(self.request("/api/model/options")[0], 200, "the chosen model is still known")
+        LOCAL.STATE["since"] -= LOCAL.RESTART_SECONDS
+        status, body = self.request("/api/local-models/catalog")
+        self.assertEqual(status, 200)
+        self.assertTrue(body["models"][0]["downloaded"])
+
     def test_ready_starts_with_the_model_chosen(self):
         LOCAL.reset("ready")
         _, options = self.request("/api/model/options")
