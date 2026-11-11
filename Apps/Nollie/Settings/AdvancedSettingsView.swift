@@ -19,7 +19,7 @@ struct AdvancedSettingsView: View {
                 if let rt = model.runtime {
                     if rt.connection.linkedMac != nil {
                         // Nollie Link carries the app's own routes only, not the dashboard's pages.
-                        GlassRowLabel(title: String(localized: "Open the Hermes dashboard on your Mac"), symbol: "safari", chevron: false)
+                        GlassRowLabel(title: String(localized: "Open the Hermes dashboard on your Mac"), symbol: "globe", chevron: false)
                             .accessibilityIdentifier("advanced.dashboard")
                     } else {
                         Link(destination: rt.connection.gateway.base) { DashboardRowLabel() }
@@ -57,7 +57,7 @@ struct AdvancedSettingsView: View {
 private struct DashboardRowLabel: View {
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: "safari")
+            Image(systemName: "globe")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(Ink.text2)
                 .frame(width: 26)

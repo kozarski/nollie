@@ -533,7 +533,7 @@ public struct WeeklyNote: Equatable, Sendable {
             did.append(Line(id: "\(bot)/spend", kind: .spend, symbol: "dollarsign.circle", text: WeeklyWords.spend(spend.dollars)))
         }
         if input.macOn == true {
-            did.append(Line(id: "\(bot)/mac", kind: .mac, symbol: "macbook", text: String(localized: "Can use your Mac", table: "Core"), actions: [.macOff(bot: bot)]))
+            did.append(Line(id: "\(bot)/mac", kind: .mac, symbol: "laptopcomputer", text: String(localized: "Can use your Mac", table: "Core"), actions: [.macOff(bot: bot)]))
         }
         // What left: each place, most used first, with a tap where one is real.
         var left: [Line] = []

@@ -22,7 +22,7 @@ struct OnYourMacNote: View {
     let words: String
 
     var body: some View {
-        Label(words, systemImage: "macbook")
+        Label(words, systemImage: "laptopcomputer")
             .small(.footnote, .secondary)
             .testID("onYourMac.note")
     }
