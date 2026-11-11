@@ -61,12 +61,17 @@ enum LocalModelStage: Equatable {
     }
 }
 
-/// The download on this Mac, shared by the Models page, its hero and its Advanced page so all
-/// three tell the same story. The page's section makes the setup; this only holds it.
+/// The download on this Mac, one for the whole app: the setup step, its sheet, the Models page,
+/// its hero and its Advanced page all tell the same story, and a download keeps being followed when
+/// the sheet closes.
 @MainActor @Observable
 final class LocalModelDownload {
+    static let shared = LocalModelDownload()
+
     private(set) var setup: LocalModelQuickstart?
     private(set) var scopeKey: String?
+    /// The catalog as last read, for names and sizes.
+    private(set) var snapshot: LocalModelSetupSnapshot?
     /// The model Download and use gets: Quick start, unless someone picks another.
     var selectedID = ""
 
@@ -75,14 +80,36 @@ final class LocalModelDownload {
     #if DEBUG
     init(picture: LocalModelQuickstart, snapshot: LocalModelSetupSnapshot) {
         setup = picture
+        self.snapshot = snapshot
         selectedID = LocalModelChoices(snapshot).quickStart?.id ?? ""
     }
     #endif
+
+    /// The setup for this assistant, made once and kept: it says hello the moment its model is chosen.
+    func prepare(runtime: GatewayRuntime, app: AppModel, scope: LocalModelInstallScope) -> LocalModelQuickstart {
+        if let setup, scopeKey == scope.storageKey { return setup }
+        let current: @MainActor () -> Bool = {
+            app.runtime === runtime && (runtime.selectedProfile ?? "default") == "default" &&
+            runtime.socketState.isOpen && !app.lock.isLocked && LocalModelQuickstartSection.scope(for: runtime) == scope
+        }
+        let made = LocalModelQuickstart(api: LocalModelAPI(api: runtime.api, profile: "default"), scope: scope,
+            persistence: .preferences(.standard, scope: scope),
+            inspect: { try await LocalModelSetupClient(api: runtime.api).inspect() },
+            isCurrent: current,
+            checkReply: { name in try await LocalModelReplyCheck.run(api: LocalModelAPI(api: runtime.api, profile: "default"), model: name, isCurrent: current) })
+        made.autoHello = true
+        setup?.stopObserving()
+        setup = made
+        scopeKey = scope.storageKey
+        selectedID = ""
+        return made
+    }
 
     /// Holds the section's setup for one install scope; a new scope starts from Quick start.
     func attach(_ setup: LocalModelQuickstart, scope: LocalModelInstallScope, snapshot: LocalModelSetupSnapshot) {
         if scopeKey != scope.storageKey { selectedID = "" }
         self.setup = setup
+        self.snapshot = snapshot
         scopeKey = scope.storageKey
         selectedID = LocalModelChoices(snapshot).chosen(selectedID)?.id ?? ""
     }
@@ -96,7 +123,7 @@ final class LocalModelDownload {
     /// What the hero says for this scope, or nil when there is no download to talk about.
     func stage(for scope: LocalModelInstallScope?, snapshot: LocalModelSetupSnapshot?) -> LocalModelStage? {
         guard let setup = setup(for: scope) else { return nil }
-        let name = snapshot.flatMap { local in local.models.first { $0.id == setup.receipt?.catalogID } }?.displayName
+        let name = (snapshot ?? self.snapshot).flatMap { local in local.models.first { $0.id == setup.receipt?.catalogID } }?.displayName
         return LocalModelStage(setup, name: name)
     }
 
@@ -104,32 +131,88 @@ final class LocalModelDownload {
         LocalModelChoices(snapshot).chosen(selectedID)
     }
 
+    /// The model that just answered hello on this Mac, with its catalog name: proof enough that it
+    /// can answer, without asking Hermes again.
+    func verified(for scope: LocalModelInstallScope?) -> LocalModelVerified? {
+        guard let setup = setup(for: scope), setup.state == .ready, let model = setup.selectedModel else { return nil }
+        return LocalModelVerified(model: model, name: Self.name(for: model, catalogID: setup.receipt?.catalogID, in: snapshot))
+    }
+
+    /// A download, the step after it, or its first hello still under way: what the setup step's
+    /// model row says while it waits, or nil when nothing is going on.
+    func activity(for scope: LocalModelInstallScope?) -> String? {
+        guard let setup = setup(for: scope) else { return nil }
+        let entry = snapshot.flatMap { local in local.models.first { $0.id == setup.receipt?.catalogID } }
+        let name = entry?.displayName ?? String(localized: "Your model")
+        switch setup.state {
+        case .starting, .installing, .checkingSelection:
+            return String(localized: "Getting \(name) · \(Self.stepWords(setup.job, size: entry?.sizeBytes))",
+                          comment: "A model name, then how far its download has come, such as Getting Qwen3.8 27B · 6.6 of 18.5 GB")
+        case .paused:
+            let words = Self.progressWords(setup.job, size: entry?.sizeBytes) ?? name
+            return String(localized: "Paused · \(words)", comment: "A paused download, then how far it came, such as Paused · 6.6 of 18.5 GB")
+        case .selected, .checkingReply:
+            return setup.message == nil ? String(localized: "Saying hello…") : nil
+        default: return nil
+        }
+    }
+
     /// The model the setup selected, as the catalog names it.
     nonisolated static func entry(for selected: String?, in snapshot: LocalModelSetupSnapshot) -> LocalModelCatalogEntry? {
         guard let selected else { return nil }
-        return snapshot.models.first { $0.modelId == selected || $0.downloadedModelId == selected || $0.id == selected }
+        let key = Self.key(selected)
+        return snapshot.models.first { [$0.modelId, $0.downloadedModelId, $0.id].contains { $0.map(Self.key) == key } }
+    }
+
+    /// A model's name as the catalog has it, else as people would say it, never the build's id.
+    nonisolated static func name(for model: String, catalogID: String? = nil, in snapshot: LocalModelSetupSnapshot?) -> String {
+        if let snapshot, let entry = entry(for: model, in: snapshot) ?? catalogID.flatMap({ id in snapshot.models.first { $0.id == id } }) {
+            return entry.displayName
+        }
+        return ModelPlace.friendlyName(model)
+    }
+
+    /// One spelling for a model's id: Hermes names a split model by its first part.
+    nonisolated static func key(_ id: String) -> String {
+        id.replacingOccurrences(of: #"-\d{5}-of-\d{5}$"#, with: "", options: .regularExpression).lowercased()
+    }
+
+    /// Bytes done and the whole, against the catalog's size when it is given. Hermes counts the
+    /// files a model needs, then starts again for its optional draft; the catalog's size counts
+    /// both, so this keeps one total from start to finish.
+    nonisolated static func bytes(_ job: LocalModelJob?, size: UInt64? = nil) -> (done: UInt64, total: UInt64)? {
+        guard let job, let total = job.totalBytes, total > 0 else { return nil }
+        let done = min(job.doneBytes, total)
+        guard let size, size > total else { return (done, total) }
+        let draft = job.detail?.localizedCaseInsensitiveContains("draft") == true
+        return draft ? (min(size, size - total + done), size) : (done, size)
     }
 
     /// "6.6 of 18.5 GB", in the total's own unit, or nil before the size is known.
-    nonisolated static func progressWords(_ job: LocalModelJob?) -> String? {
-        guard let job, let total = job.totalBytes, total > 0 else { return nil }
-        let gigabytes = total >= 1_000_000_000
+    nonisolated static func progressWords(_ job: LocalModelJob?, size: UInt64? = nil) -> String? {
+        guard let (doneBytes, totalBytes) = bytes(job, size: size) else { return nil }
+        let gigabytes = totalBytes >= 1_000_000_000
         let unit: UnitInformationStorage = gigabytes ? .gigabytes : .megabytes
         let scale = gigabytes ? 1e9 : 1e6
-        let digits = gigabytes && Double(total) / scale < 100 ? 1 : 0
+        let digits = gigabytes && Double(totalBytes) / scale < 100 ? 1 : 0
         let style = FloatingPointFormatStyle<Double>.number.precision(.fractionLength(digits))
-        let whole = Measurement(value: Double(total) / scale, unit: unit)
+        let whole = Measurement(value: Double(totalBytes) / scale, unit: unit)
             .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: style))
-        let done = (Double(min(job.doneBytes, total)) / scale).formatted(style)
+        let done = (Double(doneBytes) / scale).formatted(style)
         return String(localized: "\(done) of \(whole)", comment: "Download progress, such as 6.6 of 18.5 GB")
     }
 
+    /// How far along, from 0 to 1, on the same total as the words.
+    nonisolated static func fraction(_ job: LocalModelJob?, size: UInt64? = nil) -> Double? {
+        bytes(job, size: size).map { Double($0.done) / Double($0.total) }
+    }
+
     /// What the job is doing, in a few words: the bytes while the model downloads, else its step.
-    nonisolated static func stepWords(_ job: LocalModelJob?) -> String {
+    nonisolated static func stepWords(_ job: LocalModelJob?, size: UInt64? = nil) -> String {
         switch job?.phase {
         case "installing-runtime", "downloading-runtime", "unpacking-runtime", "verifying-runtime":
             String(localized: "Getting the engine")
-        case "downloading": progressWords(job) ?? String(localized: "Getting ready")
+        case "downloading": progressWords(job, size: size) ?? String(localized: "Getting ready")
         case "starting-server", "restarting": String(localized: "Starting your model")
         case "setting-default", "done": String(localized: "Almost ready")
         default: String(localized: "Getting ready")
@@ -137,12 +220,18 @@ final class LocalModelDownload {
     }
 }
 
+/// A model on this Mac that answered hello, by its id and the name people see.
+struct LocalModelVerified: Equatable, Sendable {
+    var model: String
+    var name: String
+}
+
 /// The model on this Mac: two clear choices (Quick start, and the best for this Mac when it
 /// differs), the rest under More models, one Download and use, then the download on glass with
 /// its time left, and a first hello the moment the model is ready.
 struct LocalModelQuickstartSection: View {
     let runtime: GatewayRuntime
-    let snapshot: LocalModelSetupSnapshot
+    private let given: LocalModelSetupSnapshot
     let download: LocalModelDownload
     var onModelChanged: () -> Void = {}
     /// Shown as Continue once the model has answered, when the section sits in setup's sheet.
@@ -151,17 +240,22 @@ struct LocalModelQuickstartSection: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var setup: LocalModelQuickstart?
+    /// Free space measured again while the page is open: a download elsewhere or an emptied Trash shows at once.
+    @State private var liveFree: UInt64?
     private var fixtureMode = false
+
+    /// The catalog as given, with this Mac's free space as it is now.
+    private var snapshot: LocalModelSetupSnapshot { given.measured(free: liveFree) }
 
     init(runtime: GatewayRuntime, snapshot: LocalModelSetupSnapshot, download: LocalModelDownload,
          onModelChanged: @escaping () -> Void = {}, onFinished: (() -> Void)? = nil) {
-        self.runtime = runtime; self.snapshot = snapshot; self.download = download
+        self.runtime = runtime; self.given = snapshot; self.download = download
         self.onModelChanged = onModelChanged; self.onFinished = onFinished
     }
 
     #if DEBUG
     init(runtime: GatewayRuntime, snapshot: LocalModelSetupSnapshot, picture: LocalModelQuickstart, onFinished: (() -> Void)? = nil) {
-        self.runtime = runtime; self.snapshot = snapshot
+        self.runtime = runtime; self.given = snapshot
         download = LocalModelDownload(picture: picture, snapshot: snapshot)
         self.onFinished = onFinished
         _setup = State(initialValue: picture)
@@ -207,7 +301,13 @@ struct LocalModelQuickstartSection: View {
         .frame(maxWidth: .infinity)
         .allowsHitTesting(!fixtureMode)
         .task { if !fixtureMode { prepare() } }
-        .onDisappear { setup?.stopObserving() }
+        .task {
+            guard !fixtureMode else { return }
+            while !Task.isCancelled {
+                liveFree = LocalModelDisk.freeBytes()
+                try? await Task.sleep(for: .seconds(5))
+            }
+        }
         .onChange(of: model.lock.isLocked) { _, locked in
             guard !fixtureMode else { return }
             if locked { setup?.stopObserving() } else { setup?.restore() }
@@ -302,7 +402,7 @@ struct LocalModelQuickstartSection: View {
                     .foregroundStyle(tint)
                     .accessibilityHidden(true)
                 Group {
-                    if let value = setup.job?.fractionCompleted, setup.state != .starting, setup.job?.phase == "downloading" {
+                    if let value = LocalModelDownload.fraction(setup.job, size: size(setup)), setup.state != .starting, setup.job?.phase == "downloading" {
                         ProgressView(value: value).tint(tint)
                     } else {
                         ProgressView().controlSize(.small)
@@ -310,7 +410,7 @@ struct LocalModelQuickstartSection: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel("Download progress")
-                Text(LocalModelDownload.stepWords(setup.job))
+                Text(LocalModelDownload.stepWords(setup.job, size: size(setup)))
                     .font(.body.weight(.medium))
                     .monospacedDigit()
                     .foregroundStyle(Ink.text)
@@ -321,7 +421,7 @@ struct LocalModelQuickstartSection: View {
             .nollieGlass(.regular, in: shape, solid: Ink.card)
             .accessibilityElement(children: .combine)
             .testID("models.local.status")
-            if let left = LocalModelTime.left(setup.job) {
+            if let left = LocalModelTime.left(setup.job, size: size(setup)) {
                 Text(left).font(.body).foregroundStyle(Ink.text2).monospacedDigit()
                     .testID("models.local.timeLeft")
             }
@@ -389,21 +489,18 @@ struct LocalModelQuickstartSection: View {
         typeSize.isAccessibilitySize ? AnyShape(.rect(cornerRadius: 26, style: .continuous)) : AnyShape(Capsule())
     }
 
+    /// The download's whole size as the choice showed it.
+    private func size(_ setup: LocalModelQuickstart) -> UInt64? {
+        snapshot.models.first { $0.id == setup.receipt?.catalogID }?.sizeBytes
+    }
+
     private func prepare() {
         guard let scope = Self.scope(for: runtime) else { return }
-        if setup == nil {
-            let current: @MainActor () -> Bool = {
-                model.runtime === runtime && (runtime.selectedProfile ?? "default") == "default" &&
-                runtime.socketState.isOpen && !model.lock.isLocked && Self.scope(for: runtime) == scope
-            }
-            setup = LocalModelQuickstart(api: LocalModelAPI(api: runtime.api, profile: "default"), scope: scope,
-                persistence: .preferences(.standard, scope: scope),
-                inspect: { try await LocalModelSetupClient(api: runtime.api).inspect() },
-                isCurrent: current,
-                checkReply: { name in try await LocalModelReplyCheck.run(api: LocalModelAPI(api: runtime.api, profile: "default"), model: name, isCurrent: current) })
-        }
-        if let setup { download.attach(setup, scope: scope, snapshot: snapshot) }
-        setup?.restore()
+        // One setup for the app, so a download keeps being followed after this page closes.
+        let made = download.prepare(runtime: runtime, app: model, scope: scope)
+        setup = made
+        download.attach(made, scope: scope, snapshot: given)
+        made.restore()
     }
 }
 

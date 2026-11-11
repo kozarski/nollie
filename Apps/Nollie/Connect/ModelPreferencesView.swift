@@ -118,10 +118,14 @@ struct ModelPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(ModelPreferenceStore.key) private var savedMode = ModelSetupMode.local.rawValue
     @State private var check = ModelCheck()
-    @State private var download = LocalModelDownload()
+    @State private var download = LocalModelDownload.shared
 
-    init(showsPreference: Bool = true) {
+    /// In setup's sheet: the way on once the model has answered, closing the sheet and moving setup along.
+    var onContinue: (() -> Void)? = nil
+
+    init(showsPreference: Bool = true, onContinue: (() -> Void)? = nil) {
         self.showsPreference = showsPreference
+        self.onContinue = onContinue
     }
 
     private var mode: ModelSetupMode { ModelSetupMode(rawValue: savedMode) ?? .local }
@@ -249,7 +253,7 @@ struct ModelPreferencesView: View {
             VStack(alignment: .leading, spacing: 14) {
                 LocalModelQuickstartSection(runtime: runtime, snapshot: local, download: download,
                                             onModelChanged: { Task { await check.refreshCurrentModel(model, identity: { identity }) } },
-                                            onFinished: isSetupSheet ? { dismiss() } : nil)
+                                            onFinished: isSetupSheet ? (onContinue ?? { dismiss() }) : nil)
                 .id(scope.storageKey)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -661,14 +665,32 @@ enum ModelReadiness: Equatable {
     case notYet(String)
     case none
 
+    /// What the setup step shows. A model on this Mac that just answered hello is ready at once,
+    /// before Hermes is asked again; otherwise the model Hermes has chosen decides.
+    static func read(_ options: ModelOptionsResult?, mode: ModelSetupMode, local: LocalModelSetupSnapshot?,
+                     verified: LocalModelVerified?) -> Self? {
+        if mode != .cloud, let verified {
+            let chosen = options?.model?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if chosen == nil || chosen?.isEmpty == true || chosen.map(LocalModelDownload.key) == LocalModelDownload.key(verified.model) {
+                return .ready(verified.name)
+            }
+        }
+        return options.map { read($0, mode: mode, local: local) }
+    }
+
     static func read(_ options: ModelOptionsResult, mode: ModelSetupMode, local: LocalModelSetupSnapshot?) -> Self {
         guard let model = options.model?.trimmingCharacters(in: .whitespacesAndNewlines), !model.isEmpty,
               let slug = ModelPlace.provider(options) else { return .none }
         if ModelPlace.isLocal(slug) {
             let entry = local.flatMap { LocalModelDownload.entry(for: model, in: $0) }
-            let name = entry?.displayName ?? ModelPlace.friendlyName(model)
+            let name = LocalModelDownload.name(for: model, in: local)
             guard mode != .cloud else { return .notYet(String(localized: "\(name) runs on this Mac. Online was chosen.", comment: "%@ is a model name")) }
-            return entry?.downloaded == true ? .ready(name) : .notYet(String(localized: "\(name) isn't downloaded yet.", comment: "%@ is a model name"))
+            if entry?.downloaded == true { return .ready(name) }
+            // A catalog that couldn't be read says nothing about the download: never claim it is missing.
+            guard let local, local.catalogIssue == nil, !local.models.isEmpty else {
+                return .notYet(String(localized: "Checking \(name)…", comment: "%@ is a model name"))
+            }
+            return .notYet(String(localized: "\(name) isn't downloaded yet.", comment: "%@ is a model name"))
         }
         let name = ModelPlace.friendlyName(model)
         guard mode != .local else {
@@ -700,12 +722,35 @@ extension ModelPlace {
     /// "openai/gpt-5.1-mini" is "GPT 5.1 Mini".
     static func friendlyName(_ model: String) -> String {
         let last = model.split(separator: "/").last.map(String.init) ?? model
-        let words = last.split(whereSeparator: { $0 == "-" || $0 == "_" || $0 == " " }).map { word -> String in
+        var parts = last.split(separator: "-").map(String.init)
+        // "Qwen3.8-27B-UD-Q4_K_M": the build's quant is not part of the name.
+        while parts.count > 1, let tail = parts.last, Self.isQuant(tail) { parts.removeLast() }
+        let words = parts.joined(separator: "-").split(whereSeparator: { $0 == "-" || $0 == "_" || $0 == " " }).map { word -> String in
             let lower = word.lowercased()
             if ["gpt", "glm", "ai"].contains(lower) { return lower.uppercased() }
             if lower.first?.isNumber == true || word.contains(where: \.isUppercase) { return String(word) }
             return lower.prefix(1).uppercased() + lower.dropFirst()
         }
         return words.isEmpty ? model : words.joined(separator: " ")
+    }
+
+    /// A GGUF build tag such as Q4_K_M, IQ4_XS, UD, F16, BF16 or 24GB.
+    static func isQuant(_ token: String) -> Bool {
+        let upper = token.uppercased()
+        if ["UD", "F16", "BF16", "F32", "GGUF", "MLX"].contains(upper) { return true }
+        if upper.range(of: #"^I?Q\d+(_[A-Z0-9]+)*$"#, options: .regularExpression) != nil { return true }
+        return upper.range(of: #"^\d+GB$"#, options: .regularExpression) != nil
+    }
+}
+
+/// Setup's last step, Ready when you are: its main button. Start chatting once a model can answer,
+/// or when setting one up was put off on purpose; otherwise Set up a model, back to that step, so the
+/// way on is never a grey button.
+enum ReadyStepAction: Equatable {
+    case startChatting, setUpModel, checkConnection
+
+    static func decide(connected: Bool, modelReady: Bool, modelPutOff: Bool) -> Self {
+        guard connected else { return .checkConnection }
+        return modelReady || modelPutOff ? .startChatting : .setUpModel
     }
 }

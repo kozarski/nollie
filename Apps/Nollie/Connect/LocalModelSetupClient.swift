@@ -78,6 +78,12 @@ struct LocalModelSetupSnapshot: Equatable, Sendable {
     /// Free space on this Mac, measured by Nollie (Hermes doesn't say). Nil off the Mac.
     var freeDiskBytes: UInt64? = nil
 
+    /// The same catalog with free space measured again, when there is a new reading.
+    func measured(free: UInt64?) -> Self {
+        guard let free else { return self }
+        var copy = self; copy.freeDiskBytes = free; return copy
+    }
+
     var recommended: LocalModelCatalogEntry? {
         guard hardware?.ramTotalBytes.map({ $0 > 0 }) == true, hardwareIssue == nil, catalogIssue == nil else { return nil }
         return models.first(where: \.isRecommendedCandidate)
@@ -247,10 +253,11 @@ enum LocalModelTime {
     }
 
     /// "About 12 min left", from the job's own measured speed, or nil when it can't be told honestly.
-    static func left(_ job: LocalModelJob?) -> String? {
+    static func left(_ job: LocalModelJob?, size: UInt64? = nil) -> String? {
         guard let job, job.status == "running", job.phase == "downloading", let total = job.totalBytes, total > job.doneBytes,
-              job.doneBytes > 0, let speed = job.bytesPerSec, speed.isFinite, speed > 0 else { return nil }
-        let seconds = Double(total - job.doneBytes) / speed
+              job.doneBytes > 0, let speed = job.bytesPerSec, speed.isFinite, speed > 0,
+              let (done, whole) = LocalModelDownload.bytes(job, size: size), whole > done else { return nil }
+        let seconds = Double(whole - done) / speed
         if seconds < 50 { return String(localized: "Less than a minute left") }
         return String(localized: "About \(duration(seconds)) left", comment: "Time left in a download, such as About 12 min left")
     }

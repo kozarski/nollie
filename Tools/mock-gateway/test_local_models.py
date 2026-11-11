@@ -50,6 +50,12 @@ class LocalModelsTests(unittest.TestCase):
         self.assertEqual(middle["phase"], "downloading")
         self.assertGreater(middle["bytes_per_sec"], 0)
         self.assertGreater(middle["eta_seconds"], 0)
+        self.assertEqual(middle["total_bytes"], 18538593472 - LOCAL.DRAFT_BYTES["qwen3.8-27b"], "The model's own files first")
+        LOCAL.STATE["jobs"][job]["started_at"] -= LOCAL.FLOW_SECONDS * 0.47
+        _, draft = self.request(f"/api/local-models/jobs/{job}")
+        self.assertIn("draft", draft["detail"])
+        self.assertEqual(draft["total_bytes"], LOCAL.DRAFT_BYTES["qwen3.8-27b"])
+        LOCAL.STATE["jobs"][job]["started_at"] += LOCAL.FLOW_SECONDS * 0.47
         self.assertEqual(self.request("/api/local-models/quickstart", "POST", {"model_id": "qwen3.8-27b"})[0], 409)
         LOCAL.STATE["jobs"][job]["started_at"] -= LOCAL.FLOW_SECONDS
         _, done = self.request(f"/api/local-models/jobs/{job}")
