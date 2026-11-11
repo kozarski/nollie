@@ -681,7 +681,8 @@ struct OnboardingView: View {
                     .font(.callout).foregroundStyle(.secondary)
                 #else
                 statusRow("Your assistant", detail: connected ? String(localized: "Connected") : String(localized: "Not connected"), ready: connected)
-                statusRow("Model", detail: readyDetail(.model, modelDetail), ready: modelStatus?.isReady == true)
+                statusRow("Model", detail: modelStatus?.isReady == true ? modelDetail : readyDetail(.model, modelDetail),
+                          ready: modelStatus?.isReady == true)
                 statusRow("Computer", detail: readyDetail(.computer, computerDetail), ready: computerConfigured == true ? true : nil)
                 statusRow("Notifications", detail: readyDetail(.permissions, notificationDetail), ready: notificationsAllowed)
                 if connected, NollieLinkMacClient.isAvailable(for: runtime?.connection) {
@@ -846,7 +847,7 @@ struct OnboardingView: View {
         VStack(spacing: 18) {
             modelPreference
             HStack(spacing: 14) {
-                if (checking && modelStatus == nil) || (!connected && AssistantWait.state(runtime) == .starting) {
+                if (checking && modelStatus == nil) || (!connected && AssistantWait.state(runtime) == .starting) || modelActivity != nil {
                     ProgressView().controlSize(.small).frame(width: 24)
                 } else {
                     Image(systemName: modelStatus?.isReady == true ? "checkmark.circle.fill" : "circle.dotted")
@@ -863,12 +864,21 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("onboarding.modelStatus")
+            .task(id: runtime?.connection.id) {
+                if let rt = runtime, let scope = LocalModelQuickstartSection.scope(for: rt) {
+                    LocalModelDownload.shared.prepare(runtime: rt, app: model, scope: scope).restore()
+                }
+            }
+            // The download chose its model in Hermes while the sheet was closed: read it again.
+            .onChange(of: LocalModelDownload.shared.setup(for: LocalModelQuickstartSection.scope(for: runtime))?.selectedModel) { _, chosen in
+                if chosen != nil { Task { await refreshChecks() } }
+            }
             if !connected && AssistantWait.state(runtime) == .unreachable { AssistantTryAgainButton() }
             let local = LocalModelQuickstartSection.scope(for: runtime) != nil && progress.preferences.modelMode != .cloud
             // Until a model can answer, setting one up is the next thing to press.
             if modelStatus?.isReady != true && local {
                 Button { destination = .models } label: {
-                    Label("Set up your local model", systemImage: "arrow.down.circle.fill").font(.headline)
+                    Label(modelActivity == nil ? "Set up your local model" : "See download", systemImage: "arrow.down.circle.fill").font(.headline)
                 }
                 .buttonStyle(LocalModelActionStyle())
                 .disabled(runtime == nil)
@@ -886,6 +896,7 @@ struct OnboardingView: View {
     }
 
     private var onboardingModelDetail: String {
+        if let modelActivity { return modelActivity }
         if checking && modelStatus == nil { return String(localized: "Checking your model…") }
         if checkError != nil && modelStatus == nil { return String(localized: "Couldn't check your model yet.") }
         if !connected { return AssistantWait.line(AssistantWait.state(runtime)) ?? String(localized: "Reconnect to check.") }
@@ -1117,7 +1128,12 @@ struct OnboardingView: View {
             return localSetup.canConnect ? String(localized: "Connect") : String(localized: "Finish setup to connect")
             #endif
         case .model, .computer, .permissions: return String(localized: "Continue")
-        case .ready: return connected ? String(localized: "Start chatting") : String(localized: "Check connection")
+        case .ready:
+            switch readyAction {
+            case .startChatting: return String(localized: "Start chatting")
+            case .setUpModel: return String(localized: "Set up a model")
+            case .checkConnection: return String(localized: "Check connection")
+            }
         }
     }
 
@@ -1136,7 +1152,7 @@ struct OnboardingView: View {
             #endif
         case .model: return !connected || modelStatus?.isReady != true
         case .computer: return !connected || !(computerSwitchOn || computerConfigured == true)
-        case .ready: return checking
+        case .ready: return checking && modelStatus == nil
         default: return false
         }
         #endif
@@ -1160,6 +1176,7 @@ struct OnboardingView: View {
             #endif
         case .model, .computer, .permissions: update { $0.advance() }
         case .ready:
+            if readyAction == .setUpModel { update { $0.step = .model }; return }
             if connected {
                 update { $0.finish(connected: true) }
                 if !isPreview {
@@ -1286,7 +1303,10 @@ struct OnboardingView: View {
             .sheetFrame().withAppModel()
         case .models:
             NavigationStack {
-                ModelPreferencesView(showsPreference: false)
+                ModelPreferencesView(showsPreference: false, onContinue: {
+                    destination = nil
+                    if progress.step == .model { update { $0.advance() } }
+                })
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { destination = nil } } }
             }
             .sheetFrame().withAppModel()
@@ -1391,7 +1411,22 @@ struct OnboardingView: View {
     }
     /// Ready only when the chosen model can answer, for the choice made on this step.
     private var modelStatus: ModelReadiness? {
-        modelOptions.map { ModelReadiness.read($0, mode: progress.preferences.modelMode, local: modelLocal) }
+        ModelReadiness.read(modelOptions, mode: progress.preferences.modelMode, local: modelLocal ?? LocalModelDownload.shared.snapshot,
+                            verified: LocalModelDownload.shared.verified(for: LocalModelQuickstartSection.scope(for: runtime)))
+    }
+    /// A download, or its first hello, under way on this Mac while the sheet is closed.
+    private var modelActivity: String? {
+        modelStatus?.isReady == true ? nil : LocalModelDownload.shared.activity(for: LocalModelQuickstartSection.scope(for: runtime))
+    }
+    /// The Ready step's main button: never a grey one.
+    private var readyAction: ReadyStepAction {
+        #if os(macOS)
+        if checking && modelStatus == nil { return connected ? .startChatting : .checkConnection }
+        return ReadyStepAction.decide(connected: connected, modelReady: modelStatus?.isReady == true,
+                                      modelPutOff: progress.deferred.contains(.model))
+        #else
+        return connected ? .startChatting : .checkConnection
+        #endif
     }
     private var modelDetail: String {
         modelStatus?.detail ?? (connected ? String(localized: "Not checked yet") : String(localized: "Reconnect to check"))
@@ -1433,11 +1468,14 @@ struct OnboardingView: View {
         do {
             let options: ModelOptionsResult = try await rt.api.get("/api/model/options", profile: profile)
             guard checkIdentity == identity, currentCheck == check, !Task.isCancelled else { return }
-            // A model on this Mac counts once it is downloaded: read the catalog before showing anything.
-            let local = ModelPlace.isLocal(ModelPlace.provider(options)) ? try? await LocalModelSetupClient(api: rt.api).inspect() : nil
-            guard checkIdentity == identity, currentCheck == check, !Task.isCancelled else { return }
-            modelLocal = local
             modelOptions = options
+            // A model on this Mac counts once it is downloaded. Until the catalog arrives the row says
+            // it is checking, never that the model is missing.
+            if ModelPlace.isLocal(ModelPlace.provider(options)) {
+                let local = try? await LocalModelSetupClient(api: rt.api).inspect()
+                guard checkIdentity == identity, currentCheck == check, !Task.isCancelled else { return }
+                modelLocal = local
+            }
             // The main helper's own computer, from the computer add-on. Without the add-on: not yet.
             let own: HelperComputerStatus? = try? await rt.api.get(HelperComputerStatus.path,
                                                                     query: [URLQueryItem(name: "profile", value: profile ?? "default")])
