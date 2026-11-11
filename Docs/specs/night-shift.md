@@ -81,6 +81,13 @@ the owner's own devices reach it and never a shared member's. The recorder reads
 mtime). A missing file means both off; a damaged one means both on with the last good values, so a broken file never
 turns protection off.
 
+New setups start with Night shift on (1.4), so the first morning already has its card: when the workflow add-on is set
+up for the first time (no `state.json` yet, in `managed_addons.start_workflow` and `install.py --apply`),
+`workflow_core.start_night_shift` writes `{"version": 1, "night_shift": true, "rehearsals": false, "morning_hour": 7,
+"rehearsals_since": null}` unless a settings file is already there. A setup made before has `state.json`, so nothing is
+written and a setup that never chose keeps reading "no file" as off. Nobody is switched on silently; rehearsals stay
+off everywhere.
+
 ## Unattended runs
 
 A run is unattended when `ctx.current_cron_execution()` is set, `HERMES_CRON_SESSION` is `1` (a cron run's helper),

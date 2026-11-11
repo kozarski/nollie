@@ -154,6 +154,37 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.assertEqual(list(source.iterdir()), [sentinel])
         self.assertEqual(sentinel.read_text(), "existing source\n")
 
+    def real_kit(self):
+        spec = importlib.util.spec_from_file_location("setup_kit_fixture", ROOT / "Tools/dev/setup-kit.py")
+        kit = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(kit)
+        destination = self.root / "Setup Kit"
+        kit.build(destination)
+        self.kit = destination / "add-ons"
+
+    def test_a_new_setup_starts_with_night_shift_on(self):
+        self.real_kit()
+        self.assertEqual(self.install(), 0)
+        settings = self.home / "nollie-workflow/night-shift.json"
+        self.assertEqual(json.loads(settings.read_text()), {"version": 1, "night_shift": True, "rehearsals": False,
+                                                            "morning_hour": 7, "rehearsals_since": None})
+        self.assertEqual(oct(settings.stat().st_mode & 0o777), "0o600")
+        # A later run, after the person turned it off, keeps their choice.
+        settings.write_text(json.dumps({"version": 1, "night_shift": False, "rehearsals": False, "morning_hour": 7,
+                                        "rehearsals_since": None}))
+        self.assertEqual(self.install(), 0)
+        self.assertFalse(json.loads(settings.read_text())["night_shift"])
+
+    def test_a_setup_made_before_keeps_night_shift_as_it_was(self):
+        # Workflow already set up, Night shift never chosen (no file, which reads as off): it stays that way.
+        self.real_kit()
+        state = self.home / "nollie-workflow"
+        state.mkdir(mode=0o700)
+        (state / "state.json").write_text(json.dumps({"version": 1, "enabled": True, "installed_at": 1, "cursors": {},
+                                                      "outbox": {}, "last_poll_at": None, "last_error": None}))
+        self.assertEqual(self.install(), 0)
+        self.assertFalse((state / "night-shift.json").exists())
+
     def test_a_newer_add_on_replaces_the_old_copy_and_keeps_it(self):
         self.assertEqual(self.install(), 0)
         (self.home / "plugins/nollie-crew/leftover.py").write_text("old\n")

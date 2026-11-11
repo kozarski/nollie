@@ -111,6 +111,25 @@ def initial_state(now=None):
             "cursors": {}, "outbox": {}, "last_poll_at": None, "last_error": None}
 
 
+# Night shift on a new setup (night_shift.SETTINGS_NAME, in night_shift's own format). A setup made before
+# Night shift started on has no settings file, which reads as off, and keeps that: only a new setup gets this.
+NIGHT_SHIFT_SETTINGS = "night-shift.json"
+NIGHT_SHIFT_NEW_SETUP = {"version": 1, "night_shift": True, "rehearsals": False, "morning_hour": 7,
+                         "rehearsals_since": None}
+
+
+def start_night_shift(root):
+    """On a new setup only, under night shift's own lock: Night shift on, unless settings already exist. True when
+    it wrote them."""
+    root = Path(root)
+    path = root / NIGHT_SHIFT_SETTINGS
+    with file_lock(root / "night-shift.lock"):
+        if path.exists() or path.is_symlink():
+            return False
+        atomic_write(path, NIGHT_SHIFT_NEW_SETUP)
+    return True
+
+
 def read_state(root):
     state = json.loads((Path(root) / "state.json").read_text())
     if (state.get("version") != 1 or not isinstance(state.get("cursors"), dict)
