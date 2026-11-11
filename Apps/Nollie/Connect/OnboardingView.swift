@@ -796,7 +796,7 @@ struct OnboardingView: View {
         VStack(spacing: 18) {
             modelPreference
             HStack(spacing: 14) {
-                if checking && modelStatus == nil {
+                if (checking && modelStatus == nil) || (!connected && AssistantWait.state(runtime) == .starting) {
                     ProgressView().controlSize(.small).frame(width: 24)
                 } else {
                     Image(systemName: modelStatus?.isReady == true ? "checkmark.circle.fill" : "circle.dotted")
@@ -813,6 +813,7 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("onboarding.modelStatus")
+            if !connected && AssistantWait.state(runtime) == .unreachable { AssistantTryAgainButton() }
             let local = LocalModelQuickstartSection.scope(for: runtime) != nil && progress.preferences.modelMode != .cloud
             // Until a model can answer, setting one up is the next thing to press.
             if modelStatus?.isReady != true && local {
@@ -837,7 +838,7 @@ struct OnboardingView: View {
     private var onboardingModelDetail: String {
         if checking && modelStatus == nil { return String(localized: "Checking your model…") }
         if checkError != nil && modelStatus == nil { return String(localized: "Couldn't check your model yet.") }
-        if !connected { return String(localized: "Reconnect to check.") }
+        if !connected { return AssistantWait.line(AssistantWait.state(runtime)) ?? String(localized: "Reconnect to check.") }
         return modelDetail
     }
 

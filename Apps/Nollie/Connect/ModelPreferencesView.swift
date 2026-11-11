@@ -135,7 +135,14 @@ struct ModelPreferencesView: View {
     private var currentProvider: String? { check.options.flatMap(ModelPlace.provider) }
 
     private var hero: ModelsHero.State {
-        guard runtime?.socketState.isOpen == true else { return .notConnected }
+        guard runtime?.socketState.isOpen == true else {
+            // The assistant on this Mac may be on its way back (after an update, at login).
+            switch AssistantWait.state(runtime) {
+            case .starting: return .starting
+            case .unreachable: return .unreachable
+            case .none: return .notConnected
+            }
+        }
         // A download on this Mac says where it stands while the page shows it.
         if mode != .cloud, check.local != nil,
            let stage = download.stage(for: localScope, snapshot: check.local) { return .download(stage) }
@@ -159,6 +166,11 @@ struct ModelPreferencesView: View {
     var body: some View {
         SettingsPage("models.page") {
             ModelsHero(state: hero)
+            if hero == .starting {
+                ProgressView().controlSize(.small).frame(maxWidth: .infinity).testID("models.starting")
+            } else if hero == .unreachable {
+                AssistantTryAgainButton().frame(maxWidth: .infinity)
+            }
             if showsPreference {
                 ModelsComparison()
                 choices
@@ -264,7 +276,7 @@ struct ModelPreferencesView: View {
 /// The top of the Models page: what runs now, in its own colour.
 struct ModelsHero: View {
     enum State: Equatable {
-        case checking, notConnected, couldntCheck, choose, here
+        case checking, notConnected, starting, unreachable, couldntCheck, choose, here
         case local(String?), plan(String), online(String), needsSignIn(String), unconfirmed(String)
         case download(LocalModelStage)
 
@@ -272,7 +284,8 @@ struct ModelsHero: View {
             switch self {
             case .checking, .choose: "cpu"
             case .here: "desktopcomputer"
-            case .notConnected: "wifi.exclamationmark"
+            case .notConnected, .unreachable: "wifi.exclamationmark"
+            case .starting: "hourglass"
             case .couldntCheck: "exclamationmark.triangle.fill"
             case .local: "desktopcomputer"
             case .plan: "person.crop.circle.badge.checkmark"
@@ -286,6 +299,8 @@ struct ModelsHero: View {
             switch self {
             case .checking: String(localized: "Checking", comment: "A status while Nollie reads the model")
             case .notConnected: String(localized: "Not connected")
+            case .starting: String(localized: "Starting your assistant…")
+            case .unreachable: String(localized: "Can't reach your assistant")
             case .couldntCheck: String(localized: "Couldn't check")
             case .choose: String(localized: "Choose how Nollie thinks")
             case .here: ModelPlace.here
@@ -297,8 +312,9 @@ struct ModelsHero: View {
         }
         var line: String? {
             switch self {
-            case .checking: nil
+            case .checking, .starting: nil
             case .notConnected: String(localized: "Connect to see your model.")
+            case .unreachable: String(localized: "Nollie keeps trying.")
             case .couldntCheck: String(localized: "Nothing was changed.")
             case .choose: ModelPlace.sentence(mac: String(localized: "On this Mac is free and private."),
                                               phone: String(localized: "On your Mac is free and private."))
@@ -313,8 +329,9 @@ struct ModelsHero: View {
         }
         var tint: Color {
             switch self {
-            case .checking: Ink.text2
+            case .checking, .starting: Ink.text2
             case .notConnected: .red
+            case .unreachable: .orange
             case .couldntCheck, .needsSignIn, .unconfirmed: .orange
             case .choose, .here: .blue
             case .local, .plan, .online: .green
