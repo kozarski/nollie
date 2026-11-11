@@ -76,7 +76,8 @@ enum ManagedRuntimeOperation: Sendable {
     case cuaSetupStart, cuaSetupStatus, cuaWake, prepareRemoval
     var timeout: Duration {
         switch self {
-        case .start: .seconds(75)
+        // Checking every file of the setup and then starting Hermes can take over a minute on a busy Mac.
+        case .start: .seconds(195)
         case .cuaWake: .seconds(30)
         case .prepareRemoval: .seconds(120)
         case .stop: .seconds(15)

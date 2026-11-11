@@ -18,7 +18,7 @@ actor NollieRuntimeSupervisor {
     private var operationActive = false
     private var stopping = false
 
-    init(backend: any NollieRuntimeBackend, pollInterval: Duration = .milliseconds(250), startupPolls: Int = 240,
+    init(backend: any NollieRuntimeBackend, pollInterval: Duration = .milliseconds(250), startupPolls: Int = 480,
          monitorInterval: Duration = .seconds(1), restartDelays: [Duration] = [.seconds(1), .seconds(3), .seconds(10)]) {
         self.backend = backend
         self.pollInterval = pollInterval
