@@ -97,12 +97,18 @@ public actor GatewaySocket {
 
     // Whether the line should be up, and how the climb back is going.
     private var climb = Climb()
+    /// How long to wait between attempts, and what a refused credential means.
+    private var policy = ReconnectPolicy.standard
+    /// Goes up with every `retryNow()`, which ends the pause under way.
+    private var nudges = 0
 
     /// Where the reconnect loop stands.
     private struct Climb {
         var wanted = false
         var wasOpen = false
         var tries = 0
+        /// When the first attempt of this climb failed.
+        var since: ContinuousClock.Instant?
     }
 
     /// Batched delivery. The sink hears about each batch only when it opens, and whoever picks the
@@ -146,6 +152,25 @@ extension GatewaySocket {
         climb.wanted = true
         guard connector == nil, line == nil else { return }
         climb.tries = 0
+        climb.since = nil
+        startConnector()
+    }
+
+    /// Sets how the socket waits between attempts from the next pause on.
+    public func use(_ policy: ReconnectPolicy) {
+        self.policy = policy
+    }
+
+    /// Tries again at once, as if this were the first attempt: the pause under way ends, the waits
+    /// start short again, and a climb that had given up (a refused credential) starts over. Nothing
+    /// happens while the line is open.
+    public func retryNow() {
+        guard state != .open else { return }
+        climb.wanted = true
+        climb.tries = 0
+        climb.since = nil
+        nudges += 1
+        guard connector == nil, line == nil else { return }
         startConnector()
     }
 
@@ -263,11 +288,21 @@ extension GatewaySocket {
             climb.tries += 1
             let comingBack = climb.tries > 1 || climb.wasOpen
             setState(comingBack ? .reconnecting(attempt: climb.tries, delay: 0) : .connecting)
+            // A `retryNow()` while this attempt runs skips the pause after it.
+            let nudged = nudges
 
             switch await tryOnce() {
             case .rejected(let why):
-                setState(.authRejected(why))
-                return
+                // A gateway someone signs in to: only a new sign-in helps. The assistant Nollie runs
+                // on this Mac: fetch its current credential and keep trying.
+                guard let afterRefusal = policy.afterRefusal else {
+                    setState(.authRejected(why))
+                    return
+                }
+                log.warning("credential refused, asking for it again: \(why, privacy: .public)")
+                await afterRefusal()
+                if !climb.wanted { return }
+                if await pauseBeforeRetry(nudged: nudged) == false { return }
             case .connected:
                 let wasReturn = climb.wasOpen
                 climb = Climb(wanted: climb.wanted, wasOpen: true, tries: 0)
@@ -275,7 +310,7 @@ extension GatewaySocket {
                 return
             case .failed:
                 if !climb.wanted { return }
-                if await pauseBeforeRetry() == false { return }
+                if await pauseBeforeRetry(nudged: nudged) == false { return }
             }
         }
     }
@@ -303,30 +338,38 @@ extension GatewaySocket {
         }
     }
 
-    /// Waits before the next attempt. Returns false if the loop should stop instead.
-    private func pauseBeforeRetry() async -> Bool {
+    /// Waits before the next attempt, unless `retryNow()` was called since `nudged` was read.
+    /// Returns false if the loop should stop instead.
+    private func pauseBeforeRetry(nudged: Int) async -> Bool {
         let network = NetworkWatch.shared
+        let now = ContinuousClock.now
+        if climb.since == nil { climb.since = now }
         guard network.isUsable else {
             // No route at all: waiting longer each time would not help (#305). Wait for the
             // network path to change, which is what a route coming up looks like.
             setState(.reconnecting(attempt: climb.tries, delay: 0))
-            await network.waitForChange(since: network.mark, upTo: 30)
-            return !Task.isCancelled
+            return await sleepUnlessPathChanges(for: 30, watching: network, nudged: nudged)
         }
-        let pause = Self.retryDelay(attempt: climb.tries) * Double.random(in: 0.8...1.2)
+        let waited = climb.since.map { Self.seconds(now - $0) } ?? 0
+        let pause = policy.delay(climb.tries, waited) * Double.random(in: 0.8...1.2)
         setState(.reconnecting(attempt: climb.tries, delay: pause))
-        return await sleepUnlessPathChanges(for: pause, watching: network)
+        return await sleepUnlessPathChanges(for: pause, watching: network, nudged: nudged)
     }
 
-    /// Sleeps in short steps so that a network change (the route came up) ends the wait early.
-    /// False means the task was cancelled while waiting.
-    private func sleepUnlessPathChanges(for seconds: Double, watching network: NetworkWatch) async -> Bool {
+    /// Sleeps in short steps so that a network change (the route came up) or `retryNow()` ends
+    /// the wait early. False means the task was cancelled while waiting.
+    private func sleepUnlessPathChanges(for seconds: Double, watching network: NetworkWatch, nudged: Int) async -> Bool {
         let marker = network.mark
         let deadline = ContinuousClock.now.advanced(by: .seconds(seconds))
-        while ContinuousClock.now < deadline && network.mark == marker {
+        while ContinuousClock.now < deadline && network.mark == marker && nudges == nudged {
             do { try await Task.sleep(for: .milliseconds(250)) } catch { return false }
         }
         return !Task.isCancelled
+    }
+
+    private nonisolated static func seconds(_ duration: Duration) -> Double {
+        let parts = duration.components
+        return Double(parts.seconds) + Double(parts.attoseconds) / 1e18
     }
 
     /// The pause after failed attempt number `attempt`: a second for the first three, then
