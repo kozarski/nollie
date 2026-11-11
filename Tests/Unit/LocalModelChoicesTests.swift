@@ -92,6 +92,15 @@ struct LocalModelChoicesTests {
         #expect(LocalModelDisk.shortfall(mid, free: 20_000_000_000)?.hasPrefix("Needs 24 GB.") == true)
     }
 
+    @Test func freeSpaceIsReadFromNolliesOwnFolderOrTheNearestOneAboveIt() throws {
+        let base = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let missing = base.appendingPathComponent("Nollie/Setups", isDirectory: true)
+        #expect(LocalModelDisk.nearestFolder(to: missing).standardizedFileURL.path == base.standardizedFileURL.path)
+        #expect(LocalModelDisk.nearestFolder(to: base).standardizedFileURL.path == base.standardizedFileURL.path)
+    }
+
     @Test func aDownloadThatDoesNotFitIsNeverStarted() async throws {
         let requests = RequestCount()
         let model = LocalModelQuickstart(api: .init { _, _, _ in requests.add(); throw CancellationError() },

@@ -202,13 +202,23 @@ enum LocalModelDisk {
         #if DEBUG
         if let demo = LocalModelDemo.freeDiskBytes { return demo }
         #endif
-        let place = URL.applicationSupportDirectory
+        let place = nearestFolder(to: NolliePaths.root)
         guard let values = try? place.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
               let free = values.volumeAvailableCapacityForImportantUsage, free > 0 else { return nil }
         return UInt64(free)
         #else
         return nil
         #endif
+    }
+
+    /// Nollie's own folder, or the closest folder above it that exists yet, so free space can be read
+    /// on a Mac where setup hasn't made the folder.
+    static func nearestFolder(to url: URL, fileManager: FileManager = .default) -> URL {
+        var place = url
+        while !fileManager.fileExists(atPath: place.path), place.pathComponents.count > 1 {
+            place.deleteLastPathComponent()
+        }
+        return place
     }
 }
 
