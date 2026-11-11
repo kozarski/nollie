@@ -15,16 +15,6 @@ final class PairRealMacUITests: DemoCase {
         guard let path = env["NOLLIE_PAIR_LINK_FILE"], !path.isEmpty else {
             throw XCTSkip("Name a file holding a pairing code from a real Mac in NOLLIE_PAIR_LINK_FILE")
         }
-        guard let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
-            XCTFail("Couldn't read the file named in NOLLIE_PAIR_LINK_FILE")
-            return
-        }
-        let raw = contents.trimmingCharacters(in: .whitespacesAndNewlines)
-        // Only the shape is checked here; the app does the real reading. Nothing about the code is echoed.
-        guard raw.hasPrefix("https://nollie.app/pair#") || raw.hasPrefix("nollie://pair-link#"), let link = URL(string: raw) else {
-            XCTFail("The file named in NOLLIE_PAIR_LINK_FILE holds no pairing code")
-            return
-        }
         if let folder = env["NOLLIE_SHOTS"], !folder.isEmpty {
             shots = URL(fileURLWithPath: folder, isDirectory: true)
             try? FileManager.default.createDirectory(at: shots!, withIntermediateDirectories: true)
@@ -40,6 +30,20 @@ final class PairRealMacUITests: DemoCase {
         addTeardownBlock { [weak self] in self?.app?.terminate() }
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20), "Nollie did not open")
         snap("1-opened")
+
+        // The Mac hides its code whenever Nollie for Mac stops being in front, so the code may be saved to
+        // the file only after this app is up. Wait for it.
+        var contents = ""
+        _ = poll(120) {
+            contents = (try? String(contentsOfFile: path, encoding: .utf8)) ?? ""
+            return !contents.isEmpty
+        }
+        let raw = contents.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Only the shape is checked here; the app does the real reading. Nothing about the code is echoed.
+        guard raw.hasPrefix("https://nollie.app/pair#") || raw.hasPrefix("nollie://pair-link#"), let link = URL(string: raw) else {
+            XCTFail("The file named in NOLLIE_PAIR_LINK_FILE holds no pairing code")
+            return
+        }
 
         openQuietly(link)
         let confirm = app.buttons["link.confirm"]
@@ -70,11 +74,39 @@ final class PairRealMacUITests: DemoCase {
 
         let done = app.buttons["pairing.done"]
         if done.waitForExistence(timeout: 5) { done.tap() }
+        // A first link ends on setup's last step: Start chatting leads to the chats.
+        let start = find("onboarding.continue")
+        if poll(10, { start.exists && start.label == "Start chatting" }) {
+            snap("5-ready")
+            start.tap()
+        }
         let chats = find("bots.list")
         let mainChat = find("chats.mainChat")
         let left = max(5, deadline.timeIntervalSinceNow)
         XCTAssertTrue(poll(left) { chats.exists || mainChat.exists }, "The chats did not come up after linking")
-        snap("5-chats", settle: 1.5)
+        snap("6-chats", settle: 1.5)
+    }
+
+    /// After a link: opens Nollie as it is, goes on to the chats if setup's last step is showing, and opens the
+    /// main chat. Skipped unless NOLLIE_PAIR_LINK_FILE is set, so it only runs beside the test above.
+    func testTheChatsOfALinkedMac() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard env["NOLLIE_PAIR_LINK_FILE"]?.isEmpty == false else { throw XCTSkip("Runs after a real link") }
+        if let folder = env["NOLLIE_SHOTS"], !folder.isEmpty { shots = URL(fileURLWithPath: folder, isDirectory: true) }
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launchArguments = ["-companionPromptShown", "YES"]
+        app.launch()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20), "Nollie did not open")
+        let start = find("onboarding.continue")
+        if poll(15, { start.exists && start.label == "Start chatting" }) {
+            snap("5-ready")
+            start.tap()
+        }
+        let chats = find("bots.list"), mainChat = find("chats.mainChat")
+        XCTAssertTrue(poll(60) { chats.exists || mainChat.exists }, "The chats did not come up")
+        snap("6-chats", settle: 2)
+        if mainChat.exists { mainChat.tap(); snap("7-main-chat", settle: 3) }
     }
 
     /// XCTest prints every step it takes, an opened link in full. The code must not reach the console, so
