@@ -90,7 +90,10 @@ private struct MacSidebarColumn: View {
     var body: some View {
         ChatListView(detailPath: $path)
             .frame(minWidth: 260, maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.top, 4)
+            // A fixed distance from the window's top, under the Board and New Bot. The window's toolbar is
+            // shorter when the chat side has no header ("Pick a bot"), and the search field rode up under +.
+            .padding(.top, MacSidebarTopButtons.listTop)
+            .ignoresSafeArea(.container, edges: .top)
             .clipShape(.rect(cornerRadius: 24, style: .continuous))
             .overlay(alignment: .topTrailing) {
                 if model.runtime != nil { MacSidebarTopButtons().ignoresSafeArea(.container, edges: .top) }
@@ -111,6 +114,9 @@ private struct MacSidebarColumn: View {
 /// the sidebar card) and as far from the card's right edge as the search field ends.
 private struct MacSidebarTopButtons: View {
     @Environment(AppModel.self) private var model
+    /// Where the list (its search field first) starts, from the window's top: below the window's buttons and
+    /// these, whether the Board is there or not.
+    static let listTop: CGFloat = 60
 
     var body: some View {
         // Each has its own glass: the Board is a sideways capsule, New Bot a round button.
