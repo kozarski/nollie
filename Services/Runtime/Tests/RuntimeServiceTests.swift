@@ -7,6 +7,18 @@ import Testing
 struct RuntimeServiceTests {
     private let token = String(repeating: "b", count: 64)
 
+    #if NOLLIE_DIRECT
+    @Test func aMacNamedWithCapitalsStillGetsAPairingCode() {
+        // Most Macs: "Coreys-MacBook-Pro". The code carries the name in small letters, which it accepts.
+        #expect(RuntimeLink.bonjourName("Coreys-MacBook-Pro") == "coreys-macbook-pro.local")
+        #expect(RuntimeLink.bonjourName("studio") == "studio.local")
+        // A name a code can't carry is left out, so the code is still made from the Mac's addresses.
+        #expect(RuntimeLink.bonjourName("") == nil)
+        #expect(RuntimeLink.bonjourName("-studio") == nil)
+        #expect(RuntimeLink.bonjourName("my mac") == nil)
+        #expect(NollieTailnet.validLinkHost(RuntimeLink.bonjourName("Coreys-Mac-Studio") ?? ""))
+    }
+    #endif
     @Test func signingRequirementsAreValidAndRejectTheFixtureExecutable() throws {
         for text in [NollieRuntimeIPCConfiguration.hostRequirement, NollieRuntimeIPCConfiguration.helperRequirement] {
             var requirement: SecRequirement?
