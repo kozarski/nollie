@@ -46,6 +46,8 @@ struct NollieApp: App {
                 .tint(AppTheme.accent(accentID).color)
                 .preferredColorScheme(preferredScheme)
                 .onOpenURL(perform: model.open)
+                // A nollie.app/pair universal link, from the Camera or a tap, at launch or while running.
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb, perform: model.continueBrowsing)
                 // A chat handed over from a Mac, iPhone or iPad opens here.
                 .continuesHandoff(model)
                 .task(launch)

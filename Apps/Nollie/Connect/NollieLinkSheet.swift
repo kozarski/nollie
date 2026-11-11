@@ -275,12 +275,19 @@ struct NollieLinkPanel: View {
         case .code(let code):
             VStack(spacing: 18) {
                 PairingCodeImage(value: code).privacySensitive()
-                Text("Open Nollie on your iPhone and scan this code")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Ink.text)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .testID("link.instruction")
+                // Both ways work: Nollie's scanner, or the Camera, which opens the code in Nollie.
+                VStack(spacing: 4) {
+                    Text("Scan with your iPhone")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Ink.text)
+                        .testID("link.instruction")
+                    Text("In Nollie, or with the Camera")
+                        .font(.callout)
+                        .foregroundStyle(Ink.text2)
+                        .testID("link.instruction.ways")
+                }
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
             }
         case .loading:
             ProgressView("Making a code").frame(height: 280)
