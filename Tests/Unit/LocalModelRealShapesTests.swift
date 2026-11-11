@@ -45,6 +45,25 @@ struct LocalModelRealShapesTests {
         #expect(ModelReadiness.read(options, mode: .local, local: try Self.snapshot(downloaded: false)).detail.contains("isn't downloaded"))
     }
 
+    @Test func theModelStepAsksAgainByItselfUntilHermesAnswers() throws {
+        let options = try Self.decode(ModelOptionsResult.self, Self.optionsAfter)
+        let late = ModelReadiness.read(options, mode: .local, local: LocalModelSetupSnapshot(models: [], catalogIssue: .unavailable))
+        #expect(late.isChecking)
+        #expect(late.detail.hasPrefix("Checking "), "Checking <name>… while the catalog can't be read")
+        #expect(ModelStepRetry.shouldRetry(status: late, checking: false, checkFailed: false, connected: true))
+        #expect(!ModelStepRetry.shouldRetry(status: late, checking: true, checkFailed: false, connected: true), "One ask at a time")
+        #expect(!ModelStepRetry.shouldRetry(status: late, checking: false, checkFailed: false, connected: false),
+                "Reconnecting checks again on its own")
+        #expect(ModelStepRetry.shouldRetry(status: nil, checking: false, checkFailed: true, connected: true), "The whole check failed")
+        #expect(!ModelStepRetry.shouldRetry(status: nil, checking: false, checkFailed: false, connected: true), "Not asked yet")
+        // An answer stops it, ready or not.
+        let ready = ModelReadiness.read(options, mode: .local, local: try Self.snapshot())
+        #expect(!ModelStepRetry.shouldRetry(status: ready, checking: false, checkFailed: false, connected: true))
+        let missing = ModelReadiness.read(options, mode: .local, local: try Self.snapshot(downloaded: false))
+        #expect(!missing.isChecking)
+        #expect(!ModelStepRetry.shouldRetry(status: missing, checking: false, checkFailed: false, connected: true))
+    }
+
     @Test func aHelloThatJustPassedIsReadyAtOnceWithoutAskingHermesAgain() throws {
         let verified = LocalModelVerified(model: "gemma-3-4b-it-Q4_K_M", name: "Gemma 3 4B (scratch test)")
         #expect(ModelReadiness.read(nil, mode: .local, local: nil, verified: verified) == .ready("Gemma 3 4B (scratch test)"))

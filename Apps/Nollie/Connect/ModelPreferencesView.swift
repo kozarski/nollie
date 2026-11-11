@@ -663,6 +663,8 @@ enum ModelReadiness: Equatable {
     case needsSignIn(String)
     /// Chosen, but it can't answer yet. The words say what is missing.
     case notYet(String)
+    /// A model on this Mac whose catalog couldn't be read yet (Hermes is starting or restarted): ask again.
+    case checking(String)
     case none
 
     /// What the setup step shows. A model on this Mac that just answered hello is ready at once,
@@ -688,7 +690,7 @@ enum ModelReadiness: Equatable {
             if entry?.downloaded == true { return .ready(name) }
             // A catalog that couldn't be read says nothing about the download: never claim it is missing.
             guard let local, local.catalogIssue == nil, !local.models.isEmpty else {
-                return .notYet(String(localized: "Checking \(name)…", comment: "%@ is a model name"))
+                return .checking(name)
             }
             return .notYet(String(localized: "\(name) isn't downloaded yet.", comment: "%@ is a model name"))
         }
@@ -712,8 +714,23 @@ enum ModelReadiness: Equatable {
         case .ready(let name): name
         case .needsSignIn(let name): String(localized: "\(name) needs sign-in.", comment: "%@ is a model name")
         case .notYet(let words): words
+        case .checking(let name): String(localized: "Checking \(name)…", comment: "%@ is a model name")
         case .none: String(localized: "No model selected yet")
         }
+    }
+
+    var isChecking: Bool { if case .checking = self { return true }; return false }
+}
+
+/// Setup's model step asks Hermes again by itself while it has no answer: the catalog couldn't be read
+/// (Hermes is starting, or restarted), or the whole check failed. It stops once there is an answer.
+enum ModelStepRetry {
+    static let interval: Duration = .seconds(4)
+
+    static func shouldRetry(status: ModelReadiness?, checking: Bool, checkFailed: Bool, connected: Bool) -> Bool {
+        guard connected, !checking else { return false }
+        if status?.isChecking == true { return true }
+        return status == nil && checkFailed
     }
 }
 

@@ -873,6 +873,13 @@ struct OnboardingView: View {
                     LocalModelDownload.shared.prepare(runtime: rt, app: model, scope: scope).restore()
                 }
             }
+            // No answer from Hermes yet (it restarted, or is starting): ask again every few seconds while this shows.
+            .task(id: modelStepRetrying) {
+                while modelStepRetrying, !Task.isCancelled {
+                    do { try await Task.sleep(for: ModelStepRetry.interval) } catch { return }
+                    await recheckModel()
+                }
+            }
             // The download chose its model in Hermes while the sheet was closed: read it again.
             .onChange(of: LocalModelDownload.shared.setup(for: LocalModelQuickstartSection.scope(for: runtime))?.selectedModel) { _, chosen in
                 if chosen != nil { Task { await refreshChecks() } }
@@ -1450,6 +1457,29 @@ struct OnboardingView: View {
         case false: return computerSwitchOn ? String(localized: "Getting ready") : String(localized: "Not set up yet. You can turn it on in Bot settings.")
         case nil: return String(localized: "Not checked yet")
         }
+    }
+
+    private var modelStepRetrying: Bool {
+        progress.step == .model && !isFixture
+            && ModelStepRetry.shouldRetry(status: modelStatus, checking: checking, checkFailed: checkError != nil, connected: connected)
+    }
+
+    /// Reads the model again without clearing what the step shows, so the row doesn't flicker between tries.
+    private func recheckModel() async {
+        #if os(macOS)
+        guard progress.step == .model, let rt = runtime, connected, !checking else { return }
+        let identity = checkIdentity
+        guard let options: ModelOptionsResult = try? await rt.api.get("/api/model/options", profile: focusProfile),
+              checkIdentity == identity, !Task.isCancelled else { return }
+        var local: LocalModelSetupSnapshot?
+        if ModelPlace.isLocal(ModelPlace.provider(options)) {
+            local = try? await LocalModelSetupClient(api: rt.api).inspect()
+            guard checkIdentity == identity, !Task.isCancelled else { return }
+        }
+        modelOptions = options
+        if let local { modelLocal = local }
+        checkError = nil
+        #endif
     }
 
     private func refreshChecks() async {
