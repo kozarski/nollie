@@ -56530,6 +56530,34 @@
         }
       }
     },
+    "Not on this Mac any more" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nicht mehr auf diesem Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "N'est plus sur ce Mac"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ya no está en este Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMacにもうありません"
+          }
+        }
+      }
+    },
     "Not on this Mac." : {
       "localizations" : {
         "de" : {
@@ -74898,6 +74926,34 @@
         }
       }
     },
+    "Set it up again to carry on." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Richte ihn neu ein, um weiterzumachen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Reconfigurez-le pour continuer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vuelve a configurarlo para seguir."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "続けるにはもう一度設定してください。"
+          }
+        }
+      }
+    },
     "Set it up for me" : {
       "localizations" : {
         "de" : {
@@ -75175,6 +75231,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "モデルを設定"
+          }
+        }
+      }
+    },
+    "Set up again" : {
+      "comment" : "The connection's state beside its Settings row: Nollie's own assistant isn't on this Mac any more",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neu einrichten"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Reconfigurer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Configurar de nuevo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "もう一度設定"
           }
         }
       }
@@ -75823,6 +75908,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "設定ガイド"
+          }
+        }
+      }
+    },
+    "Setup is still busy. Try again in a moment." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die Einrichtung ist noch beschäftigt. Versuch es gleich noch einmal."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La configuration est encore en cours. Réessayez dans un instant."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La configuración sigue ocupada. Vuelve a intentarlo en un momento."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "設定はまだ処理中です。少し待ってからもう一度お試しください。"
           }
         }
       }
@@ -105872,6 +105985,62 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "アシスタントはまだ確認中です。終わると前回の結果が更新されます。"
+          }
+        }
+      }
+    },
+    "Your assistant isn't on this Mac any more." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Assistent ist nicht mehr auf diesem Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre assistant n'est plus sur ce Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu asistente ya no está en este Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "アシスタントはこのMacにもうありません。"
+          }
+        }
+      }
+    },
+    "Your assistant isn't ready yet. Check the connection first." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Assistent ist noch nicht bereit. Prüfe zuerst die Verbindung."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre assistant n'est pas encore prêt. Vérifiez d'abord la connexion."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu asistente aún no está listo. Comprueba primero la conexión."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "アシスタントの準備がまだできていません。先に接続を確認してください。"
           }
         }
       }
