@@ -55,6 +55,11 @@ struct MacLifecycle: ViewModifier {
             .onReceive(Self.app.publisher(for: NSApplication.didResignActiveNotification)) { _ in
                 LocalNotifier.isForeground = false
             }
+            // The assistant on this Mac answers again (after an update, at login, or Try again):
+            // a connection still waiting for it tries now.
+            .onReceive(Self.app.publisher(for: .nollieManagedAssistantReady)) { note in
+                Task { await model.nudgeManagedConnection(note.object as? UUID) }
+            }
             .onReceive(Self.system.publisher(for: NSWorkspace.willSleepNotification)) { _ in model.lock.didEnterBackground() }
             .onReceive(Self.system.publisher(for: NSWorkspace.didWakeNotification)) { _ in model.lock.willEnterForeground() }
             .onReceive(Self.system.publisher(for: NSWorkspace.screensDidSleepNotification)) { _ in

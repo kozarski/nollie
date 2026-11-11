@@ -243,6 +243,11 @@ final class ManagedRuntimeRequest {
     }
 }
 
+extension Notification.Name {
+    /// The service reported the assistant ready. The object is the installation's UUID.
+    static let nollieManagedAssistantReady = Notification.Name("nollie.managedAssistantReady")
+}
+
 /// Only manages Nollie's own packaged service. Inspection never registers it or starts
 /// a runtime, and a running process does not imply a working authenticated connection.
 @MainActor @Observable
@@ -339,6 +344,7 @@ final class ManagedRuntimeClient {
             try Task.checkCancellation()
             self.endpoint = endpoint; sessionToken = token; verifiedInstallationID = installationID
             state = .ready; message = String(localized: "Connection verified. Model and computer setup come next.")
+            Self.announceReady(installationID)
         } catch is CancellationError {
             clearConnection(); state = .needsVerification; message = String(localized: "Setup continues in the background. Check the connection when you're ready.")
         } catch {
@@ -410,6 +416,12 @@ final class ManagedRuntimeClient {
         #endif
     }
 
+    /// Tells the app the assistant for `installationID` answers, so a connection still waiting for it
+    /// tries at once rather than at the end of its pause.
+    static func announceReady(_ installationID: UUID) {
+        NotificationCenter.default.post(name: .nollieManagedAssistantReady, object: installationID)
+    }
+
     static func isAllowedEndpoint(_ url: URL) -> Bool {
         guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
               parts.scheme == "http", parts.host == "127.0.0.1", let port = parts.port,
@@ -436,6 +448,7 @@ final class ManagedRuntimeClient {
             guard snapshot.enabledInstallationID == installationID, let url = snapshot.endpoint, Self.isAllowedEndpoint(url) else {
                 fail(String(localized: "The service returned an unexpected connection. No connection was saved.")); return
             }
+            Self.announceReady(installationID)
             if verifiedInstallationID == installationID && endpoint == url && sessionToken != nil {
                 state = .ready; message = String(localized: "Connection verified. Model and computer setup come next.")
             } else {
