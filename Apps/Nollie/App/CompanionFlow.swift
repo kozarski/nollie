@@ -31,7 +31,7 @@ final class CompanionFlow {
     /// Shows the prompt once it is owed and `busy` is false (onboarding, a sign-in, the lock or a
     /// pairing would all be in the way).
     func offerIfFree(model: AppModel, busy: Bool) {
-        guard owed, !wasShown, !busy, model.hasConnections else { return }
+        guard owed, !wasShown, !busy, model.hasConnections, NotificationAskPause.mayAsk() else { return }
         (owed, wasShown) = (false, true)
         Task {
             try? await Task.sleep(for: .milliseconds(700))
@@ -66,5 +66,27 @@ final class CompanionFlow {
 
     func chooseLater() {
         closePrompt(setupCardDone: false)
+    }
+}
+
+/// Setup offers notifications on a step of its own (the Mac's Allow a few things, the iPhone's Ready). Someone who
+/// was just offered them there is not asked again by the Stay in the loop sheet for a few days, whatever they chose.
+enum NotificationAskPause {
+    static let offeredKey = "nollie.setup.notificationsOfferedAt"
+    static let pause: TimeInterval = 3 * 86_400
+
+    /// Setup has just shown its notifications row.
+    static func noteOffered(now: Date = Date(), defaults: UserDefaults = .standard) {
+        defaults.set(now, forKey: offeredKey)
+    }
+
+    static func mayAsk(now: Date = Date(), defaults: UserDefaults = .standard) -> Bool {
+        mayAsk(now: now, offeredAt: defaults.object(forKey: offeredKey) as? Date)
+    }
+
+    /// Never offered in setup, or offered at least a few days ago.
+    static func mayAsk(now: Date, offeredAt: Date?) -> Bool {
+        guard let offeredAt else { return true }
+        return now.timeIntervalSince(offeredAt) >= pause
     }
 }

@@ -263,6 +263,10 @@ struct OnboardingView: View {
         .task(id: "\(checkIdentity)/\(progress.step.rawValue)") {
             await refreshChecks()
         }
+        .onChange(of: progress.step, initial: true) { _, step in
+            // Setup's own notifications row is on screen: the Stay in the loop sheet waits a few days.
+            if step == Self.notificationStep, !isPreview { NotificationAskPause.noteOffered() }
+        }
         .task(id: introActive) {
             guard introActive, demoIntroTime == nil else { return }
             do { try await Task.sleep(for: .seconds(WelcomeIntroTimeline.duration)) }
@@ -1392,6 +1396,15 @@ struct OnboardingView: View {
         Button("Reconnect") { destination = .gateway }
             .buttonStyle(.nollieGlass)
             .accessibilityIdentifier("onboarding.reconnect")
+    }
+
+    /// The step that shows the notifications row: Allow a few things on the Mac, Ready on the iPhone.
+    private static var notificationStep: OnboardingProgress.Step {
+        #if os(macOS)
+        .permissions
+        #else
+        .ready
+        #endif
     }
 
     private var notificationsAllowed: Bool {

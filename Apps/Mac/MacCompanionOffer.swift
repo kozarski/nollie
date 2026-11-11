@@ -108,8 +108,9 @@ struct CompanionOffer: ViewModifier {
     // MARK: Timing
 
     private func considerOffering() {
+        // Setup offered notifications moments ago: the sheet waits a few days, and asks on a later launch.
         let clear = !touring && !model.isDemo && !alreadyAsked && model.signInPrompt.isEmpty
-            && model.needsSignIn == nil && !model.lock.isLocked
+            && model.needsSignIn == nil && !model.lock.isLocked && NotificationAskPause.mayAsk()
         guard clear, let runtime = model.runtime else { return }
         alreadyAsked = true
         Task {
