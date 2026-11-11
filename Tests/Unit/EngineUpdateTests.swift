@@ -29,12 +29,21 @@ struct EngineUpdateTests {
         #expect(EngineUpdate.stepsToRedo(verified: verified, hasReceipt: receipts).isEmpty)
     }
 
-    @Test func pythonOrTheDownloadManagerNotReadyStaysWithTheSetupScreen() {
-        for missing in ["uv", "python"] {
-            var verified = ready
-            verified[missing] = false; verified["hermes"] = false
-            #expect(EngineUpdate.stepsToRedo(verified: verified, hasReceipt: all).isEmpty)
-        }
+    @Test func aNewerPythonOrDownloadManagerIsPreparedAgainWithEverythingAfter() {
+        var verified = ready
+        verified["uv"] = false; verified["python"] = false; verified["dependencies"] = false
+        #expect(EngineUpdate.stepsToRedo(verified: verified, hasReceipt: all) == ["uv", "python", "hermes", "dependencies", "addons"])
+        verified = ready
+        verified["python"] = false
+        #expect(EngineUpdate.stepsToRedo(verified: verified, hasReceipt: all) == ["python", "hermes", "dependencies", "addons"])
+    }
+
+    @Test func aMissingDownloadManagerStaysWithTheSetupScreen() {
+        var receipts = all
+        receipts["uv"] = false
+        var verified = ready
+        verified["uv"] = false; verified["hermes"] = false
+        #expect(EngineUpdate.stepsToRedo(verified: verified, hasReceipt: receipts).isEmpty)
     }
 }
 #endif

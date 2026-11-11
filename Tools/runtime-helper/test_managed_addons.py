@@ -62,6 +62,18 @@ class ManagedAddOnsTests(unittest.TestCase):
             return subprocess.CompletedProcess(command, 0, "", None)
         return run
 
+    def test_the_reader_is_rebuilt_for_a_newer_python(self):
+        # A newer Nollie Python moves the old one away; a reader environment built with it would not start.
+        lock = {"sha256": "a" * 64, "path": "nollie-reader/requirements.txt"}
+        calls = []
+        old, new = "/setup/python/cpython-3.14.8-macos-aarch64-none/bin/python3.14", \
+            "/setup/python/cpython-3.14.10-macos-aarch64-none/bin/python3.14"
+        run = self.fake_run(calls)
+        self.assertEqual(addons.reader_environment(self.kit, self.home, "/fixture/uv", old, lock, "s1", run=run), "built")
+        self.assertEqual(addons.reader_environment(self.kit, self.home, "/fixture/uv", old, lock, "s2", run=run), "current")
+        self.assertEqual(addons.reader_environment(self.kit, self.home, "/fixture/uv", new, lock, "s3", run=run), "built")
+        self.assertIn(new, calls[-3])
+
     def install(self, calls=None):
         calls = [] if calls is None else calls
         with mock.patch.dict(os.environ, {"HERMES_HOME": str(self.home)}), \
@@ -109,7 +121,8 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.assertIn("--require-hashes", install)
         self.assertIn("--no-build", install)
         marker = self.home / "nollie-reader/venv/nollie-lock.sha256"
-        self.assertEqual(marker.read_text(), digest((self.kit / "nollie-reader/requirements.txt").read_bytes()) + "\n")
+        self.assertEqual(marker.read_text(), digest((self.kit / "nollie-reader/requirements.txt").read_bytes()) + "\n"
+                         + "/fixture/python3.14\n")
 
     def test_a_second_run_changes_nothing(self):
         self.assertEqual(self.install(), 0)

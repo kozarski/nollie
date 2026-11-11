@@ -192,7 +192,10 @@ def reader_environment(kit, home, uv, python, lock_entry, stamp, run=None):
     state.mkdir(mode=0o700, parents=True, exist_ok=True)
     venv = state / "venv"
     marker = venv / MARKER
-    if marker.is_file() and not marker.is_symlink() and marker.read_text() == lock_entry["sha256"] + "\n":
+    # The lock and the Python it was built with: a newer Nollie Python moves the old one away, and a venv
+    # still pointing at it would not start.
+    stamp_text = lock_entry["sha256"] + "\n" + str(Path(python).absolute()) + "\n"
+    if marker.is_file() and not marker.is_symlink() and marker.read_text() == stamp_text:
         return "current"
     for leftover in state.glob("venv.new-*"):
         if leftover.is_dir() and not leftover.is_symlink():
@@ -209,7 +212,7 @@ def reader_environment(kit, home, uv, python, lock_entry, stamp, run=None):
             shutil.rmtree(fresh, ignore_errors=True)
             # Diagnostics stay in the process output, which the app never shows.
             raise Refused("the reader's environment did not build: " + (result.stdout or "")[-2000:])
-    (fresh / MARKER).write_text(lock_entry["sha256"] + "\n")
+    (fresh / MARKER).write_text(stamp_text)
     (fresh / MARKER).chmod(0o600)
     previous = state / "venv.previous"
     if venv.exists():

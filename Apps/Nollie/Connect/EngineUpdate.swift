@@ -2,8 +2,8 @@
 import Foundation
 import Observation
 
-/// A newer Nollie can carry a newer Hermes. A setup that was ready on the older one moves to it by
-/// itself at launch: Hermes stops, the reviewed engine and its libraries are prepared again, the
+/// A newer Nollie can carry a newer Hermes, Python or download manager. A setup that was ready on the
+/// older ones moves to them by itself at launch: Hermes stops, what changed is prepared again, the
 /// add-ons follow, and the service starts again if it was running. Bots, chats, schedules and
 /// settings live in the setup's home folder and are not touched.
 @MainActor @Observable
@@ -22,15 +22,15 @@ final class EngineUpdate {
         }
     }
 
-    /// The steps to prepare again: a setup prepared before, on a plan this Nollie no longer runs.
-    /// Download manager and Python move separately; when either is not ready, the setup screen handles it.
+    /// The steps to prepare again: a setup that was fully prepared once, on a plan this Nollie no longer runs
+    /// (a newer download manager, Python or Hermes). Each step is checked against the ones before it, so from
+    /// the first that's out of date every later one is run; a step already current is passed over by the
+    /// installer. A setup never finished stays with the setup screen.
     nonisolated static func stepsToRedo(verified: [String: Bool], hasReceipt: [String: Bool]) -> [String] {
-        guard verified["uv"] == true, verified["python"] == true else { return [] }
-        let engine = ["hermes", "dependencies", "addons"]
-        guard engine.contains(where: { hasReceipt[$0] == true && verified[$0] != true }) else { return [] }
-        // Each later step is checked against the earlier ones, so once one is redone the rest follow.
-        guard let first = engine.firstIndex(where: { verified[$0] != true }) else { return [] }
-        return Array(engine[first...])
+        let steps = ["uv", "python", "hermes", "dependencies", "addons"]
+        guard steps.allSatisfy({ hasReceipt[$0] == true }) else { return [] }
+        guard let first = steps.firstIndex(where: { verified[$0] != true }) else { return [] }
+        return Array(steps[first...])
     }
 
     func runIfNeeded() async {
