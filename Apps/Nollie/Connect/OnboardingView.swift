@@ -23,7 +23,8 @@ struct OnboardingView: View {
     @AppStorage(ModelPreferenceStore.key) private var savedModelMode = ModelSetupMode.local.rawValue
     @State private var previewProgress = OnboardingProgress()
     @State private var destination: Destination?
-    @State private var modelStatus: OnboardingModelStatus?
+    @State private var modelOptions: ModelOptionsResult?
+    @State private var modelLocal: LocalModelSetupSnapshot?
     @State private var computerConfigured: Bool?
     /// The computer step's toggle: on means setup is under way or done.
     @State private var computerSwitchOn = false
@@ -812,14 +813,24 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("onboarding.modelStatus")
-            Button { destination = .models } label: {
-                Text(LocalModelQuickstartSection.scope(for: runtime) != nil && progress.preferences.modelMode != .cloud
-                     ? "Set up your local model" : "Choose a model").font(.body.weight(.semibold))
-                    .padding(.horizontal, 8)
+            let local = LocalModelQuickstartSection.scope(for: runtime) != nil && progress.preferences.modelMode != .cloud
+            // Until a model can answer, setting one up is the next thing to press.
+            if modelStatus?.isReady != true && local {
+                Button { destination = .models } label: {
+                    Label("Set up your local model", systemImage: "arrow.down.circle.fill").font(.headline)
+                }
+                .buttonStyle(LocalModelActionStyle())
+                .disabled(runtime == nil)
+                .accessibilityIdentifier("onboarding.models")
+            } else {
+                Button { destination = .models } label: {
+                    Text(local ? "Set up your local model" : "Choose a model").font(.body.weight(.semibold))
+                        .padding(.horizontal, 8)
+                }
+                .buttonStyle(.nollieGlass).controlSize(.large)
+                .disabled(runtime == nil)
+                .accessibilityIdentifier("onboarding.models")
             }
-            .buttonStyle(.nollieGlass).controlSize(.large)
-            .disabled(runtime == nil)
-            .accessibilityIdentifier("onboarding.models")
         }
     }
 
@@ -1280,14 +1291,12 @@ struct OnboardingView: View {
     private func readyDetail(_ step: OnboardingProgress.Step, _ detail: String) -> String {
         progress.deferred.contains(step) ? String(localized: "Set up later in Settings") : detail
     }
+    /// Ready only when the chosen model can answer, for the choice made on this step.
+    private var modelStatus: ModelReadiness? {
+        modelOptions.map { ModelReadiness.read($0, mode: progress.preferences.modelMode, local: modelLocal) }
+    }
     private var modelDetail: String {
-        switch modelStatus {
-        case .ready(let model): return model
-        case .needsSignIn: return String(localized: "Needs sign-in")
-        case .unverified(let model): return String(localized: "\(model), not signed in yet")
-        case .notConfigured: return String(localized: "No model selected yet")
-        case nil: return connected ? String(localized: "Not checked yet") : String(localized: "Reconnect to check")
-        }
+        modelStatus?.detail ?? (connected ? String(localized: "Not checked yet") : String(localized: "Reconnect to check"))
     }
     private var computerDetail: String {
         switch computerConfigured {
@@ -1306,7 +1315,8 @@ struct OnboardingView: View {
             lastCheckIdentity = checkIdentity
             currentCheck = nil
             checking = false
-            modelStatus = nil
+            modelOptions = nil
+            modelLocal = nil
             computerConfigured = nil
             checkError = nil
         }
@@ -1317,14 +1327,19 @@ struct OnboardingView: View {
         let profile = focusProfile
         currentCheck = check
         checking = true
-        modelStatus = nil
+        modelOptions = nil
+        modelLocal = nil
         computerConfigured = nil
         checkError = nil
         defer { if currentCheck == check { checking = false } }
         do {
             let options: ModelOptionsResult = try await rt.api.get("/api/model/options", profile: profile)
             guard checkIdentity == identity, currentCheck == check, !Task.isCancelled else { return }
-            modelStatus = .read(options)
+            // A model on this Mac counts once it is downloaded: read the catalog before showing anything.
+            let local = ModelPlace.isLocal(ModelPlace.provider(options)) ? try? await LocalModelSetupClient(api: rt.api).inspect() : nil
+            guard checkIdentity == identity, currentCheck == check, !Task.isCancelled else { return }
+            modelLocal = local
+            modelOptions = options
             // The main helper's own computer, from the computer add-on. Without the add-on: not yet.
             let own: HelperComputerStatus? = try? await rt.api.get(HelperComputerStatus.path,
                                                                     query: [URLQueryItem(name: "profile", value: profile ?? "default")])
