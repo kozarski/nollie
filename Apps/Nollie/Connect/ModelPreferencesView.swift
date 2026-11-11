@@ -98,8 +98,10 @@ final class ModelCheck {
             let result: ModelOptionsResult = try await runtime.api.get("/api/model/options", profile: runtime.selectedProfile)
             guard !Task.isCancelled, requestID == id, identity() == expected else { return }
             options = result
-            let snapshot = try await LocalModelSetupClient(api: runtime.api).inspect()
+            var snapshot = try await LocalModelSetupClient(api: runtime.api).inspect()
             guard !Task.isCancelled, requestID == id, identity() == expected else { return }
+            // Hermes doesn't say how much space is free; the download lands on this Mac, so Nollie measures it.
+            snapshot.freeDiskBytes = LocalModelDisk.freeBytes()
             local = snapshot
         } catch {
             guard !Task.isCancelled, requestID == id, identity() == expected else { return }
@@ -113,7 +115,8 @@ final class ModelCheck {
 struct ModelPreferencesView: View {
     let showsPreference: Bool
     @Environment(AppModel.self) private var model
-    @AppStorage(ModelPreferenceStore.key) private var savedMode = ModelSetupMode.local.rawValue
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage(ModelPreferenceStore.key) private var savedMode = ModelMemoryGuidance.suggestedMode(ModelMemoryGuidance.thisMac).rawValue
     @State private var check = ModelCheck()
     @State private var download = LocalModelDownload()
 
@@ -123,6 +126,11 @@ struct ModelPreferencesView: View {
 
     private var mode: ModelSetupMode { ModelSetupMode(rawValue: savedMode) ?? .local }
     private var runtime: GatewayRuntime? { model.runtime }
+    /// Setup's sheet: only the model on this Mac, no choice of where Nollie thinks.
+    private var isSetupSheet: Bool { !showsPreference }
+    private var localScope: LocalModelInstallScope? { LocalModelQuickstartSection.scope(for: runtime) }
+    /// The memory of the computer the model would run on: Hermes's count when it has one, else this Mac's.
+    private var memory: UInt64? { check.local?.hardware?.ramTotalBytes ?? ModelMemoryGuidance.thisMac }
     private var identity: String { "\(runtime?.connection.id.uuidString ?? "")/\(runtime?.selectedProfile ?? "default")/\(runtime?.socketState.isOpen == true)" }
     private var currentProvider: String? { check.options.flatMap(ModelPlace.provider) }
 
@@ -130,9 +138,13 @@ struct ModelPreferencesView: View {
         guard runtime?.socketState.isOpen == true else { return .notConnected }
         // A download on this Mac says where it stands while the page shows it.
         if mode != .cloud, check.local != nil,
-           let stage = download.stage(for: LocalModelQuickstartSection.scope(for: runtime)) { return .download(stage) }
-        guard let options = check.options else { return check.error == nil ? .checking : .couldntCheck }
-        guard let word = ModelPlace.word(options), let slug = ModelPlace.provider(options) else { return .choose }
+           let stage = download.stage(for: localScope, snapshot: check.local) { return .download(stage) }
+        // Setup's sheet says what this is about from the first frame, never a page title again.
+        let sheetForHere = isSetupSheet && mode != .cloud && localScope != nil
+        guard let options = check.options else { return sheetForHere ? .here : check.error == nil ? .checking : .couldntCheck }
+        guard let word = ModelPlace.word(options), let slug = ModelPlace.provider(options) else { return sheetForHere ? .here : .choose }
+        // Setting up a model on this Mac is about this Mac, whatever runs online today.
+        if sheetForHere && !ModelPlace.isLocal(slug) { return .here }
         let status = OnboardingModelStatus.read(options)
         if case .needsSignIn = status { return .needsSignIn(word) }
         if ModelPlace.isLocal(slug) {
@@ -153,11 +165,19 @@ struct ModelPreferencesView: View {
                 notes
                 if runtime?.socketState.isOpen == true { BackupModelSection(check: check) }
             }
-            if mode != .cloud { localArea }
-            AdvancedLink(id: "models.advanced") {
-                ModelsAdvancedView(check: check, download: download, showsPreference: showsPreference,
-                                   refresh: { Task { await check.refresh(model, identity: { identity }) } })
-                    .untitledPage()
+            if mode != .cloud {
+                if isSetupSheet, let line = ModelMemoryGuidance.line(memory) {
+                    PageNote(.verbatim(line), symbol: "memorychip", id: "models.memory")
+                }
+                localArea
+            }
+            // Setup's sheet keeps to the download; everything technical stays in Settings.
+            if !(isSetupSheet && mode != .cloud && localScope != nil) {
+                AdvancedLink(id: "models.advanced") {
+                    ModelsAdvancedView(check: check, download: download, showsPreference: showsPreference,
+                                       refresh: { Task { await check.refresh(model, identity: { identity }) } })
+                        .untitledPage()
+                }
             }
         }
         .animation(.snappy, value: savedMode)
@@ -168,14 +188,16 @@ struct ModelPreferencesView: View {
     /// otherwise; then a plan they already pay for.
     private var choices: some View {
         VStack(spacing: 12) {
+            let planFirst = ModelMemoryGuidance.suggestsPlan(memory)
             ModelChoiceRow(title: ModelPlace.here, line: String(localized: "Private and free."), symbol: "desktopcomputer",
-                           recommended: true, selected: mode != .cloud, id: "models.mode.local") {
+                           note: ModelMemoryGuidance.line(memory),
+                           recommended: !planFirst, selected: mode != .cloud, id: "models.mode.local") {
                 savedMode = ModelSetupMode.local.rawValue
             }
             ModelChoiceRow(title: String(localized: "Sign in with ChatGPT or Claude"),
                            line: String(localized: "Uses a plan you already have."),
                            symbol: "person.crop.circle.badge.checkmark",
-                           selected: mode != .local, id: "models.mode.cloud") {
+                           recommended: planFirst, selected: mode != .local, id: "models.mode.cloud") {
                 savedMode = ModelSetupMode.cloud.rawValue
             }
         }
@@ -211,16 +233,24 @@ struct ModelPreferencesView: View {
     /// The model on this Mac: the download and its progress where Nollie set Hermes up itself,
     /// else where to set one up.
     @ViewBuilder private var localArea: some View {
-        if let local = check.local, let runtime, let scope = LocalModelQuickstartSection.scope(for: runtime) {
+        if let local = check.local, let runtime, let scope = localScope {
             VStack(alignment: .leading, spacing: 14) {
-                LocalModelQuickstartSection(runtime: runtime, snapshot: local, download: download) {
-                    Task { await check.refreshCurrentModel(model, identity: { identity }) }
-                }
+                LocalModelQuickstartSection(runtime: runtime, snapshot: local, download: download,
+                                            onModelChanged: { Task { await check.refreshCurrentModel(model, identity: { identity }) } },
+                                            onFinished: isSetupSheet ? { dismiss() } : nil)
                 .id(scope.storageKey)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .contain)
             .testID("models.local")
+        } else if check.loading || (localScope != nil && check.local == nil && check.error == nil && runtime?.socketState.isOpen == true) {
+            // The models are still on their way: hold their place quietly instead of a wrong line.
+            ProgressView()
+                .controlSize(.regular)
+                .frame(maxWidth: .infinity, minHeight: 160)
+                .accessibilityLabel(Text(ModelPlace.sentence(mac: String(localized: "Checking this Mac"),
+                                                             phone: String(localized: "Checking your Mac"))))
+                .testID("models.local.loading")
         } else if check.options != nil, !ModelPlace.isLocal(currentProvider) {
             #if os(macOS)
             PageNote("Downloads work with the assistant Nollie set up on this Mac.", symbol: "arrow.down.circle", id: "models.local.elsewhere")
@@ -234,13 +264,14 @@ struct ModelPreferencesView: View {
 /// The top of the Models page: what runs now, in its own colour.
 struct ModelsHero: View {
     enum State: Equatable {
-        case checking, notConnected, couldntCheck, choose
+        case checking, notConnected, couldntCheck, choose, here
         case local(String?), plan(String), online(String), needsSignIn(String), unconfirmed(String)
         case download(LocalModelStage)
 
         var symbol: String {
             switch self {
             case .checking, .choose: "cpu"
+            case .here: "desktopcomputer"
             case .notConnected: "wifi.exclamationmark"
             case .couldntCheck: "exclamationmark.triangle.fill"
             case .local: "desktopcomputer"
@@ -257,6 +288,7 @@ struct ModelsHero: View {
             case .notConnected: String(localized: "Not connected")
             case .couldntCheck: String(localized: "Couldn't check")
             case .choose: String(localized: "Choose how Nollie thinks")
+            case .here: ModelPlace.here
             case .local: ModelPlace.here
             case .plan(let word), .online(let word), .unconfirmed(let word): word
             case .needsSignIn: String(localized: "Sign in needed")
@@ -271,6 +303,7 @@ struct ModelsHero: View {
             case .choose: ModelPlace.sentence(mac: String(localized: "On this Mac is free and private."),
                                               phone: String(localized: "On your Mac is free and private."))
             case .local(let name): name ?? String(localized: "Private and free.")
+            case .here: String(localized: "Private and free.")
             case .plan: String(localized: "Signed in.")
             case .online: String(localized: "Runs online.")
             case .needsSignIn(let word): String(localized: "\(word) is signed out.")
@@ -283,7 +316,7 @@ struct ModelsHero: View {
             case .checking: Ink.text2
             case .notConnected: .red
             case .couldntCheck, .needsSignIn, .unconfirmed: .orange
-            case .choose: .blue
+            case .choose, .here: .blue
             case .local, .plan, .online: .green
             case .download(let stage): stage.tint
             }
@@ -329,6 +362,8 @@ private struct ModelChoiceRow: View {
     var title: String
     var line: String
     var symbol: String
+    /// One quiet line under the choice, such as the memory guidance.
+    var note: String? = nil
     var recommended = false
     var selected: Bool
     var id: String
@@ -353,6 +388,11 @@ private struct ModelChoiceRow: View {
                         .fixedSize(horizontal: false, vertical: true)
                     Text(line).font(.body).foregroundStyle(Ink.text2)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let note {
+                        Text(note).font(.subheadline).foregroundStyle(Ink.text2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .testID(id + ".note")
+                    }
                     if recommended {
                         Text("Recommended")
                             .font(.subheadline.weight(.semibold))
@@ -404,7 +444,7 @@ struct ModelsAdvancedView: View {
     var showsPreference = true
     var refresh: () -> Void
     @Environment(AppModel.self) private var model
-    @AppStorage(ModelPreferenceStore.key) private var savedMode = ModelSetupMode.local.rawValue
+    @AppStorage(ModelPreferenceStore.key) private var savedMode = ModelMemoryGuidance.suggestedMode(ModelMemoryGuidance.thisMac).rawValue
     @State private var keysInKeychain = false
 
     private var mode: ModelSetupMode { ModelSetupMode(rawValue: savedMode) ?? .local }
@@ -508,56 +548,17 @@ struct ModelsAdvancedView: View {
     /// that fit, each only when it applies.
     @ViewBuilder private var downloaded: some View {
         if let setup, let local = check.local {
-            let choices = LocalModelDownload.choices(in: local)
-            let canTry = [.selected, .checkingReply, .ready].contains(setup.state)
-            let canChoose = setup.canBegin && choices.count > 1
-            if setup.selectedModel != nil || canTry || canChoose {
+            if let selected = setup.selectedModel {
                 VStack(alignment: .leading, spacing: 12) {
                     PageHeading(.verbatim(ModelPlace.sentence(mac: String(localized: "Your model on this Mac"), phone: String(localized: "Your model on your Mac"))))
-                    if let selected = setup.selectedModel {
-                        ModelsDetailRow(name: String(localized: "Downloaded", comment: "The model that was downloaded"), value: selected, selectable: true)
-                            .testID("models.local.details")
+                    ModelsDetailRow(name: String(localized: "Downloaded", comment: "The model that was downloaded"), value: selected, selectable: true)
+                        .testID("models.local.details")
+                    if let entry = LocalModelDownload.entry(for: selected, in: local), let size = entry.sizeBytes {
+                        ModelsDetailRow(name: String(localized: "Size", comment: "A model's download size"), value: LocalModelSize.label(size))
                     }
-                    if canTry { firstReply(setup) }
-                    if canChoose { otherModels(choices, recommended: local.recommended?.id) }
                 }
             }
         }
-    }
-
-    /// A short greeting to check the downloaded model answers, and its reply.
-    @ViewBuilder private func firstReply(_ setup: LocalModelQuickstart) -> some View {
-        if setup.state == .selected {
-            GlassButton("Try a first reply", symbol: "text.bubble", id: "models.local.test") { setup.testReply() }
-                .disabled(setup.busy).opacity(setup.busy ? 0.5 : 1)
-            PageNote("Uses only your local model, without tools or chat history. The first reply can take a few minutes.")
-        } else if setup.state == .checkingReply {
-            PageNote("Waiting for its first reply.", symbol: "hourglass")
-        }
-        if let reply = setup.reply {
-            Text(reply)
-                .font(.body)
-                .foregroundStyle(Ink.text)
-                .textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
-                .inset(h: 20, v: 14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .nollieGlass(.regular, in: .rect(cornerRadius: 26, style: .continuous), solid: Ink.card)
-                .testID("models.local.reply")
-        }
-        if setup.state == .selected, let message = setup.message { PageNote(.verbatim(message)) }
-    }
-
-    /// Another model that fits, for Download and use on the Models page.
-    private func otherModels(_ choices: [LocalModelCatalogEntry], recommended: String?) -> some View {
-        VStack(spacing: 12) {
-            GlassChoice("Other models", selection: Binding(get: { download.selectedID }, set: { download.selectedID = $0 }),
-                        options: choices.map { ($0.id, $0.id == recommended ? String(localized: "\($0.displayName) (recommended)") : $0.displayName) },
-                        id: "models.local.choice")
-            PageNote("Download and use gets the one you pick.")
-        }
-        .accessibilityElement(children: .contain)
-        .testID("models.local.otherModels")
     }
 
     /// The computer the model runs on, and the model Hermes suggests for it.
@@ -569,7 +570,8 @@ struct ModelsAdvancedView: View {
                 if let fit = local.recommended?.fitSummary { PageNote(.verbatim(fit)) }
                 if let recommended = local.recommended, LocalModelQuickstartSection.scope(for: runtime) == nil {
                     ModelsDetailRow(name: String(localized: "Suggested", comment: "The model suggested for this computer"), value: recommended.displayName)
-                    ModelsDetailRow(name: String(localized: "Download", comment: "The size of the download"), value: recommended.downloadLabel)
+                    ModelsDetailRow(name: String(localized: "Download", comment: "The size of the download"),
+                                    value: recommended.sizeBytes.map(LocalModelSize.label) ?? recommended.downloadLabel)
                     PageNote("Downloads work with the assistant Nollie set up on this Mac. Your setup stays as it is.")
                 } else if local.recommended == nil {
                     PageNote(.verbatim(local.summary))
