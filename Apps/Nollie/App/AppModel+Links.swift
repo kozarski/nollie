@@ -30,10 +30,17 @@ extension AppModel {
 
     // MARK: Links
 
+    /// A universal link (the Camera opening nollie.app/pair, say) arrives as browsing activity rather than
+    /// a URL. It goes the same way as an opened link.
+    func continueBrowsing(_ activity: NSUserActivity) {
+        guard activity.activityType == NSUserActivityTypeBrowsingWeb, let url = activity.webpageURL else { return }
+        open(url)
+    }
+
     /// URL entry point. Understands the chat deep link (id plus optional bot), the chat list link, pairing
     /// links, and Nollie Link codes.
     func open(_ url: URL) {
-        if NollieLinkOffer.isOffer(url.absoluteString) {
+        if NollieLinkOffer.linkForm(url.absoluteString) != nil || NollieLinkOffer.isAppLink(url) {
             acceptLinkOffer(url)
             return
         }

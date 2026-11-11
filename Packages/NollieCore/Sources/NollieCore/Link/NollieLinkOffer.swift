@@ -74,6 +74,26 @@ public struct NollieLinkOffer: Sendable, Equatable, CustomStringConvertible, Cus
     /// Whether a scanned value or opened link looks like a Nollie Link code at all.
     public static func isOffer(_ raw: String) -> Bool { raw.hasPrefix(prefix) }
 
+    /// The same code handed to the app through its own scheme: `nollie://pair-link#<payload>`. The
+    /// nollie.app/pair page uses it for Open Nollie when the link opened in a browser instead of the app.
+    public static let appPrefix = "nollie://pair-link#"
+
+    /// Whether an opened link is meant as the app-scheme form of a code, well formed or not.
+    public static func isAppLink(_ url: URL) -> Bool { url.scheme == "nollie" && url.host == "pair-link" }
+
+    /// The code as its https link: a link already in that form, or one rebuilt from the app-scheme form.
+    /// Nil for anything else. The result still has to pass `parse`, so the app form is never trusted more
+    /// than the link the Mac showed.
+    public static func linkForm(_ raw: String) -> String? {
+        if isOffer(raw) { return raw }
+        guard raw.utf8.count <= 2048, raw.hasPrefix(appPrefix),
+              let components = URLComponents(string: raw), components.scheme == "nollie", components.host == "pair-link",
+              components.path.isEmpty, components.query == nil, components.port == nil,
+              components.user == nil, components.password == nil,
+              let encoded = components.fragment, !encoded.isEmpty, raw == appPrefix + encoded else { return nil }
+        return prefix + encoded
+    }
+
     public static func parse(_ raw: String, now: Date = Date()) throws(NollieLinkError) -> Self {
         guard raw.utf8.count <= 2048, raw.hasPrefix(prefix),
               let components = URLComponents(string: raw), components.scheme == "https", components.host == "nollie.app",

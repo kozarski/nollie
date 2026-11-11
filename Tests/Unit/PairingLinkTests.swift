@@ -40,6 +40,37 @@ struct PairingLinkTests {
         #expect(reason == NollieLinkError.invalidOffer.localizedDescription)
     }
 
+    @Test func aCodeHandedOverByTheWebPageOpensTheConfirmation() throws {
+        let link = try linkCode(expiresIn: 100).absoluteString
+        let handed = try #require(URL(string: NollieLinkOffer.appPrefix + link.dropFirst(NollieLinkOffer.prefix.count)))
+        guard case .link(let offer) = PairingLink.read(handed, now: now) else {
+            Issue.record("a code handed over by the web page was not read as one")
+            return
+        }
+        #expect(offer.macName == "Studio Mac")
+        #expect(offer == (try NollieLinkOffer.parse(link, now: now)))
+    }
+
+    @Test func aBrokenWebPageCodeSaysItIsNotACode() throws {
+        let link = try linkCode(expiresIn: 100).absoluteString
+        let fragment = String(link.dropFirst(NollieLinkOffer.prefix.count))
+        for raw in ["nollie://pair-link", "nollie://pair-link#", "nollie://pair-link?x=1#" + fragment,
+                    "nollie://pair-link/x#" + fragment, "nollie://pair-link#bm90LWEtY29kZQ"] {
+            guard case .unusable(let reason) = PairingLink.read(try #require(URL(string: raw)), now: now) else {
+                Issue.record("\(raw.prefix(30)) was not reported")
+                continue
+            }
+            #expect(reason == NollieLinkError.invalidOffer.localizedDescription)
+        }
+        let expired = try linkCode(expiresIn: -300).absoluteString
+        let late = try #require(URL(string: NollieLinkOffer.appPrefix + expired.dropFirst(NollieLinkOffer.prefix.count)))
+        guard case .unusable(let reason) = PairingLink.read(late, now: now) else {
+            Issue.record("an expired code from the web page was not reported")
+            return
+        }
+        #expect(reason == NollieLinkError.expired.localizedDescription)
+    }
+
     @Test func aGarbledPairingInvitationSaysWhy() {
         let read = PairingLink.read(URL(string: "nollie://pair#e30")!, now: now)
         guard case .unusable(let reason) = read else {
