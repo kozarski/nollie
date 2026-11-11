@@ -80,6 +80,8 @@ struct MacLifecycle: ViewModifier {
         Task {
             await EngineUpdate.shared.runIfNeeded()
             await MacHermesSetup.updateAddOnsIfNeeded()
+            // If something paused Hermes and never brought it back, it starts again here.
+            await EngineUpdate.shared.resumeIfStopped()
         }
         #endif
     }
