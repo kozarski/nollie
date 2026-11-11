@@ -601,9 +601,10 @@ struct PhoneDevicePairingView: View {
             defer { if operationID == operation { busy = false } }
             do {
                 if pendingConnection == nil {
+                    // Said before the system's local network question, so the spinner is never wordless.
+                    phase = String(localized: "Finding your Mac…")
                     guard await localNetworkAllowed() else { return }
                     try Task.checkCancellation()
-                    phase = String(localized: "Finding your Mac…")
                     let candidate = LinkedMac(macName: offer.macName, pin: offer.pin, port: offer.port, hosts: offer.hosts,
                                               installTag: offer.installTag, deviceID: UUID())
                     guard let host = await NollieLinkResolver().resolve(candidate, lastGood: nil) else { throw NollieLinkError.unreachable }
@@ -663,6 +664,7 @@ struct PhoneDevicePairingView: View {
                 if pendingConnection == nil {
                     let connection = try DevicePairingRecovery.connection(for: invitation, replacing: replacing)
                     if Self.reachesLocalNetwork(invitation.gateway) {
+                        phase = String(localized: "Pairing with your Mac…")
                         guard await localNetworkAllowed() else { return }
                         try Task.checkCancellation()
                     }
