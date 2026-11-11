@@ -76,6 +76,7 @@
 		D8F239F6E15A4D2C9A42D003 /* StarterAssistantDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8F239F6E15A4D2C9A42D001 /* StarterAssistantDefaults.swift */; };
 		D8F239F6E15A4D2C9A42D004 /* nollie-starter.json in Resources */ = {isa = PBXBuildFile; fileRef = D8F239F6E15A4D2C9A42D002 /* nollie-starter.json */; };
 		EF99443C8E3E6C6260E8E4F7 /* NativeRuntimeBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F626A67818516062C182F43 /* NativeRuntimeBackend.swift */; };
+		8E631A3185A934075273BEF0 /* RuntimeSpawn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85006EAB909D80C095FECCB6 /* RuntimeSpawn.swift */; };
 		FE08EFB720A8F3FFBE0627B6 /* ConfigurationBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684992DBB3E7B0B225FDCE16 /* ConfigurationBackup.swift */; };
 		EF0FA75B48F0A7748A52D617 /* ExitRelayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AFBF3ED7DC5222310A4990 /* ExitRelayPolicy.swift */; };
 		1C0C79082145CBC879F72805 /* ExitRelayWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889B81D60373AF624F558E3A /* ExitRelayWire.swift */; };
@@ -294,6 +295,7 @@
 		6C5F91D2ECCA45E6EC359DC9 /* Nollie Runtime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Nollie Runtime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D276FD283EF81B4AA946628 /* RuntimeIPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeIPC.swift; path = Services/Runtime/RuntimeIPC.swift; sourceTree = SOURCE_ROOT; };
 		6F626A67818516062C182F43 /* NativeRuntimeBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NativeRuntimeBackend.swift; path = Services/Runtime/NativeRuntimeBackend.swift; sourceTree = SOURCE_ROOT; };
+		85006EAB909D80C095FECCB6 /* RuntimeSpawn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RuntimeSpawn.swift; path = Services/Runtime/RuntimeSpawn.swift; sourceTree = SOURCE_ROOT; };
 		76900B466C4741F8B212C2D9 /* CloudAlertNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CloudAlertNotification.swift; path = Apps/Nollie/Push/CloudAlertNotification.swift; sourceTree = SOURCE_ROOT; };
 		AA00000000000000000020 /* Nollie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nollie.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000022 /* NollieTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NollieTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -845,6 +847,7 @@
 				FA022678FE0E4901BF5A9327 /* RuntimeService.swift */,
 				F2EA7B9E76774ED44587C3F4 /* RuntimeContract.swift */,
 				6F626A67818516062C182F43 /* NativeRuntimeBackend.swift */,
+				85006EAB909D80C095FECCB6 /* RuntimeSpawn.swift */,
 				F7ACFB3218C7FDA18BAA318F /* runtime_entry.py */,
 				C8D18C250E624E61B9E1DD4D /* managed_addons.py */,
 				DF9EB215A6E13067308C5591 /* RuntimeSupervisor.swift */,
@@ -1768,6 +1771,7 @@
 				1B5B06379A9478E456AD3B93 /* RuntimeContract.swift in Sources */,
 				747ECF64D9FCC821920892B4 /* RuntimeSupervisor.swift in Sources */,
 				EF99443C8E3E6C6260E8E4F7 /* NativeRuntimeBackend.swift in Sources */,
+				8E631A3185A934075273BEF0 /* RuntimeSpawn.swift in Sources */,
 				A2C0E011C2D1BFB669CC80DD /* RuntimeIPC.swift in Sources */,
 				BB2D81607900AD0A0E36AB81 /* LiveRelayIPC.swift in Sources */,
 				4C9AB1568B23FBE94B6CB677 /* LiveRelay.swift in Sources */,
