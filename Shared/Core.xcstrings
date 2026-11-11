@@ -2060,6 +2060,36 @@
         }
       }
     },
+    "%@'s own computer connected to %@." : {
+      "extractionState" : "manual",
+      "comment" : "Safety: Papertrail line; keep exact meaning",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der eigene Computer von %1$@ hat sich mit %2$@ verbunden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El propio ordenador de %1$@ se conectó a %2$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le propre ordinateur de %1$@ s'est connecté à %2$@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@の専用のコンピュータが%2$@に接続しました。"
+          }
+        }
+      }
+    },
     "%@, %@ and %@" : {
       "extractionState" : "manual",
       "comment" : "Three names in a list",
@@ -14580,35 +14610,6 @@
         }
       }
     },
-    "This is not an Nollie pairing code." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Das ist kein Nollie-Kopplungscode."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ce n'est pas un code de jumelage Nollie."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Este no es un código de enlace de Nollie."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "これはNollieのペアリングコードではありません。"
-          }
-        }
-      }
-    },
     "This isn't a Nollie code. Show the code again on your Mac and scan it." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14634,6 +14635,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "これはNollieのコードではありません。Macでもう一度コードを表示して、読み取ってください。"
+          }
+        }
+      }
+    },
+    "This isn't a Nollie pairing code. Make a new code on your Mac and scan it." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Das ist kein Nollie-Kopplungscode. Erstelle auf deinem Mac einen neuen Code und scanne ihn."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este no es un código de enlace de Nollie. Crea un código nuevo en tu Mac y escanéalo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce n'est pas un code de jumelage Nollie. Créez un nouveau code sur votre Mac et scannez-le."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "これはNollieのペアリングコードではありません。Macで新しいコードを作成してスキャンしてください。"
           }
         }
       }

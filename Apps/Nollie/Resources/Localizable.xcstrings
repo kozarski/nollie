@@ -299,34 +299,6 @@
         }
       }
     },
-    "%@ (recommended)" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ (empfohlen)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ (recomendado)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ (recommandé)"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@（おすすめ）"
-          }
-        }
-      }
-    },
     "%@ Your progress is saved." : {
       "comment" : "After an error message",
       "localizations" : {
@@ -1680,30 +1652,36 @@
         }
       }
     },
-    "%@ is ready on this iPhone." : {
+    "%@ is ready on %@." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "%@ ist auf diesem iPhone bereit."
+            "value" : "%1$@ ist bereit für %2$@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is ready on %2$@."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "%@ está listo en este iPhone."
+            "value" : "%1$@ está listo en %2$@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "%@ est prêt sur cet iPhone."
+            "value" : "%1$@ est prêt sur %2$@."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "%@はこのiPhoneで準備ができました。"
+            "value" : "%1$@は%2$@で準備ができました。"
           }
         }
       }
@@ -1968,6 +1946,35 @@
         }
       }
     },
+    "%@ isn't downloaded yet." : {
+      "comment" : "%@ is a model name",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ ist noch nicht heruntergeladen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ aún no se ha descargado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ n'est pas encore téléchargé."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@はまだダウンロードされていません。"
+          }
+        }
+      }
+    },
     "%@ isn't one of the apps you picked for this Mac." : {
       "localizations" : {
         "de" : {
@@ -1992,6 +1999,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@は、このMac用に選んだアプリではありません。"
+          }
+        }
+      }
+    },
+    "%@ isn't signed in yet." : {
+      "comment" : "%@ is a model name",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Für %@ bist du noch nicht angemeldet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aún no has iniciado sesión en %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vous n'êtes pas encore connecté à %@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@にはまだサインインしていません。"
           }
         }
       }
@@ -2144,6 +2180,35 @@
         }
       }
     },
+    "%@ needs sign-in." : {
+      "comment" : "%@ is a model name",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ braucht eine Anmeldung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ necesita un inicio de sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ nécessite une connexion."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@にはサインインが必要です。"
+          }
+        }
+      }
+    },
     "%@ needs your OK" : {
       "comment" : "Safety: an approval on the Watch; keep exact meaning",
       "localizations" : {
@@ -2232,7 +2297,7 @@
       }
     },
     "%@ of %@" : {
-      "comment" : "Download progress, such as 1.4 of 3.5 GB",
+      "comment" : "Download progress, such as 6.6 of 18.5 GB",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2653,6 +2718,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@が返信しました。"
+          }
+        }
+      }
+    },
+    "%@ runs on this Mac. Online was chosen." : {
+      "comment" : "%@ is a model name",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ läuft auf diesem Mac. Gewählt ist Online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ funciona en este Mac. Está elegido En línea."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ fonctionne sur ce Mac. Le choix actuel est En ligne."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@はこのMac上で動きます。オンラインが選ばれています。"
           }
         }
       }
@@ -3813,6 +3907,34 @@
         }
       }
     },
+    "%@ will ask about the local network. Say Allow, so Nollie can reach your Mac." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ fragt nach dem lokalen Netzwerk. Wähle „Erlauben“, damit Nollie deinen Mac erreichen kann."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ preguntará por la red local. Di Permitir para que Nollie pueda llegar a tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ va poser une question sur le réseau local. Répondez Autoriser, pour que Nollie puisse joindre votre Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@からローカルネットワークについて尋ねられます。NollieがMacに接続できるよう「許可」を選んでください。"
+          }
+        }
+      }
+    },
     "%@ won't do it." : {
       "localizations" : {
         "de" : {
@@ -3842,6 +3964,7 @@
       }
     },
     "%@ · %@" : {
+      "comment" : "A model's size, then how long it takes to download, such as 18.5 GB · about 25 min",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3906,6 +4029,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%1$@ · %2$@メモリ"
+          }
+        }
+      }
+    },
+    "%@ · Downloaded" : {
+      "comment" : "A model's size, then that it is already on the Mac",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · Heruntergeladen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · Descargado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · Téléchargé"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · ダウンロード済み"
           }
         }
       }
@@ -4883,34 +5035,6 @@
         }
       }
     },
-    "%@, not signed in yet" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@, noch nicht angemeldet"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@, aún sin iniciar sesión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@, pas encore connecté"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@、まだサインインしていません"
-          }
-        }
-      }
-    },
     "%@." : {
       "comment" : "One action as a sentence",
       "localizations" : {
@@ -4975,6 +5099,41 @@
         }
       }
     },
+    "%@. %@ %@" : {
+      "comment" : "A choice's name, its line, then a note on this Mac's memory",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@. %2$@ %3$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. %2$@ %3$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@. %2$@ %3$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@. %2$@ %3$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@。%2$@%3$@"
+          }
+        }
+      }
+    },
     "%@. %@." : {
       "comment" : "One action, then why it was allowed or stopped",
       "localizations" : {
@@ -5006,6 +5165,41 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%1$@。%2$@。"
+          }
+        }
+      }
+    },
+    "%@. %lld of %lld parts ready." : {
+      "comment" : "First what is happening, such as Downloading Hermes, 91 MB",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@. %2$lld von %3$lld Teilen bereit."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. %2$lld of %3$lld parts ready."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@. %2$lld de %3$lld partes listas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@. %2$lld parties prêtes sur %3$lld."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@。%3$lld個中%2$lld個の準備ができました。"
           }
         }
       }
@@ -10788,30 +10982,31 @@
         }
       }
     },
-    "About %@, once. Runs on this Mac, no account needed." : {
+    "About %@ left" : {
+      "comment" : "Time left in a download, such as About 12 min left",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Etwa %@, einmalig. Läuft auf diesem Mac, kein Account nötig."
+            "value" : "Noch etwa %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Unos %@, una sola vez. Funciona en este Mac, sin necesidad de cuenta."
+            "value" : "Quedan unos %@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Environ %@, une seule fois. Fonctionne sur ce Mac, sans compte."
+            "value" : "Encore environ %@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "約%@、1回だけ。このMacで動作し、アカウントは不要です。"
+            "value" : "残り約%@"
           }
         }
       }
@@ -11298,34 +11493,6 @@
         }
       }
     },
-    "Add a computer" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Computer hinzufügen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Añadir un ordenador"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ajouter un ordinateur"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "コンピュータを追加"
-          }
-        }
-      }
-    },
     "Add a gateway in Nollie first." : {
       "localizations" : {
         "de" : {
@@ -11771,6 +11938,62 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "追加済み"
+          }
+        }
+      }
+    },
+    "Adding Hermes's libraries, about 40 MB" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bibliotheken von Hermes werden hinzugefügt, etwa 40 MB"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Añadiendo las bibliotecas de Hermes, unos 40 MB"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajout des bibliothèques de Hermes, environ 40 Mo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermesのライブラリを追加中（約40MB）"
+          }
+        }
+      }
+    },
+    "Adding Nollie's add-ons, about 20 MB" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Add-ons von Nollie werden hinzugefügt, etwa 20 MB"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Añadiendo los complementos de Nollie, unos 20 MB"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajout des modules de Nollie, environ 20 Mo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieのアドオンを追加中（約20MB）"
           }
         }
       }
@@ -12875,62 +13098,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "「システム設定」›「ログイン項目と機能拡張」でNollie Papertrailを許可してください。"
-          }
-        }
-      }
-    },
-    "Allow Nollie Runtime in Login Items, then check again." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Erlaube Nollie Runtime unter Anmeldeobjekte und prüfe dann erneut."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Permite Nollie Runtime en Ítems de inicio y vuelve a comprobarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Autorisez Nollie Runtime dans Ouverture, puis vérifiez à nouveau."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "ログイン項目でNollie Runtimeを許可してから、もう一度確認してください。"
-          }
-        }
-      }
-    },
-    "Allow Nollie Runtime in System Settings > General > Login Items, then check again." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Erlaube Nollie Runtime unter Systemeinstellungen > Allgemein > Anmeldeobjekte und prüfe dann erneut."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Permite Nollie Runtime en Ajustes del Sistema > General > Ítems de inicio y vuelve a comprobarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Autorisez Nollie Runtime dans Réglages Système > Général > Ouverture, puis vérifiez à nouveau."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "「システム設定」>「一般」>「ログイン項目」でNollie Runtimeを許可してから、もう一度確認してください。"
           }
         }
       }
@@ -14533,34 +14700,6 @@
         }
       }
     },
-    "Answered a first reply." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hat eine erste Antwort gegeben."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ha dado una primera respuesta."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "A donné une première réponse."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "最初の返信に答えました。"
-          }
-        }
-      }
-    },
     "Answered elsewhere" : {
       "comment" : "A question answered on another device",
       "localizations" : {
@@ -14586,6 +14725,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "別の場所で回答済み"
+          }
+        }
+      }
+    },
+    "Answered hello." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hat auf Hallo geantwortet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ha respondido al saludo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "A répondu à votre bonjour."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "あいさつに返事をしました。"
           }
         }
       }
@@ -18013,6 +18180,34 @@
         }
       }
     },
+    "Best for this Mac" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Am besten für diesen Mac"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo mejor para este Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Idéal pour ce Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMacに最適"
+          }
+        }
+      }
+    },
     "Beta" : {
       "localizations" : {
         "de" : {
@@ -19516,30 +19711,31 @@
         }
       }
     },
-    "Camera images stay on this iPhone." : {
+    "Camera images stay on %@." : {
+      "comment" : "%@ is this iPhone or this iPad",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Kamerabilder bleiben auf diesem iPhone."
+            "value" : "Kamerabilder verlassen %@ nicht."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Las imágenes de la cámara se quedan en este iPhone."
+            "value" : "Las imágenes de la cámara se quedan en %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Les images de l'appareil photo restent sur cet iPhone."
+            "value" : "Les images de l'appareil photo restent sur %@."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "カメラの画像はこのiPhone内にとどまります。"
+            "value" : "カメラの画像は%@内にとどまります。"
           }
         }
       }
@@ -19907,6 +20103,62 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "現在Macに接続できません。自宅で、または両方でTailscaleをオンにして、お試しください。"
+          }
+        }
+      }
+    },
+    "Can't reach your assistant" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Assistent ist nicht erreichbar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se puede conectar con tu asistente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de joindre votre assistant"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "アシスタントに接続できません"
+          }
+        }
+      }
+    },
+    "Can't reach your assistant." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Assistent ist nicht erreichbar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se puede conectar con tu asistente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de joindre votre assistant."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "アシスタントに接続できません。"
           }
         }
       }
@@ -21597,6 +21849,35 @@
         }
       }
     },
+    "Checking %@…" : {
+      "comment" : "%@ is a model name",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ wird geprüft …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Comprobando %@…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vérification de %@…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@を確認中…"
+          }
+        }
+      }
+    },
     "Checking capabilities…" : {
       "localizations" : {
         "de" : {
@@ -22042,6 +22323,68 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "安全な接続を確認中。"
+          }
+        }
+      }
+    },
+    "Checking this Mac" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieser Mac wird geprüft"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Comprobando este Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vérification de ce Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMacを確認中"
+          }
+        }
+      }
+    },
+    "Checking what's already here. %lld of %lld parts ready." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Prüfe, was schon da ist. %1$lld von %2$lld Teilen bereit."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Checking what's already here. %1$lld of %2$lld parts ready."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Comprobando lo que ya hay. %1$lld de %2$lld partes listas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vérification de ce qui est déjà là. %1$lld parties prêtes sur %2$lld."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "すでにあるものを確認中。%2$lld個中%1$lld個の準備ができました。"
           }
         }
       }
@@ -23453,30 +23796,30 @@
         }
       }
     },
-    "Closing this page won't stop the download." : {
+    "Closing this won't stop the download." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Wenn du diese Seite schließt, stoppt der Download nicht."
+            "value" : "Wenn du das schließt, stoppt der Download nicht."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Cerrar esta página no detendrá la descarga."
+            "value" : "Cerrar esto no detendrá la descarga."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Fermer cette page n'arrêtera pas le téléchargement."
+            "value" : "Fermer ceci n'arrêtera pas le téléchargement."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "このページを閉じてもダウンロードは止まりません。"
+            "value" : "閉じてもダウンロードは止まりません。"
           }
         }
       }
@@ -24359,34 +24702,6 @@
         }
       }
     },
-    "Computer access" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Computerzugriff"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Acceso al ordenador"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Accès à l'ordinateur"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "コンピュータへのアクセス"
-          }
-        }
-      }
-    },
     "Computer control" : {
       "comment" : "A bot capability",
       "localizations" : {
@@ -25225,6 +25540,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Macに接続"
+          }
+        }
+      }
+    },
+    "Connect to your Mac when you're ready to start chatting." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Verbinde dich mit deinem Mac, wenn du bereit bist zu chatten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Conéctate a tu Mac cuando quieras empezar a chatear."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Connectez-vous à votre Mac quand vous êtes prêt à discuter."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "チャットを始める準備ができたら、Macに接続してください。"
           }
         }
       }
@@ -26912,34 +27255,6 @@
         }
       }
     },
-    "Could not check the background service. Try again." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Der Hintergrunddienst konnte nicht geprüft werden. Versuch es erneut."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "No se ha podido comprobar el servicio en segundo plano. Vuelve a intentarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Impossible de vérifier le service en arrière-plan. Réessayez."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "バックグラウンドサービスを確認できませんでした。もう一度お試しください。"
-          }
-        }
-      }
-    },
     "Could not check: %@" : {
       "localizations" : {
         "de" : {
@@ -28303,6 +28618,35 @@
         }
       }
     },
+    "Couldn't finish getting %@. Nothing else on your Mac changed. Check your internet connection, then try again." : {
+      "comment" : "%@ is a part of the setup, such as Hermes",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Konnte nicht fertig geladen werden: %@. Sonst hat sich auf deinem Mac nichts geändert. Prüfe deine Internetverbindung und versuch es dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se pudo terminar de descargar %@. No ha cambiado nada más en tu Mac. Comprueba tu conexión a internet y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Téléchargement inachevé : %@. Rien d'autre n'a changé sur votre Mac. Vérifiez votre connexion Internet, puis réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@を最後まで取得できませんでした。Macのほかの部分は変わっていません。インターネット接続を確認してから、もう一度お試しください。"
+          }
+        }
+      }
+    },
     "Couldn't finish pairing setup. Check the connection and try again. Any verified backup is kept." : {
       "localizations" : {
         "de" : {
@@ -28752,6 +29096,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "iCloudに接続できませんでした。何も送信されていません。"
+          }
+        }
+      }
+    },
+    "Couldn't reach the download. Check your internet, then try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Download war nicht erreichbar. Prüfe dein Internet und versuch es dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se pudo acceder a la descarga. Comprueba tu conexión a internet y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible d'accéder au téléchargement. Vérifiez votre connexion Internet, puis réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ダウンロード先に接続できませんでした。インターネット接続を確認してから、もう一度お試しください。"
           }
         }
       }
@@ -32154,6 +32526,34 @@
         }
       }
     },
+    "Didn't start. Try again below." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nicht gestartet. Versuch es unten erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se inició. Vuelve a intentarlo abajo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pas démarré. Réessayez ci-dessous."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "開始されませんでした。下でもう一度お試しください。"
+          }
+        }
+      }
+    },
     "Discord" : {
       "comment" : "A bot capability",
       "localizations" : {
@@ -32581,62 +32981,6 @@
         }
       }
     },
-    "Download and use %@" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ laden und verwenden"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Descargar y usar %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Télécharger et utiliser %@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@をダウンロードして使う"
-          }
-        }
-      }
-    },
-    "Download and use gets the one you pick." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "„Laden und verwenden“ holt das, das du auswählst."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Descargar y usar obtiene el que elijas."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Télécharger et utiliser récupère celui que vous choisissez."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "「ダウンロードして使う」で、選んだモデルを入手します。"
-          }
-        }
-      }
-    },
     "Download it" : {
       "localizations" : {
         "de" : {
@@ -32806,30 +33150,58 @@
         }
       }
     },
-    "Downloaded parts are kept." : {
+    "Downloaded parts are kept. Try again to carry on." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Geladene Teile bleiben erhalten."
+            "value" : "Bereits geladene Teile bleiben erhalten. Versuch es erneut, um weiterzumachen."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Las partes descargadas se conservan."
+            "value" : "Las partes descargadas se conservan. Vuelve a intentarlo para seguir."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Les parties téléchargées sont conservées."
+            "value" : "Les parties déjà téléchargées sont conservées. Réessayez pour continuer."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "ダウンロード済みの部分は保持されます。"
+            "value" : "ダウンロード済みの部分は残ります。続けるにはもう一度お試しください。"
+          }
+        }
+      }
+    },
+    "Downloading Hermes, 91 MB" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes wird geladen, 91 MB"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Descargando Hermes, 91 MB"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Téléchargement de Hermes, 91 Mo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermesをダウンロード中（91MB）"
           }
         }
       }
@@ -33228,35 +33600,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "毎朝、チームの作業がここと、Nollieのチャットに表示されます。"
-          }
-        }
-      }
-    },
-    "Each person gets their own %@, with your instructions and none of your memory or chats." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Jede Person bekommt ihren eigenen %@, mit deinen Anweisungen und ohne dein Gedächtnis oder deine Chats."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cada persona recibe su propio %@, con tus instrucciones y nada de tu memoria ni de tus chats."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Chaque personne reçoit son propre %@, avec vos instructions, sans rien de votre mémoire ni de vos discussions."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "それぞれの人に専用の%@が用意されます。あなたの指示は引き継がれますが、あなたのメモリやチャットは引き継がれません。"
           }
         }
       }
@@ -35015,6 +35358,35 @@
         }
       }
     },
+    "Exact reason: %@" : {
+      "comment" : "The technical reason a setup step stopped",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Genauer Grund: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Motivo exacto: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Raison exacte : %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "詳しい理由：%@"
+          }
+        }
+      }
+    },
     "Example requests" : {
       "localizations" : {
         "de" : {
@@ -36520,34 +36892,6 @@
         }
       }
     },
-    "Fits this Mac" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Passt zu diesem Mac"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cabe en este Mac"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Adapté à ce Mac"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "このMacに適合"
-          }
-        }
-      }
-    },
     "Focus and stopping rule" : {
       "localizations" : {
         "de" : {
@@ -37464,6 +37808,34 @@
         }
       }
     },
+    "Get Nollie for Mac." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hol dir Nollie für Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Consigue Nollie para Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Téléchargez Nollie pour Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mac版Nollieを入手しましょう。"
+          }
+        }
+      }
+    },
     "Get Nollie from nollie.app to import. You can connect to your setup instead." : {
       "localizations" : {
         "de" : {
@@ -37492,31 +37864,30 @@
         }
       }
     },
-    "Get Nollie from nollie.app to set up a new assistant. This version connects to one you already run." : {
-      "extractionState" : "stale",
+    "Get Nollie from nollie.app." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Lade Nollie von nollie.app, um einen neuen Assistenten einzurichten. Diese Version verbindet sich mit einem, den du schon betreibst."
+            "value" : "Lade Nollie von nollie.app."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Descarga Nollie de nollie.app para configurar un asistente nuevo. Esta versión se conecta a uno que ya tienes."
+            "value" : "Descarga Nollie de nollie.app."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Téléchargez Nollie sur nollie.app pour configurer un nouvel assistant. Cette version se connecte à un assistant que vous faites déjà tourner."
+            "value" : "Téléchargez Nollie sur nollie.app."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "新しいアシスタントを設定するには、nollie.appからNollieを入手してください。このバージョンは、すでに動かしているアシスタントに接続します。"
+            "value" : "nollie.appからNollieを入手してください。"
           }
         }
       }
@@ -37745,6 +38116,69 @@
         }
       }
     },
+    "Get the Mac app" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mac-App holen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Obtener la app para Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Obtenir l'app Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mac版アプリを入手"
+          }
+        }
+      }
+    },
+    "Getting %@ · %@" : {
+      "comment" : "A model name, then how far its download has come, such as Getting Qwen3.8 27B · 6.6 of 18.5 GB",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@ wird geladen · %2$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Getting %1$@ · %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Descargando %1$@ · %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Téléchargement de %1$@ · %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@を取得中 · %2$@"
+          }
+        }
+      }
+    },
     "Getting Nollie ready" : {
       "localizations" : {
         "de" : {
@@ -37769,6 +38203,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollieを準備中"
+          }
+        }
+      }
+    },
+    "Getting Python, 27 MB" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Python wird geladen, 27 MB"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Descargando Python, 27 MB"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Téléchargement de Python, 27 Mo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pythonを取得中（27MB）"
           }
         }
       }
@@ -37909,6 +38371,62 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "コンピュータを動かす準備中"
+          }
+        }
+      }
+    },
+    "Getting the download tool, 14 MB" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Download-Werkzeug wird geladen, 14 MB"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Obteniendo la herramienta de descarga, 14 MB"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Récupération de l'outil de téléchargement, 14 Mo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ダウンロードツールを取得中（14MB）"
+          }
+        }
+      }
+    },
+    "Getting the engine" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Motor wird geladen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Obteniendo el motor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Récupération du moteur"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "エンジンを取得中"
           }
         }
       }
@@ -39107,6 +39625,34 @@
         }
       }
     },
+    "Hermes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes"
+          }
+        }
+      }
+    },
     "Hermes 0.23.1 at a fixed revision, a 91.4 MB verified download, with Nollie's reviewed changes for Board notes and safe scheduled checks." : {
       "localizations" : {
         "de" : {
@@ -39411,6 +39957,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Hermesがプラグインを有効にしませんでした。"
+          }
+        }
+      }
+    },
+    "Hermes's libraries" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "die Bibliotheken von Hermes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "las bibliotecas de Hermes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "les bibliothèques de Hermes"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermesのライブラリ"
           }
         }
       }
@@ -40821,6 +41395,34 @@
         }
       }
     },
+    "In Nollie, or with the Camera" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "In Nollie oder mit der Kamera"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En Nollie o con la Cámara"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dans Nollie, ou avec l'app Appareil photo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieで、またはカメラで"
+          }
+        }
+      }
+    },
     "In every chat, without asking." : {
       "localizations" : {
         "de" : {
@@ -41782,6 +42384,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollieが前面に来ると再び表示されます。"
+          }
+        }
+      }
+    },
+    "It didn't answer yet. The first reply can take a minute." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Noch keine Antwort. Die erste Antwort kann eine Minute dauern."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aún no ha respondido. La primera respuesta puede tardar un minuto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pas encore de réponse. La première réponse peut prendre une minute."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "まだ返事がありません。最初の返信には1分ほどかかることがあります。"
           }
         }
       }
@@ -43057,34 +43687,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "作業を続行"
-          }
-        }
-      }
-    },
-    "Keep at least 6 GB free before preparing the runtime. Model downloads need more space." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Halte mindestens 6 GB frei, bevor du die Runtime vorbereitest. Modell-Downloads brauchen mehr Platz."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Deja al menos 6 GB libres antes de preparar el entorno de ejecución. Las descargas de modelos necesitan más espacio."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Gardez au moins 6 Go libres avant de préparer l'environnement. Les téléchargements de modèles demandent plus d'espace."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "ランタイムを準備する前に、6GB以上の空き容量を確保してください。モデルのダウンロードにはさらに容量が必要です。"
           }
         }
       }
@@ -45090,6 +45692,34 @@
         }
       }
     },
+    "Less than a minute left" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Noch weniger als eine Minute"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Queda menos de un minuto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Moins d'une minute restante"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "残り1分未満"
+          }
+        }
+      }
+    },
     "Let %@ pay for something" : {
       "comment" : "Safety: why Face ID is asked before a payment",
       "localizations" : {
@@ -46024,6 +46654,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Liquid Glassオン。"
+          }
+        }
+      }
+    },
+    "Listen" : {
+      "comment" : "A menu item that reads a reply aloud",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Anhören"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Escuchar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Écouter"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "読み上げ"
           }
         }
       }
@@ -48727,6 +49386,34 @@
         }
       }
     },
+    "More models" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Weitere Modelle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Más modelos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Plus de modèles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "その他のモデル"
+          }
+        }
+      }
+    },
     "More options" : {
       "localizations" : {
         "de" : {
@@ -49094,34 +49781,6 @@
         }
       }
     },
-    "Native installation is not included in this build yet. Your existing setup is unchanged." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Die native Installation ist in diesem Build noch nicht enthalten. Deine vorhandene Einrichtung bleibt unverändert."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La instalación nativa aún no se incluye en esta versión. Tu configuración actual no ha cambiado."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'installation native n'est pas encore incluse dans cette version. Votre configuration actuelle n'a pas changé."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "このビルドにはネイティブインストールがまだ含まれていません。既存の設定は変更されていません。"
-          }
-        }
-      }
-    },
     "Native setup is being prepared" : {
       "localizations" : {
         "de" : {
@@ -49146,6 +49805,76 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ネイティブ設定を準備中です"
+          }
+        }
+      }
+    },
+    "Needs %@. This Mac has %@ free." : {
+      "comment" : "Disk space: what a model download needs, then what this Mac has, such as 104 GB and 88 GB",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Braucht %1$@. Dieser Mac hat %2$@ frei."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Needs %1$@. This Mac has %2$@ free."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Necesita %1$@. Este Mac tiene %2$@ libres."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nécessite %1$@. Ce Mac a %2$@ libres."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@が必要です。このMacの空き容量は%2$@です。"
+          }
+        }
+      }
+    },
+    "Needs %@. Your Mac has %@ free." : {
+      "comment" : "Disk space: what a model download needs, then what the Mac has, such as 104 GB and 88 GB",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Braucht %1$@. Dein Mac hat %2$@ frei."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Needs %1$@. Your Mac has %2$@ free."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Necesita %1$@. Tu Mac tiene %2$@ libres."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nécessite %1$@. Votre Mac a %2$@ libres."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@が必要です。お使いのMacの空き容量は%2$@です。"
           }
         }
       }
@@ -49460,34 +50189,6 @@
         }
       }
     },
-    "Needs sign-in" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Anmeldung nötig"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Necesita iniciar sesión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Connexion requise"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "サインインが必要"
-          }
-        }
-      }
-    },
     "Needs you" : {
       "comment" : "A computer's state\nA helper's computer state",
       "localizations" : {
@@ -49518,6 +50219,7 @@
       }
     },
     "Needs your OK" : {
+      "comment" : "A setup step's state: waiting for approval in System Settings",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -51636,6 +52338,174 @@
         }
       }
     },
+    "No model fits the free space on this Mac. A plan needs none." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kein Modell passt in den freien Speicher dieses Mac. Ein Plan braucht keinen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ningún modelo cabe en el espacio libre de este Mac. Un plan no necesita espacio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aucun modèle ne tient dans l'espace libre de ce Mac. Un abonnement n'en demande pas."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMacの空き容量に収まるモデルはありません。プランなら容量は不要です。"
+          }
+        }
+      }
+    },
+    "No model fits the free space on your Mac. A plan needs none." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kein Modell passt in den freien Speicher deines Mac. Ein Plan braucht keinen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ningún modelo cabe en el espacio libre de tu Mac. Un plan no necesita espacio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aucun modèle ne tient dans l'espace libre de votre Mac. Un abonnement n'en demande pas."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "お使いのMacの空き容量に収まるモデルはありません。プランなら容量は不要です。"
+          }
+        }
+      }
+    },
+    "No model here fits this Mac's memory. A plan works well." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Keines dieser Modelle passt zum Arbeitsspeicher dieses Mac. Ein Plan funktioniert gut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ninguno de estos modelos cabe en la memoria de este Mac. Un plan funciona bien."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aucun de ces modèles ne convient à la mémoire de ce Mac. Un abonnement fonctionne bien."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMacのメモリに合うモデルはここにありません。プランならうまく動きます。"
+          }
+        }
+      }
+    },
+    "No model here fits your Mac's memory. A plan works well." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Keines dieser Modelle passt zum Arbeitsspeicher deines Mac. Ein Plan funktioniert gut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ninguno de estos modelos cabe en la memoria de tu Mac. Un plan funciona bien."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aucun de ces modèles ne convient à la mémoire de votre Mac. Un abonnement fonctionne bien."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "お使いのMacのメモリに合うモデルはここにありません。プランならうまく動きます。"
+          }
+        }
+      }
+    },
+    "No model on this Mac yet." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Noch kein Modell auf diesem Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aún no hay ningún modelo en este Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aucun modèle sur ce Mac pour l'instant."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMacにはまだモデルがありません。"
+          }
+        }
+      }
+    },
+    "No model on your Mac yet." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Noch kein Modell auf deinem Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aún no hay ningún modelo en tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aucun modèle sur votre Mac pour l'instant."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "お使いのMacにはまだモデルがありません。"
+          }
+        }
+      }
+    },
     "No model selected" : {
       "localizations" : {
         "de" : {
@@ -53184,6 +54054,34 @@
         }
       }
     },
+    "Nollie couldn't reach its background service. Try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie hat seinen Hintergrunddienst nicht erreicht. Versuch es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie no pudo conectar con su servicio en segundo plano. Vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie n'a pas pu joindre son service en arrière-plan. Réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieがバックグラウンドサービスに接続できませんでした。もう一度お試しください。"
+          }
+        }
+      }
+    },
     "Nollie couldn't tell what this would do, so it waited for your yes. Nobody could answer then, so it wasn't done." : {
       "comment" : "Safety: Ask first held an unclear action; keep exact meaning",
       "localizations" : {
@@ -53377,6 +54275,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "NollieはこのMacでのタスクを終了し、返信を止め、%lld件のスケジュールを一時停止しました。「スケジュール」で再開できます。"
+          }
+        }
+      }
+    },
+    "Nollie for Mac" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie für Mac"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie para Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie pour Mac"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mac版Nollie"
           }
         }
       }
@@ -53747,6 +54673,34 @@
         }
       }
     },
+    "Nollie keeps trying." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie versucht es weiter."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie sigue intentándolo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollie continue d'essayer."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieが試し続けます。"
+          }
+        }
+      }
+    },
     "Nollie left %@ alone, because it isn't Nollie's to remove." : {
       "comment" : "Safety: Remove Nollie, a step it refused; the placeholder is a file or folder name; keep exact meaning",
       "localizations" : {
@@ -53861,30 +54815,30 @@
         }
       }
     },
-    "Nollie on this iPhone now uses your Mac's assistant." : {
+    "Nollie on %@ now uses your Mac's assistant." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Nollie auf diesem iPhone verwendet jetzt den Assistenten deines Mac."
+            "value" : "Nollie nutzt für %@ jetzt den Assistenten deines Mac."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Nollie en este iPhone ahora usa el asistente de tu Mac."
+            "value" : "Nollie en %@ ahora usa el asistente de tu Mac."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Nollie sur cet iPhone utilise maintenant l'assistant de votre Mac."
+            "value" : "Nollie sur %@ utilise maintenant l'assistant de votre Mac."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "このiPhoneのNollieは、Macのアシスタントを使うようになりました。"
+            "value" : "%@のNollieは、Macのアシスタントを使うようになりました。"
           }
         }
       }
@@ -54110,6 +55064,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollieは、このHermesの設定に小さなペアリング用コンパニオンを追加します。"
+          }
+        }
+      }
+    },
+    "Nollie's add-ons" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "die Add-ons von Nollie"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "los complementos de Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "les modules de Nollie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieのアドオン"
           }
         }
       }
@@ -55031,6 +56013,34 @@
         }
       }
     },
+    "Not enough free space for this model. Nothing was started." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nicht genug freier Speicher für dieses Modell. Es wurde nichts gestartet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No hay espacio libre suficiente para este modelo. No se ha iniciado nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pas assez d'espace libre pour ce modèle. Rien n'a été lancé."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このモデルに必要な空き容量がありません。何も開始していません。"
+          }
+        }
+      }
+    },
     "Not from iCloud" : {
       "localizations" : {
         "de" : {
@@ -55059,35 +56069,6 @@
         }
       }
     },
-    "Not in this version" : {
-      "comment" : "A setup step's state",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nicht in dieser Version"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "No está en esta versión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pas dans cette version"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "このバージョンにはありません"
-          }
-        }
-      }
-    },
     "Not in this version of Nollie yet." : {
       "localizations" : {
         "de" : {
@@ -55112,34 +56093,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "このバージョンのNollieにはまだありません。"
-          }
-        }
-      }
-    },
-    "Not in this version yet." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "In dieser Version noch nicht verfügbar."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Aún no está en esta versión."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pas encore dans cette version."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "このバージョンにはまだありません。"
           }
         }
       }
@@ -55793,6 +56746,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "まだAppleに登録されていません。"
+          }
+        }
+      }
+    },
+    "Not started" : {
+      "comment" : "A setup step's state",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nicht gestartet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin empezar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pas commencé"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "未開始"
           }
         }
       }
@@ -57106,7 +58088,7 @@
       }
     },
     "Off" : {
-      "comment" : "A Status row's state word\nA switch state\nNight shift is switched off\nThe weekly note is switched off\nUsing this Mac is switched off",
+      "comment" : "A Status row's state word\nA switch state\nNight shift is switched off\nThe background service's state\nThe weekly note is switched off\nUsing this Mac is switched off",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -57475,30 +58457,31 @@
         }
       }
     },
-    "On your Mac, open Nollie's Settings and show the code for your iPhone." : {
+    "On your Mac, open Nollie's Settings and show the code for %@." : {
+      "comment" : "%@ is your iPhone or your iPad",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Öffne auf deinem Mac die Einstellungen von Nollie und zeig den Code für dein iPhone an."
+            "value" : "Öffne auf deinem Mac die Einstellungen von Nollie und zeig den Code für %@ an."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "En tu Mac, abre los Ajustes de Nollie y muestra el código para tu iPhone."
+            "value" : "En tu Mac, abre los Ajustes de Nollie y muestra el código para %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Sur votre Mac, ouvrez les réglages de Nollie et affichez le code pour votre iPhone."
+            "value" : "Sur votre Mac, ouvrez les réglages de Nollie et affichez le code pour %@."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "MacでNollieの設定を開き、iPhone用のコードを表示してください。"
+            "value" : "MacでNollieの設定を開き、%@用のコードを表示してください。"
           }
         }
       }
@@ -58802,34 +59785,6 @@
         }
       }
     },
-    "Open Nollie on your iPhone and scan this code" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Öffne Nollie auf deinem iPhone und scanne diesen Code"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abre Nollie en tu iPhone y escanea este código"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ouvrez Nollie sur votre iPhone et scannez ce code"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "iPhoneでNollieを開き、このコードをスキャンしてください"
-          }
-        }
-      }
-    },
     "Open Privacy & Security" : {
       "localizations" : {
         "de" : {
@@ -58938,6 +59893,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "システム設定を開く"
+          }
+        }
+      }
+    },
+    "Open System Settings › General › Login Items & Extensions and turn on Nollie under Allow in the Background. Then come back here." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Öffne Systemeinstellungen › Allgemein › Anmeldeobjekte & Erweiterungen und schalte Nollie unter „Im Hintergrund erlauben“ ein. Komm dann hierher zurück."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre Ajustes del Sistema › General › Ítems de inicio y extensiones y activa Nollie en «Permitir en segundo plano». Luego vuelve aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ouvrez Réglages Système › Général › Ouverture et extensions, puis activez Nollie sous « Autoriser en arrière-plan ». Revenez ensuite ici."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「システム設定」›「一般」›「ログイン項目と機能拡張」を開き、「バックグラウンドでの実行を許可」でNollieをオンにしてください。その後、ここに戻ってください。"
           }
         }
       }
@@ -59138,6 +60121,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollieで旅行のチャットを開いて"
+          }
+        }
+      }
+    },
+    "Open nollie.app" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nollie.app öffnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abrir nollie.app"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ouvrir nollie.app"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nollie.appを開く"
           }
         }
       }
@@ -59990,34 +61001,6 @@
         }
       }
     },
-    "Optional space to browse and work." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Optionaler Platz zum Surfen und Arbeiten."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Espacio opcional para navegar y trabajar."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Un espace facultatif pour naviguer et travailler."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "ブラウズや作業のための、オプションの場所。"
-          }
-        }
-      }
-    },
     "Optional, like “Codes come by text”" : {
       "localizations" : {
         "de" : {
@@ -60042,62 +61025,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "任意。例：「コードはSMSで届く」"
-          }
-        }
-      }
-    },
-    "Optional. Coming in a later version." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Optional. Kommt in einer späteren Version."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Opcional. Llegará en una versión posterior."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Facultatif. Arrive dans une version ultérieure."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "オプション。今後のバージョンで提供予定です。"
-          }
-        }
-      }
-    },
-    "Optional. Needs a packaged computer adapter and your macOS permission approval. No permissions are copied." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Optional. Braucht einen mitgelieferten Computer-Adapter und deine Freigabe der macOS-Berechtigung. Es werden keine Berechtigungen kopiert."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Opcional. Necesita un adaptador de ordenador empaquetado y que apruebes el permiso de macOS. No se copia ningún permiso."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Facultatif. Nécessite un adaptateur d'ordinateur fourni et votre accord dans macOS. Aucune autorisation n'est copiée."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "オプション。パッケージ化されたコンピュータアダプタと、macOSのアクセス許可の承認が必要です。アクセス許可はコピーされません。"
           }
         }
       }
@@ -60240,34 +61167,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ほかのヘルパー"
-          }
-        }
-      }
-    },
-    "Other models" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Andere Modelle"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Otros modelos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Autres modèles"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "その他のモデル"
           }
         }
       }
@@ -60442,6 +61341,34 @@
         }
       }
     },
+    "Pair %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ koppeln"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enlaza %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jumeler %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@をペアリング"
+          }
+        }
+      }
+    },
     "Pair iPhone" : {
       "localizations" : {
         "de" : {
@@ -60460,34 +61387,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Jumeler l'iPhone"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "iPhoneをペアリング"
-          }
-        }
-      }
-    },
-    "Pair your iPhone" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dein iPhone koppeln"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Enlaza tu iPhone"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Jumeler votre iPhone"
           }
         },
         "ja" : {
@@ -61315,6 +62214,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "サインイン入力中は一時停止しています。"
+          }
+        }
+      }
+    },
+    "Paused · %@" : {
+      "comment" : "A paused download, then how far it came, such as Paused · 6.6 of 18.5 GB",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pausiert · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En pausa · %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En pause · %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "一時停止中 · %@"
           }
         }
       }
@@ -63863,6 +64791,34 @@
         }
       }
     },
+    "Python" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Python"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Python"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Python"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Python"
+          }
+        }
+      }
+    },
     "Python 3.14.10. A 26.8 MB verified download. A separate runtime for Nollie, without changing your existing Python." : {
       "localizations" : {
         "de" : {
@@ -64169,6 +65125,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ちょっと質問"
+          }
+        }
+      }
+    },
+    "Quick start" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Schnellstart"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Inicio rápido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Démarrage rapide"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "クイックスタート"
           }
         }
       }
@@ -65253,7 +66237,7 @@
       }
     },
     "Ready" : {
-      "comment" : "A Status row's state word\nA computer's state\nA helper's computer state\nA setup step's state\nThe Mac is ready and sleeps as usual",
+      "comment" : "A Status row's state word\nA computer's state\nA helper's computer state\nA setup step's state\nThe Mac is ready and sleeps as usual\nThe downloaded model answered and is ready",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -65417,35 +66401,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "準備ができたらどうぞ。"
-          }
-        }
-      }
-    },
-    "Ready." : {
-      "comment" : "The downloaded model is ready",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Bereit."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Listo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Prêt."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "準備完了。"
           }
         }
       }
@@ -65699,34 +66654,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "おすすめ"
-          }
-        }
-      }
-    },
-    "Recommended for this Mac" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Empfohlen für diesen Mac"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Recomendado para este Mac"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Recommandé pour ce Mac"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "このMacにおすすめ"
           }
         }
       }
@@ -71068,6 +71995,34 @@
         }
       }
     },
+    "Say hello" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hallo sagen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Saludar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dire bonjour"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "あいさつする"
+          }
+        }
+      }
+    },
     "Say hello to start your chat." : {
       "localizations" : {
         "de" : {
@@ -71232,6 +72187,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "許可する"
+          }
+        }
+      }
+    },
+    "Saying hello…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sagt Hallo …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Saludando…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dit bonjour…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "あいさつ中…"
           }
         }
       }
@@ -71428,6 +72411,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "スキャンして参加"
+          }
+        }
+      }
+    },
+    "Scan with your iPhone" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mit deinem iPhone scannen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Escanea con tu iPhone"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Scannez avec votre iPhone"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhoneでスキャン"
           }
         }
       }
@@ -72637,6 +73648,34 @@
         }
       }
     },
+    "See download" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Download ansehen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ver la descarga"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Voir le téléchargement"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ダウンロードを表示"
+          }
+        }
+      }
+    },
     "See what goes before anything happens." : {
       "localizations" : {
         "de" : {
@@ -73764,6 +74803,34 @@
         }
       }
     },
+    "Set up a model" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modell einrichten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Configurar un modelo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Configurer un modèle"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "モデルを設定"
+          }
+        }
+      }
+    },
     "Set up doesn't mean delivered. A test shows they arrive." : {
       "localizations" : {
         "de" : {
@@ -73932,34 +74999,6 @@
         }
       }
     },
-    "Set up this local model?" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dieses lokale Modell einrichten?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "¿Configurar este modelo local?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Configurer ce modèle local ?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "このローカルモデルを設定しますか？"
-          }
-        }
-      }
-    },
     "Set up your local model" : {
       "localizations" : {
         "de" : {
@@ -73984,6 +75023,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ローカルモデルを設定"
+          }
+        }
+      }
+    },
+    "Setting up a new assistant needs Nollie from nollie.app. Your existing setup is unchanged." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Für einen neuen Assistenten brauchst du Nollie von nollie.app. Deine bestehende Einrichtung bleibt, wie sie ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Para configurar un asistente nuevo necesitas Nollie de nollie.app. Tu configuración actual no cambia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pour configurer un nouvel assistant, il faut Nollie de nollie.app. Votre configuration actuelle reste inchangée."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "新しいアシスタントを設定するには、nollie.appのNollieが必要です。今の設定は変わりません。"
           }
         }
       }
@@ -74265,34 +75332,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "設定はバックグラウンドで続きます。準備ができたら接続を確認してください。"
-          }
-        }
-      }
-    },
-    "Setup couldn't finish. Downloaded files are kept. Check your connection and available disk space before trying again." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Die Einrichtung konnte nicht abgeschlossen werden. Geladene Dateien bleiben erhalten. Prüfe deine Verbindung und den freien Speicherplatz, bevor du es erneut versuchst."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La configuración no ha podido terminar. Los archivos descargados se conservan. Comprueba la conexión y el espacio libre en disco antes de volver a intentarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La configuration n'a pas pu se terminer. Les fichiers téléchargés sont conservés. Vérifiez votre connexion et l'espace disque disponible avant de réessayer."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "設定を完了できませんでした。ダウンロード済みのファイルは保持されます。もう一度試す前に、接続とディスクの空き容量を確認してください。"
           }
         }
       }
@@ -77443,6 +78482,7 @@
       }
     },
     "Size" : {
+      "comment" : "A model's download size",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -79135,6 +80175,62 @@
         }
       }
     },
+    "Starting your assistant…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Assistent startet …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Iniciando tu asistente…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Démarrage de votre assistant…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "アシスタントを起動中…"
+          }
+        }
+      }
+    },
+    "Starting your model" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Modell startet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Iniciando tu modelo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Démarrage de votre modèle"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "モデルを起動中"
+          }
+        }
+      }
+    },
     "Status" : {
       "localizations" : {
         "de" : {
@@ -79932,6 +81028,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollie RuntimeとNollie Notificationsを停止"
+          }
+        }
+      }
+    },
+    "Stop Reading" : {
+      "comment" : "A menu item that stops reading a reply aloud",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vorlesen stoppen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dejar de leer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêter la lecture"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "読み上げを停止"
           }
         }
       }
@@ -83772,34 +84897,6 @@
         }
       }
     },
-    "The background connection could not be verified. Check its status, then try again." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Die Verbindung im Hintergrund konnte nicht geprüft werden. Prüfe ihren Status und versuch es dann erneut."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "No se ha podido verificar la conexión en segundo plano. Comprueba su estado y vuelve a intentarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La connexion en arrière-plan n'a pas pu être vérifiée. Vérifiez son état, puis réessayez."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "バックグラウンド接続を検証できませんでした。状態を確認してから、もう一度お試しください。"
-          }
-        }
-      }
-    },
     "The background service is starting. Check again shortly." : {
       "localizations" : {
         "de" : {
@@ -83824,34 +84921,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "バックグラウンドサービスを開始中です。しばらくしてからもう一度確認してください。"
-          }
-        }
-      }
-    },
-    "The background service needs attention. Retry after checking the setup files." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Der Hintergrunddienst braucht deine Aufmerksamkeit. Versuch es erneut, nachdem du die Einrichtungsdateien geprüft hast."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "El servicio en segundo plano necesita atención. Reintenta después de revisar los archivos de configuración."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le service en arrière-plan demande votre attention. Réessayez après avoir vérifié les fichiers de configuration."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "バックグラウンドサービスの確認が必要です。設定ファイルを確認してから再試行してください。"
           }
         }
       }
@@ -85086,6 +86155,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ダウンロードが確認済みのチェックサムと一致しませんでした。何もインストールされていません。"
+          }
+        }
+      }
+    },
+    "The download didn't check out. Try again for a fresh copy." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Download hat die Prüfung nicht bestanden. Versuch es erneut, um eine frische Kopie zu laden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La descarga no pasó la comprobación. Vuelve a intentarlo para obtener una copia nueva."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le téléchargement n'a pas passé la vérification. Réessayez pour obtenir une nouvelle copie."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ダウンロードの確認に失敗しました。もう一度試して、新しいコピーを取得してください。"
           }
         }
       }
@@ -87796,34 +88893,6 @@
         }
       }
     },
-    "The service has not returned a verified connection yet. Check again or retry." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Der Dienst hat noch keine geprüfte Verbindung geliefert. Prüfe erneut oder versuch es noch einmal."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "El servicio aún no ha devuelto una conexión verificada. Vuelve a comprobarlo o reintenta."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le service n'a pas encore renvoyé de connexion vérifiée. Vérifiez à nouveau ou réessayez."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "サービスからまだ検証済みの接続が返されていません。もう一度確認するか、再試行してください。"
-          }
-        }
-      }
-    },
     "The service is running. Verify its connection to continue." : {
       "localizations" : {
         "de" : {
@@ -89120,6 +90189,63 @@
         }
       }
     },
+    "This Mac has %@. A plan will feel faster." : {
+      "comment" : "%@ is this Mac's memory, such as 8 GB",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieser Mac hat %@ Arbeitsspeicher. Ein Plan wirkt schneller."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este Mac tiene %@ de memoria. Un plan se notará más rápido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce Mac a %@ de mémoire. Un abonnement semblera plus rapide."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMacのメモリは%@です。プランのほうが速く感じられます。"
+          }
+        }
+      }
+    },
+    "This Mac ran out of space. Free some up, then try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Auf diesem Mac ist kein Platz mehr. Gib etwas frei und versuch es dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este Mac se ha quedado sin espacio. Libera algo y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce Mac n'a plus d'espace. Libérez-en un peu, puis réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このMacの空き容量がなくなりました。容量を空けてから、もう一度お試しください。"
+          }
+        }
+      }
+    },
     "This alert has no saved reply details" : {
       "localizations" : {
         "de" : {
@@ -90102,6 +91228,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "このコピーはアプリの開発元によって署名されていないため、あなただけが使います。"
+          }
+        }
+      }
+    },
+    "This copy of Nollie can't keep your assistant running. Get Nollie again from nollie.app." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diese Kopie von Nollie kann deinen Assistenten nicht am Laufen halten. Lade Nollie erneut von nollie.app."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esta copia de Nollie no puede mantener tu asistente en marcha. Vuelve a descargar Nollie de nollie.app."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cette copie de Nollie ne peut pas faire tourner votre assistant en continu. Téléchargez à nouveau Nollie sur nollie.app."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このNollieではアシスタントを動かし続けられません。nollie.appからNollieをもう一度入手してください。"
           }
         }
       }
@@ -91292,6 +92446,34 @@
         }
       }
     },
+    "This version connects to an assistant you already run." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diese Version verbindet sich mit einem Assistenten, den du schon betreibst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esta versión se conecta a un asistente que ya tienes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cette version se connecte à un assistant que vous faites déjà tourner."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このバージョンは、すでに動かしているアシスタントに接続します。"
+          }
+        }
+      }
+    },
     "This was a rehearsal, so Nollie wrote it down instead of doing it." : {
       "localizations" : {
         "de" : {
@@ -91766,34 +92948,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@へ。"
-          }
-        }
-      }
-    },
-    "To check it answers, try a first reply under Advanced." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Um zu prüfen, ob es antwortet, versuch unter „Erweitert“ eine erste Antwort."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Para comprobar que responde, prueba una primera respuesta en Avanzado."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pour vérifier qu'il répond, essayez une première réponse sous Avancé."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "返信できるか確認するには、「詳細」で最初の返信を試してください。"
           }
         }
       }
@@ -92911,34 +94065,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "デモを試す"
-          }
-        }
-      }
-    },
-    "Try a first reply" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Erste Antwort testen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Probar una primera respuesta"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Essayer une première réponse"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "最初の返信を試す"
           }
         }
       }
@@ -96960,34 +98086,6 @@
         }
       }
     },
-    "Uses only your local model, without tools or chat history. The first reply can take a few minutes." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Verwendet nur dein lokales Modell, ohne Werkzeuge und ohne Chatverlauf. Die erste Antwort kann ein paar Minuten dauern."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Usa solo tu modelo local, sin herramientas ni historial de chat. La primera respuesta puede tardar unos minutos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Utilise seulement votre modèle local, sans outils ni historique de discussion. La première réponse peut prendre quelques minutes."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "ツールやチャット履歴なしで、ローカルモデルだけを使います。最初の返信には数分かかることがあります。"
-          }
-        }
-      }
-    },
     "Uses the plan you pay for." : {
       "localizations" : {
         "de" : {
@@ -97944,34 +99042,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollieのバックグラウンドサービスを待っています。接続を再試行します。"
-          }
-        }
-      }
-    },
-    "Waiting for its first reply." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wartet auf seine erste Antwort."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Esperando su primera respuesta."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "En attente de sa première réponse."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "最初の返信を待っています。"
           }
         }
       }
@@ -100122,36 +101192,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "選択の意味"
-          }
-        }
-      }
-    },
-    "What your helpers did, and what left your Mac." : {
-      "comment" : "Safety: the weekly note's notification; it lists what left the Mac",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Was deine Helfer getan haben und was deinen Mac verlassen hat."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Lo que hicieron tus ayudantes y lo que salió de tu Mac."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ce que vos assistants ont fait, et ce qui a quitté votre Mac."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "ヘルパーがしたことと、Macの外に送信されたもの。"
           }
         }
       }
@@ -103585,30 +104625,60 @@
         }
       }
     },
-    "Your Mac does the work. Your iPhone keeps you connected." : {
+    "Your Mac does the work. %@ keeps you connected." : {
+      "comment" : "%@ is This iPhone or This iPad",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Dein Mac erledigt die Arbeit. Dein iPhone hält dich verbunden."
+            "value" : "Dein Mac erledigt die Arbeit. %@ hält dich verbunden."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Tu Mac hace el trabajo. Tu iPhone te mantiene conectado."
+            "value" : "Tu Mac hace el trabajo. %@ te mantiene conectado."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Votre Mac fait le travail. Votre iPhone vous garde connecté."
+            "value" : "Votre Mac fait le travail. %@ vous garde connecté."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "作業はMacが行い、iPhoneでつながっていられます。"
+            "value" : "作業はMacが行い、%@でつながっていられます。"
+          }
+        }
+      }
+    },
+    "Your Mac has %@. A plan will feel faster." : {
+      "comment" : "%@ is the Mac's memory, such as 8 GB",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Mac hat %@ Arbeitsspeicher. Ein Plan wirkt schneller."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu Mac tiene %@ de memoria. Un plan se notará más rápido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre Mac a %@ de mémoire. Un abonnement semblera plus rapide."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "お使いのMacのメモリは%@です。プランのほうが速く感じられます。"
           }
         }
       }
@@ -103753,6 +104823,34 @@
         }
       }
     },
+    "Your Mac needs at least 6 GB free to get Nollie ready. Free up some space, then try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Mac braucht mindestens 6 GB freien Speicher, um Nollie vorzubereiten. Gib etwas Platz frei und versuch es dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu Mac necesita al menos 6 GB libres para preparar Nollie. Libera algo de espacio y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre Mac a besoin d'au moins 6 Go libres pour préparer Nollie. Libérez de l'espace, puis réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieを準備するには、Macに6GB以上の空き容量が必要です。容量を空けてから、もう一度お試しください。"
+          }
+        }
+      }
+    },
     "Your Mac needs to stay awake and online." : {
       "localizations" : {
         "de" : {
@@ -103777,6 +104875,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Macをスリープさせず、オンラインのままにする必要があります。"
+          }
+        }
+      }
+    },
+    "Your Mac ran out of space. Free some up, then try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Auf deinem Mac ist kein Platz mehr. Gib etwas frei und versuch es dann erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu Mac se ha quedado sin espacio. Libera algo y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre Mac n'a plus d'espace. Libérez-en un peu, puis réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "お使いのMacの空き容量がなくなりました。容量を空けてから、もう一度お試しください。"
           }
         }
       }
@@ -104146,6 +105272,34 @@
         }
       }
     },
+    "Your assistant didn't answer when Nollie checked. Try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Assistent hat nicht geantwortet, als Nollie nachgesehen hat. Versuch es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu asistente no respondió cuando Nollie lo comprobó. Vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre assistant n'a pas répondu quand Nollie a vérifié. Réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieが確認したとき、アシスタントは応答しませんでした。もう一度お試しください。"
+          }
+        }
+      }
+    },
     "Your assistant didn't keep that. Try again." : {
       "localizations" : {
         "de" : {
@@ -104339,6 +105493,62 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "アシスタントは別のコンピュータで動いているため、ヘルパーはこれらを使えません。"
+          }
+        }
+      }
+    },
+    "Your assistant started but didn't answer yet. Try again in a moment." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Assistent ist gestartet, hat aber noch nicht geantwortet. Versuch es gleich noch einmal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu asistente se ha iniciado, pero aún no ha respondido. Vuelve a intentarlo en un momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre assistant a démarré mais n'a pas encore répondu. Réessayez dans un instant."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "アシスタントは起動しましたが、まだ応答していません。少ししてからもう一度お試しください。"
+          }
+        }
+      }
+    },
+    "Your assistant stopped with a problem. Try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Assistent wurde wegen eines Problems beendet. Versuch es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu asistente se detuvo por un problema. Vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre assistant s'est arrêté à cause d'un problème. Réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "問題が起きてアシスタントが停止しました。もう一度お試しください。"
           }
         }
       }
@@ -104880,30 +106090,30 @@
         }
       }
     },
-    "Your helpers are ready on this iPhone." : {
+    "Your helpers are ready on %@." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Deine Helfer sind auf diesem iPhone bereit."
+            "value" : "Deine Helfer sind bereit für %@."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Tus ayudantes están listos en este iPhone."
+            "value" : "Tus ayudantes están listos en %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Vos assistants sont prêts sur cet iPhone."
+            "value" : "Vos assistants sont prêts sur %@."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "このiPhoneでヘルパーの準備ができました。"
+            "value" : "%@でヘルパーの準備ができました。"
           }
         }
       }
@@ -105161,34 +106371,6 @@
         }
       }
     },
-    "Your iPhone will ask about the local network. Say Allow, so Nollie can reach your Mac." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dein iPhone fragt nach dem lokalen Netzwerk. Wähle „Erlauben“, damit Nollie deinen Mac erreichen kann."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tu iPhone preguntará por la red local. Di Permitir para que Nollie pueda llegar a tu Mac."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Votre iPhone va poser une question sur le réseau local. Répondez Autoriser, pour que Nollie puisse joindre votre Mac."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "iPhoneからローカルネットワークについて尋ねられます。NollieがMacに接続できるよう「許可」を選んでください。"
-          }
-        }
-      }
-    },
     "Your last test was opened." : {
       "localizations" : {
         "de" : {
@@ -105355,6 +106537,62 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "あなたのモデル"
+          }
+        }
+      }
+    },
+    "Your model answers on this Mac." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Modell antwortet auf diesem Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu modelo responde en este Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre modèle répond sur ce Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "モデルはこのMac上で応答します。"
+          }
+        }
+      }
+    },
+    "Your model answers on your Mac." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dein Modell antwortet auf deinem Mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu modelo responde en tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre modèle répond sur votre Mac."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "モデルはお使いのMac上で応答します。"
           }
         }
       }
@@ -106271,6 +107509,34 @@
         }
       }
     },
+    "a part of Nollie" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ein Teil von Nollie"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "una parte de Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "une partie de Nollie"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nollieの一部"
+          }
+        }
+      }
+    },
     "a right-click" : {
       "comment" : "Safety: a screen action on the Mac, as a noun",
       "localizations" : {
@@ -106325,6 +107591,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "画面操作"
+          }
+        }
+      }
+    },
+    "about %@" : {
+      "comment" : "How long a download may take, such as about 25 min",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "etwa %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "unos %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "environ %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "約%@"
           }
         }
       }
@@ -109711,6 +111006,34 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@"
+          }
+        }
+      }
+    },
+    "the download tool" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "das Download-Werkzeug"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "la herramienta de descarga"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "l'outil de téléchargement"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ダウンロードツール"
           }
         }
       }
