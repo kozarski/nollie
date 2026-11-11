@@ -124,6 +124,59 @@ struct ManagedRuntimeClientTests {
         #expect(service.unregistered == 1 && service.registered == 1)
     }
 
+    /// Collects the installations the client says are ready, for one installation only, since
+    /// other cases post the same app-wide notification at the same time.
+    @MainActor private final class ReadyHeard {
+        var times = 0
+        private var token: (any NSObjectProtocol)?
+        init(_ id: UUID) {
+            token = NotificationCenter.default.addObserver(forName: .nollieManagedAssistantReady, object: nil, queue: nil) { [weak self] note in
+                guard note.object as? UUID == id else { return }
+                MainActor.assumeIsolated { self?.times += 1 }
+            }
+        }
+        func stop() { if let token { NotificationCenter.default.removeObserver(token) } }
+    }
+
+    @Test func aStartThatEndsReadySaysSoSoAWaitingConnectionTriesAtOnce() async {
+        let id = UUID(), service = Service()
+        service.status = .enabled
+        let heard = ReadyHeard(id)
+        defer { heard.stop() }
+        let client = ManagedRuntimeClient(service: service.control, request: { operation in
+            guard case .start = operation else { return reply(id) }
+            return reply(id, endpoint: endpoint, token: token)
+        }, verify: { _, _ in true }, isPackaged: { true }, isAvailable: true)
+        await client.start(installationID: id)
+        #expect(client.state == .ready && heard.times == 1)
+    }
+
+    @Test func aCheckThatFindsTheAssistantRunningSaysSoAndOneStillStartingDoesNot() async {
+        let id = UUID(), service = Service()
+        service.status = .enabled
+        let heard = ReadyHeard(id)
+        defer { heard.stop() }
+        var phase = NollieRuntimeIPCSnapshot.Phase.starting
+        let client = ManagedRuntimeClient(service: service.control, request: { _ in reply(id, phase: phase) },
+                                          verify: { _, _ in true }, isPackaged: { true }, isAvailable: true)
+        await client.refresh(installationID: id)
+        #expect(client.state == .starting && heard.times == 0)
+        phase = .ready
+        await client.refresh(installationID: id)
+        #expect(heard.times == 1)
+    }
+
+    @Test func aStartThatFailsSaysNothing() async {
+        let id = UUID(), service = Service()
+        service.status = .enabled
+        let heard = ReadyHeard(id)
+        defer { heard.stop() }
+        let client = ManagedRuntimeClient(service: service.control, request: { _ in reply(id, phase: .failed) },
+                                          verify: { _, _ in true }, isPackaged: { true }, isAvailable: true)
+        await client.start(installationID: id)
+        #expect(client.state == .failed && heard.times == 0)
+    }
+
     @Test func aServiceThatIsOffIsNeverRegisteredByTheRepair() async {
         let service = Service()
         service.status = .notRegistered

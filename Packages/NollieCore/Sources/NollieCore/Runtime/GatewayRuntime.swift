@@ -55,6 +55,13 @@ public final class GatewayRuntime {
 
     /// Set only by the direct Mac app, for an installation it owns and has saved.
     public var managedEndpointResolver: (@MainActor @Sendable () async throws -> GatewayURL)?
+    /// Set with `managedEndpointResolver`: asks the service for the installation's current session
+    /// after Hermes refused the one this runtime holds. Nil when it can't be asked right now.
+    public var managedSessionRefresher: (@MainActor @Sendable () async -> GatewaySecrets?)?
+    /// Whether the assistant Nollie runs on this Mac is still on its way, for the screens that need it.
+    public internal(set) var managedWait: ManagedWait = .none
+    /// When the current wait began (the first time the managed socket wasn't open).
+    @ObservationIgnored var managedWaitSince: Date?
     /// For a linked Mac: finds its door again before every socket attempt, wherever it answers.
     public var linkResolver: NollieLinkResolver?
     /// Set while a linked Mac can't be found, cleared when it answers.
@@ -210,6 +217,7 @@ public final class GatewayRuntime {
 
     private func socketStateChanged(to state: SocketState) {
         socketState = state
+        judgeManagedWait()
         if state.isOpen && awaitingManagedStartup {
             Task { await finishManagedStartup() }
         }
@@ -224,10 +232,13 @@ public final class GatewayRuntime {
         kanban.attach(self)
         schedules.attach(self)
         awaitingManagedStartup = managedEndpointResolver != nil
+        if managedEndpointResolver != nil { managedWaitSince = Date() }
+        judgeManagedWait()
         guard socketEnabled else {
             await loadProfilesAndCapabilities()
             return
         }
+        await socket.use(reconnectPolicy())
         await socket.connect()
         // Wait briefly for the socket before the first HTTP call. Just after it opens the route can still
         // be starting, and requesting profiles that soon produced an error which the connect loop was
@@ -281,6 +292,39 @@ public final class GatewayRuntime {
         await socket.disconnect()
         guard socketEnabled else { return }
         await socket.connect()
+    }
+
+    /// Tries to connect again at once, without dropping anything: the pause under way ends and,
+    /// for the assistant Nollie runs on this Mac, the wait starts again. Used when Nollie knows the
+    /// assistant has just started, and behind Try again.
+    public func retryNow() async {
+        guard !isDisposed else { return }
+        if !socketState.isOpen, managedEndpointResolver != nil {
+            managedWaitSince = Date()
+            judgeManagedWait()
+        }
+        guard socketEnabled else { return }
+        await socket.retryNow()
+    }
+
+    /// How the socket waits between attempts: the assistant Nollie runs on this Mac is asked again
+    /// every few seconds while it starts, and its credential is fetched again if Hermes refuses it.
+    private func reconnectPolicy() -> ReconnectPolicy {
+        guard managedEndpointResolver != nil else { return .standard }
+        return .managed { [weak self] in await self?.refreshManagedSession() }
+    }
+
+    /// Updates `managedWait` from the socket's state and how long the wait has lasted.
+    func judgeManagedWait(now: Date = Date()) {
+        let managed = managedEndpointResolver != nil
+        if !managed || socketState.isOpen {
+            managedWaitSince = nil
+        } else if managedWaitSince == nil {
+            managedWaitSince = now
+        }
+        let next = ManagedReconnect.wait(isManaged: managed, isOpen: socketState.isOpen,
+                                         waited: managedWaitSince.map { now.timeIntervalSince($0) })
+        if next != managedWait { managedWait = next }
     }
 
     /// The socket came back after dropping: say what we can answer again, fetch what the
