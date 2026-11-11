@@ -281,4 +281,37 @@ struct OnboardingProgressTests {
         let older = Data(#"{"assistantName":"Juniper","modelMode":"local"}"#.utf8)
         #expect(try JSONDecoder().decode(OnboardingPreferences.self, from: older).modelModeChosen == false)
     }
+
+    @Test func setupReopenedWithoutAPathTakesTheOneItsConnectionBelongsTo() {
+        // Settings' Review setup on a Mac whose saved progress was empty: Back reached the connection step
+        // with no path, showing Start new's card under another heading, and Connect did nothing.
+        var managed = OnboardingProgress(step: .model)
+        managed.settleRoute(managed: true)
+        #expect(managed.route == .new)
+        #expect(managed.previous == .connection)
+        var other = OnboardingProgress(step: .model)
+        other.settleRoute(managed: false)
+        #expect(other.route == .existing)
+        // A path already chosen stays, and before the choice there is nothing to settle.
+        var chosen = OnboardingProgress(step: .connection, route: .importCopy)
+        chosen.settleRoute(managed: true)
+        #expect(chosen.route == .importCopy)
+        var home = OnboardingProgress(step: .home)
+        home.settleRoute(managed: true)
+        #expect(home.route == nil)
+    }
+
+    @Test func settingUpAgainGoesToStartNewsSetupStepAndKeepsTheName() {
+        var progress = OnboardingProgress(step: .ready, route: .existing,
+                                          preferences: OnboardingPreferences(assistantName: "Juniper"),
+                                          connectionID: UUID(), deferred: [.model], completion: .completed)
+        progress.setUpAgain()
+        #expect(progress.route == .new && progress.step == .connection)
+        #expect(progress.connectionID == nil && progress.deferred.isEmpty)
+        #expect(progress.completion == .inProgress)
+        #expect(progress.preferences.assistantName == "Juniper")
+        let raw = OnboardingProgress.settingUpAgain("")
+        #expect(OnboardingProgress.parse(raw).step == .connection)
+        #expect(OnboardingProgress.shouldPresent(hasConnections: true, raw: raw))
+    }
 }

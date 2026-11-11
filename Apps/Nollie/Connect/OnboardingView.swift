@@ -191,9 +191,19 @@ struct OnboardingView: View {
 
     private var showsInstallerCharacter: Bool {
         #if os(macOS)
-        progress.step == .connection && progress.route == .new
+        progress.step == .connection && connectionRoute == .new
         #else
         false
+        #endif
+    }
+
+    /// The connection step's path. On the Mac a setup saved without one shows Start new's card, so it is
+    /// Start new all through that step (`settleRoute` saves the right path as soon as setup opens).
+    private var connectionRoute: OnboardingProgress.Route? {
+        #if os(macOS)
+        progress.route ?? .new
+        #else
+        progress.route
         #endif
     }
 
@@ -253,11 +263,16 @@ struct OnboardingView: View {
             if skipWelcome, progress.step == .welcome { update { $0.step = .home } }
             if !isPreview {
                 let matchingConnection = progress.connectionID.map { id in model.store.connections.contains { $0.id == id } } ?? model.hasConnections
+                #if os(macOS)
+                let saved = model.runtime?.connection ?? model.store.active
+                let managed = saved == nil || saved?.managedInstallationID != nil
+                #endif
                 update {
                     #if os(iOS)
                     $0.resumeOnPhone(hasConnection: matchingConnection)
                     #else
                     $0.resume(hasConnection: matchingConnection)
+                    $0.settleRoute(managed: managed)
                     #endif
                 }
             }
@@ -555,8 +570,8 @@ struct OnboardingView: View {
         case .howItWorks: return String(localized: "How Nollie works")
         case .team: return String(localized: "Make it yours.")
         case .connection:
-            if progress.route == .importCopy { return String(localized: "A copy, all your own.") }
-            return progress.route == .new ? String(localized: "A home for \(assistantName).") : String(localized: "Bring your assistant along.")
+            if connectionRoute == .importCopy { return String(localized: "A copy, all your own.") }
+            return connectionRoute == .new ? String(localized: "A home for \(assistantName).") : String(localized: "Bring your assistant along.")
         case .model: return String(localized: "Choose how Nollie thinks.")
         case .computer: return String(localized: "Their own computers.")
         case .permissions: return String(localized: "Allow a few things.")
@@ -1119,9 +1134,10 @@ struct OnboardingView: View {
         #else
         if progress.step == .home { return false }
         if progress.step == .connection {
-            if progress.route == .importCopy { return false }
+            if connectionRoute == .importCopy { return false }
             #if os(macOS)
-            if progress.route == .new { return false }
+            // Start new's card has its own main button; another here would only say the same.
+            if connectionRoute == .new { return false }
             #endif
         }
         return true
@@ -1136,11 +1152,11 @@ struct OnboardingView: View {
         case .welcome: return String(localized: "Get started")
         case .home, .howItWorks, .team: return String(localized: "Continue")
         case .connection:
-            if progress.route == .importCopy { return String(localized: "Import is not available yet") }
+            if connectionRoute == .importCopy { return String(localized: "Import is not available yet") }
             #if os(iOS)
             return String(localized: "Scan QR code")
             #else
-            if progress.route == .existing { return String(localized: "Connect") }
+            if connectionRoute == .existing { return String(localized: "Connect") }
             if managedConnectionRequest != nil { return String(localized: "Connecting…") }
             return localSetup.canConnect ? String(localized: "Connect") : String(localized: "Finish setup to connect")
             #endif
@@ -1160,9 +1176,9 @@ struct OnboardingView: View {
         #else
         switch progress.step {
         case .connection:
-            if progress.route == .importCopy { return true }
+            if connectionRoute == .importCopy { return true }
             #if os(macOS)
-            return model.lock.isLocked || (progress.route == .new &&
+            return model.lock.isLocked || (connectionRoute == .new &&
                 (!localSetup.canConnect || localSetup.isBusy || managedConnectionRequest != nil))
             #else
             return false
@@ -1184,10 +1200,10 @@ struct OnboardingView: View {
         case .home: break
         case .howItWorks, .team: update { $0.advance() }
         case .connection:
-            guard progress.route != .importCopy else { return }
+            guard connectionRoute != .importCopy else { return }
             #if os(macOS)
-            if progress.route == .existing { destination = .gateway }
-            else if progress.route == .new { connectManagedAssistant() }
+            if connectionRoute == .existing { destination = .gateway }
+            else { connectManagedAssistant() }
             #else
             destination = .pairing
             #endif
@@ -1207,10 +1223,19 @@ struct OnboardingView: View {
 
     #if os(macOS)
     private func connectManagedAssistant() {
-        guard !isPreview, !DemoMode.isOn, !model.lock.isLocked, progress.route == .new,
-              progress.step == .connection, localSetup.canConnect, !localSetup.isBusy,
-              !localSetup.managedRuntime.isBusy,
-              managedConnectionRequest == nil, let installationID = localSetup.installationID else { return }
+        guard !isPreview, !DemoMode.isOn, !model.lock.isLocked, progress.step == .connection,
+              connectionRoute == .new, managedConnectionRequest == nil else { return }
+        // Connect never does nothing: when it can't go ahead yet, one line says why.
+        guard !localSetup.isBusy, !localSetup.managedRuntime.isBusy else {
+            checkError = String(localized: "Setup is still busy. Try again in a moment.")
+            return
+        }
+        guard localSetup.canConnect, let installationID = localSetup.installationID else {
+            checkError = String(localized: "Your assistant isn't ready yet. Check the connection first.")
+            return
+        }
+        // A setup saved without a path is Start new from here on.
+        if progress.route == nil { update(animated: false) { $0.route = .new } }
         let request = UUID()
         managedConnectionRequest = request
         checkError = nil
@@ -1242,7 +1267,13 @@ struct OnboardingView: View {
                 } else {
                     await model.activate(prepared.connection, ifCurrent: isCurrent)
                 }
-                guard isCurrent(), model.runtime?.connection.id == prepared.connection.id else { return }
+                guard isCurrent() else { return }
+                guard model.runtime?.connection.id == prepared.connection.id else {
+                    checkError = String(localized: "Couldn't finish connecting. Check the service, then try again.")
+                    return
+                }
+                // The saved connection to a setup that is no longer on this Mac gives way to this one.
+                for gone in prepared.replaces { await model.deleteConnection(gone) }
                 update { $0.connected(prepared.connection.id) }
             } catch is CancellationError {
                 return

@@ -124,6 +124,7 @@ struct GatewaysView: View {
         progress.completion = .inProgress
         progress.step = model.hasConnections ? .model : .home
         progress.connectionID = model.runtime?.connection.id
+        progress.settleRoute(managed: model.runtime?.connection.managedInstallationID != nil)
         onboardingRaw = progress.encoded
     }
 

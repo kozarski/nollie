@@ -132,6 +132,31 @@ struct OnboardingProgress: Codable, Equatable, Sendable {
         }
     }
 
+    /// Setup reopened past the first choice without a path (from Settings, or saved before the path was
+    /// kept) takes the one its saved connection belongs to: Nollie's own assistant on this Mac is Start
+    /// new, any other is Connect existing. Without it the connection step showed Start new's card under
+    /// another path's heading, and Connect did nothing.
+    mutating func settleRoute(managed: Bool) {
+        guard route == nil, ![.welcome, .home].contains(step) else { return }
+        route = managed ? .new : .existing
+    }
+
+    /// The saved assistant's setup is no longer on this Mac: back to Start new's setup step, keeping the
+    /// name and choices made before.
+    mutating func setUpAgain() {
+        route = .new
+        step = .connection
+        connectionID = nil
+        deferred = []
+        completion = .inProgress
+    }
+
+    static func settingUpAgain(_ raw: String) -> String {
+        var progress = parse(raw)
+        progress.setUpAgain()
+        return progress.encoded
+    }
+
     mutating func finish(connected: Bool) {
         guard connected else { return }
         completion = .completed
