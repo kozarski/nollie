@@ -141,7 +141,7 @@ struct QuickAnswerSheet: View {
                 .buttonStyle(.nollieGlass)
                 .buttonBorderShape(.capsule)
                 .controlSize(.large)
-                .tint(.primary)
+                .tint(nil)
             }
         }
         .padding(.top, 6)
@@ -226,7 +226,7 @@ struct QuickAnswerSheet: View {
             }
             .buttonStyle(.nollieGlass)
             .buttonBorderShape(.capsule)
-            .tint(.primary)
+            .tint(nil)
             .testID("quickAnswer.copy")
         }
         if place.handsOff { handOff(turn, prominent: needsMac) }
@@ -243,7 +243,7 @@ struct QuickAnswerSheet: View {
             }
             .testID("quickAnswer.handOff")
             .buttonBorderShape(.capsule)
-            if prominent { button.buttonStyle(.nollieGlassProminent) } else { button.buttonStyle(.nollieGlass).tint(.primary) }
+            if prominent { button.buttonStyle(.nollieGlassProminent) } else { button.buttonStyle(.nollieGlass).tint(nil) }
         case .waiting?:
             HStack(spacing: 8) {
                 Label("Goes when your Mac is back", systemImage: "clock")
@@ -256,7 +256,7 @@ struct QuickAnswerSheet: View {
                 }
                 .buttonStyle(.nollieGlass)
                 .buttonBorderShape(.circle)
-                .tint(.primary)
+                .tint(nil)
                 .accessibilityLabel("Don't send")
                 .testID("quickAnswer.handOff.cancel")
             }

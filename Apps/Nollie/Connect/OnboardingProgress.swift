@@ -141,11 +141,11 @@ struct OnboardingProgress: Codable, Equatable, Sendable {
         route = managed ? .new : .existing
     }
 
-    /// The saved assistant's setup is no longer on this Mac: back to Start new's setup step, keeping the
-    /// name and choices made before.
+    /// The saved assistant's setup is no longer on this Mac: setup starts again from its first step, with
+    /// the name and choices made before already filled in, so each one is seen and confirmed.
     mutating func setUpAgain() {
         route = .new
-        step = .connection
+        step = .welcome
         connectionID = nil
         deferred = []
         completion = .inProgress

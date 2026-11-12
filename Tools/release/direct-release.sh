@@ -113,9 +113,17 @@ BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.
 STAGE="$OUT/dmg"
 DMG="$OUT/Nollie-$VERSION-$BUILD.dmg"
 rm -rf "$STAGE" "$DMG" && mkdir -p "$STAGE"
-ditto "$APP" "$STAGE/Nollie.app"
-ln -s /Applications "$STAGE/Applications"
-hdiutil create -volname "Nollie" -srcfolder "$STAGE" -format UDZO -fs APFS "$DMG" > /dev/null
+# The window people see when they open it: Nollie and Applications in a glass pill, nothing else. The
+# picture is drawn here, and dmgbuild (in a private folder under build/) writes the window's layout.
+swiftc -O Tools/release/dmg-background.swift -o "$STAGE/dmg-background"
+"$STAGE/dmg-background" "$STAGE/background.png" 1
+"$STAGE/dmg-background" "$STAGE/background@2x.png" 2
+tiffutil -cathidpicheck "$STAGE/background.png" "$STAGE/background@2x.png" -out "$STAGE/background.tiff" > /dev/null 2>&1
+DMG_TOOLS="$ROOT/build/release-tools"
+[ -x "$DMG_TOOLS/bin/python" ] || python3 -m venv "$DMG_TOOLS"
+"$DMG_TOOLS/bin/python" -c 'import dmgbuild' 2> /dev/null || "$DMG_TOOLS/bin/pip" -q install dmgbuild==1.6.7
+"$DMG_TOOLS/bin/python" Tools/release/dmg-window.py "$APP" "$DMG" "$STAGE/background.tiff" > /dev/null 2>&1 \
+  || { echo "The disk image could not be made." >&2; exit 1; }
 IDENTITY=$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application: Corey Kozarski/ {print $2; exit}')
 codesign --sign "$IDENTITY" --timestamp "$DMG"
 if [ -n "$DRY" ]; then

@@ -83,7 +83,7 @@ struct AssistantSetUpAgainButton: View {
             Button(action: setUpAgain) {
                 Text("Set up again").font(.body.weight(.semibold)).foregroundStyle(.primary).padding(.horizontal, 8)
             }
-            .buttonStyle(.nollieGlass).tint(.primary)
+            .buttonStyle(.nollieGlass).tint(nil)
             .accessibilityIdentifier("assistant.setUpAgain")
         }
     }

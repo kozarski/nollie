@@ -16,7 +16,7 @@ struct QuickAnswerButton: View {
             }
             .buttonStyle(.nollieGlass)
             .buttonBorderShape(.capsule)
-            .tint(.primary)
+            .tint(nil)
             .help("Ask Nollie something now. It stays on \(DeviceWords.this).")
             .testID("quickAnswer.open")
             .sheet(isPresented: $open) {
@@ -127,7 +127,7 @@ struct QuickAnswerAwayBar: View {
             } label: { Text("Open").font(.subheadline.weight(.semibold)) }
             .buttonStyle(.nollieGlass)
             .buttonBorderShape(.capsule)
-            .tint(.primary)
+            .tint(nil)
             .testID("quickAnswer.sent.open")
         }
         .padding(.leading, 18).padding(.trailing, 8).padding(.vertical, 8)
