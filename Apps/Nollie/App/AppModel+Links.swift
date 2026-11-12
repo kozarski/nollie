@@ -185,22 +185,11 @@ extension AppModel {
 
         func stale() -> Bool { Task.isCancelled || self.runtime !== runtime || lock.isLocked }
 
-        let lookup = await runtime.mainChat(profile: name)
-        if stale() { return nil }
-
         let session: String
-        switch lookup {
-        case .found(let id):
-            session = id
-        case .missing:
-            guard let started = try? await runtime.newChat(profile: name) else {
-                return String(localized: "Could not start \(label)'s main chat.")
-            }
-            if stale() { return nil }
-            await started.rename("Bot Chat") // A title the gateway matches on, so it stays in English.
-            guard !started.storedID.isEmpty else { return String(localized: "Could not start \(label)'s main chat.") }
-            session = started.storedID
-        case .unknown:
+        switch await mainChatAnswer(runtime, name) {
+        case .session(let id): session = id
+        case .couldNotStart: return String(localized: "Could not start \(label)'s main chat.")
+        case .unreachable:
             return String(localized: "Could not reach \(label)'s main chat. Check the connection, then try again.")
         }
         if stale() { return nil }
@@ -214,6 +203,14 @@ extension AppModel {
         selectedTab = .chats
         pendingRoute = route
         return nil
+    }
+
+    /// Where a bot's main chat is, starting one titled "Bot Chat" if the gateway says it has none. Asks
+    /// that overlap for the same bot wait for the same answer.
+    func mainChatAnswer(_ runtime: GatewayRuntime, _ name: String) async -> MainChatAnswer {
+        await mainChatLookups.answer(runtime.connection.id.uuidString + "|" + name) {
+            await MainChatAnswer.find(runtime, name)
+        }
     }
 
     // MARK: Ask Nollie
@@ -259,5 +256,39 @@ extension AppModel {
         if let board = context.board { runtime.kanban.select(board: board) }
         boardTaskToReveal = context
         selectedTab = .kanban
+    }
+}
+
+/// What looking for a bot's main chat came to.
+enum MainChatAnswer: Sendable, Equatable {
+    case session(String)
+    case couldNotStart
+    case unreachable
+
+    @MainActor static func find(_ runtime: GatewayRuntime, _ name: String) async -> MainChatAnswer {
+        switch await runtime.mainChat(profile: name) {
+        case .found(let id):
+            return .session(id)
+        case .missing:
+            guard let started = try? await runtime.newChat(profile: name) else { return .couldNotStart }
+            await started.rename("Bot Chat") // A title the gateway matches on, so it stays in English.
+            return started.storedID.isEmpty ? .couldNotStart : .session(started.storedID)
+        case .unknown:
+            return .unreachable
+        }
+    }
+}
+
+/// One lookup at a time for each bot: an ask that arrives while another is running gets that one's answer.
+@MainActor final class MainChatLookups {
+    private var running: [String: Task<MainChatAnswer, Never>] = [:]
+
+    func answer(_ key: String, find: @escaping @MainActor () async -> MainChatAnswer) async -> MainChatAnswer {
+        if let task = running[key] { return await task.value }
+        let task = Task { @MainActor in await find() }
+        running[key] = task
+        let answer = await task.value
+        running[key] = nil
+        return answer
     }
 }
