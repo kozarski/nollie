@@ -301,17 +301,17 @@ struct OnboardingProgressTests {
         #expect(home.route == nil)
     }
 
-    @Test func settingUpAgainGoesToStartNewsSetupStepAndKeepsTheName() {
+    @Test func settingUpAgainStartsAtTheFirstStepAndKeepsTheChoices() {
         var progress = OnboardingProgress(step: .ready, route: .existing,
                                           preferences: OnboardingPreferences(assistantName: "Juniper"),
                                           connectionID: UUID(), deferred: [.model], completion: .completed)
         progress.setUpAgain()
-        #expect(progress.route == .new && progress.step == .connection)
+        #expect(progress.route == .new && progress.step == .welcome)
         #expect(progress.connectionID == nil && progress.deferred.isEmpty)
         #expect(progress.completion == .inProgress)
         #expect(progress.preferences.assistantName == "Juniper")
         let raw = OnboardingProgress.settingUpAgain("")
-        #expect(OnboardingProgress.parse(raw).step == .connection)
+        #expect(OnboardingProgress.parse(raw).step == .welcome)
         #expect(OnboardingProgress.shouldPresent(hasConnections: true, raw: raw))
     }
 

@@ -837,7 +837,7 @@ struct OnboardingView: View {
                     Label("Back up first", systemImage: "externaldrive.badge.timemachine")
                         .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
                 }
-                    .buttonStyle(.nollieGlass).tint(.primary)
+                    .buttonStyle(.nollieGlass).tint(nil)
                     .accessibilityIdentifier("onboarding.backup")
                 #endif
             }
@@ -1061,14 +1061,14 @@ struct OnboardingView: View {
                         Text(progress.step == .permissions ? "Not now" : "Set up later")
                             .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
                     }
-                        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
+                        .buttonStyle(.nollieGlass).controlSize(.large).tint(nil)
                         .accessibilityIdentifier("onboarding.later")
                 } else if progress.step.hasSkipPill {
                     Button { update { $0.skip() } } label: {
                         Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
                             .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
                     }
-                        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
+                        .buttonStyle(.nollieGlass).controlSize(.large).tint(nil)
                         .accessibilityIdentifier("onboarding.skip")
                 }
                 #endif
@@ -1098,7 +1098,7 @@ struct OnboardingView: View {
             Text("Try a demo")
                 .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
         }
-        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
+        .buttonStyle(.nollieGlass).controlSize(.large).tint(nil)
         .accessibilityIdentifier("onboarding.tryDemo")
     }
 
@@ -1132,7 +1132,7 @@ struct OnboardingView: View {
             Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
                 .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
         }
-        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
+        .buttonStyle(.nollieGlass).controlSize(.large).tint(nil)
         .accessibilityIdentifier("onboarding.skip")
     }
     #endif
