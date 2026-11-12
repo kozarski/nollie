@@ -49,6 +49,10 @@ struct MacRootView: View {
             // Kept for code that has no view to ask, like an App Intent run with the window closed.
             .task { MacWindow.openMain = { openWindow(id: MacWindow.main) } }
             .companionOffer(touring: touring)
+            #if NOLLIE_DIRECT
+            // An update check Nollie starts itself waits while setup is on screen (UpdateCheckRule).
+            .onChange(of: touring, initial: true) { _, showing in UpdateCheckRule.setupOnScreen = showing }
+            #endif
             .notificationNavigation(model)
             .weeklyNoteHost()
             .whatsNewHost()

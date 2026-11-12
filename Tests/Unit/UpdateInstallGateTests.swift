@@ -152,4 +152,14 @@ struct SparkleConfigurationTests {
         #expect(SparkleConfiguration(info: ["SUFeedURL": "not a url", "SUPublicEDKey": key]) == nil)
     }
 }
+
+/// A check Nollie starts itself never opens its window over setup, where it would take the keyboard.
+@Suite struct UpdateCheckRuleTests {
+    @Test func aCheckWaitsWhileSetupIsOnScreen() {
+        #expect(!UpdateCheckRule.allows(byThePerson: false, setupOnScreen: true, demo: false))
+        #expect(UpdateCheckRule.allows(byThePerson: false, setupOnScreen: false, demo: false))
+        #expect(UpdateCheckRule.allows(byThePerson: true, setupOnScreen: true, demo: false), "Check for Updates… always goes ahead")
+        #expect(!UpdateCheckRule.allows(byThePerson: false, setupOnScreen: false, demo: true), "The demo copy never checks by itself")
+    }
+}
 #endif

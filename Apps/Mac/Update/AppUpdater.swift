@@ -80,6 +80,19 @@ final class AppUpdater {
             return true
         }
 
+        /// A check Nollie starts by itself waits while setup is on screen: its "new version" window takes the
+        /// keyboard, and typing in setup then goes nowhere. Check for Updates… in the menu always goes ahead.
+        func updater(_ updater: SPUUpdater, mayPerform updateCheck: SPUUpdateCheck) throws {
+            let byThePerson = updateCheck == .updates
+            let allowed = MainActor.assumeIsolated {
+                UpdateCheckRule.allows(byThePerson: byThePerson, setupOnScreen: UpdateCheckRule.setupOnScreen, demo: DemoMode.isOn)
+            }
+            guard allowed else {
+                throw NSError(domain: "com.coreykozarski.nollie.updates", code: 1,
+                              userInfo: [NSLocalizedDescriptionKey: "Waiting until setup is finished"])
+            }
+        }
+
         func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
             NollieLog.updates.notice("Relaunching to finish the update")
         }
@@ -90,6 +103,17 @@ final class AppUpdater {
             if nsError.domain == SUSparkleErrorDomain, nsError.code == Int(SUError.noUpdateError.rawValue) { return }
             NollieLog.updates.error("Update check did not finish", detail: nsError.localizedDescription)
         }
+    }
+}
+
+/// When an update check may run.
+@MainActor enum UpdateCheckRule {
+    /// Kept current by the Mac's root view. True from launch, so a check at launch waits to hear.
+    static var setupOnScreen = true
+
+    nonisolated static func allows(byThePerson: Bool, setupOnScreen: Bool, demo: Bool) -> Bool {
+        if byThePerson { return true }
+        return !demo && !setupOnScreen
     }
 }
 #endif
