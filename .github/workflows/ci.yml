@@ -3,7 +3,7 @@
 # What runs here, with nothing signed and no secret used:
 #   - the iPhone app, built for the simulator without signing
 #   - the sandboxed Mac client, built without signing
-#   - the Python suites (the same list as Tools/dev/verify.py), against Hermes Agent v0.22.2
+#   - the Python suites (the same list as Tools/dev/verify.py), against Hermes Agent v0.23.1
 #   - the app unit tests on a simulator, as a hint only (see the last job)
 #
 # What cannot run on a hosted runner, and still runs on Corey's Mac with Tools/dev/verify.py:
@@ -116,16 +116,16 @@ jobs:
 
       # Some suites import Hermes Agent's own source, read-only, at the version Nollie pins
       # (Tools/pins.json). They refuse a checkout that is not that exact commit.
-      - name: Get Hermes Agent v0.22.2
+      - name: Get Hermes Agent v0.23.1
         run: |
-          git clone --quiet --depth 1 --branch v0.22.2 https://github.com/NousResearch/hermes-agent "$RUNNER_TEMP/hermes-v0.22.2"
+          git clone --quiet --depth 1 --branch v0.23.1 https://github.com/NousResearch/hermes-agent "$RUNNER_TEMP/hermes-v0.23.1"
           pinned="$(python3 -I -c "import json; print(next(c['commit'] for c in json.load(open('Tools/pins.json'))['components'] if c['id'] == 'hermes'))")"
-          actual="$(git -C "$RUNNER_TEMP/hermes-v0.22.2" rev-parse HEAD)"
+          actual="$(git -C "$RUNNER_TEMP/hermes-v0.23.1" rev-parse HEAD)"
           if [ "$pinned" != "$actual" ]; then
-            echo "::error::Hermes v0.22.2 is at $actual, but Tools/pins.json pins $pinned."
+            echo "::error::Hermes v0.23.1 is at $actual, but Tools/pins.json pins $pinned."
             exit 1
           fi
-          echo "NOLLIE_HERMES_SOURCE=$RUNNER_TEMP/hermes-v0.22.2" >> "$GITHUB_ENV"
+          echo "NOLLIE_HERMES_SOURCE=$RUNNER_TEMP/hermes-v0.23.1" >> "$GITHUB_ENV"
 
       # verify.py makes a virtual environment under build/verify and runs every suite it lists,
       # so CI and a local check never drift apart. It exits non-zero if any suite fails.
