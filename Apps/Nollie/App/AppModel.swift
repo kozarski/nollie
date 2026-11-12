@@ -40,6 +40,10 @@ final class AppModel {
     var activationError: String?
     @ObservationIgnored var activationGeneration = UUID()
     @ObservationIgnored var activationRecovery: Task<Void, Never>?
+    /// A bot's main chat being found or started right now, per gateway and bot. Two asks at once (setup's
+    /// Start chatting, the window opening its first chat, a second click) share the one answer, so a bot
+    /// with no main chat yet gets one, not two.
+    @ObservationIgnored let mainChatLookups = MainChatLookups()
 
     /// Gateways that need signing in again on this device. The banner adds to the list; the sheet at
     /// the root takes them one after another.
