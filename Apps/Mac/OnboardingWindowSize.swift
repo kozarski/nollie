@@ -151,9 +151,12 @@ struct OnboardingWindowSize: NSViewRepresentable {
             let wasKey = window.isKeyWindow
             previous = WindowState(window, initiallyPlain: !normalAppearanceInstalled)
             // Keep resize and close behavior while removing all system frame artwork.
-            // Keyboard focus comes from the scene's native plain-window implementation.
             let setupStyle: NSWindow.StyleMask = [.borderless, .closable, .resizable]
             if window.styleMask != setupStyle { window.styleMask = setupStyle }
+            // A window with no title bar refuses the keyboard unless it says otherwise, and setup has
+            // fields to type in: the assistant's name, an address, a key.
+            KeyableWindow.adopt(window)
+            if NSApp.isActive, !window.isKeyWindow { window.makeKey() }
             window.titleVisibility = .hidden
             window.toolbar?.isVisible = false
             window.tabbingMode = .disallowed
@@ -273,6 +276,30 @@ struct OnboardingWindowSize: NSViewRepresentable {
             DispatchQueue.main.async {
                 Self.restore(previous, to: window)
             }
+        }
+    }
+}
+
+/// Lets a window that has no title bar take the keyboard. AppKit asks the window itself (`canBecomeKey`),
+/// and SwiftUI makes the window, so the window's class is taught to say yes for the windows adopted here
+/// and to answer as before for every other. Without it, clicks reach setup's buttons but typing goes nowhere.
+@MainActor enum KeyableWindow {
+    private static let adopted = NSHashTable<NSWindow>.weakObjects()
+    private static var taught = Set<ObjectIdentifier>()
+
+    static func adopt(_ window: NSWindow) {
+        guard !adopted.contains(window) else { return }
+        adopted.add(window)
+        guard let kind = object_getClass(window), taught.insert(ObjectIdentifier(kind)).inserted else { return }
+        for selector in [#selector(getter: NSWindow.canBecomeKey), #selector(getter: NSWindow.canBecomeMain)] {
+            guard let method = class_getInstanceMethod(kind, selector) else { continue }
+            typealias Answer = @convention(c) (AnyObject, Selector) -> Bool
+            let before = unsafeBitCast(method_getImplementation(method), to: Answer.self)
+            let now: @convention(block) (AnyObject) -> Bool = { object in
+                if let window = object as? NSWindow, MainActor.assumeIsolated({ adopted.contains(window) }) { return true }
+                return before(object, selector)
+            }
+            class_replaceMethod(kind, selector, imp_implementationWithBlock(now), method_getTypeEncoding(method))
         }
     }
 }
