@@ -82,7 +82,10 @@ struct BotPresenceAvatar: View {
 @MainActor
 enum BotActivity {
     static func line(_ presence: BotPresence) -> String {
-        guard let live = presence.live else { return presence.onBoard ? String(localized: "Working on a task…") : String(localized: "Working…") }
+        guard let live = presence.live else {
+            if let work = presence.gatewayWork { return work.line }
+            return presence.onBoard ? String(localized: "Working on a task…") : String(localized: "Working…")
+        }
         // Held on an approval it is waiting on the person, not typing (the Mac's header reads this).
         if live.botState == .needsYou { return String(localized: "Needs your OK") }
         if let goal = ChatGoals.shared.goal(for: live.storedID), !goal.isEmpty { return goal }
@@ -233,8 +236,10 @@ struct BotListRow: View {
 
     private var lastLine: String {
         if let t = entry.lastText, !t.isEmpty { return t }
-        if entry.storedID == nil { return String(localized: "Say hello to start your chat.") }
+        if entry.storedID == nil, entry.noMainChat { return String(localized: "Say hello to start your chat.") }
         if let d = profile.description, !d.isEmpty { return d }
+        // Not known yet (the gateway hasn't answered): claim nothing, and keep the row's height.
+        if entry.storedID == nil { return " " }
         return String(localized: "No messages yet.")
     }
 }

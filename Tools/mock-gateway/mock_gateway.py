@@ -29,6 +29,7 @@ import base64
 import copy
 import datetime
 import hashlib
+import importlib.util
 import itertools
 import json
 import os
@@ -37,6 +38,7 @@ import re
 import sys
 import time
 import uuid
+from pathlib import Path
 from urllib.parse import unquote, urlencode
 
 from websockets import http11 as _http11
@@ -571,8 +573,9 @@ def papertrail_rest(method: str, base: str, query: dict, payload) -> tuple[int, 
 # POST .../week/remove-app takes a seeded app out for good and keeps it as a change the person made.
 # GET .../mutes and PUT .../mutes/<bot> keep each helper's mute for every device; GET/PUT .../weekly-note the note's
 # switch and day; POST .../weekly-note/live is the Mac saying it sends the note itself.
-# POST /api/_mock/week {"state": "busy"|"quiet"} empties every bot's week; "reset" restores the switches, the removed
-# apps, the mutes and the note's settings.
+# POST /api/_mock/week {"state": "busy"|"quiet"} empties every bot's week; "new" is a busy week on a setup made today
+# (Papertrail kept nothing before this morning); "reset" restores the switches, the removed apps, the mutes and the
+# note's settings.
 WEEK = dict(state="busy")
 WEEK_SWITCHES: dict = {}
 WEEK_REMOVED: list = []
@@ -631,7 +634,8 @@ def week_view(bot: str, now: float | None = None) -> dict:
             if app["name"] not in removed]
     changes = [dict(at=change["at"], kind="app_removed", name=change["name"])
                for change in reversed(WEEK_REMOVED) if change["bot"] == bot]
-    return dict(bot=bot, days=7, now=int(now), since=midnight(6), recording_since=midnight(30), papertrail=True,
+    return dict(bot=bot, days=7, now=int(now), since=midnight(6),
+                recording_since=midnight(0) if WEEK["state"] == "new" else midnight(30), papertrail=True,
                 replies=dict(stayed=0, left=0, online=0) if quiet else seed["replies"], places=places,
                 places_more=0, answers=dict(once=0, session=0, always=0, deny=0) if quiet else seed["answers"],
                 asks={} if quiet else seed["asks"], earlier_answers=seed["earlier_answers"], schedules=schedules,
@@ -649,10 +653,10 @@ def week_rest(method: str, base: str, query: dict, payload) -> tuple[int, object
             WEEK_MUTED.clear()
             WEEK_NOTE.update(on=True, weekday=1, live_at=None, saved=False)
             WEEK["state"] = "busy"
-        elif state in ("busy", "quiet"):
+        elif state in ("busy", "quiet", "new"):
             WEEK["state"] = state
         else:
-            return refuse(422, "Send a state: busy, quiet or reset.")
+            return refuse(422, "Send a state: busy, quiet, new or reset.")
         return ok(dict(state=WEEK["state"]))
     settings = weekly_settings_rest(method, base, query, payload)
     if settings is not None:
@@ -779,7 +783,7 @@ def ask_first_rest(method: str, base: str, query: dict, payload) -> tuple[int, o
         return None
     if method not in ("GET", "PUT"):
         return refuse(405, "Method Not Allowed")
-    profile = unquote(query.get("profile", ""))
+    profile = unquote(query.get("bot", query.get("profile", "")))
     if not PRIVATE_PROFILE_NAME.fullmatch(profile):
         return refuse(422, "Choose a bot first.")
     if private_identity(profile) or set(re.split(r"[^a-z0-9]+", profile)) & carried_over_private_names():
@@ -1242,7 +1246,7 @@ def own_computer_rest(method: str, base: str, query: dict, payload) -> tuple[int
                      log=OWN_COMPUTERS["log"]))
     if base != "/api/plugins/nollie-computer/own-computer":
         return None
-    name = unquote(query.get("profile", "")) if method == "GET" else body.get("profile")
+    name = unquote(query.get("bot", query.get("profile", ""))) if method == "GET" else body.get("profile")
     if not isinstance(name, str) or not PRIVATE_PROFILE_NAME.match(name):
         return refuse(422, "That isn't a helper on this Mac.")
     if name in private_names() or (name not in PROFILES and name not in CREATED_PROFILES):
@@ -1872,7 +1876,7 @@ def computer_pictures_paused() -> bool:
 
 
 def computer_preview_rest(query):
-    profile, sid = unquote(query.get("profile", "")), unquote(query.get("session_id", ""))
+    profile, sid = unquote(query.get("bot", query.get("profile", ""))), unquote(query.get("session_id", ""))
     COMPUTER_PREVIEW["requests"].append(dict(profile=profile, session_id=sid, at=time.time()))
     COMPUTER_PREVIEW["requests"] = COMPUTER_PREVIEW["requests"][-500:]
     row = next((r for r in STORED_SESSIONS if r["id"] == sid and r.get("profile") == profile), None)
@@ -1911,7 +1915,7 @@ def computer_control_rest(method, base, query):
         return None
     if method != "POST":
         return refuse(405, "Method Not Allowed")
-    profile = unquote(query.get("profile", ""))
+    profile = unquote(query.get("bot", query.get("profile", "")))
     if profile != "default" or profile.lower() in private_names() or COMPUTER_PREVIEW["state"] == "unsupported":
         return refuse(409, "This computer can't be taken over right now.")
     if COMPUTER_PREVIEW["held"] != action:
@@ -2326,8 +2330,9 @@ _TOOLSET_ROWS = (
     ("files", "File Operations", "read, write, patch, search", True, True,
      ["patch", "read_file", "search_files", "write_file"]),
     ("code", "Code Execution", "execute_code", True, True, ["execute_code"]),
-    ("browser", "Browser Automation", "navigate, click, type, scroll", False, True,
-     ["browser_click", "browser_navigate"]),
+    # As Hermes 0.23 lists it: one browser_exec script tool in place of browser_click, browser_navigate and the rest.
+    ("browser", "Browser Automation", "navigate, click, type, extract, screenshots", False, True,
+     ["browser_cdp", "browser_dialog", "browser_exec", "browser_vault"]),
     ("vision", "Vision / Image Analysis", "vision_analyze", True, False, ["vision_analyze"]),
 )
 TOOLSETS = [dict(zip(("name", "label", "description", "enabled", "configured", "tools"), row), platform="cli")
@@ -2338,6 +2343,82 @@ SKILLS = [
     dict(name="incident-writeup", description="Write a postmortem from an incident timeline", category="ops", enabled=True, usage=7, provenance="hub"),
     dict(name="release-notes", description="Write release notes from merged pull requests", category="engineering", enabled=False, usage=3, provenance="agent"),
 ]
+
+# Hermes 0.23's skill locks, per bot: a locked skill can't be changed by its bot, only used. Keep skills as they are is
+# the workflow add-on's switch per bot; with it on, a skill the bot makes is locked at once (the add-on's
+# on_skill_lifecycle hook). `POST /api/_mock/skills {"reset": true}` or `{"bot": "work", "made": "name"}` plays one.
+SKILL_LOCKS: dict[str, set] = {}
+SKILLS_MADE: dict[str, list] = {}
+KEEP_SKILLS: set = set()
+
+
+def skills_reset() -> None:
+    SKILL_LOCKS.clear()
+    SKILLS_MADE.clear()
+    KEEP_SKILLS.clear()
+    for skill in SKILLS:
+        skill.pop("locked", None)
+    # One the person locked by hand, so the list shows a lock before the switch is touched.
+    SKILL_LOCKS["default"] = {"incident-writeup"}
+
+
+skills_reset()
+
+
+def _skills_of(bot: str) -> list:
+    made = [dict(name=name, description="Made by this bot", category="notes", enabled=True, usage=1, provenance="agent")
+            for name in SKILLS_MADE.get(bot, [])]
+    return [dict(skill, locked=skill["name"] in SKILL_LOCKS.get(bot, set())) for skill in SKILLS + made]
+
+
+def skills_rest(method: str, base: str, query: dict, payload) -> tuple[int, object] | None:
+    fields = payload if isinstance(payload, dict) else {}
+    bot = unquote(query.get("profile") or "default")
+    if base == "/api/_mock/skills" and method == "POST":
+        if fields.get("reset"):
+            skills_reset()
+        made, owner = fields.get("made"), fields.get("bot", "default")
+        if isinstance(made, str) and re.fullmatch(r"[a-z0-9-]{1,64}", made) and isinstance(owner, str):
+            SKILLS_MADE.setdefault(owner, []).append(made)
+            if owner in KEEP_SKILLS:
+                SKILL_LOCKS.setdefault(owner, set()).add(made)
+        return ok(dict(ok=True, keep=sorted(KEEP_SKILLS), locks={k: sorted(v) for k, v in SKILL_LOCKS.items()}))
+    if base == "/api/skills":
+        return ok(_skills_of(bot)) if method == "GET" else None
+    if base in ("/api/skills/lock", "/api/skills/toggle"):
+        if method != "PUT":
+            return refuse(405, "Method Not Allowed")
+        name = fields.get("name")
+        skill = next((s for s in _skills_of(bot) if s["name"] == name), None)
+        if skill is None:
+            return refuse(404, f"Skill '{name}' not found.")
+        if base.endswith("/toggle"):
+            enabled = fields.get("enabled") is True
+            for row in SKILLS:
+                if row["name"] == name:
+                    row["enabled"] = enabled
+            return ok(dict(ok=True, name=name, enabled=enabled))
+        locked = fields.get("locked") is True
+        (SKILL_LOCKS.setdefault(bot, set()).add if locked else SKILL_LOCKS.setdefault(bot, set()).discard)(name)
+        return ok(dict(ok=True, name=name, locked=locked))
+    if base == "/api/plugins/nollie-workflow/keep-skills":
+        if method not in ("GET", "PUT"):
+            return refuse(405, "Method Not Allowed")
+        if query.get("profile", "default") != "default":
+            return refuse(403, "Board follow-through belongs to Nollie.")
+        who = unquote(query.get("bot", "default")) if method == "GET" else fields.get("bot")
+        if not isinstance(who, str) or not PRIVATE_PROFILE_NAME.fullmatch(who):
+            return refuse(422, "Send a bot's Hermes profile name.")
+        if private_identity(who) or set(re.split(r"[^a-z0-9]+", who)) & carried_over_private_names():
+            return refuse(403, "Private bots are left alone.")
+        if who not in PROFILES and who not in CREATED_PROFILES:
+            return refuse(404, "No such bot.")
+        if method == "PUT":
+            if set(fields) != {"bot", "on"} or not isinstance(fields.get("on"), bool):
+                return refuse(422, "Send on as true or false.")
+            (KEEP_SKILLS.add if fields["on"] else KEEP_SKILLS.discard)(who)
+        return ok(dict(bot=who, on=who in KEEP_SKILLS))
+    return None
 
 CRON_JOBS = [
     dict(job_id="morning-brief", name="Morning brief", schedule="0 7 * * 1-5",
@@ -2351,6 +2432,24 @@ CRON_JOBS = [
      prompt_preview="Run the dependency audit and report what our code can reach.",
      deliver="local", enabled=False, state="paused", last_status="ok", profile="work"),
 ]
+# Hermes 0.23 lists each job's run in flight (a claimed or running attempt whose process is alive)
+# as live_execution, null when nothing runs; Stop on the run is POST .../cancel.
+for _job in CRON_JOBS:
+    _job.setdefault("live_execution", None)
+
+# --schedule-demo: the morning brief is four minutes into a run the schedule started (for pictures
+# of who is working and of Stop on a run).
+SCHEDULE_DEMO = "--schedule-demo" in sys.argv
+
+
+def _live_execution(job_id: str, started: float, source: str = "scheduler") -> dict:
+    stamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(started))
+    return dict(id=f"exec-{job_id}-{int(started)}", job_id=job_id, source=source, status="running", pid=4242,
+                claimed_at=stamp, started_at=stamp, finished_at=None, error=None)
+
+
+if SCHEDULE_DEMO:
+    CRON_JOBS[0]["live_execution"] = _live_execution(CRON_JOBS[0]["job_id"], time.time() - 245)
 
 
 def _once_schedule(stamp: str):
@@ -2372,7 +2471,7 @@ def _cron_create(profile: str, payload):
         return refuse(400, "A prompt and schedule are required.")
     job = dict(job_id=f"demo-cron-{uuid.uuid4().hex[:10]}", name=fields.get("name", ""), profile=profile,
            prompt=texts["prompt"], schedule=texts["schedule"], deliver=fields.get("deliver", "local"),
-           enabled=True, state="active")
+           enabled=True, state="active", live_execution=None)
     if re.match(r"\d{4}-\d{2}-\d{2}T", texts["schedule"]):
         block = _once_schedule(texts["schedule"])
         if block is None:
@@ -2408,7 +2507,7 @@ def _cron_job(ref: str) -> dict | None:
     return None
 
 
-_CRON_EDITABLE = {"name", "prompt", "schedule", "deliver"}
+_CRON_EDITABLE = {"name", "prompt", "schedule", "deliver", "catch_up"}
 
 
 def cron_update(ref, method, payload, action=None, profile=None):
@@ -2424,8 +2523,27 @@ def cron_update(ref, method, payload, action=None, profile=None):
         return refuse(400, "Unsupported change")
     if set(edits) - _CRON_EDITABLE:
         return refuse(400, "Unsupported fixture field")
+    if "catch_up" in edits and edits["catch_up"] not in (True, False, None):
+        return refuse(400, "catch_up must be true, false, or null (use the default).")
     job.update(edits)
     return ok(job)
+
+
+def cron_cancel(ref, profile=None):
+    """Stop on the job's run in flight, answered as Hermes 0.23 does: the run ends, the schedule stays."""
+    job = _cron_job(ref)
+    if job is None or (profile and job.get("profile", "default") != profile):
+        return refuse(404, "Job not found")
+    live = job.get("live_execution")
+    if not live:
+        return ok(dict(success=True, cancelled=False, execution_id=None, job_id=job["job_id"],
+                       detail="No run of this job is in flight — nothing to cancel."))
+    job["live_execution"] = None
+    job.pop("fire_claim", None)
+    job["last_status"] = "cancelled"
+    job["last_run_at"] = _utc_now_text()
+    return ok(dict(success=True, cancelled=True, execution_id=live["id"], status=live["status"], pid=live.get("pid"),
+                   job_id=job["job_id"], detail="Cancel requested; the run stops at its next cancel check."))
 
 
 def _utc_now_text() -> str:
@@ -2440,12 +2558,18 @@ async def cron_trigger(ref: str) -> tuple[int, object]:
     if job.get("fire_claim"):
         return refuse(409, "Job is running already, or another scheduler holds its claim")
 
-    # The claim is held for the length of the pretend run.
+    # The claim is held for the length of the pretend run, and the run is listed as in flight.
     job["fire_claim"] = dict(at=_utc_now_text(), by="mock")
+    live = _live_execution(job["job_id"], time.time(), source="manual")
+    job["live_execution"] = live
     try:
         await asyncio.sleep(CRON_RUN_SECONDS)
     finally:
         job.pop("fire_claim", None)
+    if job.get("live_execution") is not live:
+        # Stopped part way: Hermes answers the trigger with the cancelled run.
+        return ok(job)
+    job["live_execution"] = None
     job["last_run_at"] = _utc_now_text()
     job["last_status"] = "ok"
     return ok(job)
@@ -2751,8 +2875,10 @@ def _auxiliary_route(query: dict) -> tuple[int, object]:
 
 
 def _usage_analytics_route(query: dict) -> tuple[int, object]:
-    """Thirty (or `days`) days of made-up usage. The seed is fixed, so the numbers are the same every call."""
+    """Thirty (or `days`) days of made-up usage. The seed is fixed, so the numbers are the same every call. `work` runs
+    on a local model, so it has tokens and no cost, as Hermes reports a model it has no price for."""
     span = int(query.get("days") or 30)
+    local = unquote(query.get("profile") or "default") == "work"
     dice = random.Random(7)
     today = datetime.date.today()
     daily = []
@@ -2766,7 +2892,7 @@ def _usage_analytics_route(query: dict) -> tuple[int, object]:
                       output_tokens=runs * dice.randint(1500, 6000),
                       cache_read_tokens=runs * dice.randint(40000, 120000),
                       reasoning_tokens=0,
-                      estimated_cost=round(runs * 0.31, 2),
+                      estimated_cost=0 if local else round(runs * 0.31, 2),
                       actual_cost=0,
                       sessions=runs,
                       api_calls=runs * dice.randint(4, 15)))
@@ -2777,7 +2903,7 @@ def _usage_analytics_route(query: dict) -> tuple[int, object]:
     main_model = dict(model=MODEL, input_tokens=total("input_tokens"), output_tokens=total("output_tokens"),
                   estimated_cost=total("estimated_cost"), sessions=total("sessions"), api_calls=total("api_calls"))
     other_model = dict(model="openai/gpt-5.5", input_tokens=120000, output_tokens=9000,
-                   estimated_cost=1.2, sessions=3, api_calls=20)
+                   estimated_cost=0 if local else 1.2, sessions=3, api_calls=20)
     totals = dict(total_input=total("input_tokens"), total_output=total("output_tokens"),
               total_cache_read=total("cache_read_tokens"), total_reasoning=0,
               total_estimated_cost=total("estimated_cost"), total_actual_cost=0,
@@ -2884,7 +3010,6 @@ EXACT_ROUTES = {
     "/api/dashboard/plugins/hub": _plugin_hub_route,
     "/api/env": lambda query: (200, ENV_VARS),
     "/api/tools/toolsets": lambda query: (200, TOOLSETS),
-    "/api/skills": lambda query: (200, SKILLS),
     "/api/mcp/servers": _mcp_servers_route,
     "/api/cron/jobs": lambda query: (200, dict(jobs=CRON_JOBS, count=len(CRON_JOBS))),
     "/api/messaging/platforms": _messaging_route,
@@ -3524,8 +3649,21 @@ def _expire_everything():
     return ok({"ok": True})
 
 
+def _start_schedule_run(payload) -> tuple[int, object]:
+    """Puts a schedule part way through a run the scheduler started, or ends it with {"running": false}."""
+    fields = payload if isinstance(payload, dict) else {}
+    job = _cron_job(str(fields.get("job_id") or "morning-brief"))
+    if job is None:
+        return refuse(404, "Job not found")
+    running = fields.get("running", True) is not False
+    ago = float(fields.get("seconds_ago") or 245)
+    job["live_execution"] = _live_execution(job["job_id"], time.time() - ago) if running else None
+    return ok(job)
+
+
 # Controls that work whether or not the password gate is on: path -> (method it needs or None, handler).
 _AUTH_CONTROLS = {
+    "/api/_mock/schedule-run": ("POST", lambda query, payload: _start_schedule_run(payload)),
     "/api/_mock/password-auth": ("POST", lambda query, payload: _configure_password_auth(payload)),
     "/api/_mock/expire-sessions": ("POST", lambda query, payload: _expire_everything()),
     "/api/_mock/auth-log": (None, lambda query, payload: ok({"log": AUTH_LOG})),
@@ -3596,7 +3734,7 @@ def _live_gate(path: str):
     return _json_response(404, dict(detail="Not found")) if unsupported else None
 
 
-_JOB_PATH = re.compile(r"/api/cron/jobs/([^/]+)(?:/(trigger|pause|resume))?")
+_JOB_PATH = re.compile(r"/api/cron/jobs/([^/]+)(?:/(trigger|pause|resume|cancel))?")
 
 
 def _cron_route(method: str, base: str, query: dict, body):
@@ -3616,6 +3754,8 @@ def _cron_route(method: str, base: str, query: dict, body):
             status, answer = await cron_trigger(ref)
             return _json_response(status, answer)
         return after_run()
+    if action == "cancel":
+        return cron_cancel(ref, query.get("profile")) if method == "POST" else None
     if action:
         return cron_update(ref, method, body, action, query.get("profile")) if method == "POST" else None
     if method == "PUT":
@@ -3630,6 +3770,157 @@ def _cron_route(method: str, base: str, query: dict, body):
     return None
 
 
+# ── Chat renames, flags and deletes as Hermes 0.23 fences them ──────────────────────────────────
+# GET /api/sessions/{id}/mutation-snapshot gives {exists, runtime_revision, runtime_generation}; PATCH and DELETE
+# need request_id and expected_revision (DELETE also expected_generation, in its query) or answer 409, as 0.23 does.
+# A repeated request_id with the same change answers from its receipt. Test switches, POST /api/_mock/session-mutations:
+#   {"mode": "0.22"}     the older Hermes: no snapshot route (404), the extra fields ignored
+#   {"conflicts": n}     the next n writes find the chat changed elsewhere (revision moves, 409 revision_conflict)
+#   {"busy": n}          the next n writes find the chat busy (409 session_busy)
+#   {"refuse": "word"}   every write answers 409 with that word
+# GET /api/_mock/session-mutations returns the writes seen, oldest first. Any POST resets the switches and the chats.
+
+SESSION_MUTATIONS: dict = {}
+_SEEDED_SESSIONS = copy.deepcopy(STORED_SESSIONS)
+
+
+def _reset_session_mutations(fields: dict | None = None) -> None:
+    fields = fields or {}
+    STORED_SESSIONS[:] = copy.deepcopy(_SEEDED_SESSIONS)
+    SESSION_MUTATIONS.clear()
+    SESSION_MUTATIONS.update(mode=str(fields.get("mode") or "0.23"), conflicts=int(fields.get("conflicts") or 0),
+                             busy=int(fields.get("busy") or 0), refuse=fields.get("refuse"),
+                             log=[], revisions={}, receipts={})
+
+
+_reset_session_mutations()
+
+_SESSION_PATH = re.compile(r"/api/sessions/([^/]+)(/mutation-snapshot)?")
+_MUTATION_RESERVED = {"search", "stats", "empty", "bulk-delete", "import", "prune", "owner-backfill", "active"}
+
+
+def _session_known(session_id: str) -> bool:
+    return stored_row(session_id) is not None or any(live.stored == session_id or live.sid == session_id for live in LIVE.values())
+
+
+def _int_or_none(value):
+    try:
+        return None if value is None or value == "" else int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def session_mutations_rest(method: str, base: str, query: dict, body):
+    """Answers the snapshot, PATCH and DELETE of one stored chat; None for anything else."""
+    fields = body if isinstance(body, dict) else {}
+    if base == "/api/_mock/session-mutations":
+        if method == "POST":
+            _reset_session_mutations(fields)
+            return ok(dict(ok=True, mode=SESSION_MUTATIONS["mode"]))
+        return ok(dict(log=SESSION_MUTATIONS["log"], mode=SESSION_MUTATIONS["mode"]))
+    hit = _SESSION_PATH.fullmatch(base)
+    if hit is None or unquote(hit[1]) in _MUTATION_RESERVED:
+        return None
+    session_id, snapshot = unquote(hit[1]), bool(hit[2])
+    state = SESSION_MUTATIONS
+    legacy = state["mode"] == "0.22"
+    if snapshot:
+        if method != "GET":
+            return None
+        if legacy:
+            return refuse(404, f"No such API endpoint: {base[1:]}")
+        known = _session_known(session_id)
+        return ok(dict(session_id=session_id, exists=known, runtime_revision=state["revisions"].get(session_id, 0) if known else 0,
+                       runtime_generation=0 if known else None))
+    if method not in ("PATCH", "DELETE"):
+        return None
+
+    source = fields if method == "PATCH" else query
+    request_id = source.get("request_id") or None
+    revision, generation = _int_or_none(source.get("expected_revision")), _int_or_none(source.get("expected_generation"))
+    change = {key: fields[key] for key in ("title", "archived", "pinned", "hidden", "unread") if key in fields} if method == "PATCH" else {}
+    state["log"].append(dict(method=method, session_id=session_id, request_id=request_id, expected_revision=revision,
+                             expected_generation=generation, change=change))
+    if not legacy:
+        if request_id is None and revision is None and generation is None:
+            return refuse(409, "client_upgrade_required: this app is out of sync (different versions) with the Hermes backend; "
+                               "update the app to edit sessions")
+        if request_id is None or revision is None or (method == "DELETE" and generation is None):
+            return refuse(409, "mutation_identity_required")
+        digest = json.dumps([method, change, revision, generation], sort_keys=True)
+        receipt = state["receipts"].get((session_id, request_id))
+        if receipt is not None:
+            return (200, receipt[1]) if receipt[0] == digest else refuse(409, "admission_conflict")
+        if state["refuse"]:
+            return refuse(409, str(state["refuse"]))
+        if state["conflicts"] > 0:
+            # Someone else changed the chat in the meantime.
+            state["conflicts"] -= 1
+            state["revisions"][session_id] = state["revisions"].get(session_id, 0) + 1
+            return refuse(409, "revision_conflict")
+        if state["busy"] > 0:
+            state["busy"] -= 1
+            return refuse(409, "session_busy")
+        if not _session_known(session_id):
+            return (200, dict(ok=True, already_absent=True)) if method == "DELETE" else refuse(404, "not_found")
+        if revision != state["revisions"].get(session_id, 0):
+            return refuse(409, "revision_conflict")
+        if generation is not None and generation != 0:
+            return refuse(409, "stale_generation")
+
+    row = stored_row(session_id)
+    if method == "DELETE":
+        if row is not None:
+            STORED_SESSIONS.remove(row)
+        result = dict(ok=True, session_id=session_id, operation="delete", deleted_ids=[session_id])
+    else:
+        if row is not None:
+            row.update({key: value for key, value in change.items() if key in ("title", "archived", "pinned")})
+        state["revisions"][session_id] = state["revisions"].get(session_id, 0) + 1
+        result = dict(ok=True, session_id=session_id, operation="sidebar", revision=state["revisions"][session_id],
+                      title=(row or {}).get("title", change.get("title", "")))
+    if not legacy:
+        state["receipts"][(session_id, request_id)] = (digest, result)
+    return ok(result)
+
+
+# ── Turns handed to the chat's owner (Hermes 0.23) ───────────────────────────────────────────────
+# POST /api/_mock/owner {"mode": ..., "wait": s, "run": s} picks what prompt.submit does next:
+#   "forward"      answers {status: queued, admission_id, forwarded: true}; after `wait` seconds only message.start,
+#                  then after `run` an empty message.complete arrive, and the reply is in the stored history
+#   "busy"         error 4090, reason SESSION_OWNER_BUSY (nothing was sent; the app offers Try again)
+#   "unconfirmed"  error 4090, reason SESSION_OWNER_UNCONFIRMED (it may still run; no automatic retry)
+#   "not_owned"    error 4090, reason SESSION_NOT_OWNED
+#   "off"          the usual scripted turns
+# GET /api/_mock/owner returns the mode and the prompts forwarded so far.
+
+PROGRESS_STEP = 1.2
+
+OWNER_TURNS: dict = dict(mode="off", wait=4.0, run=1.5, forwarded=[])
+OWNER_REPLY = "All done. The export now runs at 2 AM, after the other job finishes."
+OWNER_REFUSALS = {
+    "busy": ("SESSION_OWNER_BUSY", "The gateway is running a turn in this chat and could not queue this message. "
+                                   "Nothing was sent. Send it again when the current turn ends."),
+    "unconfirmed": ("SESSION_OWNER_UNCONFIRMED", "The gateway is running a turn in this chat and did not confirm your "
+                                                 "message in time. It may already be queued there: check the chat before "
+                                                 "sending it again."),
+    "not_owned": ("SESSION_NOT_OWNED", "Session has pending work in the gateway's durable queue. Resume it through "
+                                       "the gateway to resolve it; nothing was run here."),
+}
+
+
+def owner_rest(method: str, base: str, body):
+    if base != "/api/_mock/owner":
+        return None
+    fields = body if isinstance(body, dict) else {}
+    if method == "POST":
+        mode = str(fields.get("mode") or "off")
+        if mode not in ("off", "forward", *OWNER_REFUSALS):
+            return refuse(400, f"unknown mode {mode}")
+        OWNER_TURNS.update(mode=mode, wait=float(fields.get("wait", 4.0)), run=float(fields.get("run", 1.5)), forwarded=[])
+    return ok(dict(mode=OWNER_TURNS["mode"], forwarded=OWNER_TURNS["forwarded"]))
+
+
 def _counts_as_config_write(method: str, base: str, body) -> bool:
     """Writes the computer preview reports: a config change or a write of the bot's lease file."""
     if method not in {"PUT", "PATCH", "POST"}:
@@ -3638,6 +3929,11 @@ def _counts_as_config_write(method: str, base: str, body) -> bool:
         return True
     return (base == "/api/files/upload" and isinstance(body, dict)
             and str(body.get("path", "")).endswith("/bot-desktop/lease.json"))
+
+
+_LOCAL_SPEC = importlib.util.spec_from_file_location("mock_local_models", Path(__file__).with_name("local_models.py"))
+LOCAL_MODELS = importlib.util.module_from_spec(_LOCAL_SPEC)
+_LOCAL_SPEC.loader.exec_module(LOCAL_MODELS)
 
 
 def process_request(connection, request):
@@ -3664,6 +3960,7 @@ def process_request(connection, request):
     modules = [
         ("normal", lambda: auth_rest(method, base, query, fields, request.headers)),
         ("quiet", lambda: family_rest(method, base, query, body)),
+        ("quiet", lambda: LOCAL_MODELS.local_models_rest(method, base, query, body)),
         ("normal", lambda: profile_creation(method, base, fields)),
         ("normal", lambda: private_bots_rest(method, base, query, body)),
         ("quiet", lambda: bot_looks_rest(method, base, query, body)),
@@ -3680,7 +3977,11 @@ def process_request(connection, request):
         ("quiet", lambda: apple_data_rest(method, base, query, body)),
         ("quiet", lambda: memory_rest(method, base, query, body)),
         ("quiet", lambda: payments_rest(method, base, query, body)),
+        ("quiet", lambda: skills_rest(method, base, query, body)),
         ("quiet", lambda: link_rest(method, base, body)),
+        ("quiet", lambda: session_mutations_rest(method, base, query, body)),
+        ("quiet", lambda: owner_rest(method, base, body)),
+        ("quiet", lambda: reply_frames_rest(method, base, body)),
     ]
     answer = None
     for kind, ask_module in modules:
@@ -3699,11 +4000,6 @@ def process_request(connection, request):
             return steer_preview()
         if base.startswith("/api/plugins/kanban/"):
             answer = kanban_rest(method, base, query, fields)
-        elif method == "PATCH" and base.startswith("/api/sessions/"):
-            # Serves a chat rename made in the info sheet. The library passes on headers only, so
-            # the body can't be read; a plausible title is echoed back to exercise the "saved" path.
-            row = next((r for r in STORED_SESSIONS if r["id"] == base.split("/")[3]), None)
-            answer = (200, dict(ok=True, title=row["title"] if row else ""))
         elif base.startswith("/api/cron/jobs"):
             answer = _cron_route(method, base, query, body)
             if answer is None:
@@ -3843,13 +4139,56 @@ LIVE: dict[str, Session] = {}   # keyed by runtime id
 GATEWAYS: set = set()           # all connected JSON-RPC sockets, used by /mock/drop-sockets
 
 
+# Hermes 0.23 stamps a turn's reply frames (tui_gateway/stream_segments.py) so a copy can be dropped:
+# message.start carries turn_id, message.delta turn_id + segment + offset (UTF-16 units), message.interim
+# turn_id + the segment it seals. POST /api/_mock/reply-frames {"stamp": true, "twice": true} turns the
+# stamps on and sends every delta twice, as a replay or a second socket would. Both are off by default.
+REPLY_FRAMES: dict = dict(stamp=False, twice=False)
+
+
+def _utf16_len(text: str) -> int:
+    return len(text.encode("utf-16-le", errors="surrogatepass")) // 2
+
+
+def stamp_reply_frame(live, kind: str, payload):
+    if not REPLY_FRAMES["stamp"] or live is None:
+        return payload
+    if kind == "message.start":
+        live.__dict__["segments"] = dict(turn_id=uuid.uuid4().hex, segment=0, offset=0)
+        return {**(payload or {}), "turn_id": live.segments["turn_id"]}
+    cursor = live.__dict__.get("segments")
+    if cursor is None or payload is None:
+        return payload
+    if kind == "message.interim":
+        stamped = {**payload, "turn_id": cursor["turn_id"], "segment": cursor["segment"]}
+        cursor.update(segment=cursor["segment"] + 1, offset=0)
+        return stamped
+    if kind == "message.delta" and isinstance(payload.get("text"), str):
+        stamped = {**payload, "turn_id": cursor["turn_id"], "segment": cursor["segment"], "offset": cursor["offset"]}
+        cursor["offset"] += _utf16_len(payload["text"])
+        return stamped
+    if kind == "message.complete":
+        live.__dict__.pop("segments", None)
+    return payload
+
+
+def reply_frames_rest(method: str, base: str, body):
+    if base != "/api/_mock/reply-frames":
+        return None
+    fields = body if isinstance(body, dict) else {}
+    if method == "POST":
+        REPLY_FRAMES.update(stamp=bool(fields.get("stamp")), twice=bool(fields.get("twice")))
+    return ok(dict(REPLY_FRAMES))
+
+
 class RpcFault(Exception):
     """Raised by a request handler to answer with a JSON-RPC error."""
 
-    def __init__(self, code: int, message: str) -> None:
+    def __init__(self, code: int, message: str, data: dict | None = None) -> None:
         super().__init__(message)
         self.code = code
         self.message = message
+        self.data = data
 
 
 class Gateway:
@@ -3876,16 +4215,19 @@ class Gateway:
 
     async def event(self, kind, sid, payload=None):
         """Sends one `event` frame for a session to everyone who should hear it."""
+        live = LIVE.get(sid)
+        payload = stamp_reply_frame(live, kind, payload)
         params = {"type": kind, "session_id": sid, **({} if payload is None else {"payload": payload})}
         frame = {"jsonrpc": "2.0", "method": "event", "params": params}
-        live = LIVE.get(sid)
         if live and live.inflight is not None:
             # Keep what a client resuming mid-turn would need: the text so far, and finished tools.
             self._remember_for_resume(live, kind, payload or {})
 
+        copies = 2 if REPLY_FRAMES["twice"] and kind == "message.delta" else 1
         for listener in self._audience(live):
             try:
-                await listener.send(frame)
+                for _ in range(copies):
+                    await listener.send(frame)
             except Exception:  # noqa: BLE001
                 if live is not None:
                     live.members.discard(listener)
@@ -4046,6 +4388,26 @@ class Gateway:
 
     # -- scripted turns -----------------------------------------------------------------------
 
+    async def _progress_turn(self, s, prompt):
+        """A tool that reports how far it has got (Hermes 0.23's tool.progress, from an MCP server's
+        notifications/progress): ten pages read, one every `PROGRESS_STEP` seconds, then the reply."""
+        await self.begin_message(s)
+        await self.stream_words(s, "Reading the ten release pages now.")
+        call = f"progress-{uuid.uuid4().hex[:8]}"
+        await self.event("tool.start", s.sid, dict(tool_id=call, name="read_pages", context="ten release pages"))
+        began = time.time()
+        for step in range(1, 11):
+            await asyncio.sleep(PROGRESS_STEP)
+            await self.event("tool.progress", s.sid, dict(tool_id=call, name="read_pages", progress=float(step), total=10.0,
+                                                         percent=step * 10, message=f"Page {step} of 10"))
+        await self.event("tool.complete", s.sid, dict(tool_id=call, name="read_pages", duration_s=round(time.time() - began, 1),
+                                                      summary="Read 10 pages"))
+        reply = "All ten pages read. Two of them mention the export change."
+        await self.stream_words(s, " " + reply)
+        whole = "Reading the ten release pages now. " + reply
+        await self.report_usage(s)
+        await self.settle(s, prompt, ["Reading the ten release pages now.", 1, reply], whole)
+
     async def _card_turn(self, s, prompt):
         """A reply carrying a card: an html fence containing a compact table and a line chart drawn
         with Chart.js from a CDN, placed between two paragraphs. Any bot can send this today."""
@@ -4180,6 +4542,36 @@ class Gateway:
             reply, layout = "It's in your calendar.", [intro, 1, "It's in your calendar."]
         await self.stream_words(s, "\n\n" + reply)
         await self.settle(s, prompt, layout, intro + "\n\n" + reply)
+
+    # Hermes 0.23's approval for a priced MCP tool on an untrusted server, word for word as tools/mcp_tool_handlers.py and
+    # tools/mcp_tool_costs.py build it: the price and the chat's running total are only in this text.
+    PAID_TOOL_COMMAND = ("MCP tool 'get_quote' on UNTRUSTED server 'quotes' wants to run. Costs about 5 credits. "
+                         "This chat has used about 10 credits on 'quotes' (limit 50). This tool is write-capable "
+                         "(no readOnlyHint=true annotation) and may modify external state.\n\nArguments:\n"
+                         '{\n  "symbol": "AAPL"\n}')
+    PAID_TOOL_DESCRIPTION = ("Server 'quotes' is configured 'trust: untrusted'. Approve to run 'get_quote' once, for this "
+                             "session, or always, or deny to block it.")
+
+    async def _paid_tool_turn(self, s, prompt):
+        """"paid tool": a connected app's tool with a declared price waits for a yes, as Hermes asks for it."""
+        tool = "mcp_quotes_get_quote"
+        intro = "I'll get the latest quote."
+        await self.begin_message(s)
+        await self.stream_words(s, intro)
+        call = f"quote-{int(time.time() * 1000)}"
+        await self.event("tool.start", s.sid, dict(tool_id=call, name=tool, args=dict(symbol="AAPL")))
+        answer = await self.ask("approval", s.sid, dict(
+            request_id=f"req-{uuid.uuid4().hex[:8]}", command=self.PAID_TOOL_COMMAND, description=self.PAID_TOOL_DESCRIPTION,
+            pattern_key="mcp_elicitation", pattern_keys=["mcp_elicitation"],
+            choices=["once", "session", "always", "deny"], allow_session=True, allow_permanent=True))
+        if answer is None or answer.get("choice", "deny") == "deny":
+            reply = "Okay, I didn't run it."
+        else:
+            await self.event("tool.complete", s.sid, dict(tool_id=call, name=tool, duration_s=0.4, summary="quote",
+                                                       result=json.dumps(dict(symbol="AAPL", price=231.4))))
+            reply = "AAPL is at 231.40."
+        await self.stream_words(s, "\n\n" + reply)
+        await self.settle(s, prompt, [intro, 1, reply], intro + "\n\n" + reply)
 
     # A payment with a saved card, as the workflow add-on's request_payment asks: the Mac's own words for it,
     # on Ask first's buy card, so Face ID guards the yes. Only a payment provider's published test card.
@@ -4644,6 +5036,7 @@ class Gateway:
         ("starts", "delegate", "_delegate_turn"),
         ("starts", "crew", "_crew_turn"),
         ("starts", "sign in", "_sign_in_turn"),
+        ("starts", "paid tool", "_paid_tool_turn"),
         ("starts", "ask first", "_ask_first_turn"),
         ("starts", "compress", "_compress_turn"),
         ("starts", "card", "_card_turn"),
@@ -4655,6 +5048,7 @@ class Gateway:
         ("starts", "backup", "_backup_turn"),
         ("starts", "plan back", "_plan_back_turn"),
         ("starts", "interrupt", "_interrupt_turn"),
+        ("starts", "progress", "_progress_turn"),
     )
 
     @staticmethod
@@ -4704,7 +5098,10 @@ class Gateway:
         try:
             result = await getattr(self, action)(params, profile)
         except RpcFault as fault:
-            return dict(jsonrpc="2.0", id=request_id, error=dict(code=fault.code, message=fault.message))
+            error = dict(code=fault.code, message=fault.message)
+            if fault.data is not None:
+                error["data"] = fault.data
+            return dict(jsonrpc="2.0", id=request_id, error=error)
         return dict(jsonrpc="2.0", id=request_id, result=result)
 
     # Which handler answers which method. Handlers take (params, profile) and return the result.
@@ -4981,8 +5378,29 @@ class Gateway:
         s = self._session_in(p)
         if s is None:
             raise RpcFault(4006, "unknown session")
+        refusal = OWNER_REFUSALS.get(OWNER_TURNS["mode"])
+        if refusal is not None:
+            raise RpcFault(4090, refusal[1], {"reason": refusal[0]})
+        if OWNER_TURNS["mode"] == "forward":
+            # Hermes 0.23 hands the prompt to the chat's owner: queued behind its turn, then only
+            # message.start and an empty message.complete come back here. The reply is in the history.
+            admission = "adm-" + uuid.uuid4().hex[:8]
+            OWNER_TURNS["forwarded"].append(dict(session=s.sid, admission_id=admission, text=str(p.get("text", ""))))
+            asyncio.create_task(self.forwarded_turn(s, str(p.get("text", ""))))
+            return dict(status="queued", admission_id=admission, forwarded=True)
         asyncio.create_task(self.run_turn(s, str(p.get("text", ""))))
         return dict(status="streaming")
+
+    async def forwarded_turn(self, s: Session, prompt: str) -> None:
+        """The owner runs its own turn first (nothing relayed), then this prompt (start and complete only)."""
+        await asyncio.sleep(float(OWNER_TURNS["wait"]))
+        s.running, s.turn_started_at, s.turn_base = True, time.time(), len(s.history)
+        turn = uuid.uuid4().hex
+        await self.event("message.start", s.sid, {"turn_id": turn})
+        await asyncio.sleep(float(OWNER_TURNS["run"]))
+        self.store_turn(s, prompt, [OWNER_REPLY])
+        s.running, s.inflight = False, None
+        await self.event("message.complete", s.sid, {"text": "", "turn_id": turn})
 
     # -- projects -----------------------------------------------------------------------------
 
@@ -5198,10 +5616,13 @@ def _arguments() -> argparse.Namespace:
         "--activity-demo": "seed Work with a short completed activity run and an inbound message",
         "--notification-activity-demo": "seed a default-dispatched Work task, a live preview, and typed machine history",
         "--silence-demo": "seed quiet automatic replies and literal user markers",
+        "--schedule-demo": "seed the morning brief part way through a scheduled run (Stop ends it)",
         "--no-pdf-tools": "refuse all PDFs, like a gateway without poppler-utils",
     }
     for flag, help_text in switches.items():
         parser.add_argument(flag, action="store_true", help=help_text)
+    parser.add_argument("--local-models", choices=LOCAL_MODELS.SCENARIOS, default="flow",
+                        help="how a local model download on this Mac goes (see local_models.py)")
     return parser.parse_args()
 
 

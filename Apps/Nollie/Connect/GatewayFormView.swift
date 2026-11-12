@@ -308,7 +308,8 @@ struct GatewayFormView: View {
 
     private var addressNotes: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(Self.addressIntro)
+            // Read as Markdown, so `hermes serve` shows as code rather than with its backticks.
+            Text((try? AttributedString(markdown: Self.addressIntro)) ?? AttributedString(Self.addressIntro))
             addressVerdict
         }
     }
@@ -420,7 +421,7 @@ struct GatewayFormView: View {
         Button(action: { Task { await signInWithBrowser() } }) {
             HStack {
                 Label(signedIn ? "Signed in" : "Sign in with browser",
-                      systemImage: signedIn ? "checkmark.circle.fill" : "safari")
+                      systemImage: signedIn ? "checkmark.circle.fill" : "globe")
                 Spacer()
                 if isSigningIn { ProgressView() }
             }

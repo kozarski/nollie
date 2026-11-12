@@ -1,6 +1,6 @@
 --- a/tui_gateway/session_notifications.py
 +++ b/tui_gateway/session_notifications.py
-@@ -336,9 +336,16 @@
+@@ -419,9 +419,16 @@
  
  
  def _kb_timed_out(task, payload: dict, title: str) -> str:

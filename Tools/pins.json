@@ -6,14 +6,14 @@
       "id": "uv",
       "name": "uv by Astral",
       "role": "Download manager for the Mac setup",
-      "version": "0.13.4",
+      "version": "0.13.7",
       "license": "MIT or Apache-2.0",
       "source": "https://github.com/astral-sh/uv",
       "upstream": {"kind": "github-release", "repo": "astral-sh/uv"},
       "artifact": {
-        "url": "https://github.com/astral-sh/uv/releases/download/0.13.4/uv-aarch64-apple-darwin.tar.gz",
-        "bytes": 14326193,
-        "sha256": "e0b1d4743ce64c55d9f0f4a444afa6b81125680070ee04e853fcd0f6c1ebf8f1"
+        "url": "https://github.com/astral-sh/uv/releases/download/0.13.7/uv-aarch64-apple-darwin.tar.gz",
+        "bytes": 14347867,
+        "sha256": "81b811b57e4624df7ed3aac148e0359100d9962f3d9dce00aec533dc2e086731"
       },
       "notes": "Notarized by Astral (team 2DC432GLL2, identifier sh.astral.uv). A firewall that allows apps by signing identity sees it as new: 0.13.1 was uv-12607afb3fd970b7.",
       "pinnedIn": ["Apps/Nollie/Connect/NativeDependencyInstaller.swift"]
@@ -22,15 +22,15 @@
       "id": "python",
       "name": "Python (python-build-standalone)",
       "role": "Nollie's own Python, separate from any Python on the Mac",
-      "version": "3.14.8",
-      "key": "cpython-3.14.8-macos-aarch64-none",
+      "version": "3.14.10",
+      "key": "cpython-3.14.10-macos-aarch64-none",
       "license": "PSF-2.0 and bundled licences",
       "source": "https://github.com/astral-sh/python-build-standalone",
       "upstream": {"kind": "uv-python", "series": "3.14"},
       "artifact": {
-        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8%2B20261013-aarch64-apple-darwin-install_only_stripped.tar.gz",
-        "bytes": 26678949,
-        "sha256": "994adadc202c5df0b4570192cc9a70e3f2c131e512f4a125c56efa8562f44b28"
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.14.10%2B20261026-aarch64-apple-darwin-install_only_stripped.tar.gz",
+        "bytes": 26753457,
+        "sha256": "95eb8c87d16af37c54e9765e31d8c56c0d8ffa9968ea0f704f73a9b83f84e9f9"
       },
       "notes": "uv installs it and checks it against the checksum built into uv, so this pin moves with uv. The artifact here is for reference and the dry run; it matches the release's SHA256SUMS.",
       "pinnedIn": ["Apps/Nollie/Connect/NativeDependencyInstaller.swift"]
@@ -39,27 +39,27 @@
       "id": "hermes",
       "name": "Hermes Agent by Nous Research",
       "role": "The engine behind the assistant",
-      "version": "0.22.2",
-      "tag": "v0.22.2",
-      "commit": "d923a5eb487a17c0a68801bba9ef0f56c81040a8",
-      "tree": "5a064077e8d1de9fc7a4b27efc04f0caa2cb06c0",
+      "version": "0.23.1",
+      "tag": "v0.23.1",
+      "commit": "3b421578588243f920886e6fe79a6faa87ea026e",
+      "tree": "c69ce0f0fb52a2650efcbb79cc97d35474a9be9a",
       "license": "MIT",
       "source": "https://github.com/NousResearch/hermes-agent",
       "upstream": {"kind": "github-release", "repo": "NousResearch/hermes-agent"},
       "artifact": {
-        "url": "https://codeload.github.com/NousResearch/hermes-agent/tar.gz/d923a5eb487a17c0a68801bba9ef0f56c81040a8",
-        "bytes": 81466389,
-        "sha256": "616649f8ac7e3bb186999d000d77511e733b3930bd2b5921be4a85673320ef8b"
+        "url": "https://codeload.github.com/NousResearch/hermes-agent/tar.gz/3b421578588243f920886e6fe79a6faa87ea026e",
+        "bytes": 91372324,
+        "sha256": "2525046f165880c22f177f2214c8da3e26c58cb0aeab5bd09aad940556538897"
       },
-      "notes": "The v0.22.2 tag's commit has the release/0.22.1 tree (4ccc5806) with v0.22.1 recorded as a second parent. v0.22.1 itself was built from main by mistake and is skipped.",
+      "notes": "v0.23.1 is the tag's own commit. 0.23 moved new-bot setup into hermes_cli/profiles_initialization.py and replaced the browser_* tools with browser_exec.",
       "pinnedIn": ["Apps/Nollie/Connect/NativeDependencyInstaller.swift", "Services/Runtime/runtime_entry.py", "Services/Runtime/HermesOverlay/overlay.json"]
     },
     {
       "id": "hermes-packages",
       "name": "Hermes's Python packages",
       "role": "The libraries Hermes needs, from Hermes's own lockfile",
-      "version": "uv.lock at v0.22.2",
-      "lockSha256": "16300cf807347b7fcfa3c19963f5fe950913fdb3e41e3c649ea724bc7dc997da",
+      "version": "uv.lock at v0.23.1",
+      "lockSha256": "d0ae8bfd20db7a8ca0e75418df718315c58088b120366227cc62ee8fe25d4274",
       "license": "Mostly MIT, BSD and Apache-2.0",
       "source": "https://pypi.org",
       "upstream": {"kind": "follows", "component": "hermes"},
@@ -110,14 +110,14 @@
       "id": "sparkle",
       "name": "Sparkle",
       "role": "Updates the Direct Mac edition by itself",
-      "version": "2.10.0",
+      "version": "2.10.1",
       "license": "MIT (with a few BSD-style and zlib-style notices for bundled parts)",
       "source": "https://github.com/sparkle-project/Sparkle",
       "upstream": {"kind": "github-release", "repo": "sparkle-project/Sparkle"},
       "artifact": {
-        "url": "https://github.com/sparkle-project/Sparkle/releases/download/2.10.0/Sparkle-for-Swift-Package-Manager.zip",
-        "bytes": 10193895,
-        "sha256": "17e28312b8e18ab7cdbbe09a6fb28cc55a5479ec6c371dbc07cdecd2a14fd959"
+        "url": "https://github.com/sparkle-project/Sparkle/releases/download/2.10.1/Sparkle-for-Swift-Package-Manager.zip",
+        "bytes": 10197413,
+        "sha256": "4c2e48a3e50ebcc2c88a58a4c7264a1a99c3c31857ce754357afb9cdb323022a"
       },
       "notes": "The release file Sparkle's own Swift package points at (its Package.swift carries this checksum). Only the Direct Mac edition links and embeds it, so it is fetched and checked by Tools/sparkle/fetch-sparkle.sh and linked by build settings rather than as a package product, which would link into the App Store edition too. It also holds the key, signing and appcast tools the release uses.",
       "pinnedIn": ["Tools/sparkle/pin.env", "Nollie.xcodeproj/project.pbxproj", "LICENSE", "Docs/legal/notices.md"]

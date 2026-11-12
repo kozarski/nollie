@@ -67,6 +67,10 @@ struct SettingsView: View {
     @ViewBuilder private var categoryRows: some View {
         let visible = SettingsCategory.visible(developerMode: developerMode, away: showsAway,
                                                weekly: !model.family.isMember(model), matching: search)
+        // Using Nollie on an iPhone or iPad, first: on the Mac with its own assistant.
+        #if os(macOS)
+        if showsPhoneRow { PhoneLinkRow() }
+        #endif
         ForEach(settingsGroups.indices, id: \.self) { index in
             let members = settingsGroups[index].filter(visible.contains)
             if !members.isEmpty {
@@ -83,7 +87,15 @@ struct SettingsView: View {
                 }
             }
         }
-        if visible.isEmpty { PageNote("Nothing matches \u{201C}\(search)\u{201D}.", id: "settings.noMatch") }
+        if visible.isEmpty && !showsPhoneRow { PageNote("Nothing matches \u{201C}\(search)\u{201D}.", id: "settings.noMatch") }
+    }
+
+    private var showsPhoneRow: Bool {
+        #if os(macOS)
+        PhoneLinkRow.shows(available: DemoMode.isOn || NollieLinkMacClient.isAvailable(for: model.runtime?.connection), search: search)
+        #else
+        false
+        #endif
     }
 
     /// Away from home: on the Direct Mac's own assistant, and on a phone linked to such a Mac.
@@ -98,6 +110,9 @@ struct SettingsView: View {
     /// A word on the right of a row, when it says something worth knowing at a glance.
     private func word(for category: SettingsCategory) -> String? {
         guard category == .connection, let socket = model.runtime?.socketState else { return nil }
+        if AssistantWait.state(model.runtime) == .missing {
+            return String(localized: "Set up again", comment: "The connection's state beside its Settings row: Nollie's own assistant isn't on this Mac any more")
+        }
         switch socket {
         case .open: return String(localized: "Connected", comment: "The connection's state beside its Settings row")
         case .connecting, .reconnecting: return String(localized: "Connecting", comment: "The connection's state beside its Settings row")
@@ -108,7 +123,7 @@ struct SettingsView: View {
 
     #if DEBUG
     /// For pictures: `-nollie-demo-settings <page>` opens that page (its raw name),
-    /// `left` or `night` the summary pages, `models-advanced` Models › Advanced, and `bot-<tab>`
+    /// `left` or `night` the summary pages, `models-advanced` Models › Advanced, `skills` the main bot's skills, and `bot-<tab>`
     /// the default bot's settings.
     private func openDemoPage() async {
         let words = ProcessInfo.processInfo.arguments
@@ -184,6 +199,8 @@ private struct DemoSettingsPage: View {
             PermissionsSettingsView().untitledPage()
         } else if name == "models-advanced" {
             DemoModelsAdvanced()
+        } else if name == "skills" {
+            SkillsView(profileName: model.runtime?.defaultProfile ?? "default")
         } else if name.hasPrefix("bot-") {
             ProfileCardView(
                 profileName: model.runtime?.defaultProfile ?? "default",

@@ -7,19 +7,37 @@ struct OnboardingPreferences: Codable, Equatable, Sendable {
     var assistantName = "Nollie"
     var includeHelpers = false
     var modelMode: ModelSetupMode = .local
+    /// The person picked where Nollie thinks (on the model step or in Settings), so setup never
+    /// changes it for them.
+    var modelModeChosen = false
 
-    init(assistantName: String = "Nollie", includeHelpers: Bool = false, modelMode: ModelSetupMode = .local) {
+    init(assistantName: String = "Nollie", includeHelpers: Bool = false, modelMode: ModelSetupMode = .local,
+         modelModeChosen: Bool = false) {
         self.assistantName = assistantName
         self.includeHelpers = includeHelpers
         self.modelMode = modelMode
+        self.modelModeChosen = modelModeChosen
     }
 
-    private enum CodingKeys: String, CodingKey { case assistantName, includeHelpers, modelMode }
+    private enum CodingKeys: String, CodingKey { case assistantName, includeHelpers, modelMode, modelModeChosen }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         assistantName = try values.decodeIfPresent(String.self, forKey: .assistantName) ?? "Nollie"
         includeHelpers = try values.decodeIfPresent(Bool.self, forKey: .includeHelpers) ?? false
         modelMode = try values.decodeIfPresent(ModelSetupMode.self, forKey: .modelMode) ?? .local
+        modelModeChosen = try values.decodeIfPresent(Bool.self, forKey: .modelModeChosen) ?? false
+    }
+
+    /// Starts the model step on what suits the Mac: a plan on one with less memory than a model on
+    /// the Mac wants (ModelMemoryGuidance), on this Mac otherwise. Once the person has chosen, their
+    /// choice stays. True when the choice changed.
+    @discardableResult
+    mutating func suggestModelMode(memoryBytes: UInt64?) -> Bool {
+        guard !modelModeChosen, memoryBytes != nil else { return false }
+        let suggested = ModelMemoryGuidance.suggestedMode(memoryBytes)
+        guard suggested != modelMode else { return false }
+        modelMode = suggested
+        return true
     }
 
     var resolvedAssistantName: String {
@@ -114,6 +132,31 @@ struct OnboardingProgress: Codable, Equatable, Sendable {
         }
     }
 
+    /// Setup reopened past the first choice without a path (from Settings, or saved before the path was
+    /// kept) takes the one its saved connection belongs to: Nollie's own assistant on this Mac is Start
+    /// new, any other is Connect existing. Without it the connection step showed Start new's card under
+    /// another path's heading, and Connect did nothing.
+    mutating func settleRoute(managed: Bool) {
+        guard route == nil, ![.welcome, .home].contains(step) else { return }
+        route = managed ? .new : .existing
+    }
+
+    /// The saved assistant's setup is no longer on this Mac: back to Start new's setup step, keeping the
+    /// name and choices made before.
+    mutating func setUpAgain() {
+        route = .new
+        step = .connection
+        connectionID = nil
+        deferred = []
+        completion = .inProgress
+    }
+
+    static func settingUpAgain(_ raw: String) -> String {
+        var progress = parse(raw)
+        progress.setUpAgain()
+        return progress.encoded
+    }
+
     mutating func finish(connected: Bool) {
         guard connected else { return }
         completion = .completed
@@ -121,6 +164,37 @@ struct OnboardingProgress: Codable, Equatable, Sendable {
 
     mutating func skip() { completion = .skipped }
 }
+
+extension OnboardingProgress.Step {
+    /// The Mac's setup steps with a second pill under Continue that means something else: the model,
+    /// where Continue waits for one that answers and Set up later goes on without it, and permissions'
+    /// Not now. The computer step is optional, so its Continue already goes on with the switch off.
+    var hasLaterPill: Bool { self == .model || self == .permissions }
+
+    /// Continue on an optional step works whatever is chosen: off means go on without it.
+    var continueAlwaysWorks: Bool { self == .computer || self == .permissions }
+
+    /// Finish setup later, on the Mac steps without a pill of their own. The computer step has none:
+    /// Continue is its one way on.
+    var hasSkipPill: Bool { !hasLaterPill && self != .computer }
+}
+
+#if os(macOS)
+extension OnboardingProgress {
+    /// The steps the Mac header counts: those after the path is chosen, before Ready. Counted only once a
+    /// path is chosen, so the total never changes under someone.
+    var countedSteps: [Step] {
+        guard route != nil, ![.welcome, .home, .ready].contains(step) else { return [] }
+        return steps.filter { ![.welcome, .home, .ready].contains($0) }
+    }
+
+    /// "Step 2 of 6", or nil where the header shows no count.
+    var stepCount: (index: Int, total: Int)? {
+        guard let index = countedSteps.firstIndex(of: step) else { return nil }
+        return (index + 1, countedSteps.count)
+    }
+}
+#endif
 
 enum OnboardingModelStatus: Equatable {
     case notConfigured

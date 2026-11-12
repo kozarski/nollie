@@ -220,7 +220,8 @@ class RegisterTests(unittest.TestCase):
         with patch.object(load("recorder"), "register", side_effect=RuntimeError("broken")), \
                 self.assertLogs("nollie-workflow", "WARNING") as logged:
             hooks, _, _ = self.register("career")
-        self.assertEqual(hooks, MAC_SCREEN_HOOKS + ASK_FIRST_HOOKS + ["pre_llm_call", "post_llm_call"] + list(load("papertrail").HOOKS))
+        self.assertEqual(hooks, MAC_SCREEN_HOOKS + ASK_FIRST_HOOKS + ["pre_llm_call", "post_llm_call"] + list(load("papertrail").HOOKS)
+                         + ["on_skill_lifecycle"])
         self.assertIn("The Night shift recorder did not start: RuntimeError", logged.output[0])
 
     def test_private_profiles_get_ask_first_and_nothing_else(self):

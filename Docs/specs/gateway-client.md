@@ -20,9 +20,9 @@ This module has no views, chat rows or local history store. The [conversation en
 
 ## Source and scope
 
-The source of wire types is `apps/shared/src/gateway-contract.openrpc.json` in the read-only Hermes checkout at `d923a5eb487a17c0a68801bba9ef0f56c81040a8` (`v0.22.2`). Its SHA-256 is `8848b394df533af8b37afd3cdccfc48b3e3d6ca1ce4037ebaf38653e33ed832e`.
+The source of wire types is `apps/shared/src/gateway-contract.openrpc.json` in the read-only Hermes checkout at `3b421578588243f920886e6fe79a6faa87ea026e` (`v0.23.1`). Its SHA-256 is `c2f48466a3e4fa98babceb066ab5d053d1573f0202146cd6e6fdb319ddd81f19`.
 
-That file contains 257 client methods, 774 schemas, 16 server request methods and 77 notification types. Generating a type does not enable a feature. Nollie calls only the methods required by these specs and advertises only the request handling it provides.
+That file contains 262 client methods, 899 schemas, 16 server request methods and 78 notification types. Generating a type does not enable a feature. Nollie calls only the methods required by these specs and advertises only the request handling it provides.
 
 The OpenRPC file describes method parameters and results. It does not fully describe authentication, the outer message envelope, socket heartbeat, replay retention or concurrent snapshot timing. The pinned Hermes server is the evidence for those details. Proposed Nollie policies below are labelled separately from those server facts. No existing Nollie Swift implementation is a design source for this spec.
 
@@ -215,7 +215,7 @@ Open before implementation acceptance: prove snapshot/replay convergence during 
 
 ## Evidence in the pinned Hermes checkout
 
-All paths below are relative to a checkout of Hermes Agent at tag `v0.22.2`.
+All paths below are relative to a checkout of Hermes Agent at tag `v0.23.1`.
 
 - `apps/shared/src/gateway-contract.openrpc.json`: generated method, schema, request and notification definitions.
 - `tui_gateway/contracts/base.py`, `liveness.py`, `sessions.py`, `server_requests.py` and `prompt_voice.py`: field presence, capability results, resume/activate identities, replay results and request-answer shapes.

@@ -126,6 +126,9 @@ final class AppModel {
     var pendingDevicePairing: DevicePairingInvitation?
     /// A Nollie Link code opened as a link (https://nollie.app/pair#...) waiting to be confirmed.
     var pendingLinkOffer: NollieLinkOffer?
+    /// Why a pairing code opened as a link can't be used (run out, already spent), shown in the
+    /// pairing sheet with a way to scan again.
+    var pendingPairingIssue: String?
     var devicePairingFlowActive = false
 
     var boardChatContext: BoardChatContext?
@@ -384,6 +387,7 @@ final class AppModel {
         #if os(macOS) && NOLLIE_DIRECT
         if connection.managedInstallationID != nil, !DemoMode.isOn {
             runtime.managedEndpointResolver = managedEndpointResolver(for: runtime)
+            runtime.managedSessionRefresher = managedSessionRefresher(for: runtime)
         }
         #endif
         // A yes to buying, sending or posting checks it's you first, wherever it is given.
@@ -444,7 +448,59 @@ final class AppModel {
             }
         }
     }
+
+    /// Hermes refused the saved session: ask the service for the installation's current one. Only
+    /// while the service says that installation is ready and no engine update is under way, since
+    /// asking means a start request, and a start must never cut into an update.
+    private func managedSessionRefresher(for runtime: GatewayRuntime) -> @MainActor @Sendable () async -> GatewaySecrets? {
+        { [weak self, weak runtime] in
+            guard let self, let runtime, self.runtime === runtime,
+                  let installation = runtime.connection.managedInstallationID,
+                  EngineUpdate.shared.phase != .updating,
+                  let reply = try? await ManagedRuntimeClient.readStatus(),
+                  reply.error == nil, reply.snapshot.phase == .ready,
+                  reply.snapshot.installationID == installation,
+                  reply.snapshot.enabledInstallationID == installation,
+                  self.runtime === runtime
+            else { return nil }
+            let client = ManagedRuntimeClient()
+            await client.start(installationID: installation)
+            guard self.runtime === runtime, client.canConnect, let token = client.sessionToken else { return nil }
+            return GatewaySecrets(sessionToken: token)
+        }
+    }
     #endif
+
+    /// The service reports `installation` ready: if that is the assistant this app is waiting for,
+    /// try now instead of at the end of the pause.
+    func nudgeManagedConnection(_ installation: UUID?) async {
+        guard let current = runtime,
+              ManagedReconnect.shouldNudge(waitingFor: current.connection.managedInstallationID,
+                                           isOpen: current.socketState.isOpen, ready: installation)
+        else { return }
+        await current.retryNow()
+    }
+
+    /// Try again, once the assistant on this Mac couldn't be reached after the whole wait: the
+    /// connection tries at once, and the service is asked to start the assistant if it isn't running.
+    func retryAssistant() async {
+        guard let current = runtime else { return }
+        await current.retryNow()
+        #if os(macOS) && NOLLIE_DIRECT
+        // Never during an engine update: that update starts the assistant itself when it is done.
+        guard let installation = current.connection.managedInstallationID, !DemoMode.isOn,
+              EngineUpdate.shared.phase != .updating else { return }
+        let client = ManagedRuntimeClient()
+        await client.start(installationID: installation)
+        guard runtime === current, client.canConnect, let token = client.sessionToken else { return }
+        if token != current.secrets.sessionToken {
+            var fresh = current.secrets
+            fresh.sessionToken = token
+            await current.replaceSecrets(fresh)
+        }
+        await current.retryNow()
+        #endif
+    }
 
     func deactivate() async {
         let generation = UUID()

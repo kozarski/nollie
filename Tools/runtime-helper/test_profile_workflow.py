@@ -37,7 +37,7 @@ class ProfileWorkflowTests(unittest.TestCase):
             try:
                 config = {"model": "fixture-model", "plugins": {"enabled": list(self.clone_plugins)}}
                 (staging / "config.yaml").write_text(json.dumps(config))
-                self.profiles._finish_profile_layout(staging)
+                self.layout.finish_profile_layout(staging)
                 staging.rename(destination)
                 self.events.append("published")
                 return destination
@@ -47,7 +47,8 @@ class ProfileWorkflowTests(unittest.TestCase):
 
         def ensure(home, name, path):
             self.assertEqual(home, self.home)
-            self.assertFalse((self.home / "profiles" / name).exists())
+            if "import" not in self.events:  # an import is checked again once Hermes has placed it
+                self.assertFalse((self.home / "profiles" / name).exists())
             self.events.append("ask-first")
             if self.fail:
                 raise ValueError("fixture setup failed")
@@ -55,8 +56,25 @@ class ProfileWorkflowTests(unittest.TestCase):
             config["plugins"]["enabled"].append("nollie-workflow")
             (path / "config.yaml").write_text(json.dumps(config))
 
-        self.profiles = SimpleNamespace(create_profile=create, _finish_profile_layout=finish,
+        def import_profile(archive, name=None):
+            self.events.append("import")
+            destination = self.home / "profiles" / (name or "from-archive")
+            destination.mkdir()
+            (destination / "config.yaml").write_text(json.dumps({"plugins": {"enabled": []}}))
+            return destination
+
+        def export_profile(name, output):
+            self.events.append("export")
+            return Path(output)
+
+        def rename_profile(old, new):
+            self.events.append("rename")
+            return self.home / "profiles" / new
+
+        self.profiles = SimpleNamespace(create_profile=create, import_profile=import_profile,
+                                        export_profile=export_profile, rename_profile=rename_profile,
                                         _canon_valid=str.lower, get_active_profile_name=lambda: "default")
+        self.layout = SimpleNamespace(finish_profile_layout=finish)
         policy = SimpleNamespace(excluded=lambda name, private: name in private)
         self.addons = SimpleNamespace(WORKFLOW="nollie-workflow", ensure_profile_workflow=ensure,
                                       workflow_privacy=lambda *_: (policy, self.private))
@@ -67,7 +85,9 @@ class ProfileWorkflowTests(unittest.TestCase):
             self.events.append("keys")
             self.cloned.append((source, keep_channels))
 
-        entry._scope_profile_workflow(self.profiles, self.addons, self.home, clone_keys)
+        self.chat_home = self.home
+        entry._scope_profile_workflow(self.profiles, self.layout, self.addons, self.home, clone_keys,
+                                      current_home=lambda: self.chat_home)
 
     def test_new_and_cloned_bots_get_rules_before_publication(self):
         for name, options, events in (("fresh", {}, ["create", "layout", "ask-first", "published"]),
@@ -117,8 +137,49 @@ class ProfileWorkflowTests(unittest.TestCase):
 
     def test_layout_outside_creation_cannot_enable_an_existing_bot(self):
         with self.assertRaises(ValueError):
-            self.profiles._finish_profile_layout(self.home / "profiles" / "existing")
+            self.layout.finish_profile_layout(self.home / "profiles" / "existing")
         self.assertEqual(self.events, [])
+
+
+    def test_no_new_bot_from_a_private_bots_chat(self):
+        # Hermes copies the open chat's bot's sign-ins into a bot made there, after it is created.
+        self.chat_home = self.home / "profiles" / "moss"
+        with self.assertRaises(ValueError):
+            self.profiles.create_profile("fresh")
+        self.chat_home = self.home / "profiles" / "scout"
+        self.profiles.create_profile("fresh")
+        self.assertEqual(self.events[-1], "published")
+
+    def test_a_chat_outside_this_setup_is_refused(self):
+        self.chat_home = Path("/tmp/elsewhere")
+        with self.assertRaises(ValueError):
+            self.profiles.create_profile("fresh")
+        self.assertEqual(self.events, [])
+
+    def test_imports_are_named_public_and_get_ask_first(self):
+        with self.assertRaises(ValueError):
+            self.profiles.import_profile("backup.tar.gz")
+        with self.assertRaises(ValueError):
+            self.profiles.import_profile("backup.tar.gz", "Moss")
+        self.assertEqual(self.events, [])
+        self.profiles.import_profile("backup.tar.gz", "rover")
+        self.assertEqual(self.events, ["import", "ask-first"])
+
+    def test_private_bots_are_never_exported_or_renamed(self):
+        for call in (lambda: self.profiles.export_profile("moss", "/tmp/out"),
+                     lambda: self.profiles.rename_profile("moss", "rover"),
+                     lambda: self.profiles.rename_profile("rover", "personal")):
+            with self.assertRaises(ValueError):
+                call()
+        self.assertEqual(self.events, [])
+        self.profiles.export_profile("rover", "/tmp/out")
+        self.profiles.rename_profile("rover", "ivy")
+        self.assertEqual(self.events, ["export", "rename"])
+
+    def test_a_copy_bound_at_import_is_refused(self):
+        bound = SimpleNamespace(**vars(self.profiles), finish_profile_layout=lambda *a, **k: None)
+        with self.assertRaises(SystemExit):
+            entry._scope_profile_workflow(bound, self.layout, self.addons, self.home)
 
 
 if __name__ == "__main__":

@@ -9,13 +9,17 @@ import Foundation
         guard let entrypoint = Bundle.main.url(forResource: "runtime_entry", withExtension: "py") else { return }
         let paths = NolliePaths.current
         let serviceDirectory = paths.runtimeService
-        let backend = NativeRuntimeBackend(installations: paths.setups, entrypoint: entrypoint)
+        // Papertrail for helpers' own computers: the exit relay writes into the book of the setup
+        // Hermes last ran from.
+        let computersPapertrail = ExitRelayPapertrailLog()
+        let backend = NativeRuntimeBackend(installations: paths.setups, entrypoint: entrypoint,
+                                           computersPapertrail: computersPapertrail)
         let service = RuntimeService(supervisor: NollieRuntimeSupervisor(backend: backend),
                                      credentials: RuntimeKeychainCredentials(),
                                      consent: RuntimeConsentFile(directory: serviceDirectory))
         // The exit relay: helpers' computers reach the internet through this Mac, so a Tailscale
         // exit node carries their traffic too. On by itself whenever a computer runs.
-        let relay = RuntimeExitRelay(directory: serviceDirectory)
+        let relay = RuntimeExitRelay(directory: serviceDirectory, papertrail: computersPapertrail)
         // Nollie Link: the TLS door for linked phones. It listens only while a device is linked or
         // a pairing code is showing.
         let link = RuntimeLink.make(service: service, directory: serviceDirectory, relay: relay)

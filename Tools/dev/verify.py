@@ -49,6 +49,7 @@ GOLDEN_UI = [
     "WholeReplyUITests",
     "DemoModeUITests",
     "WhatsNewUITests",
+    "ScheduleStopUITests",
 ]
 
 PYTHON_SUITES = [

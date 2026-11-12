@@ -23,34 +23,40 @@ import urllib.request
 
 # This compatibility scope is only valid for the source archived by the native installer.
 CATALOG_SOURCE_HASHES = {
-    "agent/models_dev.py": "92bab26726beae0259989c75316167134b0f67a243a5faa4a29c5f6e4ac9f30d",
-    "hermes_cli/model_catalog.py": "80dd5e199de1dc5cac7eab22bf3030d1ad659645fbf01c1ef9c106384451e832",
-    "hermes_cli/model_switch_providers.py": "462ecb18bd015dc6dd5e48990e2248d07d2200c61610f887f81afc450208ea0d",
-    "hermes_cli/inventory.py": "ef4280ca5abc210e4ef273015d04debf5b5582375af272b52822b56a8c03d04a",
+    "agent/models_dev.py": "13b873684a16fe8c67149071ca7ab3a173001476d496e35b0ad27bac65b127d5",
+    "hermes_cli/model_catalog.py": "466859b7339c84f88e065baff9872108a04e93e7f26f632d233e066afd06c627",
+    "hermes_cli/model_switch_providers.py": "54b1eb1984487a7dd0c6da07f35401c6d4abdeaaf9cf916ddcc5f7a1ab48d24f",
+    "hermes_cli/inventory.py": "e752a4a0f0f292878ab39c9791d12705dac5d6d7b6b08dd1bc5d47886b3b4235",
 }
 
 
 MODEL_PROBE_SOURCE_HASHES = {
-    'hermes_cli/web_routers/local_models.py': '381c8db2a27d7d60809a8e93f2a57efb663aed7d1b461235d077bad6659d2f2c',
-    'hermes_cli/local_runtime/endpoint.py': '58e36eaede25d34e438fa874fd6866e2a3fe37b1a58a74eb139240fc3491425a',
+    'hermes_cli/web_routers/local_models.py': 'ca7335f1022547241ba4f3cf301dd0fbb992fbf66f7e2974ec284590fb9f60b3',
+    'hermes_cli/local_runtime/endpoint.py': '92263833b5b107e2ac11405328fdc3b31a94f97052ba1f8e56e6e710ed0a1406',
     'hermes_cli/local_runtime/recovery.py': '8446fb9e257d8461a84859592c6bc9940cce39315635c03ca7a9b9136679fb2f',
-    'hermes_cli/local_runtime/bootstrap.py': 'c48dd0d0a90f9f66de15928ff3d5545e6eaa80bbce26b50d37790f82da71e87b',
-    'hermes_cli/web_server.py': 'bd14c619166da6534b94d0a6e802c6da3711f9738dc80747c17f85af2e71af0b',
+    'hermes_cli/local_runtime/bootstrap.py': '64df9225e84ce1c0bcfef8575f4336bc9bdaa57ea9b2b949d1700bcd82eb33bd',
+    'hermes_cli/web_server.py': '450289d43bb48e0df8906881ca4760fc8e4d92cf6e9b63e8fc5890a7231ce047',
 }
 
 PROFILE_SOURCE_HASHES = {
-    "hermes_cli/profiles.py": "f65320d57dfe6bd670c139b5b2c394eb6150cf67b9536b8a82e95f0ea0180f14",
+    "hermes_cli/profiles.py": "88112265f41b1393cc518f74856488d22af88fad11600330f2f83ee9d990a19c",
+    "hermes_cli/profiles_initialization.py": "31f2d005acf3f01b4e8997855b7a6dea35e11c017cedc686116ace631d2dd59e",
+    "tui_gateway/methods_profiles.py": "646041d3d812d71d5db718b33bf5d5cb0d98a5e9e15ccc18894368982aeed511",
+    "hermes_cli/web_routers/profiles.py": "9f9dfead957a023ac4e76af0c43050dcb66b00547ee9baf64122fc779ae25c50",
+    "hermes_constants.py": "74d849629c176703d48f9aa43a245fd8819545ac908c805e347db7d691976510",
 }
 
 KEY_SOURCE_HASHES = {
-    "hermes_cli/env_loader.py": "da921984d4cd690bbb9813c6431ecc88b18b46307800d155c86e25c8e45ccee1",
-    "agent/secret_sources/registry.py": "d3cde03a36e77b8ce342549acc4d684d28071baa619c5e6b7b00c1f97650e08f",
+    "hermes_cli/env_loader.py": "b4ba716b5e9d73ccbbc16f507b366ffad0c02bbf12d164568ca32461bf858e11",
+    "agent/secret_sources/registry.py": "01048f385823494590b8868d1b70136bf943af336e0ce77041f96677cd124424",
     "agent/secret_sources/base.py": "49b39c137a57691030966101313becfb455b6ea5f89d160808ff3bee601b3cee",
-    "agent/secret_scope.py": "e641d7e811d988cb25140005b61d44a82829f0957dd52b8a79c3c9915da80cf2",
-    "hermes_cli/profile_channels.py": "dca712fdcb9176e3d20e49b254d0d97b2340c289c84b7f883239b8f659a4f0eb",
+    "agent/secret_scope.py": "b1e9033c6b456e517a31ea3115da9f90475f535fd87d64ceece9b14b241e105f",
+    "hermes_cli/profile_channels.py": "06bc290992c2a2ae8ebb822dcd4fd5815bcfcc996c8ac739ede0f12900f44862",
 }
 
 KEY_SOURCE = "nollie_keychain"
+# Names Hermes 0.23 reads only from the process environment (plugins/config_backends/remote/credentials.py).
+NEVER_FROM_KEYCHAIN = frozenset({"HERMES_CONFIG_BACKEND", "HERMES_CONFIG_REMOTE_URL", "HERMES_CONFIG_INSTANCE_ID"})
 CLONE_NOTE = ".nollie-keys-from"
 _ENV_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,127}")
 _PROFILE_NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,63}")
@@ -364,7 +370,10 @@ def _scope_keychain_source(base, registry, env_loader, home, keys, read_env):
             return True
 
         def fetch(self, cfg, home_path):
-            return base.FetchResult(secrets=own(home_path))
+            # Hermes refuses to start when a secret source names its config backend or plane credentials.
+            found = own(home_path)
+            return base.FetchResult(secrets={name: value for name, value in found.items()
+                                             if name not in NEVER_FROM_KEYCHAIN and not name.startswith("HERMES_CONFIG_")})
 
     if not registry.register_source(KeychainSource(), replace=True, builtin=True):
         raise SystemExit(78)
@@ -415,6 +424,13 @@ def _note_cloned_keys(keys, home):
     secret source and for the helper to copy at the next start. Messaging bot tokens stay
     behind, as Hermes's own copy leaves them."""
     def note(folder, source, keep_channels):
+        # A full copy brings the source's own note along; this copy's note says only what it took.
+        copied = Path(folder) / CLONE_NOTE
+        try:
+            if stat.S_ISREG(os.lstat(copied).st_mode):
+                os.unlink(copied)
+        except FileNotFoundError:
+            pass
         names = sorted(keys.get(source, {}))
         if names and not keep_channels:
             try:
@@ -431,10 +447,23 @@ def _note_cloned_keys(keys, home):
     return note
 
 
-def _scope_profile_workflow(profiles, addons, home, clone_keys=None):
-    """Finish Ask first inside Hermes's hidden staging folder, before a bot can be served."""
+def _current_home():
+    from hermes_constants import get_hermes_home
+    return Path(get_hermes_home())
+
+
+def _scope_profile_workflow(profiles, layout, addons, home, clone_keys=None, current_home=None):
+    """Finish Ask first inside Hermes's hidden staging folder, before a bot can be served.
+
+    ``layout`` is ``hermes_cli.profiles_initialization``: ``create_profile`` imports its
+    ``finish_profile_layout`` when it runs, so the wrapped one is the one it calls."""
+    if hasattr(profiles, "finish_profile_layout") or hasattr(profiles, "_finish_profile_layout"):
+        raise SystemExit(78)  # a copy bound at import would skip the wrapped step
     original_create = profiles.create_profile
-    original_finish = profiles._finish_profile_layout
+    original_finish = layout.finish_profile_layout
+    original_import = profiles.import_profile
+    original_export = profiles.export_profile
+    original_rename = profiles.rename_profile
     creating = contextvars.ContextVar("nollie_creating_profile", default=None)
 
     def require_public(name):
@@ -442,10 +471,26 @@ def _scope_profile_workflow(profiles, addons, home, clone_keys=None):
         if policy.excluded(name, private):
             raise ValueError("Private bots cannot be copied or created here.")
 
+    def require_public_chat():
+        # Hermes's chat screen copies the open chat's bot's .env and sign-ins into a bot made there
+        # (tui_gateway/methods_profiles.py, _mirror_launch_credentials), after the bot is created.
+        if current_home is None:
+            return
+        try:
+            bound = Path(current_home()).absolute()
+        except Exception:
+            raise ValueError("The new bot's setup could not be checked.") from None
+        if bound == home:
+            return
+        if bound.parent != home / "profiles":
+            raise ValueError("The new bot's setup could not be checked.")
+        require_public(profiles._canon_valid(bound.name))
+
     @functools.wraps(original_create)
     def create(name, *args, **kwargs):
         canon = profiles._canon_valid(name)
         require_public(canon)
+        require_public_chat()
         clone_from = args[0] if args else kwargs.get("clone_from")
         clone_all = args[1] if len(args) > 1 else kwargs.get("clone_all", False)
         clone_config = args[2] if len(args) > 2 else kwargs.get("clone_config", False)
@@ -473,8 +518,35 @@ def _scope_profile_workflow(profiles, addons, home, clone_keys=None):
             clone_keys(profile_dir, source, clone_channels)
         return result
 
+    @functools.wraps(original_import)
+    def import_bot(archive_path, name=None, *args, **kwargs):
+        # Nollie restores its own archives under a name it gives; an import that names itself
+        # from inside the archive could be a private bot's copy.
+        if not name:
+            raise ValueError("Name the bot to import.")
+        canon = profiles._canon_valid(name)
+        require_public(canon)
+        path = original_import(archive_path, name, *args, **kwargs)
+        addons.ensure_profile_workflow(home, canon, Path(path))
+        return path
+
+    @functools.wraps(original_export)
+    def export_bot(name, *args, **kwargs):
+        require_public(profiles._canon_valid(name))
+        return original_export(name, *args, **kwargs)
+
+    @functools.wraps(original_rename)
+    def rename_bot(old_name, new_name, *args, **kwargs):
+        require_public(profiles._canon_valid(old_name))
+        if (new_name or "").strip():
+            require_public(profiles._canon_valid(new_name))
+        return original_rename(old_name, new_name, *args, **kwargs)
+
     profiles.create_profile = create
-    profiles._finish_profile_layout = finish
+    profiles.import_profile = import_bot
+    profiles.export_profile = export_bot
+    profiles.rename_profile = rename_bot
+    layout.finish_profile_layout = finish
 
 
 def _prepare_profile_workflow(source, keys):
@@ -490,10 +562,14 @@ def _prepare_profile_workflow(source, keys):
         addons.ensure_workflow(home)
     except (KeyError, addons.Refused, OSError, ValueError):
         raise SystemExit(78) from None
-    from hermes_cli import profiles
-    if Path(profiles.__file__).resolve(strict=True) != Path(source).resolve(strict=True) / "hermes_cli/profiles.py":
-        raise SystemExit(78)
-    _scope_profile_workflow(profiles, addons, home, _note_cloned_keys(keys, home))
+    from hermes_cli import profiles, profiles_initialization
+    root = Path(source).resolve(strict=True)
+    for module, relative in ((profiles, "hermes_cli/profiles.py"),
+                             (profiles_initialization, "hermes_cli/profiles_initialization.py")):
+        if Path(module.__file__).resolve(strict=True) != root / relative:
+            raise SystemExit(78)
+    _scope_profile_workflow(profiles, profiles_initialization, addons, home, _note_cloned_keys(keys, home),
+                            current_home=_current_home)
 
 
 # Papertrail's door. Nollie Runtime starts Hermes with every proxy variable pointing at its door on

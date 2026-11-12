@@ -234,9 +234,15 @@ actor RuntimeLink {
 
     /// The Bonjour host name, `<LocalHostName>.local`.
     static func localName() -> String? {
-        guard let local = SCDynamicStoreCopyLocalHostName(nil) as String?, !local.isEmpty,
-              local.utf8.allSatisfy({ (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || $0 == 45 }) else { return nil }
-        return local + ".local"
+        guard let local = SCDynamicStoreCopyLocalHostName(nil) as String? else { return nil }
+        return bonjourName(local)
+    }
+
+    /// In small letters: most Macs are named with capitals ("Coreys-MacBook-Pro"), names on a network
+    /// don't tell capitals apart, and a code only carries small-letter names. Nil for a name a code can't carry.
+    static func bonjourName(_ local: String) -> String? {
+        let name = local.lowercased() + ".local"
+        return NollieTailnet.validLinkHost(name) ? name : nil
     }
 }
 #endif

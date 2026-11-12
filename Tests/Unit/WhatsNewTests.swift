@@ -72,6 +72,12 @@ import Testing
                     #expect(!words.contains("\u{2014}"), "an em dash in \(item.id)")
                 }
                 #expect(!item.title.isEmpty && !item.line.isEmpty)
+                // An iPhone reads it too, so it never says "this Mac".
+                if !item.macOnly {
+                    for words in [item.title, item.line, item.place ?? "", item.more ?? ""] {
+                        #expect(!words.localizedCaseInsensitiveContains("this Mac"), "\(item.id) says this Mac on an iPhone")
+                    }
+                }
             }
         }
     }

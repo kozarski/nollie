@@ -6,7 +6,9 @@ import NollieCore
 /// connected apps. The screens say so up front, so nobody taps a control only to be refused.
 enum OnYourMac {
     /// True on a phone that reaches its helpers through a linked Mac's door.
-    static func applies(_ connection: GatewayConnection?) -> Bool { connection?.linkedMac != nil }
+    static func applies(_ connection: GatewayConnection?) -> Bool {
+        connection?.linkedMac != nil || (connection != nil && DemoMode.linkedPhone)
+    }
 
     /// Schedules are made by hand only where the gateway takes them; a linked phone asks Nollie instead.
     static func makesSchedulesByHand(developerMode: Bool, linked: Bool) -> Bool { developerMode && !linked }
@@ -20,7 +22,7 @@ struct OnYourMacNote: View {
     let words: String
 
     var body: some View {
-        Label(words, systemImage: "macbook")
+        Label(words, systemImage: "laptopcomputer")
             .small(.footnote, .secondary)
             .testID("onYourMac.note")
     }

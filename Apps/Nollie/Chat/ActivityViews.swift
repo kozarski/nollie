@@ -113,6 +113,7 @@ struct ToolRunRow: View, Equatable {
             Text(title).font(.subheadline.weight(.medium))
                 .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
                 .fixedSize(horizontal: false, vertical: true)
+            if let progress = running?.progress { Text(progress.shortText).quiet(.caption.monospacedDigit()) }
             if isOpen { Spacer(minLength: 6) }
             trailingMark.accessibilityHidden(true)
             Text("\(steps.count)").quiet(.caption.monospacedDigit()).accessibilityHidden(true)
@@ -224,6 +225,7 @@ struct ToolCardView: View {
             if let line = presentation.detail {
                 Text(line).quiet(.caption).lineLimit(1).truncationMode(.middle)
             }
+            if activity.status == .running, let progress = activity.progress { ToolProgressLine(progress: progress) }
         }
     }
 
@@ -287,6 +289,27 @@ struct ToolCardView: View {
         case .done: Glyph("checkmark", .caption2, .tertiary)
         case .running: ProgressView().controlSize(.mini)
         }
+    }
+}
+
+/// How far a running step has got: a thin bar when the tool says how much there is, and "3 of 10".
+struct ToolProgressLine: View {
+    var progress: ToolProgress
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if let fraction = progress.fraction {
+                ProgressView(value: fraction)
+                    .progressViewStyle(.linear)
+                    .frame(maxWidth: 120)
+                    .animation(.easeOut(duration: 0.3), value: fraction)
+            }
+            Text(progress.shortText).quiet(.caption2.monospacedDigit())
+        }
+        .padding(.top, 2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(progress.shortText)
+        .accessibilityIdentifier("activity.progress")
     }
 }
 

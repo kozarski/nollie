@@ -21,11 +21,11 @@ enum NativeSetupPlan {
         #endif
     }
     // Every pin below is listed in Tools/pins.json; Tools/dev/check-latest.py --local checks they agree.
-    static let hermesCommit = "d923a5eb487a17c0a68801bba9ef0f56c81040a8"
-    static let pythonVersion = "3.14.8"
-    static let pythonKey = "cpython-3.14.8-macos-aarch64-none"
+    static let hermesCommit = "3b421578588243f920886e6fe79a6faa87ea026e"
+    static let pythonVersion = "3.14.10"
+    static let pythonKey = "cpython-3.14.10-macos-aarch64-none"
     /// SHA-256 of Services/Runtime/HermesOverlay/overlay.json: Nollie's reviewed changes to this Hermes.
-    static let hermesOverlayDigest = "dbaab45cd6f846b8650c0dc91e51c2d4835f17986659668d2ebd8bcaa6541530"
+    static let hermesOverlayDigest = "ef18f0b69d3e2fb138e289f9e2574ac71b51354465d17816851175775d75061d"
     /// What a prepared Hermes receipt records: the release plus the exact reviewed changes on top.
     static var hermesPreparedVersion: String { hermes.version + "+nollie." + hermesOverlayDigest.prefix(12) }
     struct Artifact: Sendable {
@@ -35,12 +35,12 @@ enum NativeSetupPlan {
         let sha256: String
         let bytes: Int
     }
-    static let uv = Artifact(id: "uv", version: "0.13.4",
-        url: URL(string: "https://github.com/astral-sh/uv/releases/download/0.13.4/uv-aarch64-apple-darwin.tar.gz")!,
-        sha256: "e0b1d4743ce64c55d9f0f4a444afa6b81125680070ee04e853fcd0f6c1ebf8f1", bytes: 14_326_193)
-    static let hermes = Artifact(id: "hermes", version: "0.22.2",
+    static let uv = Artifact(id: "uv", version: "0.13.7",
+        url: URL(string: "https://github.com/astral-sh/uv/releases/download/0.13.7/uv-aarch64-apple-darwin.tar.gz")!,
+        sha256: "81b811b57e4624df7ed3aac148e0359100d9962f3d9dce00aec533dc2e086731", bytes: 14_347_867)
+    static let hermes = Artifact(id: "hermes", version: "0.23.1",
         url: URL(string: "https://codeload.github.com/NousResearch/hermes-agent/tar.gz/" + hermesCommit)!,
-        sha256: "616649f8ac7e3bb186999d000d77511e733b3930bd2b5921be4a85673320ef8b", bytes: 81_466_389)
+        sha256: "2525046f165880c22f177f2214c8da3e26c58cb0aeab5bd09aad940556538897", bytes: 91_372_324)
     /// The preparation steps, in order. "addons" is Nollie's own add-ons; the service needs only the first four.
     static let preparationSteps = ["uv", "python", "hermes", "dependencies", "addons"]
     static let runtimeSteps = ["uv", "python", "hermes", "dependencies"]
@@ -49,13 +49,12 @@ enum NativeSetupPlan {
     static let diskMegabytes = 800
 
     static var steps: [NativeDependencyStep] { [
-        .init(id: "uv", title: String(localized: "Download manager"), detail: String(localized: "uv 0.13.4. A 14.3 MB verified download, kept inside Nollie's setup folder."), state: .notChecked, optional: false),
-        .init(id: "python", title: String(localized: "Python runtime"), detail: String(localized: "Python 3.14.8. A 26.7 MB verified download. A separate runtime for Nollie, without changing your existing Python."), state: .notChecked, optional: false),
-        .init(id: "hermes", title: "Hermes Agent", detail: String(localized: "Hermes 0.22.2 at a fixed revision, an 81.5 MB verified download, with Nollie's reviewed changes for quiet bot chats, Board notes and safe scheduled checks."), state: .notChecked, optional: false),
+        .init(id: "uv", title: String(localized: "Download manager"), detail: String(localized: "uv 0.13.7. A 14.3 MB verified download, kept inside Nollie's setup folder."), state: .notChecked, optional: false),
+        .init(id: "python", title: String(localized: "Python runtime"), detail: String(localized: "Python 3.14.10. A 26.8 MB verified download. A separate runtime for Nollie, without changing your existing Python."), state: .notChecked, optional: false),
+        .init(id: "hermes", title: "Hermes Agent", detail: String(localized: "Hermes 0.23.1 at a fixed revision, a 91.4 MB verified download, with Nollie's reviewed changes for Board notes and safe scheduled checks."), state: .notChecked, optional: false),
         .init(id: "dependencies", title: String(localized: "Runtime libraries"), detail: String(localized: "The exact versions in Hermes's lockfile, each checked against its recorded hash. About 40 MB."), state: .notChecked, optional: false),
         .init(id: "addons", title: String(localized: "Nollie add-ons"), detail: String(localized: "Board follow-through, Papertrail and the Night shift, the crew, the page reader, computer previews and using apps on this Mac. The reader's own libraries are about 20 MB, each checked against its recorded hash."), state: .notChecked, optional: false),
-        .init(id: "service", title: String(localized: "Background service"), detail: String(localized: "Keeps your assistant running while this Mac is awake, even after Nollie closes. Starting it is a separate step, with your permission."), state: .notChecked, optional: false),
-        .init(id: "computer", title: String(localized: "Computer access"), detail: String(localized: "Optional. Needs a packaged computer adapter and your macOS permission approval. No permissions are copied."), state: .blocked, optional: true)
+        .init(id: "service", title: String(localized: "Background service"), detail: String(localized: "Keeps your assistant running while this Mac is awake, even after Nollie closes. Starting it is a separate step, with your permission."), state: .notChecked, optional: false)
     ] }
 
     static func environment(installation: URL) -> [String: String] {
@@ -95,6 +94,50 @@ enum NativeSetupPlan {
     }
 
     static func failure(_ message: String) -> ConfigurationBackup.Failure { .init(message) }
+
+    /// Said as it is on the setup screen: the person can act on it.
+    static var lowDiskMessage: String {
+        String(localized: "This Mac needs at least 6 GB free to get Nollie ready. Free up some space, then try again.")
+    }
+}
+
+/// Lets one preparation step run at a time for each setup folder, across every installer in this app.
+/// Callers wait their turn in order.
+actor NativeInstallGate {
+    static let shared = NativeInstallGate()
+    private var busy: Set<String> = []
+    private var waiting: [String: [CheckedContinuation<Void, Never>]] = [:]
+
+    func serialized<Value: Sendable>(_ key: String, _ work: @Sendable () async throws -> Value) async throws -> Value {
+        await acquire(key)
+        do {
+            let value = try await work()
+            release(key)
+            return value
+        } catch {
+            release(key)
+            throw error
+        }
+    }
+
+    /// True while a step for this folder runs or waits.
+    func isBusy(_ key: String) -> Bool { busy.contains(key) }
+
+    private func acquire(_ key: String) async {
+        guard busy.contains(key) else { busy.insert(key); return }
+        await withCheckedContinuation { waiting[key, default: []].append($0) }
+    }
+
+    private func release(_ key: String) {
+        if var queue = waiting[key], !queue.isEmpty {
+            // Handed straight to the next caller; the folder stays busy.
+            let next = queue.removeFirst()
+            waiting[key] = queue.isEmpty ? nil : queue
+            next.resume()
+        } else {
+            busy.remove(key)
+        }
+    }
 }
 
 /// Stores preparation receipts separately from runtime readiness. A downloaded dependency
@@ -119,7 +162,7 @@ actor NativeDependencyInstaller {
 
     func inspect() -> [NativeDependencyStep] {
         var steps = NativeSetupPlan.steps
-        for index in steps.indices where !["service", "computer"].contains(steps[index].id) {
+        for index in steps.indices where steps[index].id != "service" {
             let id = steps[index].id
             if !NativeSetupPlan.directAvailable {
                 steps[index].state = .blocked
@@ -131,7 +174,16 @@ actor NativeDependencyInstaller {
         return steps
     }
 
+    /// One step at a time per setup folder, whichever installer asks: the launch-time add-on update,
+    /// an engine update and the setup screen each make their own installer. The step is checked again
+    /// once it is this caller's turn, so work another caller just finished is kept, never redone.
     func install(_ id: String) async throws {
+        try await NativeInstallGate.shared.serialized(installation.standardizedFileURL.path) {
+            try await self.installNow(id)
+        }
+    }
+
+    private func installNow(_ id: String) async throws {
         #if NOLLIE_DIRECT
         guard NativeSetupPlan.preparationSteps.contains(id) else {
             throw NativeSetupPlan.failure(String(localized: "This step needs a packaged, signed native service before it can run."))
@@ -172,15 +224,36 @@ actor NativeDependencyInstaller {
             let envPython = installation.appendingPathComponent("environment/bin/python")
             // The bundled installer copies the checked add-ons, keeps dated copies of older ones, builds the
             // reader's hash-locked environment and lists the add-ons in Hermes's config, with a dated backup.
-            _ = try await run(envPython, ["-I", "-B", kit.installer.path, "--kit", kit.root.path,
-                                          "--installation", installation.path, "--uv", uvPath.path,
-                                          "--python", pythonPath.path], timeout: 900)
+            // Exit 3 means another add-on update holds the installer's own lock (another copy of Nollie,
+            // say). That is a wait, not a failure: look again until it finishes, then trust what it did.
+            var attempts = 0
+            while true {
+                do {
+                    _ = try await run(envPython, ["-I", "-B", kit.installer.path, "--kit", kit.root.path,
+                                                  "--installation", installation.path, "--uv", uvPath.path,
+                                                  "--python", pythonPath.path], timeout: 900)
+                    break
+                } catch where NativeDependencyInstaller.isBusy(error) && attempts < 150 {
+                    attempts += 1
+                    try await Task.sleep(for: .seconds(2))
+                    if (try? verified("addons")) == true { return }
+                }
+            }
             try saveAddOnsReceipt(kit)
         default: break
         }
         #endif
         #else
         throw NativeSetupPlan.failure(String(localized: "Local installation is available in the direct Mac edition."))
+        #endif
+    }
+
+    /// The add-on installer's "another update is running" (its exit status 3).
+    nonisolated static func isBusy(_ error: Error) -> Bool {
+        #if NOLLIE_DIRECT
+        (error as? NativeSetupProcess.Failure)?.status == 3
+        #else
+        false
         #endif
     }
 
@@ -243,17 +316,14 @@ actor NativeDependencyInstaller {
         }.sorted { $0.path < $1.path }
     }
 
-    private func record(_ file: URL, relativeTo root: URL) throws -> FileRecord {
-        guard file.path.hasPrefix(root.path + "/") else { throw NativeSetupPlan.failure(String(localized: "A prepared file escaped its setup folder.")) }
-        let bytes = try OwnedSetupFiles.read(file, maximum: 100_000_000)
-        return FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: bytes.count, sha256: OwnedSetupFiles.hash(bytes))
-    }
-
     func inventory(_ root: URL, allowInternalLinks: Bool = false) throws -> [FileRecord] {
         let fd = try OwnedSetupFiles.directory(root)
         close(fd)
         var records: [FileRecord] = []
         func visit(_ folder: URL) throws {
+            // Opened once per folder, without following links, and every file in it is read through it.
+            let opened = try OwnedSetupFiles.directory(folder)
+            defer { close(opened) }
             for file in try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]) {
                 let values = try file.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
                 if values.isSymbolicLink == true {
@@ -273,7 +343,11 @@ actor NativeDependencyInstaller {
                     records.append(FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: 0,
                                               sha256: OwnedSetupFiles.hash(Data(target.utf8)), linkTarget: target))
                 } else if values.isDirectory == true { try visit(file) }
-                else if values.isRegularFile == true { records.append(try record(file, relativeTo: root)) }
+                else if values.isRegularFile == true {
+                    guard file.path.hasPrefix(root.path + "/") else { throw NativeSetupPlan.failure(String(localized: "A prepared file escaped its setup folder.")) }
+                    let bytes = try OwnedSetupFiles.read(in: opened, name: file.lastPathComponent, maximum: 100_000_000)
+                    records.append(FileRecord(path: String(file.path.dropFirst(root.path.count + 1)), bytes: bytes.count, sha256: OwnedSetupFiles.hash(bytes)))
+                }
                 else { throw NativeSetupPlan.failure(String(localized: "A prepared component contains an unsupported file.")) }
                 guard records.count < 100_000 else { throw NativeSetupPlan.failure(String(localized: "A prepared component has too many files.")) }
             }
@@ -323,7 +397,7 @@ actor NativeDependencyInstaller {
     private func prepareDirectories() throws {
         let values = try installation.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         guard let available = values.volumeAvailableCapacityForImportantUsage, available > 6_000_000_000 else {
-            throw NativeSetupPlan.failure(String(localized: "Keep at least 6 GB free before preparing the runtime. Model downloads need more space."))
+            throw NativeSetupPlan.failure(NativeSetupPlan.lowDiskMessage)
         }
         // The service creates and owns this root before a runner can write into it.
         let marker = try OwnedSetupFiles.read(installation.appendingPathComponent("ownership.json"), maximum: 4096)
@@ -457,18 +531,34 @@ enum NativeSetupProcess {
 
 /// A private session accepts only the pinned project's HTTPS release hosts and bounds
 /// download size before reading the result. Response bodies never enter user-facing logs.
-private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+///
+/// A download that stops moving ends after `stallLimit` without a byte, so Try again shows in about a
+/// minute rather than after the whole allowance. A slow one that keeps moving may take up to an hour.
+final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+    /// Seconds without a byte before a download counts as stalled.
+    static let stallLimit: TimeInterval = 60
+    /// The most a download that keeps moving may take.
+    static let resourceLimit: TimeInterval = 3_600
+
     private let artifact: NativeSetupPlan.Artifact
+    private let stallLimit: TimeInterval
     private var continuation: CheckedContinuation<Data, Error>?
     private var session: URLSession?
     private var cancelled = false
+    private var lastProgress = Date()
+    private var watch: DispatchSourceTimer?
     private let lock = NSLock()
-    private init(_ artifact: NativeSetupPlan.Artifact) { self.artifact = artifact }
-    static func fetch(_ artifact: NativeSetupPlan.Artifact) async throws -> Data {
+    private init(_ artifact: NativeSetupPlan.Artifact, stallLimit: TimeInterval) {
+        self.artifact = artifact
+        self.stallLimit = stallLimit
+    }
+    /// `protocolClasses` lets tests answer without the network.
+    static func fetch(_ artifact: NativeSetupPlan.Artifact, stallLimit: TimeInterval = NativeArtifactDownload.stallLimit,
+                      protocolClasses: [AnyClass]? = nil) async throws -> Data {
         guard NativeArtifactDownloadPolicy.allows(artifact.url) else {
             throw NativeSetupPlan.failure(NativeArtifactDownloadPolicy.redirectFailure)
         }
-        let delegate = NativeArtifactDownload(artifact)
+        let delegate = NativeArtifactDownload(artifact, stallLimit: stallLimit)
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 delegate.lock.lock()
@@ -479,19 +569,43 @@ private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate
                 }
                 delegate.continuation = continuation
                 let configuration = URLSessionConfiguration.ephemeral
-                configuration.timeoutIntervalForRequest = 60
-                configuration.timeoutIntervalForResource = 600
+                configuration.timeoutIntervalForRequest = stallLimit
+                configuration.timeoutIntervalForResource = resourceLimit
                 configuration.httpCookieStorage = nil
                 configuration.urlCredentialStorage = nil
+                if let protocolClasses { configuration.protocolClasses = protocolClasses }
                 let queue = OperationQueue()
                 queue.maxConcurrentOperationCount = 1
                 let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: queue)
                 delegate.session = session
+                delegate.lastProgress = Date()
+                delegate.startWatch()
                 delegate.lock.unlock()
                 session.downloadTask(with: artifact.url).resume()
             }
         } onCancel: { delegate.finish(.failure(CancellationError())) }
     }
+
+    /// Looks a few times per limit for bytes. The session's own request timeout can miss a connection
+    /// that trickles or hangs part way, which once left the first download of Hermes waiting 12 minutes.
+    /// Called with the lock held.
+    private func startWatch() {
+        let timer = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
+        let every = min(5, max(stallLimit / 4, 0.05))
+        timer.schedule(deadline: .now() + every, repeating: every)
+        timer.setEventHandler { [weak self] in self?.checkForStall() }
+        watch = timer
+        timer.resume()
+    }
+
+    private func checkForStall() {
+        lock.lock()
+        let stalled = !cancelled && Date().timeIntervalSince(lastProgress) >= stallLimit
+        lock.unlock()
+        guard stalled else { return }
+        finish(.failure(NativeSetupPlan.failure(NativeArtifactDownloadPolicy.transportFailure(URLError(.timedOut)))))
+    }
+
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
                     newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
         guard let url = request.url, NativeArtifactDownloadPolicy.allows(url) else {
@@ -503,6 +617,9 @@ private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate
     }
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64,
                     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        lock.lock()
+        lastProgress = Date()
+        lock.unlock()
         if totalBytesWritten > artifact.bytes || totalBytesExpectedToWrite > artifact.bytes {
             finish(.failure(NativeSetupPlan.failure(String(localized: "The download was larger than the reviewed release."))))
         }
@@ -536,7 +653,10 @@ private final class NativeArtifactDownload: NSObject, URLSessionDownloadDelegate
         continuation = nil
         let active = session
         session = nil
+        let timer = watch
+        watch = nil
         lock.unlock()
+        timer?.cancel()
         pending?.resume(with: result)
         active?.invalidateAndCancel()
     }

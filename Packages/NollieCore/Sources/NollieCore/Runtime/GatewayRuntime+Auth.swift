@@ -18,6 +18,18 @@ extension GatewayRuntime {
         await socket.connect()
     }
 
+    /// Hermes refused the session for the assistant Nollie runs on this Mac. Asks the service for
+    /// the installation's current one and uses it from the next attempt on, when it differs.
+    func refreshManagedSession() async {
+        guard let refresher = managedSessionRefresher, let fresh = await refresher(),
+              let token = fresh.sessionToken, !token.isEmpty, token != secrets.sessionToken,
+              managedEndpointResolver != nil, !isDisposed else { return }
+        var next = secrets
+        next.sessionToken = token
+        keep(next)
+        await api.updateSigner(RequestSigner(authMode: connection.authMode, secrets: next))
+    }
+
     /// Remembers a session that works: it is held here and saved, and the refusal is forgotten.
     private func keep(_ working: GatewaySecrets) {
         refreshRefused = false

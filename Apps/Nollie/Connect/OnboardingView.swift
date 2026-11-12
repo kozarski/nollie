@@ -18,12 +18,15 @@ struct OnboardingView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @ScaledMetric(relativeTo: .largeTitle) private var desktopTitleSize: CGFloat = 38
     @ScaledMetric(relativeTo: .body) private var desktopBodySize: CGFloat = 17
+    /// The column for a feature's symbol grows with the text, so at the largest sizes it never spills left.
+    @ScaledMetric(relativeTo: .title3) private var featureIconWidth: CGFloat = 28
     @AppStorage(OnboardingProgress.storageKey) private var savedProgress = ""
     @AppStorage(WelcomeIntroTimeline.seenKey) private var welcomeIntroSeen = false
     @AppStorage(ModelPreferenceStore.key) private var savedModelMode = ModelSetupMode.local.rawValue
     @State private var previewProgress = OnboardingProgress()
     @State private var destination: Destination?
-    @State private var modelStatus: OnboardingModelStatus?
+    @State private var modelOptions: ModelOptionsResult?
+    @State private var modelLocal: LocalModelSetupSnapshot?
     @State private var computerConfigured: Bool?
     /// The computer step's toggle: on means setup is under way or done.
     @State private var computerSwitchOn = false
@@ -41,6 +44,15 @@ struct OnboardingView: View {
     @State private var managedConnectionRequest: UUID?
     @State private var compactDesktop = true
     @Environment(\.dismissWindow) private var dismissWindow
+    #else
+    /// The height the page has. On shorter iPhones the character shrinks (or, on the steps after the
+    /// welcome, steps aside) and the spacing tightens, so the words and pills sit clear of the buttons.
+    @State private var phoneHeight: CGFloat = 800
+    /// iPhone SE and mini.
+    private var compactPhone: Bool { phoneHeight < 740 }
+    /// Up to the Pro size: the steps after the welcome tighten a little.
+    private var mediumPhone: Bool { phoneHeight < 820 }
+    @Environment(\.horizontalSizeClass) private var widthClass
     #endif
 
     private enum Destination: String, Identifiable {
@@ -157,7 +169,7 @@ struct OnboardingView: View {
         progress.step == .welcome ? (compactDesktop ? 176 : 208)
             : (compactDesktop ? (progress.step == .home ? 44 : 56) : 88)
         #else
-        progress.step == .welcome ? 164 : progress.step == .howItWorks ? 56 : 92
+        progress.step == .welcome ? (compactPhone ? 116 : 164) : progress.step == .howItWorks ? 56 : (mediumPhone ? 64 : 92)
         #endif
     }
 
@@ -165,7 +177,7 @@ struct OnboardingView: View {
         #if os(macOS)
         .system(size: desktopTitleSize * (progress.step == .welcome ? 1.12 : compactDesktop ? 0.76 : 0.9), weight: .bold, design: .rounded)
         #else
-        .system(.largeTitle, design: .rounded, weight: .bold)
+        .system(compactPhone && progress.step != .welcome ? .title : .largeTitle, design: .rounded, weight: .bold)
         #endif
     }
 
@@ -179,9 +191,28 @@ struct OnboardingView: View {
 
     private var showsInstallerCharacter: Bool {
         #if os(macOS)
-        progress.step == .connection && progress.route == .new
+        progress.step == .connection && connectionRoute == .new
         #else
         false
+        #endif
+    }
+
+    /// Only the Direct download can import a copy of Hermes.
+    private var importAvailable: Bool {
+        #if os(macOS) && NOLLIE_DIRECT
+        true
+        #else
+        false
+        #endif
+    }
+
+    /// The connection step's path. On the Mac a setup saved without one shows Start new's card, so it is
+    /// Start new all through that step (`settleRoute` saves the right path as soon as setup opens).
+    private var connectionRoute: OnboardingProgress.Route? {
+        #if os(macOS)
+        progress.route ?? .new
+        #else
+        progress.route
         #endif
     }
 
@@ -203,7 +234,9 @@ struct OnboardingView: View {
                     WelcomeIntroView(startedAt: introStartedAt, heroFrame: target, size: geometry.size,
                                      fixedTime: demoIntroTime, skip: { finishIntro() })
                 }
+                #if os(macOS)
                 .clipShape(.rect(cornerRadius: 32))
+                #endif
                 .transition(.opacity)
             }
         }
@@ -222,6 +255,12 @@ struct OnboardingView: View {
                 previewProgress.route = .new
                 previewProgress.step = step
             }
+            // `-nollie-demo-onboarding-sheet models|link` opens that sheet over the step, a moment after it shows.
+            if DemoMode.isOn, let at = ProcessInfo.processInfo.arguments.firstIndex(of: "-nollie-demo-onboarding-sheet"),
+               ProcessInfo.processInfo.arguments.indices.contains(at + 1),
+               let sheet = Destination(rawValue: ProcessInfo.processInfo.arguments[at + 1]) {
+                Task { try? await Task.sleep(for: .seconds(3)); destination = sheet }
+            }
             #endif
             if workingPreview || installStepPreview {
                 previewProgress.route = .new
@@ -229,14 +268,20 @@ struct OnboardingView: View {
                 if workingPreview { return }
             }
             syncModelPreference()
+            suggestModelModeForThisMac()
             if skipWelcome, progress.step == .welcome { update { $0.step = .home } }
             if !isPreview {
                 let matchingConnection = progress.connectionID.map { id in model.store.connections.contains { $0.id == id } } ?? model.hasConnections
+                #if os(macOS)
+                let saved = model.runtime?.connection ?? model.store.active
+                let managed = saved == nil || saved?.managedInstallationID != nil
+                #endif
                 update {
                     #if os(iOS)
                     $0.resumeOnPhone(hasConnection: matchingConnection)
                     #else
                     $0.resume(hasConnection: matchingConnection)
+                    $0.settleRoute(managed: managed)
                     #endif
                 }
             }
@@ -247,6 +292,10 @@ struct OnboardingView: View {
         }
         .task(id: "\(checkIdentity)/\(progress.step.rawValue)") {
             await refreshChecks()
+        }
+        .onChange(of: progress.step, initial: true) { _, step in
+            // Setup's own notifications row is on screen: the Stay in the loop sheet waits a few days.
+            if step == Self.notificationStep, !isPreview { NotificationAskPause.noteOffered() }
         }
         .task(id: introActive) {
             guard introActive, demoIntroTime == nil else { return }
@@ -299,6 +348,7 @@ struct OnboardingView: View {
             .onExitCommand { dismissWindow(id: MacWindow.main) }
         #else
         navigationContent
+            .onGeometryChange(for: CGFloat.self) { $0.size.height.rounded() } action: { phoneHeight = $0 }
         #endif
     }
 
@@ -340,6 +390,11 @@ struct OnboardingView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(.hidden)
+            // On an iPad the page sits in the middle of the tall screen rather than at its top.
+            .defaultScrollAnchor(widthClass == .regular ? .center : .top, for: .alignment)
+            // At the largest sizes the page scrolls; the words soften under the bar and the clock
+            // instead of running into the back button.
+            .scrollEdgeEffectStyle(.soft, for: .top)
             .id(progress.step)
             .background { background }
             .safeAreaInset(edge: .bottom, spacing: 0) { if !typeSize.isAccessibilitySize { controls } }
@@ -352,12 +407,8 @@ struct OnboardingView: View {
                         .accessibilityIdentifier("onboarding.back")
                     }
                 }
-                ToolbarItem(placement: .primaryAction) {
-                    if progress.step != .welcome {
-                        Text(stepLabel).font(.caption).foregroundStyle(.secondary)
-                            .accessibilityLabel(stepLabel)
-                    }
-                }
+                // No step label here: the bar would wrap it in a glass pill that looks like a button,
+                // and the page's own title already says where you are.
             }
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -390,7 +441,7 @@ struct OnboardingView: View {
         #if os(macOS)
         compactDesktop ? (progress.step == .home ? 10 : 12) : 20
         #else
-        progress.step == .howItWorks ? 16 : 24
+        progress.step == .howItWorks || compactPhone || (mediumPhone && progress.step != .welcome) ? 16 : 24
         #endif
     }
 
@@ -422,17 +473,19 @@ struct OnboardingView: View {
                 QuickAnswerButton(place: .macSetup)
             }
             Spacer()
-            if progress.step != .welcome {
+            if let count = progress.stepCount {
                 VStack(alignment: .trailing, spacing: 7) {
-                    Text(stepLabel).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                    Text("Step \(count.index) of \(count.total)").font(.caption.weight(.medium)).foregroundStyle(.secondary)
                     HStack(spacing: 4) {
-                        ForEach(progress.steps.filter { $0 != .welcome && $0 != .ready }, id: \.self) { step in
+                        ForEach(progress.countedSteps, id: \.self) { step in
                             Capsule().fill(step == progress.step ? Color.blue : Color.primary.opacity(0.12))
                                 .frame(width: step == progress.step ? 22 : 6, height: 6)
                         }
                     }
                     .accessibilityHidden(true)
                 }
+            } else if progress.step == .ready {
+                Text("Ready when you are").font(.caption.weight(.medium)).foregroundStyle(.secondary)
             }
             Button { dismissWindow(id: MacWindow.main) } label: {
                 Image(systemName: "xmark")
@@ -448,23 +501,43 @@ struct OnboardingView: View {
         }
         .frame(minHeight: 32)
         .padding(.horizontal, 24).padding(.top, 16).padding(.bottom, 4)
-        .contentShape(.rect)
-        .gesture(WindowDragGesture())
-        .allowsWindowActivationEvents()
+        // The empty strip moves the window; each button keeps its own hit area and accessibility frame.
+        .background {
+            Color.clear.contentShape(.rect)
+                .gesture(WindowDragGesture())
+                .allowsWindowActivationEvents()
+                .accessibilityHidden(true)
+        }
+        .accessibilityElement(children: .contain)
     }
     #endif
 
     private var background: some View {
+        #if os(iOS)
+        OnboardingBackdrop()
+        #else
         ZStack {
             Color(.systemGroupedBackground)
             LinearGradient(colors: [Color.blue.opacity(0.08), .clear],
                            startPoint: .topLeading, endPoint: .bottomTrailing)
         }
         .ignoresSafeArea()
+        #endif
+    }
+
+    /// On a short iPhone the steps after the welcome leave the character out, so their words and
+    /// buttons fit above Scan QR code; the welcome and Ready keep it.
+    private var showsHeroCharacter: Bool {
+        #if os(iOS)
+        !(compactPhone && progress.step != .welcome && progress.step != .ready)
+        #else
+        true
+        #endif
     }
 
     private var hero: some View {
         VStack(spacing: pageSpacing) {
+            if showsHeroCharacter {
             ZStack {
                 if progress.step == .welcome && !reduceTransparency && contrast != .increased {
                     Circle()
@@ -479,6 +552,7 @@ struct OnboardingView: View {
             }
             .frame(height: heroSize * (progress.step == .welcome ? 1.16 : 1))
             .accessibilityHidden(true)
+            }
             VStack(spacing: 10) {
                 Text(title)
                     .font(headlineFont)
@@ -505,8 +579,8 @@ struct OnboardingView: View {
         case .howItWorks: return String(localized: "How Nollie works")
         case .team: return String(localized: "Make it yours.")
         case .connection:
-            if progress.route == .importCopy { return String(localized: "A copy, all your own.") }
-            return progress.route == .new ? String(localized: "A home for \(assistantName).") : String(localized: "Bring your assistant along.")
+            if connectionRoute == .importCopy { return String(localized: "A copy, all your own.") }
+            return connectionRoute == .new ? String(localized: "A home for \(assistantName).") : String(localized: "Bring your assistant along.")
         case .model: return String(localized: "Choose how Nollie thinks.")
         case .computer: return String(localized: "Their own computers.")
         case .permissions: return String(localized: "Allow a few things.")
@@ -517,7 +591,8 @@ struct OnboardingView: View {
     private var subtitle: String {
         #if os(iOS)
         if progress.step != .welcome && progress.step != .ready {
-            return String(localized: "Your Mac does the work. Your iPhone keeps you connected.")
+            return String(localized: "Your Mac does the work. \(DeviceWords.This) keeps you connected.",
+                          comment: "%@ is This iPhone or This iPad")
         }
         #endif
         switch progress.step {
@@ -640,7 +715,8 @@ struct OnboardingView: View {
                     .font(.callout).foregroundStyle(.secondary)
                 #else
                 statusRow("Your assistant", detail: connected ? String(localized: "Connected") : String(localized: "Not connected"), ready: connected)
-                statusRow("Model", detail: readyDetail(.model, modelDetail), ready: modelStatus?.isReady == true)
+                statusRow("Model", detail: modelStatus?.isReady == true ? modelDetail : readyDetail(.model, modelDetail),
+                          ready: modelStatus?.isReady == true)
                 statusRow("Computer", detail: readyDetail(.computer, computerDetail), ready: computerConfigured == true ? true : nil)
                 statusRow("Notifications", detail: readyDetail(.permissions, notificationDetail), ready: notificationsAllowed)
                 if connected, NollieLinkMacClient.isAvailable(for: runtime?.connection) {
@@ -654,14 +730,31 @@ struct OnboardingView: View {
     }
 
     #if os(iOS)
+    private var connectManuallyButton: some View {
+        Button("Connect manually") { destination = .gateway }
+            .buttonStyle(.nollieGlass).accessibilityIdentifier("onboarding.connectManually")
+    }
+
+    /// Where the Mac app comes from.
+    private static let macAppPage = URL(string: "https://nollie.app")!
+
     private var phonePairingStep: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            feature("Start on your Mac", "Install Nollie and set up your assistant.", symbol: "desktopcomputer")
-            feature("Pair your iPhone", "On your Mac, open Settings and show the code.", symbol: "qrcode.viewfinder")
-            Button("Connect manually") { destination = .gateway }
-                .buttonStyle(.nollieGlass).accessibilityIdentifier("onboarding.connectManually")
-            QuickAnswerButton(place: .phoneSetup)
+        VStack(alignment: .leading, spacing: compactPhone ? 14 : 18) {
+            VStack(alignment: .leading, spacing: 10) {
+                feature("Start on your Mac", "Install Nollie and set up your assistant.", symbol: "desktopcomputer")
+                // No Mac app yet: send its page to the Mac (AirDrop, Messages, Mail) from here.
+                ShareLink(item: Self.macAppPage, subject: Text("Nollie for Mac"), message: Text("Get Nollie for Mac.")) {
+                    Label("Get the Mac app", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(.nollieGlass)
+                .padding(.leading, featureIconWidth + 14)
+                .accessibilityIdentifier("onboarding.getMacApp")
+            }
+            feature("Pair \(DeviceWords.this)", "On your Mac, open Settings and show the code.", symbol: "qrcode.viewfinder")
+            VStack(alignment: .leading, spacing: 10) { connectManuallyButton; QuickAnswerButton(place: .phoneSetup) }
         }
+        // Pills a finger can hit: 44 points or more.
+        .controlSize(.large)
     }
     #endif
 
@@ -723,9 +816,6 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 18) {
                 feature("Preview before copying", "Choose the original folder, review the files, then decide.", symbol: "doc.text.magnifyingglass")
                 feature("Your original stays put", "Copies its instructions and settings. Chats, bots and schedules stay where they are.", symbol: "checkmark.shield")
-                Button("Review the import") { destination = .importReview }
-                    .buttonStyle(.nollieGlassProminent).controlSize(.large)
-                    .accessibilityIdentifier("onboarding.import.review")
             }
             #else
             VStack(alignment: .leading, spacing: 18) {
@@ -743,8 +833,11 @@ struct OnboardingView: View {
                     .buttonStyle(.nollieGlass).accessibilityIdentifier("onboarding.connectManually")
                 #else
                 feature("Your setup stays yours", "Nollie only saves how to reach it. Your files stay as they are.", symbol: "checkmark.shield")
-                Button { destination = .backup } label: { Label("Back up first", systemImage: "externaldrive.badge.timemachine") }
-                    .buttonStyle(.nollieGlass)
+                Button { destination = .backup } label: {
+                    Label("Back up first", systemImage: "externaldrive.badge.timemachine")
+                        .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
+                }
+                    .buttonStyle(.nollieGlass).tint(.primary)
                     .accessibilityIdentifier("onboarding.backup")
                 #endif
             }
@@ -754,7 +847,8 @@ struct OnboardingView: View {
                                      connect: connectManagedAssistant,
                                      isConnecting: managedConnectionRequest != nil, isLocked: model.lock.isLocked,
                                      containedInGlass: true,
-                                     previewWorking: workingPreview, compact: compactDesktop)
+                                     previewWorking: workingPreview, compact: compactDesktop,
+                                     connectExisting: { update { $0.route = .existing; $0.step = .connection } })
             #else
             VStack(alignment: .leading, spacing: 20) {
                 feature("Start on a Mac", "Open Nollie on your Mac and choose Start new.", symbol: "desktopcomputer")
@@ -787,7 +881,7 @@ struct OnboardingView: View {
         VStack(spacing: 18) {
             modelPreference
             HStack(spacing: 14) {
-                if checking && modelStatus == nil {
+                if (checking && modelStatus == nil) || (!connected && AssistantWait.state(runtime) == .starting) || modelActivity != nil {
                     ProgressView().controlSize(.small).frame(width: 24)
                 } else {
                     Image(systemName: modelStatus?.isReady == true ? "checkmark.circle.fill" : "circle.dotted")
@@ -804,21 +898,49 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("onboarding.modelStatus")
-            Button { destination = .models } label: {
-                Text(LocalModelQuickstartSection.scope(for: runtime) != nil && progress.preferences.modelMode != .cloud
-                     ? "Set up your local model" : "Choose a model").font(.body.weight(.semibold))
-                    .padding(.horizontal, 8)
+            .task(id: runtime?.connection.id) {
+                if let rt = runtime, let scope = LocalModelQuickstartSection.scope(for: rt) {
+                    LocalModelDownload.shared.prepare(runtime: rt, app: model, scope: scope).restore()
+                }
             }
-            .buttonStyle(.nollieGlass).controlSize(.large)
-            .disabled(runtime == nil)
-            .accessibilityIdentifier("onboarding.models")
+            // No answer from Hermes yet (it restarted, or is starting): ask again every few seconds while this shows.
+            .task(id: modelStepRetrying) {
+                while modelStepRetrying, !Task.isCancelled {
+                    do { try await Task.sleep(for: ModelStepRetry.interval) } catch { return }
+                    await recheckModel()
+                }
+            }
+            // The download chose its model in Hermes while the sheet was closed: read it again.
+            .onChange(of: LocalModelDownload.shared.setup(for: LocalModelQuickstartSection.scope(for: runtime))?.selectedModel) { _, chosen in
+                if chosen != nil { Task { await refreshChecks() } }
+            }
+            if !connected && AssistantWait.state(runtime) == .unreachable { AssistantTryAgainButton() }
+            let local = LocalModelQuickstartSection.scope(for: runtime) != nil && progress.preferences.modelMode != .cloud
+            // Until a model can answer, setting one up is the next thing to press.
+            if modelStatus?.isReady != true && local {
+                Button { destination = .models } label: {
+                    Label(modelActivity == nil ? "Set up your local model" : "See download", systemImage: "arrow.down.circle.fill").font(.headline)
+                }
+                .buttonStyle(LocalModelActionStyle())
+                .disabled(runtime == nil)
+                .accessibilityIdentifier("onboarding.models")
+            } else {
+                Button { destination = .models } label: {
+                    Text(local ? "Set up your local model" : "Choose a model").font(.body.weight(.semibold))
+                        .padding(.horizontal, 8)
+                }
+                .buttonStyle(.nollieGlass).controlSize(.large)
+                .disabled(runtime == nil)
+                .accessibilityIdentifier("onboarding.models")
+            }
         }
     }
 
     private var onboardingModelDetail: String {
+        if let modelActivity { return modelActivity }
         if checking && modelStatus == nil { return String(localized: "Checking your model…") }
         if checkError != nil && modelStatus == nil { return String(localized: "Couldn't check your model yet.") }
-        if !connected { return String(localized: "Reconnect to check.") }
+        if !connected { return AssistantWait.line(AssistantWait.state(runtime)) ?? String(localized: "Reconnect to check.") }
         return modelDetail
     }
 
@@ -834,9 +956,14 @@ struct OnboardingView: View {
         case .cloud: String(localized: "Uses your ChatGPT or Claude plan.")
         case .both: String(localized: "This Mac first, online when it helps.")
         }
+        // Under 16 GB, the reason a plan comes first ("This Mac has 8 GB. A plan will feel faster.").
+        let memoryLine = preference == .local ? macMemoryLine : nil
         return Button {
             savedModelMode = preference.rawValue
-            update(animated: false) { $0.preferences.modelMode = preference }
+            update(animated: false) {
+                $0.preferences.modelMode = preference
+                $0.preferences.modelModeChosen = true
+            }
         } label: {
             let layout = stacked ? AnyLayout(HStackLayout(spacing: 14)) : AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
             layout {
@@ -847,6 +974,13 @@ struct OnboardingView: View {
                     Text(preference.title).font(.title3.weight(.semibold)).foregroundStyle(.primary)
                     Text(detail).font(.subheadline).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let memoryLine {
+                        Label(memoryLine, systemImage: "memorychip")
+                            .font(.footnote).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 2)
+                            .accessibilityIdentifier("onboarding.modelPreference.memory")
+                    }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(18)
@@ -863,7 +997,8 @@ struct OnboardingView: View {
             RoundedRectangle(cornerRadius: Ink.cardRadius, style: .continuous).strokeBorder(selected ? Color.blue : .clear, lineWidth: 2)
                 .allowsHitTesting(false)
         }
-        .accessibilityLabel(String(localized: "\(preference.title). \(detail)", comment: "A choice's name, then its line"))
+        .accessibilityLabel(memoryLine.map { String(localized: "\(preference.title). \(detail) \($0)", comment: "A choice's name, its line, then a note on this Mac's memory") }
+                            ?? String(localized: "\(preference.title). \(detail)", comment: "A choice's name, then its line"))
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("onboarding.modelPreference.\(preference.rawValue)")
@@ -913,37 +1048,27 @@ struct OnboardingView: View {
                     .disabled(primaryDisabled)
                     .accessibilityIdentifier("onboarding.continue")
                 }
+                #if os(iOS)
+                phoneSecondaryControls
+                #else
                 if [.welcome, .home].contains(progress.step), !isFixture {
                     // After the main path, never instead of it.
-                    Button { Task { await model.startDemo() } } label: {
-                        Text("Try a demo")
+                    tryDemoButton
+                }
+                // One pill, the same size on every step that has one, so nothing under the main button moves.
+                if progress.step.hasLaterPill {
+                    Button { update { $0.advance(deferStep: true) } } label: {
+                        Text(progress.step == .permissions ? "Not now" : "Set up later")
                             .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
                     }
-                    .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
-                    .accessibilityIdentifier("onboarding.tryDemo")
-                }
-                #if os(iOS)
-                Button { update { $0.skip() } } label: {
-                    Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
-                        .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
-                }
-                .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
-                .accessibilityIdentifier("onboarding.skip")
-                #else
-                if [.model, .computer, .permissions].contains(progress.step) {
-                    Button(progress.step == .permissions ? "Not now" : "Set up later") { update { $0.advance(deferStep: true) } }
-                        .buttonStyle(OutlinePillStyle())
+                        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
                         .accessibilityIdentifier("onboarding.later")
-                } else if [.welcome, .home, .howItWorks].contains(progress.step) || showsInstallerCharacter {
+                } else if progress.step.hasSkipPill {
                     Button { update { $0.skip() } } label: {
                         Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
                             .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
                     }
                         .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
-                        .accessibilityIdentifier("onboarding.skip")
-                } else {
-                    Button(progress.step == .welcome ? "Skip setup" : "Finish setup later") { update { $0.skip() } }
-                        .buttonStyle(OutlinePillStyle())
                         .accessibilityIdentifier("onboarding.skip")
                 }
                 #endif
@@ -968,15 +1093,61 @@ struct OnboardingView: View {
         }
     }
 
+    private var tryDemoButton: some View {
+        Button { Task { await model.startDemo() } } label: {
+            Text("Try a demo")
+                .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
+        }
+        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
+        .accessibilityIdentifier("onboarding.tryDemo")
+    }
+
+    #if os(iOS)
+    /// Try a demo and putting setup off, after the main path, never instead of it. On the welcome they
+    /// stand one under the other; on the steps after it they share a row when it fits, so the page above
+    /// keeps its room on a small iPhone.
+    @ViewBuilder private var phoneSecondaryControls: some View {
+        let demo = [.welcome, .home].contains(progress.step) && !isFixture
+        // Once connected there is nothing left to put off: Start chatting is the way on.
+        let later = !(progress.step == .ready && connected)
+        if progress.step == .welcome {
+            if demo { tryDemoButton }
+            if later { skipButton }
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    if demo { tryDemoButton }
+                    if later { skipButton }
+                }
+                VStack(spacing: 8) {
+                    if demo { tryDemoButton }
+                    if later { skipButton }
+                }
+            }
+        }
+    }
+
+    private var skipButton: some View {
+        Button { update { $0.skip() } } label: {
+            Text(progress.step == .welcome ? "Skip setup" : "Finish setup later")
+                .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
+        }
+        .buttonStyle(.nollieGlass).controlSize(.large).tint(.primary)
+        .accessibilityIdentifier("onboarding.skip")
+    }
+    #endif
+
     private var showsPrimaryControl: Bool {
         #if os(iOS)
         return true
         #else
         if progress.step == .home { return false }
         if progress.step == .connection {
-            if progress.route == .importCopy { return false }
+            // Review the import is the main button, where every other step has its own.
+            if connectionRoute == .importCopy { return importAvailable }
             #if os(macOS)
-            if progress.route == .new { return false }
+            // Start new's card has its own main button; another here would only say the same.
+            if connectionRoute == .new { return false }
             #endif
         }
         return true
@@ -991,16 +1162,23 @@ struct OnboardingView: View {
         case .welcome: return String(localized: "Get started")
         case .home, .howItWorks, .team: return String(localized: "Continue")
         case .connection:
-            if progress.route == .importCopy { return String(localized: "Import is not available yet") }
+            if connectionRoute == .importCopy {
+                return importAvailable ? String(localized: "Review the import") : String(localized: "Import is not available yet")
+            }
             #if os(iOS)
             return String(localized: "Scan QR code")
             #else
-            if progress.route == .existing { return String(localized: "Connect") }
+            if connectionRoute == .existing { return String(localized: "Connect") }
             if managedConnectionRequest != nil { return String(localized: "Connecting…") }
             return localSetup.canConnect ? String(localized: "Connect") : String(localized: "Finish setup to connect")
             #endif
         case .model, .computer, .permissions: return String(localized: "Continue")
-        case .ready: return connected ? String(localized: "Start chatting") : String(localized: "Check connection")
+        case .ready:
+            switch readyAction {
+            case .startChatting: return String(localized: "Start chatting")
+            case .setUpModel: return String(localized: "Set up a model")
+            case .checkConnection: return String(localized: "Check connection")
+            }
         }
     }
 
@@ -1010,16 +1188,16 @@ struct OnboardingView: View {
         #else
         switch progress.step {
         case .connection:
-            if progress.route == .importCopy { return true }
+            if connectionRoute == .importCopy { return !importAvailable || model.lock.isLocked }
             #if os(macOS)
-            return model.lock.isLocked || (progress.route == .new &&
+            return model.lock.isLocked || (connectionRoute == .new &&
                 (!localSetup.canConnect || localSetup.isBusy || managedConnectionRequest != nil))
             #else
             return false
             #endif
         case .model: return !connected || modelStatus?.isReady != true
-        case .computer: return !connected || !(computerSwitchOn || computerConfigured == true)
-        case .ready: return checking
+        case .computer, .permissions: return !progress.step.continueAlwaysWorks
+        case .ready: return checking && modelStatus == nil
         default: return false
         }
         #endif
@@ -1034,15 +1212,19 @@ struct OnboardingView: View {
         case .home: break
         case .howItWorks, .team: update { $0.advance() }
         case .connection:
-            guard progress.route != .importCopy else { return }
+            guard connectionRoute != .importCopy else {
+                if importAvailable { destination = .importReview }
+                return
+            }
             #if os(macOS)
-            if progress.route == .existing { destination = .gateway }
-            else if progress.route == .new { connectManagedAssistant() }
+            if connectionRoute == .existing { destination = .gateway }
+            else { connectManagedAssistant() }
             #else
             destination = .pairing
             #endif
         case .model, .computer, .permissions: update { $0.advance() }
         case .ready:
+            if readyAction == .setUpModel { update { $0.step = .model }; return }
             if connected {
                 update { $0.finish(connected: true) }
                 if !isPreview {
@@ -1056,10 +1238,19 @@ struct OnboardingView: View {
 
     #if os(macOS)
     private func connectManagedAssistant() {
-        guard !isPreview, !DemoMode.isOn, !model.lock.isLocked, progress.route == .new,
-              progress.step == .connection, localSetup.canConnect, !localSetup.isBusy,
-              !localSetup.managedRuntime.isBusy,
-              managedConnectionRequest == nil, let installationID = localSetup.installationID else { return }
+        guard !isPreview, !DemoMode.isOn, !model.lock.isLocked, progress.step == .connection,
+              connectionRoute == .new, managedConnectionRequest == nil else { return }
+        // Connect never does nothing: when it can't go ahead yet, one line says why.
+        guard !localSetup.isBusy, !localSetup.managedRuntime.isBusy else {
+            checkError = String(localized: "Setup is still busy. Try again in a moment.")
+            return
+        }
+        guard localSetup.canConnect, let installationID = localSetup.installationID else {
+            checkError = String(localized: "Your assistant isn't ready yet. Check the connection first.")
+            return
+        }
+        // A setup saved without a path is Start new from here on.
+        if progress.route == nil { update(animated: false) { $0.route = .new } }
         let request = UUID()
         managedConnectionRequest = request
         checkError = nil
@@ -1091,7 +1282,13 @@ struct OnboardingView: View {
                 } else {
                     await model.activate(prepared.connection, ifCurrent: isCurrent)
                 }
-                guard isCurrent(), model.runtime?.connection.id == prepared.connection.id else { return }
+                guard isCurrent() else { return }
+                guard model.runtime?.connection.id == prepared.connection.id else {
+                    checkError = String(localized: "Couldn't finish connecting. Check the service, then try again.")
+                    return
+                }
+                // The saved connection to a setup that is no longer on this Mac gives way to this one.
+                for gone in prepared.replaces { await model.deleteConnection(gone) }
                 update { $0.connected(prepared.connection.id) }
             } catch is CancellationError {
                 return
@@ -1169,7 +1366,10 @@ struct OnboardingView: View {
             .sheetFrame().withAppModel()
         case .models:
             NavigationStack {
-                ModelPreferencesView(showsPreference: false)
+                ModelPreferencesView(showsPreference: false, onContinue: {
+                    destination = nil
+                    if progress.step == .model { update { $0.advance() } }
+                })
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { destination = nil } } }
             }
             .sheetFrame().withAppModel()
@@ -1257,6 +1457,15 @@ struct OnboardingView: View {
             .accessibilityIdentifier("onboarding.reconnect")
     }
 
+    /// The step that shows the notifications row: Allow a few things on the Mac, Ready on the iPhone.
+    private static var notificationStep: OnboardingProgress.Step {
+        #if os(macOS)
+        .permissions
+        #else
+        .ready
+        #endif
+    }
+
     private var notificationsAllowed: Bool {
         model.push.authorization == .authorized || model.push.authorization == .provisional
     }
@@ -1272,14 +1481,27 @@ struct OnboardingView: View {
     private func readyDetail(_ step: OnboardingProgress.Step, _ detail: String) -> String {
         progress.deferred.contains(step) ? String(localized: "Set up later in Settings") : detail
     }
+    /// Ready only when the chosen model can answer, for the choice made on this step.
+    private var modelStatus: ModelReadiness? {
+        ModelReadiness.read(modelOptions, mode: progress.preferences.modelMode, local: modelLocal ?? LocalModelDownload.shared.snapshot,
+                            verified: LocalModelDownload.shared.verified(for: LocalModelQuickstartSection.scope(for: runtime)))
+    }
+    /// A download, or its first hello, under way on this Mac while the sheet is closed.
+    private var modelActivity: String? {
+        modelStatus?.isReady == true ? nil : LocalModelDownload.shared.activity(for: LocalModelQuickstartSection.scope(for: runtime))
+    }
+    /// The Ready step's main button: never a grey one.
+    private var readyAction: ReadyStepAction {
+        #if os(macOS)
+        if checking && modelStatus == nil { return connected ? .startChatting : .checkConnection }
+        return ReadyStepAction.decide(connected: connected, modelReady: modelStatus?.isReady == true,
+                                      modelPutOff: progress.deferred.contains(.model))
+        #else
+        return connected ? .startChatting : .checkConnection
+        #endif
+    }
     private var modelDetail: String {
-        switch modelStatus {
-        case .ready(let model): return model
-        case .needsSignIn: return String(localized: "Needs sign-in")
-        case .unverified(let model): return String(localized: "\(model), not signed in yet")
-        case .notConfigured: return String(localized: "No model selected yet")
-        case nil: return connected ? String(localized: "Not checked yet") : String(localized: "Reconnect to check")
-        }
+        modelStatus?.detail ?? (connected ? String(localized: "Not checked yet") : String(localized: "Reconnect to check"))
     }
     private var computerDetail: String {
         switch computerConfigured {
@@ -1287,6 +1509,29 @@ struct OnboardingView: View {
         case false: return computerSwitchOn ? String(localized: "Getting ready") : String(localized: "Not set up yet. You can turn it on in Bot settings.")
         case nil: return String(localized: "Not checked yet")
         }
+    }
+
+    private var modelStepRetrying: Bool {
+        progress.step == .model && !isFixture
+            && ModelStepRetry.shouldRetry(status: modelStatus, checking: checking, checkFailed: checkError != nil, connected: connected)
+    }
+
+    /// Reads the model again without clearing what the step shows, so the row doesn't flicker between tries.
+    private func recheckModel() async {
+        #if os(macOS)
+        guard progress.step == .model, let rt = runtime, connected, !checking else { return }
+        let identity = checkIdentity
+        guard let options: ModelOptionsResult = try? await rt.api.get("/api/model/options", profile: focusProfile),
+              checkIdentity == identity, !Task.isCancelled else { return }
+        var local: LocalModelSetupSnapshot?
+        if ModelPlace.isLocal(ModelPlace.provider(options)) {
+            local = try? await LocalModelSetupClient(api: rt.api).inspect()
+            guard checkIdentity == identity, !Task.isCancelled else { return }
+        }
+        modelOptions = options
+        if let local { modelLocal = local }
+        checkError = nil
+        #endif
     }
 
     private func refreshChecks() async {
@@ -1298,7 +1543,8 @@ struct OnboardingView: View {
             lastCheckIdentity = checkIdentity
             currentCheck = nil
             checking = false
-            modelStatus = nil
+            modelOptions = nil
+            modelLocal = nil
             computerConfigured = nil
             checkError = nil
         }
@@ -1309,14 +1555,22 @@ struct OnboardingView: View {
         let profile = focusProfile
         currentCheck = check
         checking = true
-        modelStatus = nil
+        modelOptions = nil
+        modelLocal = nil
         computerConfigured = nil
         checkError = nil
         defer { if currentCheck == check { checking = false } }
         do {
             let options: ModelOptionsResult = try await rt.api.get("/api/model/options", profile: profile)
             guard checkIdentity == identity, currentCheck == check, !Task.isCancelled else { return }
-            modelStatus = .read(options)
+            modelOptions = options
+            // A model on this Mac counts once it is downloaded. Until the catalog arrives the row says
+            // it is checking, never that the model is missing.
+            if ModelPlace.isLocal(ModelPlace.provider(options)) {
+                let local = try? await LocalModelSetupClient(api: rt.api).inspect()
+                guard checkIdentity == identity, currentCheck == check, !Task.isCancelled else { return }
+                modelLocal = local
+            }
             // The main helper's own computer, from the computer add-on. Without the add-on: not yet.
             let own: HelperComputerStatus? = try? await rt.api.get(HelperComputerStatus.path,
                                                                     query: [URLQueryItem(name: "profile", value: profile ?? "default")])
@@ -1334,8 +1588,33 @@ struct OnboardingView: View {
         if UserDefaults.standard.object(forKey: ModelPreferenceStore.key) == nil {
             savedModelMode = progress.preferences.modelMode.rawValue
         } else if let mode = ModelSetupMode(rawValue: savedModelMode), mode != progress.preferences.modelMode {
-            update(animated: false) { $0.preferences.modelMode = mode }
+            // Chosen elsewhere (Settings, the models sheet): that is the person's choice now.
+            update(animated: false) {
+                $0.preferences.modelMode = mode
+                $0.preferences.modelModeChosen = true
+            }
         }
+    }
+
+    /// This Mac's memory note for the On this Mac card, only on a Mac under 16 GB.
+    private var macMemoryLine: String? {
+        #if os(macOS)
+        ModelMemoryGuidance.line(ModelMemoryGuidance.thisMac)
+        #else
+        nil
+        #endif
+    }
+
+    /// A Mac under 16 GB starts the model step on a plan, until the person picks.
+    private func suggestModelModeForThisMac() {
+        #if os(macOS)
+        guard !isFixture else { return }
+        var next = progress
+        guard next.preferences.suggestModelMode(memoryBytes: ModelMemoryGuidance.thisMac) else { return }
+        // A preview (the demo's pictures) shows the suggestion without saving it.
+        if !isPreview { savedModelMode = next.preferences.modelMode.rawValue }
+        update(animated: false) { $0.preferences = next.preferences }
+        #endif
     }
 
     private func update(animated: Bool = true, _ change: (inout OnboardingProgress) -> Void) {
@@ -1372,7 +1651,7 @@ struct OnboardingView: View {
     private func feature(_ title: LocalizedStringKey, _ detail: LocalizedStringKey, symbol: String) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: symbol).font(.title3).foregroundStyle(.blue)
-                .frame(width: 28).accessibilityHidden(true)
+                .frame(width: featureIconWidth).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.headline)
                 Text(detail).font(.subheadline).foregroundStyle(.secondary)

@@ -16,18 +16,18 @@
 
 Each file specifies intended behaviour. It is not a claim that the rewrite is implemented or verified. Public types are proposed boundaries; generated wire names follow Hermes. Existing implementation choices do not override these contracts.
 
-The separate [Papertrail](papertrail.md), [Night shift](night-shift.md), [Weekly note](weekly-note.md) and [Apple model](apple-model.md) feature specs remain in this folder, with [In your pocket](pocket-audit.md), what works on each device. They are outside these five rewrite modules and retain their own acceptance work.
+The separate [Papertrail](papertrail.md), [Night shift](night-shift.md), [Weekly note](weekly-note.md), [Kept skills and prices](kept-skills-and-prices.md) and [Apple model](apple-model.md) feature specs remain in this folder, with [In your pocket](pocket-audit.md), what works on each device. They are outside these five rewrite modules and retain their own acceptance work.
 
 ## Source boundary
 
-Use the read-only Hermes checkout at a checkout of Hermes Agent at tag `v0.22.2`.
+Use the read-only Hermes checkout at a checkout of Hermes Agent at tag `v0.23.1`.
 
 | Item | Exact pin |
 | :--- | :--- |
-| Release label | `v0.22.2` |
-| Commit | `d923a5eb487a17c0a68801bba9ef0f56c81040a8` |
+| Release label | `v0.23.1` |
+| Commit | `3b421578588243f920886e6fe79a6faa87ea026e` |
 | OpenRPC file | `apps/shared/src/gateway-contract.openrpc.json` |
-| OpenRPC SHA-256 | `8848b394df533af8b37afd3cdccfc48b3e3d6ca1ce4037ebaf38653e33ed832e` |
+| OpenRPC SHA-256 | `c2f48466a3e4fa98babceb066ab5d053d1573f0202146cd6e6fdb319ddd81f19` |
 
 Hermes's public contract is the wire authority. Its pinned server routes and tests clarify behaviour absent from OpenRPC, including history pagination, replay timing and the scripted model server. Each module names the evidence it uses. A new pin needs a reviewed contract diff and regenerated recordings; it is not a silent dependency update.
 

@@ -2,7 +2,7 @@
 """Build Nollie's reviewed changes to the pinned Hermes source, for the managed Mac setup.
 
     python3 Tools/dev/hermes-overlay.py            rebuild Services/Runtime/HermesOverlay
-    python3 Tools/dev/hermes-overlay.py --source /path/to/hermes-v0.22.2 --check
+    python3 Tools/dev/hermes-overlay.py --source /path/to/hermes-v0.23.1 --check
 
 Without --source it downloads the pinned Hermes archive (Tools/pins.json; checked by size and
 SHA-256, cached in build/pins). With --source it checks the local files against the pinned Git
@@ -27,11 +27,9 @@ pinslib = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pinslib)
 
 ROOT = pinslib.ROOT
-PATCHES = ["silent-bot-chat.patch", "kanban-machine-prompts.patch", "kanban-timeout-evidence.patch",
-           "cron-fail-closed-precheck.patch"]
+PATCHES = ["kanban-machine-prompts.patch", "kanban-timeout-evidence.patch", "cron-fail-closed-precheck.patch"]
 CACHE = ROOT / "build" / "pins"
 REASONS = {
-    "silent-bot-chat.patch": "No hook carries trusted cron origin through desktop receipts, final-row storage and resume.",
     "kanban-machine-prompts.patch": "The desktop Board notification submit path has no hook for prompt origin.",
     "kanban-timeout-evidence.patch": "The desktop Board timeout formatter has no text transform hook.",
     "cron-fail-closed-precheck.patch": "The scheduler has no preflight hook before agent creation; tool hooks run too late.",

@@ -285,7 +285,7 @@ struct HelperComputerAdvanced: View {
                 }
                 .disabled(rt == nil)
                 #if os(macOS)
-                GlassButton("Cua's website", symbol: "safari", id: "profile.ownComputer.cuaSite") { CuaSetup.shared.openDownloadPage() }
+                GlassButton("Cua's website", symbol: "globe", id: "profile.ownComputer.cuaSite") { CuaSetup.shared.openDownloadPage() }
                 #endif
             }
         }

@@ -137,6 +137,10 @@ struct LinkDoorFamilyTests {
         #expect(decide("PATCH", "/api/sessions/20261026_1_ab?profile=career-sam") == .chat(.init(id: "20261026_1_ab", profile: "career-sam")))
         #expect(decide("DELETE", "/api/sessions/20261026_1_ab?profile=career-sam") == .chat(.init(id: "20261026_1_ab", profile: "career-sam")))
         #expect(decide("GET", "/api/sessions/20261026_1_ab/messages?profile=career-sam&limit=50") == .chat(.init(id: "20261026_1_ab", profile: "career-sam")))
+        // Hermes 0.23's rename, archive and delete identity: the snapshot read, and the delete's three query names.
+        #expect(decide("GET", "/api/sessions/20261026_1_ab/mutation-snapshot?profile=career-sam") == .chat(.init(id: "20261026_1_ab", profile: "career-sam")))
+        #expect(decide("DELETE", "/api/sessions/20261026_1_ab?profile=career-sam&request_id=5b0c&expected_revision=3&expected_generation=1")
+                == .chat(.init(id: "20261026_1_ab", profile: "career-sam")))
         #expect(decide("GET", "/api/ws", socket: true) == .socket)
 
         // Everything an owner may do beyond chatting, and every trick on the chat routes.
@@ -149,10 +153,14 @@ struct LinkDoorFamilyTests {
             ("GET", "/api/sessions/20261026_1_ab"), ("GET", "/api/sessions/20261026_1_ab?profile=career-sam&full=1"),
             ("POST", "/api/sessions/20261026_1_ab?profile=career-sam"), ("GET", "/api/sessions/20261026_1_ab/messages"),
             ("GET", "/api/sessions/20261026_1_ab/latest-descendant?profile=career-sam"),
+            ("GET", "/api/sessions/20261026_1_ab/mutation-snapshot"),
+            ("GET", "/api/sessions/20261026_1_ab/mutation-snapshot?profile=career-sam&request_id=x"),
+            ("GET", "/api/sessions/20261026_1_ab?profile=career-sam&request_id=x"),
+            ("PATCH", "/api/sessions/20261026_1_ab?profile=career-sam&expected_revision=1"),
             ("GET", "/api/plugins/nollie-workflow/papertrail?bot=career-sam"), ("GET", "/api/plugins/nollie-workflow/memory?bot=career-sam"),
             ("GET", "/api/plugins/nollie-workflow/payments/cards"), ("GET", "/api/plugins/nollie-workflow/private-bots"),
             ("GET", "/api/plugins/nollie-workflow/posts"), ("GET", "/api/plugins/nollie-workflow/attention"),
-            ("GET", "/api/plugins/kanban/board"), ("GET", "/api/cron/jobs"), ("POST", "/api/cron/jobs/x/trigger"),
+            ("GET", "/api/plugins/kanban/board"), ("GET", "/api/cron/jobs"), ("POST", "/api/cron/jobs/x/trigger"), ("POST", "/api/cron/jobs/x/cancel"),
             ("GET", "/api/media?path=/x"), ("GET", "/api/media/proxy?url=x"), ("GET", "/api/analytics/usage"),
             ("GET", "/api/skills"), ("GET", "/api/config/schema"), ("GET", "/api/model/options"),
             ("POST", "/api/plugins/nollie-computer/take-over?profile=career-sam"), ("GET", "/api/plugins/nollie-computer/preview"),

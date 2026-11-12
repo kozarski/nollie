@@ -10,7 +10,8 @@ model answered, and the person's approval answers in the same turn.
 
 Nollie Runtime's door writes "door" lines into the same files: one per connection Hermes or a program it
 started made, with the host, port, time and kind of program (``hermes``, ``terminal``, ``code``, ``mcp``,
-``model``, ``reader``, ``program``). The reader puts each with the reply it happened in, by time.
+``model``, ``reader``, ``program``), and one per connection the bot's own computer made through Nollie
+Runtime's exit relay (``computer``). The reader puts each with the reply it happened in, by time.
 """
 from __future__ import annotations
 
@@ -33,6 +34,7 @@ import time
 from urllib.parse import urlsplit
 import weakref
 
+from . import browser_script
 from .apple_data import READS as LOCAL_READS
 from .sign_ins import normalize_site
 
@@ -54,8 +56,9 @@ CHANGES = frozenset({"app_removed"})
 CHANGE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}\Z")
 MAX_CHANGES = 50
 # What kind of program made a connection through the door.
-# "direct": a connection the network filter saw going around the door.
-DOOR_KINDS = frozenset({"hermes", "terminal", "code", "mcp", "model", "reader", "program", "direct"})
+# "direct": a connection the network filter saw going around the door. "computer": one the exit relay
+# passed on from the bot's own computer (a Cua VM).
+DOOR_KINDS = frozenset({"hermes", "terminal", "code", "mcp", "model", "reader", "program", "direct", "computer"})
 # A connection this close to a reply's own calls belongs to that reply; otherwise it stands alone,
 # with the others of its bot in the same hour.
 DOOR_SLACK = 5
@@ -83,7 +86,8 @@ LOCAL_SCHEMES = frozenset({"process", "unix", "file"})
 HOME_NETWORKS = tuple(ipaddress.ip_network(net) for net in (
     "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "100.64.0.0/10", "fe80::/10", "fc00::/7"))
 SEARCH_TOOLS = frozenset({"web_search", "x_search"})
-PAGE_TOOLS = frozenset({"web_extract", "browser_navigate"})
+# browser_navigate is Hermes 0.22's; from 0.23 the browser is browser_exec, counted by the pages its script opens.
+PAGE_TOOLS = frozenset({"web_extract", "browser_navigate", "browser_exec"})
 IMAGE_TOOLS = frozenset({"image_generate"})
 # Hermes's web_extract reads at most this many of the URLs it is given (tools/web_tools.py).
 EXTRACT_MAX_URLS = 5
@@ -225,7 +229,10 @@ def _config(config_path):
         config = read_user_config_raw(config_path)
     except Exception:
         try:
-            import yaml
+            try:
+                import hermes_yaml as yaml  # Hermes's own reader; 0.23 no longer installs PyYAML
+            except ImportError:
+                import yaml
             config = yaml.safe_load(Path(config_path).read_text())
         except Exception:
             return {}
@@ -451,6 +458,9 @@ class Recorder:
             pages = min(len(urls), EXTRACT_MAX_URLS) if isinstance(urls, list) else 0
             if not pages:
                 return None  # Hermes reads nothing without a list of URLs.
+        elif name == browser_script.TOOL:
+            pages = browser_script.opens(browser_script.parse((args or {}).get("code") if isinstance(args, dict)
+                                                              else None))
         elif name in PAGE_TOOLS:
             pages = 1
         service = "xai" if name == "x_search" else self.search_service() if name == "web_search" else ""

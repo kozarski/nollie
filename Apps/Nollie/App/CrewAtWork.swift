@@ -3,8 +3,8 @@ import Foundation
 import NollieCore
 
 /// Who is working right now, as this iPhone or iPad sees it: one entry a bot, by the same rule the
-/// bot rows use (a chat open here mid-reply, a Board card, a chat the gateway's record shows mid-turn,
-/// or a helper it handed work to). The chat list's bar and the Watch both show this, so they agree
+/// bot rows use (a chat open here mid-reply, a Board card, a schedule's run, a chat the gateway's
+/// record shows mid-turn, or a helper it handed work to). The chat list's bar and the Watch both show this, so they agree
 /// with the rows. Private bots' work stays out.
 @MainActor
 enum CrewAtWork {
@@ -12,9 +12,17 @@ enum CrewAtWork {
         var helper: WatchWire.Helper
         /// The chat to open for it: the one it is working in, or its main chat.
         var chatID: String?
-        /// What it is doing, in its row's words ("Searching the web…", "Working on a task…").
+        /// What it is doing, in its row's words ("Searching the web…", "Working on “Morning brief”").
         var step: String
+        /// The schedule's run or Board card the gateway says it is on, when no chat here speaks for it.
+        var work: GatewayWork? = nil
         var id: String { helper.profile }
+
+        /// The step, with how long it has run when it is a schedule or a card: "Working on “Morning brief” · 4 min".
+        func line(now: Date = Date()) -> String {
+            guard work != nil else { return step }
+            return step + " \u{00B7} " + HelperAtWorkWords.elapsed(since: helper.since, now: now)
+        }
     }
 
     /// When each bot was first seen at work with nothing better to date it, so its place in the
@@ -31,7 +39,7 @@ enum CrewAtWork {
         var working: Set<String> = []
         for profile in names where !WatchLink.isPrivate(profile, on: runtime) {
             let entry = home.entry(runtime, profile)
-            let presence = BotPresence(runtime: runtime, profile: profile, mainID: entry.storedID, remoteBusy: entry.busy)
+            let presence = BotPresence(runtime: runtime, profile: profile, mainID: entry.storedID, remoteBusy: entry.busy, now: now)
             guard presence.working else { continue }
             let seenKey = runtime.connection.id.uuidString + "/" + profile
             working.insert(seenKey)
@@ -41,15 +49,19 @@ enum CrewAtWork {
             let places = chats.compactMap { chat in BotComputerActivity.workPlace(in: chat.items, isRunning: true).map { (chat, $0) } }
             let live = places.first?.0 ?? chats.first ?? presence.live
             let work = places.first?.1
-            let since = work?.since ?? live?.items.last(where: \.isPrompt)?.timestamp ?? firstSeen[seenKey] ?? now
+            // A schedule's run or a Board card speaks for the bot only when no chat open here does.
+            let gateway = live == nil ? presence.gatewayWork : nil
+            let since = work?.since ?? live?.items.last(where: \.isPrompt)?.timestamp ?? gateway?.since ?? firstSeen[seenKey] ?? now
             if firstSeen[seenKey] == nil { firstSeen[seenKey] = since }
             let name = runtime.profiles.first { $0.name == profile }?.shownName ?? ProfileInfo.shownName(of: profile)
             let avatar = CharacterDrawing.avatarName(BotAvatarStore.look(for: profile))
             var shown = presence
             shown.live = live
-            found.append(Member(helper: WatchWire.Helper(profile: profile, name: name, avatar: avatar, place: work?.place, since: since),
+            found.append(Member(helper: WatchWire.Helper(profile: profile, name: name, avatar: avatar, place: work?.place, since: since,
+                                                         work: work == nil ? gateway?.title : nil),
                                 chatID: live?.storedID ?? entry.storedID,
-                                step: work.map { WatchWords.doing($0.place) } ?? BotActivity.line(shown)))
+                                step: work.map { WatchWords.doing($0.place) } ?? BotActivity.line(shown),
+                                work: work == nil ? gateway : nil))
         }
         let prefix = runtime.connection.id.uuidString + "/"
         firstSeen = firstSeen.filter { !$0.key.hasPrefix(prefix) || working.contains($0.key) }

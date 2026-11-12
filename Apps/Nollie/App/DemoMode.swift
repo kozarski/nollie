@@ -57,6 +57,9 @@ enum DemoMode {
     /// so a picture never shows a system prompt or the machine's real answers.
     static let permissions: String? = word(after: "-nollie-demo-permissions")
 
+    /// `-nollie-demo-linked`: the demo acts as a phone linked to a Mac, so settings the Mac keeps say so.
+    nonisolated static let linkedPhone = isOn && ProcessInfo.processInfo.arguments.contains("-nollie-demo-linked")
+
     /// `-nollie-demo-alerts`: iCloud alerts count as on, for the away line's picture.
     static let alertsOn = isOn && ProcessInfo.processInfo.arguments.contains("-nollie-demo-alerts")
 
@@ -103,5 +106,6 @@ enum DemoMode {
     static let picture = false
     static let iCloud: AwayICloudState? = nil
     static let permissions: String? = nil
+    nonisolated static let linkedPhone = false
 }
 #endif

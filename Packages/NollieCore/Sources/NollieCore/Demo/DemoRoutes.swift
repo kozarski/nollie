@@ -38,20 +38,56 @@ enum DemoRoutes {
         })])
     }
 
+    // MARK: Skills and spending
+
+    /// The skills every demo bot has, as Hermes 0.23 lists them.
+    static let skills: [[String: JSONValue]] = [
+        ["name": "compare-prices", "description": "Compare a product's price across shops", "category": "shopping",
+         "enabled": true, "usage": 12, "provenance": "agent"],
+        ["name": "meeting-notes", "description": "Turn a meeting into short notes and next steps", "category": "notes",
+         "enabled": true, "usage": 5, "provenance": "bundled"],
+        ["name": "trip-plan", "description": "Plan a day out from a few details", "category": "plans",
+         "enabled": true, "usage": 2, "provenance": "hub"],
+    ]
+
+    /// A week of model costs as Hermes counts them: Nollie and Scout use a priced model, Mason and Wren a local one,
+    /// which Hermes doesn't price.
+    static func usage(bot: String, days: Int) -> JSONValue {
+        let perDay: Double = ["default": 0.16, "scout": 0.34][bot] ?? 0
+        let span = max(1, min(days, 30))
+        let cost = (perDay * Double(span) * 100).rounded() / 100
+        return ["period_days": .number(Double(span)),
+                "totals": ["total_estimated_cost": .number(cost), "total_actual_cost": 0, "total_sessions": .number(Double(span)),
+                           "total_input": .number(Double(span) * 24_000), "total_output": .number(Double(span) * 3_000)],
+                "by_model": [["model": .string(DemoSeed.model), "estimated_cost": .number(cost), "sessions": .number(Double(span))]],
+                "daily": []]
+    }
+
     // MARK: Schedules
 
-    static func schedules(now: Double) -> [JSONValue] {
+    /// `-nollie-demo-schedule-running`: Scout's price watch is part way through a run the schedule
+    /// started, so the crew bar, the menu bar, the Watch and the schedule's Stop have something to show.
+    static var scheduleRunning: Bool { ProcessInfo.processInfo.arguments.contains("-nollie-demo-schedule-running") }
+
+    static func schedules(now: Double, running: Bool = scheduleRunning) -> [JSONValue] {
         func when(_ offset: Double) -> JSONValue {
             let formatter = ISO8601DateFormatter()
             return .string(formatter.string(from: Date(timeIntervalSince1970: now + offset)))
         }
+        // As Hermes 0.23 lists a run in flight: the attempt, claimed and started four minutes ago.
+        let live: JSONValue = running
+            ? ["id": "demo-run-1", "job_id": "price-watch", "status": "running", "source": "scheduler",
+               "claimed_at": when(-245), "started_at": when(-244), "finished_at": nil, "error": nil]
+            : nil
         return [
             ["job_id": "price-watch", "name": "Watch the Aero 5 price", "schedule": "0 9 * * 1",
              "prompt_preview": "Check the Aero 5 price and tell me if it changes.", "deliver": "local", "enabled": true, "state": "active",
-             "next_run_at": when(2 * 86_400), "last_run_at": when(-5 * 86_400), "last_status": "ok", "profile": "scout"],
+             "next_run_at": when(2 * 86_400), "last_run_at": when(-5 * 86_400), "last_status": "ok", "profile": "scout",
+             "live_execution": live],
             ["job_id": "morning-plan", "name": "Morning plan", "schedule": "0 8 * * 1-5",
              "prompt_preview": "Plan my day from what I told you.", "deliver": "local", "enabled": true, "state": "active",
-             "next_run_at": when(14 * 3600), "last_run_at": when(-10 * 3600), "last_status": "ok", "profile": "wren"],
+             "next_run_at": when(14 * 3600), "last_run_at": when(-10 * 3600), "last_status": "ok", "profile": "wren",
+             "live_execution": nil],
         ]
     }
 

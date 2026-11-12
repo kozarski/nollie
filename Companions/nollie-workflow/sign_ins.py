@@ -342,6 +342,7 @@ COMPUTER_TOOLS = frozenset(("computer_use",))
 CAPTURE_COMMANDS = re.compile(r"(?i)\b(cua|screencapture|ffmpeg|avfoundation|vncsnapshot|vncviewer|xwd|scrot|"
                               r"gnome-screenshot|grim|import\s+-window|screenshot|cua-driver|cliclick|osascript|"
                               r"peekaboo)\b")
+BROWSER_PICTURES = re.compile(r"capture_screenshot|captureScreenshot|Screencast|screenshot\s*\(")
 PAUSED = ("Paused for a moment: Nollie is typing a saved sign-in or card, so pictures of computers and actions on "
           "them wait until it's done. Try again in about {seconds} seconds.")
 
@@ -437,7 +438,10 @@ def shows_a_computer(tool, args):
     lowered = tool.lower()
     if any(word in lowered for word in PICTURE_WORDS):
         return True
-    if tool in ("terminal", "process", "process_manage", "execute_code"):
+    if tool == "browser_exec" and BROWSER_PICTURES.search(str(args.get("code") or "")):
+        return True  # A picture of the browser, as browser_vision took on Hermes 0.22.
+    # browser_exec (Hermes 0.23) runs Python beside its browser helpers, so it can start these programs too.
+    if tool in ("terminal", "process", "process_manage", "execute_code", "browser_exec"):
         text = " ".join(str(args.get(k) or "") for k in ("command", "cmd", "code", "script", "input", "data",
                                                          "text"))
         return bool(CAPTURE_COMMANDS.search(text))

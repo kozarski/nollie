@@ -23,6 +23,7 @@ import os
 from pathlib import Path
 import pwd
 import re
+import secrets
 import shutil
 import subprocess
 import threading
@@ -191,6 +192,11 @@ RELAY_STATES = {"off", "idle", "on", "failed"}
 RELAY_MARKER = "nollie-relay-ready"
 # ExitRelayPolicy.port in Nollie Runtime.
 RELAY_PORT = 47610
+# The key a helper's computer gives the relay with its name, so Papertrail can say whose computer
+# connected: kept in that helper's own home (PapertrailDoorBook.computerKey in Nollie Runtime reads it).
+RELAY_KEY_FOLDER = "nollie-computer"
+RELAY_KEY_FILE = "relay-key"
+RELAY_KEY = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def relay_state_path(environ=None, home=None):
@@ -219,32 +225,40 @@ def read_relay_state(path=None):
     return {"state": document["state"], "port": document["port"]}
 
 
-def relay_snippet(port):
+def relay_snippet(port, profile=None, key=None):
     """A login-shell snippet: it finds the Mac (the computer's default gateway), checks within a
     second that the relay answers, and only then sets the usual proxy variables. The relay runs
     whenever the computer does; if it is ever down, the check fails at once and nothing changes.
-    Fixed text: only the port is filled in."""
+    With a profile and its key, the proxy addresses carry them as the user name and password, so
+    the relay can write each connection into that helper's Papertrail. Fixed text: only the port,
+    the profile and the key are filled in."""
     port = int(port)
     if not 1024 <= port <= 65535:
         raise ValueError("port")
+    label = ""
+    if profile is not None or key is not None:
+        if not (isinstance(profile, str) and PROFILE_NAME.fullmatch(profile)
+                and isinstance(key, str) and RELAY_KEY.fullmatch(key)):
+            raise ValueError("label")
+        label = f"{profile}:{key}@"
     return f"""# Added by Nollie. While Nollie's relay on your Mac answers, web traffic from here goes
 # through your Mac, so it follows your Mac's VPN or Tailscale exit node. Otherwise nothing changes.
 nollie_relay=$(ip route show default 2>/dev/null | awk '{{print $3; exit}}')
 if [ -n "$nollie_relay" ] && command -v bash >/dev/null 2>&1 && command -v timeout >/dev/null 2>&1 \\
    && timeout 1 bash -c 'exec 3<>"/dev/tcp/$0/{port}"' "$nollie_relay" 2>/dev/null; then
-  export http_proxy="http://$nollie_relay:{port}" https_proxy="http://$nollie_relay:{port}"
-  export all_proxy="socks5h://$nollie_relay:{port}" no_proxy="localhost,127.0.0.1,::1"
+  export http_proxy="http://{label}$nollie_relay:{port}" https_proxy="http://{label}$nollie_relay:{port}"
+  export all_proxy="socks5h://{label}$nollie_relay:{port}" no_proxy="localhost,127.0.0.1,::1"
   export HTTP_PROXY="$http_proxy" HTTPS_PROXY="$https_proxy" ALL_PROXY="$all_proxy" NO_PROXY="$no_proxy"
 fi
 unset nollie_relay
 """
 
 
-def relay_script(port):
+def relay_script(port, profile=None, key=None):
     """What Nollie runs once in a helper's computer so its programs use the relay while it answers:
     the snippet goes in /etc/profile.d when the computer allows that, else in the person's own
     profile."""
-    quoted = relay_snippet(port).replace("'", "'\\''")
+    quoted = relay_snippet(port, profile, key).replace("'", "'\\''")
     return f"""set -e
 snippet='{quoted}'
 if [ -w /etc/profile.d ]; then
@@ -431,7 +445,10 @@ class OwnComputers:
             raise Refused("This helper's settings can't be read right now.", 500) from None
         load = self.yaml_load
         if load is None:
-            import yaml
+            try:
+                import hermes_yaml as yaml  # Hermes's own reader; 0.23 no longer installs PyYAML
+            except ImportError:
+                import yaml
             load = yaml.safe_load
         try:
             document = load(text)
@@ -710,16 +727,50 @@ class OwnComputers:
         fails the switch: if Cua can't run it, the computer simply keeps its own network and the
         exit node card stays."""
         port = (self.relay() or {}).get("port", RELAY_PORT)
+        # A fresh key each time, kept before the computer gets it, so the relay can check it at once.
+        # Without one the computer still uses the relay; its connections just can't be placed.
+        key = self.save_relay_key(profile)
         cua = self.cua_path()
         done = False
         if cua and self.socket.exists():
             try:
                 done = bool(self.space_bash(cua, self.socket, self.cua_env, "local:" + space_name(profile),
-                                            relay_script(port)))
+                                            relay_script(port, profile if key else None, key)))
             except Exception:
                 done = False
         entry = self.record(profile) or {}
         self.save_record(profile, {**entry, "relay": port if done else None})
+
+    def relay_key_path(self, profile):
+        return Path(self.homes(profile)) / RELAY_KEY_FOLDER / RELAY_KEY_FILE
+
+    def save_relay_key(self, profile):
+        """A new key for this helper's computer, in the helper's own home (0600, links refused). None
+        when it can't be kept."""
+        key = secrets.token_hex(32)
+        path = self.relay_key_path(profile)
+        try:
+            if not path.parent.parent.is_dir() or path.parent.is_symlink():
+                return None
+            path.parent.mkdir(mode=0o700, exist_ok=True)
+            temporary = path.with_name(f".{RELAY_KEY_FILE}.{secrets.token_hex(4)}")
+            fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            try:
+                os.write(fd, (key + "\n").encode())
+            finally:
+                os.close(fd)
+            os.replace(temporary, path)
+            return key
+        except OSError:
+            return None
+
+    def forget_relay_key(self, profile):
+        path = self.relay_key_path(profile)
+        try:
+            if path.is_symlink() or path.is_file():
+                path.unlink()
+        except OSError:
+            pass
 
     def turn_off(self, profile):
         entry = self.record(profile) or {}
@@ -762,6 +813,7 @@ class OwnComputers:
             self.cua_change("spaces", "delete", "local:" + name, "--force")
         if self.owned(profile) == "local:" + name:
             self.set_owned(profile, None)
+        self.forget_relay_key(profile)
         self.save_record(profile, None)
 
     # MARK: Removing Nollie

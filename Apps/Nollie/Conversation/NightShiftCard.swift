@@ -412,6 +412,11 @@ enum NightShiftWords {
                              notDone: String(localized: "Remember", comment: "Verb before what to remember"),
                              tried: String(localized: "Tried to remember", comment: "Before what was remembered"),
                              wouldHave: String(localized: "Would have: remember", comment: "Before what would have been remembered"))
+        case "browser_exec" where !target.isEmpty:
+            // Hermes 0.23's browser script: the add-on says what it did in words with their own verb ("Opened
+            // bbc.co.uk/weather", "Clicked Place order"), so none goes before them. A stopped one says why beside it.
+            return ToolWords(done: "", notDone: "", tried: "",
+                             wouldHave: String(localized: "Would have:", comment: "Before what a rehearsal would have done"))
         default:
             if tool.hasPrefix("browser_") {
                 return ToolWords(done: String(localized: "Browsed", comment: "Past tense verb before a web page"),

@@ -18,6 +18,9 @@ final class BotsHome {
         /// prompt or a tool's, minutes old at most): work started elsewhere (Signal, a phone, the
         /// terminal) still shows as working here.
         var busy = false
+        /// The gateway said outright that the bot has no main chat yet (its canonical session is empty), so
+        /// "Say hello" is true. Unknown until it has answered.
+        var noMainChat = false
     }
 
     /// Per gateway and bot. Kept between appearances, so a row never comes back blank.
@@ -99,15 +102,21 @@ final class BotsHome {
         let gateway = runtime.connection.id
         if !force, let at = refreshedAt[gateway], Date().timeIntervalSince(at) < 15 { return }
         refreshing = true
-        defer { refreshing = false; refreshedAt[gateway] = Date() }
+        // A read the gateway didn't answer (a phone's link still opening, a slow restart) doesn't count as fresh:
+        // the next try, such as the one when the connection opens, goes through instead of waiting 15 seconds.
+        var listed = false
+        defer { refreshing = false; if listed { refreshedAt[gateway] = Date() } }
         if runtime.profiles.isEmpty { await runtime.loadProfiles() }
         let names = runtime.profiles.map(\.name)
         guard !names.isEmpty else { return }
         var ids: [String: String] = [:]
+        var none = Set<String>()
         if let r = try? await runtime.rpc("profiles.list", timeout: 15), let rows = r["profiles"]?.arrayValue {
+            listed = true
             for row in rows {
-                guard let name = row["name"]?.stringValue, let cs = row["canonical_session"], !cs.isNull,
-                      let id = cs["resolved_id"]?.stringValue ?? cs["id"]?.stringValue, !id.isEmpty else { continue }
+                guard let name = row["name"]?.stringValue, let cs = row["canonical_session"] else { continue }
+                if cs.isNull { none.insert(name); continue }
+                guard let id = cs["resolved_id"]?.stringValue ?? cs["id"]?.stringValue, !id.isEmpty else { continue }
                 ids[name] = id
             }
         }
@@ -123,6 +132,7 @@ final class BotsHome {
         for name in names {
             let k = Self.key(gateway, name)
             var e = Entry(storedID: ids[name] ?? entries[k]?.storedID)
+            e.noMainChat = e.storedID == nil && none.contains(name)
             if let sid = e.storedID, let last = await Self.lastReply(runtime, storedID: sid, profile: name) {
                 // Mid-turn with nothing said yet: the row keeps the last thing it did say.
                 e.lastText = last.text.isEmpty ? entries[k]?.lastText : last.text
@@ -231,11 +241,48 @@ struct BotPresence {
     /// A card of its is being worked on the board.
     var onBoard = false
 
-    init(runtime: GatewayRuntime, profile: String, mainID: String?, remoteBusy: Bool = false) {
+    /// A schedule's run or a Board card the gateway says it is on, wherever it was started.
+    var gatewayWork: GatewayWork?
+
+    init(runtime: GatewayRuntime, profile: String, mainID: String?, remoteBusy: Bool = false, now: Date = Date()) {
         let chats = runtime.chats.filter { $0.profileName == profile }
         live = chats.first { $0.isRunning }
-        onBoard = runtime.kanban.activity.state(for: profile) == .working
-        working = live != nil || onBoard || remoteBusy || BotComputerActivity.hasDelegatedWork(runtime: runtime, profile: profile)
+        onBoard = runtime.kanban.activity.state(for: profile, now: now) == .working
+        gatewayWork = GatewayWork.of(runtime, profile: profile, now: now)
+        working = live != nil || onBoard || gatewayWork != nil || remoteBusy
+            || BotComputerActivity.hasDelegatedWork(runtime: runtime, profile: profile)
         needsYou = chats.contains { runtime.needsAttention.contains($0.storedID) } || (mainID.map { runtime.needsAttention.contains($0) } ?? false)
     }
+}
+
+/// Work the gateway reports for a bot, started anywhere (the Mac's scheduler, the Board's
+/// dispatcher, another device): a schedule's run first, else the Board card it has been on longest.
+struct GatewayWork: Equatable {
+    enum Kind: Equatable {
+        case schedule(jobID: String)
+        case board(taskID: String)
+    }
+
+    var kind: Kind
+    /// The schedule's or the card's name.
+    var title: String
+    var since: Date?
+
+    var jobID: String? {
+        if case .schedule(let id) = kind { return id }
+        return nil
+    }
+
+    @MainActor static func of(_ runtime: GatewayRuntime, profile: String, now: Date = Date()) -> GatewayWork? {
+        if let run = runtime.schedules.activity.runs(for: profile, now: now).first {
+            return GatewayWork(kind: .schedule(jobID: run.jobID), title: run.name, since: run.startedAt)
+        }
+        if let card = runtime.kanban.activity.work(for: profile, now: now) {
+            return GatewayWork(kind: .board(taskID: card.taskID), title: card.title, since: card.since)
+        }
+        return nil
+    }
+
+    /// Its row's words: "Working on “Morning brief”".
+    var line: String { String(localized: "Working on “\(title)”", comment: "A helper is busy with a schedule's run or a Board task, named") }
 }

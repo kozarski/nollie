@@ -348,6 +348,14 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual((entry["services"], entry["searches"], entry["pages"], entry["calls"], entry["input_tokens"]),
                          (["xai"], 1, 1, 2, 0))
 
+    def test_a_browser_script_counts_the_pages_it_opens(self):
+        self.model(NOW - 100, "t-1", provider="ollama", base_url="http://localhost:11434", i=10)
+        self.tool(NOW - 90, "browser_exec", "t-1", code="new_tab('https://a.example/')\ngoto_url('https://b.example/')")
+        self.tool(NOW - 80, "browser_exec", "t-1", code="print(page_info())")
+        self.tool(NOW - 70, "browser_exec", "t-1", code="def (")
+        entry = self.read()["entries"][0]
+        self.assertEqual((entry["route"], entry["pages"], entry["calls"]), ("online", 4, 3))
+
     def test_a_network_model_beside_an_online_search_is_named_by_the_search(self):
         self.model(NOW - 100, "t-1", provider="custom", base_url="http://192.168.1.9:8000/v1", model="m", i=500)
         self.tool(NOW - 90, "web_search", "t-1")
@@ -530,6 +538,22 @@ class DoorLineTests(unittest.TestCase):
                          [("models.example.com", 2), ("192.168.1.20", 1)])
         self.assertNotIn("why", alone[0])
         self.assertEqual(answer["stayed"]["window"], 1, "the reply itself stayed on this Mac")
+
+    def test_a_helpers_own_computer_joins_the_reply_and_keeps_its_why(self):
+        # Lines the exit relay writes for a bot's own computer: placed by time like the door's, so the
+        # reply's own Why (what started it) explains them too.
+        self.recorder.context = lambda: {"origin": "schedule", "job": "job-1"}
+        self.model(NOW - 600, "t-4", provider=SUBSCRIPTION, base_url=f"process://{SUBSCRIPTION}")
+        self.door(NOW - 598, "github.com", kind="computer")
+        self.door(NOW - 30, "example.org", kind="computer")
+        answer = self.read()
+        joined = next(entry for entry in answer["entries"] if entry["id"] == "t-4")
+        self.assertEqual(joined["connections"],
+                         [{"host": "github.com", "port": 443, "kind": "computer", "route": "online", "count": 1}])
+        self.assertEqual(joined["why"]["origin"], "schedule")
+        alone = next(entry for entry in answer["entries"] if entry["id"].startswith("w-"))
+        self.assertEqual(alone["connections"][0]["kind"], "computer")
+        self.assertNotIn("why", alone)
 
     def test_damaged_and_local_door_lines_are_skipped(self):
         self.door(NOW - 100, "localhost", route="mac")
@@ -839,8 +863,9 @@ class RegisterTests(unittest.TestCase):
         return ctx.hooks, start.called, followups.called, (bot_home / "nollie-workflow" / "papertrail").is_dir()
 
     def test_every_bot_that_is_not_private_records_and_only_default_runs_the_board(self):
-        # The two log privacy hooks come first: they let Hermes's logs leave a quoted message out.
-        hooks = ["pre_llm_call", "post_llm_call", *papertrail.HOOKS]
+        # The two log privacy hooks come first: they let Hermes's logs leave a quoted message out. Keep skills as
+        # they are comes last.
+        hooks = ["pre_llm_call", "post_llm_call", *papertrail.HOOKS, "on_skill_lifecycle"]
         self.assertEqual(self.register("career"), (hooks, False, False, True))
         self.assertEqual(self.register("default"), (hooks, True, True, True))
 
@@ -944,8 +969,10 @@ from hermes_cli import plugins
 plugins.discover_plugins()
 manager = plugins.get_plugin_manager()
 loaded = {key: (bool(p.enabled), p.error and type(p.error).__name__) for key, p in manager._plugins.items()}
-hooks = sorted(name for name in ("post_api_request", "api_request_error", "post_auxiliary_call", "post_tool_call")
-               if plugins.has_hook(name))
+# Papertrail's own hooks, the recorder's. Ask first hooks into every bot, private ones too, and keeps nothing.
+hooks = sorted(name for name in ("post_api_request", "api_request_error", "post_auxiliary_call", "post_tool_call",
+                                 "post_approval_response")
+               if any(type(getattr(hook, "__self__", None)).__name__ == "Recorder" for hook in manager._hooks.get(name, [])))
 
 # The real call sites, so the keyword arguments are Hermes's own.
 from agent.api_request_hooks import ApiRequestHooksMixin
@@ -987,10 +1014,12 @@ while time.time() < deadline and len([l for f in root.glob("*.jsonl") for l in f
 text = "".join(f.read_text() for f in root.glob("*.jsonl")) if root.is_dir() else ""
 answer = None
 if root.is_dir():
-    spec_path = bot_home / "plugins" / "nollie-workflow" / "papertrail.py"
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("papertrail_reader_check", spec_path)
-    reader = importlib.util.module_from_spec(spec); spec.loader.exec_module(reader)
+    # Read back the way the add-on's own route does: papertrail.py as part of its package.
+    import importlib
+    entry = (bot_home / "plugins" / "nollie-workflow" / "__init__.py").resolve()
+    package = next(name for name, module in list(sys.modules.items())
+                   if getattr(module, "__file__", None) and Path(module.__file__).resolve() == entry)
+    reader = importlib.import_module(package + ".papertrail")
     answer = reader.read(bot_home, profile, 7)
 print(json.dumps({"loaded": loaded, "hooks": hooks, "lines": [json.loads(l) for l in text.splitlines()],
                   "text": text, "answer": answer, "folder": root.is_dir()}))

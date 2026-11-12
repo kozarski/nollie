@@ -1,7 +1,7 @@
 #if DEBUG
 import Foundation
 
-/// `-nollie-watch-sample approval|phone|crew|stopping|quiet|board|night|night-quiet|week`: a debug build shows made-up helpers and
+/// `-nollie-watch-sample approval|phone|crew|schedule|stopping|quiet|board|night|night-quiet|week`: a debug build shows made-up helpers and
 /// approvals without a phone, for pictures of each screen. Nothing is sent anywhere.
 enum WatchSamples {
     struct Sample {
@@ -35,6 +35,14 @@ enum WatchSamples {
         case "phone":
             snapshot.approvals = [payment]
             return Sample(snapshot: snapshot, page: payment.id)
+        case "schedule":
+            // A schedule the Mac started, and a Board task, beside a helper using the Mac.
+            snapshot.helpers = [crew[0],
+                                WatchWire.Helper(profile: "default", name: "Nollie", avatar: "character-nollie-avatar", place: nil,
+                                                 since: now.addingTimeInterval(-245), work: "Morning job alerts"),
+                                WatchWire.Helper(profile: "forager", name: "Forager", avatar: "character-spike-avatar", place: nil,
+                                                 since: now.addingTimeInterval(-41 * 60), work: "Renew the car insurance")]
+            return Sample(snapshot: snapshot, page: WatchModel.crewPage)
         case "stopping":
             return Sample(snapshot: snapshot, page: WatchModel.crewPage, sendingStop: true)
         case "quiet":

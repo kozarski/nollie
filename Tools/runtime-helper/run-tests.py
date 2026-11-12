@@ -13,7 +13,7 @@ MACROS = DEVELOPER / "Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plu
 sources = ["Apps/Nollie/Connect/ConfigurationBackup.swift", "Apps/Nollie/Connect/ScopedHermesImport.swift",
            "Apps/Nollie/Connect/StarterAssistantDefaults.swift",
            "Apps/Nollie/Connect/NativeDependencyInstaller.swift", "Apps/Nollie/Connect/NativeSetupKit.swift", "Services/Runtime/RuntimeContract.swift",
-           "Services/Runtime/RuntimeSupervisor.swift", "Services/Runtime/NativeRuntimeBackend.swift",
+           "Services/Runtime/RuntimeSupervisor.swift", "Services/Runtime/NativeRuntimeBackend.swift", "Services/Runtime/RuntimeSpawn.swift",
            "Services/Runtime/RuntimeIPC.swift", "Services/Runtime/RuntimeService.swift",
            "Services/Runtime/LinkDoorHTTP.swift", "Services/Runtime/LinkDoorPolicy.swift", "Services/Runtime/LinkDoorDevices.swift",
            "Services/Runtime/LinkDoorIdentity.swift", "Services/Runtime/LinkDoor.swift", "Services/Runtime/LinkDoorWebSocket.swift", "Services/Runtime/LinkDoorLive.swift",

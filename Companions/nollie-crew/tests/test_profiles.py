@@ -92,18 +92,37 @@ class ProfileSafetyTests(unittest.TestCase):
         self.assertEqual(store.read_yaml(path)["plugins"], config["plugins"])
         self.assertEqual((path.parent / "nollie-workflow/ask-first-initialized").read_text(), "1\n")
 
-    def fake_hermes(self):
+    def fake_hermes(self, before_023=False):
+        """Hermes's profile code. From 0.23 the step that fills a new bot's folder lives in
+        ``hermes_cli.profiles_initialization``; before, it was ``profiles._finish_profile_layout``."""
         profiles = types.ModuleType("hermes_cli.profiles")
         profiles.get_profile_dir = lambda name: self.home.root if name == "default" else self.home.root / "profiles" / name
         profiles.validate_profile_name = lambda name: None
-        profiles._finish_profile_layout = lambda path, **kwargs: None
         profiles.write_profile_meta = lambda path, **kwargs: store.write_yaml(Path(path) / "profile.yaml", kwargs)
         parent = types.ModuleType("hermes_cli")
         parent.profiles = profiles
-        return profiles, {"hermes_cli": parent, "hermes_cli.profiles": profiles}
+        modules = {"hermes_cli": parent, "hermes_cli.profiles": profiles}
+        if before_023:
+            profiles._finish_profile_layout = lambda path, **kwargs: None
+            self.finish_layout = lambda *args, **kwargs: profiles._finish_profile_layout(*args, **kwargs)
+        else:
+            layout = types.ModuleType("hermes_cli.profiles_initialization")
+            layout.finish_profile_layout = lambda path, **kwargs: None
+            parent.profiles_initialization = layout
+            modules["hermes_cli.profiles_initialization"] = layout
+            self.finish_layout = lambda *args, **kwargs: layout.finish_profile_layout(*args, **kwargs)
+        return profiles, modules
 
     def test_overlapping_hermes_creates_keep_rules_scoped_before_publication(self):
-        profiles, modules = self.fake_hermes()
+        for before_023 in (False, True):
+            with self.subTest(before_023=before_023):
+                self.overlapping_creates(before_023)
+
+    def overlapping_creates(self, before_023):
+        for name in ("rover", "ivy", "ordinary"):
+            for folder in (self.home.root / "profiles").glob(f"*{name}*"):
+                shutil.rmtree(folder)
+        profiles, modules = self.fake_hermes(before_023)
         barrier = threading.Barrier(3)
         seen = {}
 
@@ -112,7 +131,7 @@ class ProfileSafetyTests(unittest.TestCase):
             staging.mkdir()
             store.write_yaml(staging / "config.yaml", {"unbounded": True})
             barrier.wait(timeout=10)
-            profiles._finish_profile_layout(staging, description=kwargs.get("description"))
+            self.finish_layout(staging, description=kwargs.get("description"))
             seen[name] = store.read_yaml(staging / "config.yaml")
             if name != "ordinary":
                 self.assertTrue((staging / "plugins/nollie-workflow/ask_first.py").is_file())
@@ -167,7 +186,7 @@ class ProfileSafetyTests(unittest.TestCase):
         def create(name, **kwargs):
             staging = self.home.root / "profiles" / "unexpected"
             staging.mkdir()
-            profiles._finish_profile_layout(staging)
+            self.finish_layout(staging)
             self.fail("unexpected staging folder published")
 
         profiles.create_profile = create

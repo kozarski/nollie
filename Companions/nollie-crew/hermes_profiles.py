@@ -19,9 +19,23 @@ _PREPARE_MEMBER = ContextVar("nollie_crew_prepare_member", default=None)
 _LAYOUT_LOCK = threading.Lock()
 
 
-def prepare_member_layout(profiles):
+def _layout_home(profiles):
+    """Where Hermes keeps the step that fills a new bot's folder before it is published, and its
+    name there: ``hermes_cli.profiles_initialization.finish_profile_layout`` from 0.23, and
+    ``hermes_cli.profiles._finish_profile_layout`` before. ``create_profile`` looks it up when it runs."""
+    try:
+        from hermes_cli import profiles_initialization
+    except ImportError:
+        profiles_initialization = None
+    if profiles_initialization is not None and hasattr(profiles_initialization, "finish_profile_layout"):
+        return profiles_initialization, "finish_profile_layout"
+    return profiles, "_finish_profile_layout"
+
+
+def prepare_member_layout(profiles, layout=None):
     with _LAYOUT_LOCK:
-        finish = getattr(profiles, "_finish_profile_layout", None)
+        home, name = layout if layout is not None else _layout_home(profiles)
+        finish = getattr(home, name, None)
         if finish is None:
             raise CrewError("Hermes needs updating before adding a crew member.")
         if getattr(finish, "_nollie_crew_context", None) is _PREPARE_MEMBER:
@@ -34,7 +48,7 @@ def prepare_member_layout(profiles):
             return prepare(finish, Path(staging), kwargs)
 
         finish_member._nollie_crew_context = _PREPARE_MEMBER
-        profiles._finish_profile_layout = finish_member
+        setattr(home, name, finish_member)
 
 
 @contextlib.contextmanager

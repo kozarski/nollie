@@ -167,7 +167,7 @@ class MemoryTests(unittest.TestCase):
     def test_acting_on_a_page_forgets_its_snapshot(self):
         memory = screen_text.Memory()
         for tool in ("browser_click", "browser_press", "browser_type", "browser_console", "browser_exec",
-                     "browser_cdp", "browser_dialog", "browser_back"):
+                     "browser_cdp", "browser_dialog", "browser_back", "browser_vault"):
             memory.post_tool_call(tool_name="browser_snapshot", args={}, result=page(), task_id="t1")
             memory.post_tool_call(tool_name="browser_snapshot", args={}, result=page(), task_id="t2")
             memory.post_tool_call(tool_name=tool, args={"ref": "e12"}, result="{}", task_id="t1")
@@ -568,6 +568,19 @@ class HermesScreenTests(unittest.TestCase):
         self.assertIs(other.label_at("browser_click", {"ref": "e12"}), UNREADABLE)
         self.assertIs(other.text("browser_press", {"key": "Enter"}), UNREADABLE)
 
+    def test_a_browser_script_never_reads_the_remembered_page(self):
+        # Its own steps open and change the page before it presses, so the last snapshot says nothing about it.
+        memory = screen_text.Memory()
+        memory.post_tool_call(tool_name="browser_snapshot", args={}, result=page(), task_id="task")
+        bound = self.screen(memory=memory).bind("task", "chat")
+        code = {"code": "cdp('Input.dispatchKeyEvent', type='keyDown', key='Enter')"}
+        for read in (bound.label_at, bound.text, bound.around):
+            self.assertIs(read("browser_exec", code), UNREADABLE)
+        self.assertIsNone(bound.page("browser_exec", code))
+        found = ask_first.classify("browser_exec", {"code": "click_at_xy(812, 604)"}, screen=bound)
+        self.assertEqual(found.kind, ask_first.UNSURE)
+        self.assertEqual(self.captured, [])
+
     def test_anything_else_is_unreadable(self):
         screen = self.screen()
         self.assertIs(screen.label_at("terminal", {}), UNREADABLE)
@@ -701,6 +714,10 @@ class AroundTests(unittest.TestCase):
         broken = SimpleNamespace(browser_tool=SimpleNamespace(browser_console=lambda **_: "not json"))
         with patch.dict("sys.modules", {"tools": broken, "tools.browser_tool": broken.browser_tool}):
             self.assertIsNone(screen_text.read_page_forms("t", "OK"))
+        # Hermes 0.23 keeps tools.browser_tool only as a stub, with no browser_console.
+        stub = SimpleNamespace(browser_tool=SimpleNamespace(warm_agent_browser_npx_cache=lambda **_: False))
+        with patch.dict("sys.modules", {"tools": stub, "tools.browser_tool": stub.browser_tool}):
+            self.assertIsNone(screen_text.read_page_forms("t", "Pay now"))
 
 
 if __name__ == "__main__":

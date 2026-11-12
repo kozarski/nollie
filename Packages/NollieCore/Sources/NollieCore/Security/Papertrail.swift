@@ -465,6 +465,7 @@ public extension Papertrail {
         case "reader": String(localized: "\(bot) read a page at \(host).", table: "Core", comment: "Safety: Papertrail line; keep exact meaning")
         case "hermes": String(localized: "\(bot) connected to \(host) by itself, outside a reply.", table: "Core", comment: "Safety: Papertrail line; keep exact meaning")
         case "direct": String(localized: "A program \(bot) started reached \(host) directly.", table: "Core", comment: "Safety: Papertrail line; keep exact meaning")
+        case "computer": String(localized: "\(bot)'s own computer connected to \(host).", table: "Core", comment: "Safety: Papertrail line; keep exact meaning")
         default: String(localized: "A program \(bot) started connected to \(host).", table: "Core", comment: "Safety: Papertrail line; keep exact meaning")
         }
     }

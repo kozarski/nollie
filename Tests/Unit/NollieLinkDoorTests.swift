@@ -26,6 +26,10 @@ struct NollieLinkDoorTests {
         #expect(request.value("x-hermes-session-token") == "abc")
         #expect(!request.isWebSocketUpgrade)
 
+        // A phone forgets a memory note or removes a schedule with a DELETE that carries a small JSON body.
+        let forget = try LinkDoorHTTP.parseRequest(head(["DELETE /api/plugins/nollie-workflow/memory/notes?bot=default HTTP/1.1",
+                                                          "Host: h", "Content-Length: 2"], body: "{}"))
+        #expect(forget.method == "DELETE")
         let socket = try LinkDoorHTTP.parseRequest(head(["GET /api/ws?token=abc HTTP/1.1", "Host: h", "Upgrade: websocket",
                                                          "Connection: keep-alive, Upgrade", "Sec-WebSocket-Version: 13",
                                                          "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ=="]))
@@ -59,6 +63,7 @@ struct NollieLinkDoorTests {
             ("signed length", head(["POST /api/sessions HTTP/1.1", "Host: h", "Content-Length: +1"])),
             ("hex length", head(["POST /api/sessions HTTP/1.1", "Host: h", "Content-Length: 0x10"])),
             ("GET body", head(["GET /api/status HTTP/1.1", "Host: h", "Content-Length: 1"], body: "x")),
+            ("HEAD body", head(["HEAD /api/status HTTP/1.1", "Host: h", "Content-Length: 1"], body: "x")),
             ("expect", head(["POST /api/sessions HTTP/1.1", "Host: h", "Expect: 100-continue", "Content-Length: 1"])),
             ("dot segment", head(["GET /api/../env HTTP/1.1"] + base)),
             ("dot", head(["GET /api/./status HTTP/1.1"] + base)),
@@ -191,14 +196,14 @@ struct NollieLinkDoorTests {
             ("GET", "/api/status", false), ("GET", "/api/ws", true), ("GET", "/api/sessions", false),
             ("GET", "/api/sessions/search", false),
             ("GET", "/api/sessions/abc", false), ("PATCH", "/api/sessions/abc", false), ("DELETE", "/api/sessions/abc", false),
-            ("GET", "/api/sessions/abc/messages", false),
+            ("GET", "/api/sessions/abc/messages", false), ("GET", "/api/sessions/abc/mutation-snapshot", false),
             ("GET", "/api/profiles", false), ("POST", "/api/profiles", false), ("PATCH", "/api/profiles/scout", false),
             ("GET", "/api/profiles/scout/soul", false), ("PUT", "/api/profiles/scout/soul", false),
             ("PUT", "/api/profiles/scout/model", false), ("PUT", "/api/profiles/scout/description", false),
             ("GET", "/api/model/options", false), ("GET", "/api/config/schema", false), ("GET", "/api/media", false),
             ("GET", "/api/cron/jobs", false), ("GET", "/api/cron/jobs/abc", false), ("DELETE", "/api/cron/jobs/abc", false),
             ("POST", "/api/cron/jobs/abc/pause", false), ("POST", "/api/cron/jobs/abc/resume", false),
-            ("POST", "/api/cron/jobs/abc/trigger", false),
+            ("POST", "/api/cron/jobs/abc/trigger", false), ("POST", "/api/cron/jobs/abc/cancel", false),
             ("GET", "/api/plugins/kanban/board", false), ("POST", "/api/plugins/kanban/tasks", false),
             ("GET", "/api/plugins/kanban/events", true), ("GET", "/api/plugins/nollie-workflow/attention", false),
             ("GET", "/api/plugins/nollie-workflow/private-bots", false),
@@ -237,11 +242,15 @@ struct NollieLinkDoorTests {
             // Scheduled tasks: reads and pause, resume, run and delete only.
             ("POST", "/api/cron/jobs", false), ("PUT", "/api/cron/jobs/abc", false), ("POST", "/api/cron/blueprints/instantiate", false),
             ("POST", "/api/cron/fire", false),
+            // Stop on a run is a POST and nothing else; it never reaches bulk or reserved routes.
+            ("GET", "/api/cron/jobs/abc/cancel", false), ("DELETE", "/api/cron/jobs/abc/cancel", false),
+            ("POST", "/api/cron/jobs/active/cancel", false),
             // Sessions: one chat at a time, nothing in bulk.
             ("POST", "/api/sessions", false), ("POST", "/api/sessions/bulk-delete", false), ("POST", "/api/sessions/prune", false),
             ("POST", "/api/sessions/import", false), ("DELETE", "/api/sessions/empty", false), ("GET", "/api/sessions/empty/count", false),
             ("POST", "/api/sessions/owner-backfill", false), ("GET", "/api/sessions/abc/export", false),
             ("POST", "/api/sessions/abc/messages", false), ("DELETE", "/api/sessions/search", false),
+            ("POST", "/api/sessions/abc/mutation-snapshot", false), ("GET", "/api/sessions/empty/mutation-snapshot", false),
             // Screens the app no longer has: session store statistics, the model page, voice and channels.
             ("GET", "/api/sessions/stats", false), ("GET", "/api/model/auxiliary", false), ("POST", "/api/model/set", false),
             ("POST", "/api/audio/transcribe", false), ("POST", "/api/audio/speak", false), ("GET", "/api/audio/speak-stream", true),
@@ -928,6 +937,20 @@ extension NollieLinkDoorTests {
         }
     }
 
+    /// Hermes 0.23's plugin manager and new owner routes stay shut from a phone: installing, updating or
+    /// turning on unattended plugin updates, and cancelling or locking through routes the door hasn't reviewed.
+    @Test func hermes023PluginAndOwnerRoutesStayShut() {
+        let refused: [(String, String)] = [
+            ("GET", "/api/dashboard/plugins/auto-update"), ("PUT", "/api/dashboard/plugins/auto-update"),
+            ("POST", "/api/dashboard/plugins/update"), ("POST", "/api/dashboard/plugins/install"),
+            ("POST", "/api/plugins/install"), ("PUT", "/api/delegation/backends/profile_routes"),
+            ("GET", "/api/webapp"), ("POST", "/api/profiles/import"), ("POST", "/api/profiles/moss/export"),
+        ]
+        for (method, path) in refused {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .refused, "\(method) \(path)")
+        }
+    }
+
     @Test func memoryAllowsOnlyItsOwnRoutesAndOneBot() {
         let base = "/api/plugins/nollie-workflow/memory"
         let allowed: [(String, String)] = [("GET", base), ("POST", base + "/notes"), ("PUT", base + "/notes"),
@@ -956,9 +979,12 @@ extension NollieLinkDoorTests {
                 #expect(!LinkDoorPolicy.allowsQuery(path: path, query: bad), "\(path) \(bad ?? "nil")")
             }
         }
-        // The profile-only routes keep their own rule.
-        #expect(!LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "bot=default"))
+        // The computer's routes take one bot name, as `bot` from Hermes 0.23 on or `profile` from an older Nollie.
+        #expect(LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "bot=default"))
         #expect(LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: "profile=default"))
+        for bad in ["bot=default&profile=default", "profile=default&bot=default", "bot=a&bot=b", "bot=../x"] {
+            #expect(!LinkDoorPolicy.allowsQuery(path: "/api/plugins/nollie-computer/ask-first", query: bad), "\(bad)")
+        }
     }
 
     @Test func readyMadeHelpersAllowOnlyTheRosterAddAndUndo() {
@@ -1120,6 +1146,28 @@ extension NollieLinkDoorTests {
                                 ("PUT", "/api/plugins/nollie-workflow/weekly-note"), ("POST", path + "/remove-app")] {
             #expect(LinkDoorFamily.memberRoute(method: method, path: owned, query: nil, websocket: false) == .refused)
         }
+    }
+
+    /// Keep skills as they are: a linked phone reads one helper's switch, and only the Mac changes it or any skill's lock.
+    @Test func keepSkillsIsReadOnlyFromThePhone() {
+        let path = "/api/plugins/nollie-workflow/keep-skills"
+        #expect(LinkDoorPolicy.route(method: "GET", path: path, websocket: false) == .hermes)
+        for method in ["PUT", "POST", "DELETE", "PATCH"] {
+            #expect(LinkDoorPolicy.route(method: method, path: path, websocket: false) == .refused, "\(method)")
+        }
+        for (method, refused) in [("PUT", "/api/skills/lock"), ("PUT", "/api/skills/toggle"), ("GET", path + "/x"),
+                                  ("GET", "/api/skills/lock")] {
+            #expect(LinkDoorPolicy.route(method: method, path: refused, websocket: false) == .refused, "\(method) \(refused)")
+        }
+        #expect(LinkDoorPolicy.allowsQuery(path: path, query: "bot=career"))
+        for bad in [nil, "", "bot=a&bot=b", "bot=career&on=1", "profile=career", "bot=../x"] {
+            #expect(!LinkDoorPolicy.allowsQuery(path: path, query: bad), "\(bad ?? "nil")")
+        }
+        // A member's phone never reaches it.
+        #expect(LinkDoorFamily.memberRoute(method: "GET", path: path, query: "bot=career", websocket: false) == .refused)
+        // The skills list and the week's spending were readable before and still are.
+        #expect(LinkDoorPolicy.route(method: "GET", path: "/api/skills", websocket: false) == .hermes)
+        #expect(LinkDoorPolicy.route(method: "GET", path: "/api/analytics/usage", websocket: false) == .hermes)
     }
 
     /// Only the owner flips Night shift: their linked phone reaches the switch, a shared member's never does.

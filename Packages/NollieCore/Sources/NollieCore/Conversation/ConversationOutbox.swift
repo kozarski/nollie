@@ -76,6 +76,8 @@ public struct ConversationOutbox: Codable, Hashable, Sendable {
 /// How a send ended, as far as this device can tell.
 public enum ConversationSendOutcome: Hashable, Sendable {
     case accepted(userRowId: Int?)
+    /// Hermes 0.23 handed it to the chat's owner, queued behind the turn running there.
+    case forwarded
     /// Hermes answered with an error. `retryable` when it only means "not yet" (the agent is still starting).
     case refused(String, retryable: Bool)
     /// It never left the device.

@@ -232,12 +232,32 @@ final class LinkDoor: @unchecked Sendable {
                         if self.pending === made { self.pending = nil }
                         if self.listener === made { self.listener = nil; self.listeningPort = nil }
                         once.resume(.failure(NWError.posix(.ECANCELED)))
+                    case .waiting:
+                        // macOS holds a listener that announces itself until Local Network is allowed. The
+                        // code carries this Mac's addresses, so the door opens without the announcement
+                        // rather than leaving the person with no code at all.
+                        self.listenQuietly(made)
                     default: break
                     }
                 }
                 made.start(queue: queue)
+                // The same, when macOS neither readies the listener nor says it is waiting.
+                queue.asyncAfter(deadline: .now() + 3) { [weak self, weak made] in
+                    guard let self, let made, self.pending === made else { return }
+                    self.listenQuietly(made)
+                }
             }
         }
+    }
+
+    /// True when this Mac could not announce itself on the network (Local Network is not allowed for Nollie).
+    /// A phone still links with the code; finding the Mac by name later may not work until it is allowed.
+    private(set) var announcementBlocked = false
+
+    private func listenQuietly(_ made: NWListener) {
+        guard made.service != nil else { return }
+        announcementBlocked = true
+        made.service = nil
     }
 
     // MARK: Devices

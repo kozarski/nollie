@@ -304,6 +304,11 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(response.json(), {"profile": "work", "enabled": False})
         self.assertEqual(response.headers["cache-control"], "no-store")
         service.change.assert_called_once_with("work", False)
+        # From Hermes 0.23 Nollie names the bot as `bot`, since Hermes takes `profile` for itself.
+        service.status.reset_mock()
+        self.assertEqual(client.get("/ask-first", params={"bot": "work"}).status_code, 200)
+        service.status.assert_called_once_with("work")
+        self.assertEqual(client.get("/ask-first", params={"bot": "a" * 65}).status_code, 422)
 
     def test_route_dispatch_and_refusals_without_a_running_gateway(self):
         class Router:
@@ -320,7 +325,8 @@ class RouteTests(unittest.TestCase):
         class Response:
             def __init__(self, body, status_code=200, headers=None):
                 self.body, self.status_code, self.headers = body, status_code, headers
-        modules = {"fastapi": SimpleNamespace(APIRouter=Router, Body=lambda *a, **k: None, Query=lambda *a, **k: None),
+        modules = {"fastapi": SimpleNamespace(APIRouter=Router, Body=lambda *a, **k: None, Query=lambda *a, **k: None,
+                                              Depends=lambda *a, **k: None, HTTPException=Exception),
                    "fastapi.responses": SimpleNamespace(JSONResponse=Response),
                    "pydantic": SimpleNamespace(BaseModel=object, StrictBool=bool)}
         with patch.dict(sys.modules, modules):

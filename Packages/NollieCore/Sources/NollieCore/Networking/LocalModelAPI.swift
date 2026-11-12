@@ -13,6 +13,12 @@ public struct LocalModelJob: Codable, Equatable, Sendable, Identifiable {
     public var canPause: Bool?
     public var canResume: Bool?
     public var pauseRequested: Bool?
+    /// Hermes's own words for the step it is on, such as "Downloading the draft model that speeds up generation".
+    public var detail: String?
+    /// Hermes's own words for why the job stopped, only when its status is "error".
+    public var error: String?
+    /// The transfer rate over the last few seconds, only while bytes are moving.
+    public var bytesPerSec: Double?
     public var id: String { jobId }
 
     public var fractionCompleted: Double? {

@@ -90,13 +90,15 @@ enum LinkDoorPolicy {
     /// returns secrets from config.yaml), plugin and MCP management, updates, restarts and ops,
     /// sign-in, local model downloads, files (Hermes's file routes are not confined to a folder
     /// the door can enforce), the raw file system and git, logs, Hermes's own memory routes (reset and provider), webhooks, creating or
-    /// changing scheduled tasks (their scripts can't be inspected here), deleting bots, bulk
+    /// changing scheduled tasks (their scripts can't be inspected here; stopping one run is fine), deleting bots, bulk
     /// session routes, and every page or asset outside `/api`.
     private static let rules: [Rule] = [
         Rule(["GET"], "/api/status"), Rule(["GET"], "/api/health"),
         Rule([], "/api/ws", socket: true),
         Rule(["GET"], "/api/sessions"), Rule(["GET"], "/api/sessions/search"),
         Rule(["GET", "PATCH", "DELETE"], "/api/sessions/*"), Rule(["GET"], "/api/sessions/*/messages"),
+        // Hermes 0.23 wants a chat's revision before a rename, archive or delete: a read of two counters.
+        Rule(["GET"], "/api/sessions/*/mutation-snapshot"),
         Rule(["GET", "POST"], "/api/profiles"), Rule(["GET", "POST"], "/api/profiles/active"),
         Rule(["GET"], "/api/profiles/sessions"), Rule(["PATCH"], "/api/profiles/*"),
         Rule(["GET", "PUT"], "/api/profiles/*/soul"), Rule(["PUT"], "/api/profiles/*/description"),
@@ -107,6 +109,9 @@ enum LinkDoorPolicy {
         Rule(["GET"], "/api/cron/jobs"), Rule(["GET", "DELETE"], "/api/cron/jobs/*"),
         Rule(["POST"], "/api/cron/jobs/*/pause"), Rule(["POST"], "/api/cron/jobs/*/resume"),
         Rule(["POST"], "/api/cron/jobs/*/trigger"),
+        // Stop on one schedule's run: Hermes ends that run and leaves the schedule as it was. Harmless, and the
+        // person's own call from their phone, like Run now. Editing a schedule stays on the Mac.
+        Rule(["POST"], "/api/cron/jobs/*/cancel"),
         Rule(["GET"], "/api/analytics/usage"), Rule(["GET"], "/api/skills"), Rule(["GET"], "/api/tools/toolsets"),
         Rule(["GET", "POST", "PATCH", "DELETE"], "/api/plugins/kanban/**"), Rule([], "/api/plugins/kanban/events", socket: true),
         Rule(["GET"], "/api/plugins/nollie-workflow/private-bots"), Rule(["GET"], "/api/plugins/nollie-workflow/attention"),
@@ -144,6 +149,10 @@ enum LinkDoorPolicy {
         // their answers and the history stay on the Mac, which alone fills a card in.
         Rule(["GET"], "/api/plugins/nollie-workflow/payments/cards"),
         Rule(["GET", "PUT"], "/api/plugins/nollie-workflow/payments/bots"),
+        // A helper's "Keep skills as they are" switch: the phone reads it to show it, and only the Mac changes it (the
+        // skills' own locks, `PUT /api/skills/lock`, stay on the Mac too). The add-on refuses a private bot; the door
+        // allows nothing but `?bot=` (see `allowsQuery`).
+        Rule(["GET"], "/api/plugins/nollie-workflow/keep-skills"),
         // Watch: Take over and Hand back, after Face ID on the phone. The add-on still refuses
         // private bots; the door allows nothing but `?profile=` on these (see `allowsQuery`).
         Rule(["POST"], "/api/plugins/nollie-computer/take-over"),
@@ -196,18 +205,20 @@ enum LinkDoorPolicy {
 
     static let awayRoutes: [String: Route] = ["/nollie/link/hosts": .hosts, "/nollie/link/away/on": .awayOn, "/nollie/link/away/off": .awayOff]
 
-    /// Paths whose query is held to one `profile` and nothing else.
+    /// Paths whose query is held to one bot name and nothing else: `bot`, which Nollie sends from Hermes 0.23
+    /// on (Hermes takes `profile` on a plugin route for itself), or `profile` from an older Nollie.
     static let profileOnlyPaths: Set<String> = ["/api/plugins/nollie-computer/take-over", "/api/plugins/nollie-computer/hand-back",
                                                "/api/plugins/nollie-computer/ask-first"]
 
     /// Paths whose query is held to one `bot` and nothing else: a helper's memory. So a phone can't say
     /// `on_this_mac`, which only Nollie on the Mac that runs Hermes sends for a private bot.
     static let botOnlyPaths: Set<String> = ["/api/plugins/nollie-workflow/memory", "/api/plugins/nollie-workflow/memory/notes",
-                                           "/api/plugins/nollie-workflow/memory/switch", "/api/plugins/nollie-workflow/week"]
+                                           "/api/plugins/nollie-workflow/memory/switch", "/api/plugins/nollie-workflow/week",
+                                           "/api/plugins/nollie-workflow/keep-skills"]
 
     /// Every other path passes its query on as before; these take exactly one profile name.
     static func allowsQuery(path: String, query: String?) -> Bool {
-        if profileOnlyPaths.contains(path) { return onlyOneName("profile", in: query) }
+        if profileOnlyPaths.contains(path) { return onlyOneName("bot", in: query) || onlyOneName("profile", in: query) }
         if botOnlyPaths.contains(path) { return onlyOneName("bot", in: query) }
         return true
     }

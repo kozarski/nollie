@@ -93,7 +93,9 @@ private final class SystemProbe: NSObject, NetServiceDelegate {
 
         let service = NetService(domain: "local.", type: "_nollie-check._tcp.", name: "Nollie check", port: 9)
         service.delegate = self
-        service.publish(options: [.noAutoRename])
+        // Renamed when another device on the network is checking at the same moment: with the name
+        // taken and no rename it never published, and the pairing spinner waited the full timeout.
+        service.publish()
         self.service = service
 
         timer = Task { [weak self] in
@@ -115,5 +117,10 @@ private final class SystemProbe: NSObject, NetServiceDelegate {
 
     nonisolated func netServiceDidPublish(_ sender: NetService) {
         MainActor.assumeIsolated { finish(.granted) }
+    }
+
+    /// A publish that fails for any other reason says nothing about the answer; stop waiting for it.
+    nonisolated func netService(_ sender: NetService, didNotPublish errorDict: [String: NSNumber]) {
+        MainActor.assumeIsolated { finish(.undecided) }
     }
 }

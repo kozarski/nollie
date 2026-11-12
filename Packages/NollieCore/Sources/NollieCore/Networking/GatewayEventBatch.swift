@@ -60,6 +60,9 @@ public extension GatewayEvent {
     static func coalescingText(_ events: [GatewayEvent]) -> [GatewayEvent] {
         var result: [GatewayEvent] = []
         var pieces: [String] = []
+        // Where the run's text ends in Hermes 0.23's stamps (turn, segment, UTF-16 offset), so a copy sent again
+        // is never joined onto the original: the reply's dedupe needs each copy's own offset.
+        var runEnd: Stamp?
 
         // Writes the joined text of a finished run into the event that heads it.
         func closeRun() {
@@ -72,17 +75,40 @@ public extension GatewayEvent {
 
         for event in events {
             let text = textPieces.contains(event.type) ? event.payload["text"]?.stringValue : nil
+            let stamp = Stamp(event.payload)
             let continuesRun = !pieces.isEmpty && result.last.map { $0.type == event.type && $0.sessionID == event.sessionID } == true
+                && stamp == runEnd
             if let text, continuesRun {
                 pieces.append(text)
+                runEnd = stamp.map { $0.after(text) }
                 result[result.count - 1].seq = event.seq ?? result[result.count - 1].seq
                 continue
             }
             closeRun()
             result.append(event)
-            if let text, case .object = event.payload { pieces = [text] }
+            if let text, case .object = event.payload {
+                pieces = [text]
+                runEnd = stamp.map { $0.after(text) }
+            }
         }
         closeRun()
         return result
+    }
+
+    /// A delta's place in its turn, when Hermes stamps it.
+    internal struct Stamp: Equatable {
+        var turn: String
+        var segment: Int
+        var offset: Int
+
+        init?(_ payload: JSONValue) {
+            guard let turn = payload["turn_id"]?.stringValue, let segment = payload["segment"]?.intValue,
+                  let offset = payload["offset"]?.intValue else { return nil }
+            (self.turn, self.segment, self.offset) = (turn, segment, offset)
+        }
+
+        init(turn: String, segment: Int, offset: Int) { (self.turn, self.segment, self.offset) = (turn, segment, offset) }
+
+        func after(_ text: String) -> Stamp { Stamp(turn: turn, segment: segment, offset: offset + text.utf16.count) }
     }
 }

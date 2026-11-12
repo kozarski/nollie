@@ -9,16 +9,16 @@
             "value" : "%@ nutzt seinen Computer"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ utilise son ordinateur"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@ está usando su ordenador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ utilise son ordinateur"
           }
         },
         "ja" : {
@@ -37,16 +37,16 @@
             "value" : "%@ nutzt deinen Mac"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ utilise votre Mac"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@ está usando tu Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ utilise votre Mac"
           }
         },
         "ja" : {
@@ -65,16 +65,16 @@
             "value" : "%@ nutzt jetzt deinen Mac."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ a commencé à utiliser votre Mac."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@ ha empezado a usar tu Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ a commencé à utiliser votre Mac."
           }
         },
         "ja" : {
@@ -94,16 +94,16 @@
             "value" : "%@ gestoppt"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ arrêté"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@ se ha detenido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ arrêté"
           }
         },
         "ja" : {
@@ -117,24 +117,6 @@
     "%@, %lld waiting" : {
       "comment" : "Who is working, then how many approvals wait",
       "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%@, 1 waiting"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%@, %lld waiting"
-                }
-              }
-            }
-          }
-        },
         "de" : {
           "variations" : {
             "plural" : {
@@ -153,19 +135,19 @@
             }
           }
         },
-        "fr" : {
+        "en" : {
           "variations" : {
             "plural" : {
               "one" : {
                 "stringUnit" : {
-                  "state" : "needs_review",
-                  "value" : "%@, 1 en attente"
+                  "state" : "translated",
+                  "value" : "%@, 1 waiting"
                 }
               },
               "other" : {
                 "stringUnit" : {
-                  "state" : "needs_review",
-                  "value" : "%@, %lld en attente"
+                  "state" : "translated",
+                  "value" : "%@, %lld waiting"
                 }
               }
             }
@@ -189,6 +171,24 @@
             }
           }
         },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%@, 1 en attente"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%@, %lld en attente"
+                }
+              }
+            }
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
@@ -205,13 +205,13 @@
             "value" : "%lld"
           }
         },
-        "fr" : {
+        "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%lld"
           }
         },
-        "es" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%lld"
@@ -227,24 +227,6 @@
     },
     "%lld helpers working" : {
       "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "1 helper working"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld helpers working"
-                }
-              }
-            }
-          }
-        },
         "de" : {
           "variations" : {
             "plural" : {
@@ -263,19 +245,19 @@
             }
           }
         },
-        "fr" : {
+        "en" : {
           "variations" : {
             "plural" : {
               "one" : {
                 "stringUnit" : {
-                  "state" : "needs_review",
-                  "value" : "1 assistant au travail"
+                  "state" : "translated",
+                  "value" : "1 helper working"
                 }
               },
               "other" : {
                 "stringUnit" : {
-                  "state" : "needs_review",
-                  "value" : "%lld assistants au travail"
+                  "state" : "translated",
+                  "value" : "%lld helpers working"
                 }
               }
             }
@@ -299,6 +281,24 @@
             }
           }
         },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "1 assistant au travail"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld assistants au travail"
+                }
+              }
+            }
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
@@ -310,24 +310,6 @@
     "%lld more" : {
       "comment" : "More runs past the ones listed",
       "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "1 more"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld more"
-                }
-              }
-            }
-          }
-        },
         "de" : {
           "variations" : {
             "plural" : {
@@ -346,19 +328,19 @@
             }
           }
         },
-        "fr" : {
+        "en" : {
           "variations" : {
             "plural" : {
               "one" : {
                 "stringUnit" : {
-                  "state" : "needs_review",
-                  "value" : "1 de plus"
+                  "state" : "translated",
+                  "value" : "1 more"
                 }
               },
               "other" : {
                 "stringUnit" : {
-                  "state" : "needs_review",
-                  "value" : "%lld de plus"
+                  "state" : "translated",
+                  "value" : "%lld more"
                 }
               }
             }
@@ -382,6 +364,24 @@
             }
           }
         },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "1 de plus"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld de plus"
+                }
+              }
+            }
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
@@ -393,24 +393,6 @@
     "%lld waiting for you" : {
       "comment" : "Approvals waiting for a yes or no",
       "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "1 waiting for you"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld waiting for you"
-                }
-              }
-            }
-          }
-        },
         "de" : {
           "variations" : {
             "plural" : {
@@ -429,19 +411,19 @@
             }
           }
         },
-        "fr" : {
+        "en" : {
           "variations" : {
             "plural" : {
               "one" : {
                 "stringUnit" : {
-                  "state" : "needs_review",
-                  "value" : "1 vous attend"
+                  "state" : "translated",
+                  "value" : "1 waiting for you"
                 }
               },
               "other" : {
                 "stringUnit" : {
-                  "state" : "needs_review",
-                  "value" : "%lld vous attendent"
+                  "state" : "translated",
+                  "value" : "%lld waiting for you"
                 }
               }
             }
@@ -465,6 +447,24 @@
             }
           }
         },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "1 vous attend"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld vous attendent"
+                }
+              }
+            }
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
@@ -476,28 +476,28 @@
     "%lld working, %lld waiting" : {
       "comment" : "Helpers working, then approvals waiting",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld working, %2$lld waiting"
-          }
-        },
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%1$lld arbeiten, %2$lld warten"
           }
         },
-        "fr" : {
+        "en" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%1$lld au travail, %2$lld en attente"
+            "state" : "new",
+            "value" : "%1$lld working, %2$lld waiting"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%1$lld trabajando, %2$lld en espera"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$lld au travail, %2$lld en attente"
           }
         },
         "ja" : {
@@ -516,16 +516,16 @@
             "value" : "Alles ruhig"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tout est calme"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Todo tranquilo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tout est calme"
           }
         },
         "ja" : {
@@ -545,16 +545,16 @@
             "value" : "Einmal erlauben"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Autoriser une fois"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Permitir una vez"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Autoriser une fois"
           }
         },
         "ja" : {
@@ -574,16 +574,16 @@
             "value" : "Einmal erlauben?"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Autoriser une fois ?"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "¿Permitir una vez?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Autoriser une fois ?"
           }
         },
         "ja" : {
@@ -603,16 +603,16 @@
             "value" : "Erlaubt"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Autorisé"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Permitido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Autorisé"
           }
         },
         "ja" : {
@@ -631,22 +631,51 @@
             "value" : "Schon beantwortet"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Déjà répondu"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Ya respondida"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Déjà répondu"
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "回答済み"
+          }
+        }
+      }
+    },
+    "Answer on your iPhone." : {
+      "comment" : "Under Board tasks on the Watch",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Antworte auf deinem iPhone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Responde en tu iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Répondez sur votre iPhone."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iPhoneで答えてください。"
           }
         }
       }
@@ -660,16 +689,16 @@
             "value" : "Auf deinem iPhone freigeben"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Approuvez sur votre iPhone"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Aprueba en tu iPhone"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Approuvez sur votre iPhone"
           }
         },
         "ja" : {
@@ -688,16 +717,16 @@
             "value" : "Dein iPhone ist nicht erreichbar"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Impossible de joindre votre iPhone"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "No se puede conectar con tu iPhone"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de joindre votre iPhone"
           }
         },
         "ja" : {
@@ -717,16 +746,16 @@
             "value" : "Abgelehnt"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Refusé"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Denegado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Refusé"
           }
         },
         "ja" : {
@@ -746,16 +775,16 @@
             "value" : "Ablehnen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Refuser"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Denegar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Refuser"
           }
         },
         "ja" : {
@@ -774,16 +803,16 @@
             "value" : "Beendet die Aufgabe des Helfers, stoppt Antworten und pausiert Zeitpläne."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Met fin à la tâche de l'assistant, arrête les réponses et suspend les planifications."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Termina la tarea del ayudante, detiene las respuestas y pausa las programaciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Met fin à la tâche de l'assistant, arrête les réponses et suspend les planifications."
           }
         },
         "ja" : {
@@ -802,22 +831,51 @@
             "value" : "Helfer"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Assistants"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Ayudantes"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Assistants"
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ヘルパー"
+          }
+        }
+      }
+    },
+    "Just started" : {
+      "comment" : "A helper began its work under a minute ago",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gerade gestartet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Acaba de empezar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vient de commencer"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "開始したばかり"
           }
         }
       }
@@ -830,16 +888,16 @@
             "value" : "Zuletzt gesehen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Vu pour la dernière fois"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Visto por última vez"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vu pour la dernière fois"
           }
         },
         "ja" : {
@@ -858,22 +916,51 @@
             "value" : "Zuletzt gesehen %@"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Vu %@"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Visto por última vez %@"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vu %@"
+          }
+        },
         "ja" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "最終確認：%@"
+          }
+        }
+      }
+    },
+    "Needs your help" : {
+      "comment" : "Board tasks waiting for the person",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Braucht deine Hilfe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Necesita tu ayuda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "A besoin de vous"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "あなたの助けが必要です"
           }
         }
       }
@@ -886,13 +973,13 @@
             "value" : "Night shift"
           }
         },
-        "fr" : {
+        "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Night shift"
           }
         },
-        "es" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Night shift"
@@ -914,16 +1001,16 @@
             "value" : "Keine Helfer bei der Arbeit"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Aucun assistant au travail"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "No hay ayudantes trabajando"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aucun assistant au travail"
           }
         },
         "ja" : {
@@ -942,13 +1029,13 @@
             "value" : "Nollie"
           }
         },
-        "fr" : {
+        "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollie"
           }
         },
-        "es" : {
+        "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nollie"
@@ -970,16 +1057,16 @@
             "value" : "Nollie auf deinem iPhone öffnen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ouvrez Nollie sur votre iPhone"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Abre Nollie en tu iPhone"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ouvrez Nollie sur votre iPhone"
           }
         },
         "ja" : {
@@ -998,16 +1085,16 @@
             "value" : "„Stoppen“ auf dem Sperrbildschirm zeigen, während ein Helfer arbeitet"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Afficher Arrêter sur l'écran verrouillé quand un assistant travaille"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Mostrar Detener en la pantalla bloqueada mientras trabaja un ayudante"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Afficher Arrêter sur l'écran verrouillé quand un assistant travaille"
           }
         },
         "ja" : {
@@ -1027,16 +1114,16 @@
             "value" : "Stoppen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Arrêter"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Detener"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêter"
           }
         },
         "ja" : {
@@ -1055,16 +1142,16 @@
             "value" : "Nollie stoppen"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Arrête Nollie"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Detén Nollie"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrête Nollie"
           }
         },
         "ja" : {
@@ -1084,16 +1171,16 @@
             "value" : "„Stoppen“ hat deinen Mac nicht erreicht"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "L'arrêt n'a pas atteint votre Mac"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Detener no llegó a tu Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'arrêt n'a pas atteint votre Mac"
           }
         },
         "ja" : {
@@ -1113,16 +1200,16 @@
             "value" : "„Stoppen“ beendet den Job auf deinem Mac, stoppt Antworten und pausiert Zeitpläne. Dein iPhone bittet zuerst ums Entsperren."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Arrêter met fin à la tâche sur votre Mac, arrête les réponses et suspend les planifications. Votre iPhone demande d'abord à être déverrouillé."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Detener termina el trabajo en tu Mac, detiene las respuestas y pausa las programaciones. Tu iPhone pide que lo desbloquees primero."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêter met fin à la tâche sur votre Mac, arrête les réponses et suspend les planifications. Votre iPhone demande d'abord à être déverrouillé."
           }
         },
         "ja" : {
@@ -1142,16 +1229,16 @@
             "value" : "%@ wird gestoppt"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Arrêt de %@"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Deteniendo a %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arrêt de %@"
           }
         },
         "ja" : {
@@ -1171,16 +1258,16 @@
             "value" : "Dein Mac wird informiert"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Transmission à votre Mac"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Avisando a tu Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Transmission à votre Mac"
           }
         },
         "ja" : {
@@ -1200,16 +1287,16 @@
             "value" : "Der Job ist beendet"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La tâche est terminée"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "El trabajo ha terminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La tâche est terminée"
           }
         },
         "ja" : {
@@ -1229,16 +1316,16 @@
             "value" : "Die Sicherheitsprüfung hat das markiert."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le contrôle de sécurité a signalé celle-ci."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "La comprobación de seguridad ha marcado esta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le contrôle de sécurité a signalé celle-ci."
           }
         },
         "ja" : {
@@ -1257,16 +1344,16 @@
             "value" : "Die ganze Notiz, mit allen Schaltflächen, ist in Nollie auf deinem iPhone."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La note complète, avec ses actions, est dans Nollie sur votre iPhone."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "La nota completa, con sus toques, está en Nollie en tu iPhone."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La note complète, avec ses actions, est dans Nollie sur votre iPhone."
           }
         },
         "ja" : {
@@ -1285,16 +1372,16 @@
             "value" : "Nutzt seinen Computer"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Utilise son ordinateur"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Usando su ordenador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Utilise son ordinateur"
           }
         },
         "ja" : {
@@ -1313,16 +1400,16 @@
             "value" : "Nutzt deinen Mac"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Utilise votre Mac"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Usando tu Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Utilise votre Mac"
           }
         },
         "ja" : {
@@ -1341,16 +1428,16 @@
             "value" : "Wer arbeitet und was auf dein Ja wartet."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Qui travaille, et ce qui attend votre accord."
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Quién está trabajando y qué espera tu sí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Qui travaille, et ce qui attend votre accord."
           }
         },
         "ja" : {
@@ -1370,16 +1457,16 @@
             "value" : "Arbeitet"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "En cours"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Trabajando"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En cours"
           }
         },
         "ja" : {
@@ -1398,16 +1485,16 @@
             "value" : "Deine Woche"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Votre semaine"
-          }
-        },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Tu semana"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Votre semaine"
           }
         },
         "ja" : {

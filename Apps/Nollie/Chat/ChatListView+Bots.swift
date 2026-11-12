@@ -71,7 +71,11 @@ extension ChatListView {
                 #endif
                 // Someone at home is waiting on a yes.
                 if model.family.canShare(model) { FamilyAsksSection() }
-                if let errorText, model.needsSignIn == nil {
+                // The assistant on this Mac says where it stands in plain words, not the connection's error.
+                let wait = AssistantWait.state(runtime)
+                if wait != .none {
+                    AssistantWaitNotice(wait: wait).inset(h: 12, v: 6)
+                } else if let errorText, model.needsSignIn == nil {
                     Text(errorText).font(.footnote).foregroundStyle(.red)
                         .inset(h: 12, v: 6)
                 }
@@ -305,7 +309,10 @@ extension ChatListView {
                 ToolbarItem(placement: .topBarTrailing) { BoardToolbarButton() }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
-            ToolbarItem(placement: .topBarTrailing) { NewBotButton() }
+            // With nothing connected a new bot has nowhere to live, so + would do nothing.
+            if runtime != nil {
+                ToolbarItem(placement: .topBarTrailing) { NewBotButton() }
+            }
         }
     }
     #endif

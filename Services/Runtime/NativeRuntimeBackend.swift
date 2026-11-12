@@ -6,8 +6,8 @@ import Foundation
 /// command, saved-PID adoption or process-name scan enters this implementation.
 actor NativeRuntimeBackend: NollieRuntimeBackend {
     typealias Contract = NollieRuntimeContract
-    static let entrypointDigest = "6a10009c138c42fa02854c5ad9ddb5bff754e249083df939257fd43491a81ec0"
-    static let addonsDigest = "f30da3b9b00012436099457d5e3d845ebd848dfff749647d8ca4ec7133ad5aba"
+    static let entrypointDigest = "ec4bdd962231cc6dbdd4c23f20545d895f063f586e96557cc7df74d5b05cf4a8"
+    static let addonsDigest = "9c457294fc1cc48f858cfabfebdc7d9c68bf4ca8c509f1e4977a22c523492810"
     private let installations: URL
     private let entrypoint: URL
     private let keys: any RuntimeKeyStoring
@@ -20,6 +20,8 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
     private let session: URLSession
     /// Papertrail's door: open while Hermes runs, so every connection it makes is noted.
     private var door: PapertrailDoor?
+    /// The exit relay's Papertrail: helpers' own computers are noted in this run's book too.
+    private let computersPapertrail: ExitRelayPapertrailLog?
     /// Papertrail's network filter link, while Hermes runs and the switch is on.
     private var filter: RuntimeNetworkFilter?
     /// Rereads the filter's switch while Hermes runs, so turning it on or off needs no restart.
@@ -34,10 +36,12 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         var port: Int?
         var exitCode: Int32?
     }
-    init(installations: URL, entrypoint: URL, keys: any RuntimeKeyStoring = RuntimeKeychainKeys()) {
+    init(installations: URL, entrypoint: URL, keys: any RuntimeKeyStoring = RuntimeKeychainKeys(),
+         computersPapertrail: ExitRelayPapertrailLog? = nil) {
         self.installations = installations
         self.entrypoint = entrypoint
         self.keys = keys
+        self.computersPapertrail = computersPapertrail
         let config = URLSessionConfiguration.ephemeral
         config.httpCookieStorage = nil
         config.urlCredentialStorage = nil
@@ -144,27 +148,9 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         }
         for fd in output + owner + handoff { _ = fcntl(fd, F_SETFD, FD_CLOEXEC) }
         _ = fcntl(output[0], F_SETFL, O_NONBLOCK)
-        var actions: posix_spawn_file_actions_t?
-        var attributes: posix_spawnattr_t?
-        guard posix_spawn_file_actions_init(&actions) == 0, posix_spawnattr_init(&attributes) == 0 else {
-            throw Contract.Failure.launchFailed
-        }
-        defer { posix_spawn_file_actions_destroy(&actions); posix_spawnattr_destroy(&attributes) }
-        let settings = [
-            posix_spawn_file_actions_addopen(&actions, STDIN_FILENO, "/dev/null", O_RDONLY, 0),
-            posix_spawn_file_actions_adddup2(&actions, output[1], STDOUT_FILENO),
-            posix_spawn_file_actions_addopen(&actions, STDERR_FILENO, "/dev/null", O_WRONLY, 0),
-            posix_spawn_file_actions_adddup2(&actions, owner[0], Contract.ownerDescriptor),
-            posix_spawn_file_actions_adddup2(&actions, handoff[0], Contract.keysDescriptor),
-            posix_spawn_file_actions_addchdir(&actions, plan.source.path),
-            posix_spawnattr_setflags(&attributes, Int16(POSIX_SPAWN_CLOEXEC_DEFAULT))
-        ]
-        guard settings.allSatisfy({ $0 == 0 }) else { throw Contract.Failure.launchFailed }
-        var argv = ([plan.executable.path] + plan.arguments(for: role)).map { strdup($0) } + [nil]
-        var environment = plan.environment(for: role, token: token).sorted { $0.key < $1.key }.map { strdup($0.key + "=" + $0.value) } + [nil]
-        defer { argv.forEach { free($0) }; environment.forEach { free($0) } }
-        var pid: pid_t = 0
-        guard posix_spawn(&pid, plan.executable.path, &actions, &attributes, &argv, &environment) == 0 else {
+        guard let pid = RuntimeSpawn.start(executable: plan.executable.path, arguments: plan.arguments(for: role),
+                                           environment: plan.environment(for: role, token: token), directory: plan.source.path,
+                                           output: output[1], owner: owner[0], keys: handoff[0]) else {
             throw Contract.Failure.launchFailed
         }
         let handle = Contract.Child(id: UUID(), pid: pid, role: role)
@@ -264,6 +250,8 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
     func stop(_ handle: Contract.Child) async {
         guard var child = children[handle.id], child.handle == handle else { return }
         if child.owner >= 0 { close(child.owner); child.owner = -1 }
+        // The whole group: Hermes and whatever it started.
+        _ = kill(-handle.pid, SIGTERM)
         if collectExit(&child) == nil { _ = kill(handle.pid, SIGTERM) }
         children[handle.id] = child
         for attempt in 0..<70 {
@@ -272,9 +260,11 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
             if collectExit(&pending) != nil {
                 close(pending.output)
                 children.removeValue(forKey: handle.id)
+                // Hermes has gone. Anything it left running goes too.
+                _ = kill(-handle.pid, SIGKILL)
                 return
             }
-            if attempt == 50 { _ = kill(handle.pid, SIGKILL) }
+            if attempt == 50 { _ = kill(-handle.pid, SIGKILL); _ = kill(handle.pid, SIGKILL) }
             children[handle.id] = pending
             // A caller cancellation must not abandon child cleanup.
             await Task.detached { try? await Task.sleep(for: .milliseconds(100)) }.value
@@ -307,6 +297,7 @@ actor NativeRuntimeBackend: NollieRuntimeBackend {
         let made = PapertrailDoor(configuration: configuration, book: book)
         guard let port = try? await made.start() else { made.stop(); door = nil; return nil }
         door = made
+        computersPapertrail?.use(book)
         apply(state, book: book)
         switchWatch?.cancel()
         switchWatch = Task { [weak self] in

@@ -32,6 +32,6 @@ import Testing
         let data = try Data(contentsOf: resource)
         let checksum = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         // The whole LICENSE travels with the app: Nollie's own notice, then the third-party notices, word for word.
-        #expect(checksum == "7cce67a3255046e040d93f529b3d3bfb3db29b9aeb21dcf777c3067c8b11a5b8")
+        #expect(checksum == "a1153f751db7a28fa370d1d6ecb21364eb714a9086692d069931d36ecb7160c4")
     }
 }

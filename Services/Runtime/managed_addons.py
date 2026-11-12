@@ -13,10 +13,13 @@ is on in every bot, Private ones too, and stays on: the person's Ask first switc
 (nollie-workflow/ask-first.json) and covers only what Nollie can't read, so an add-on an older Nollie
 switched off comes back on with that switch off. Every bot's use of this Mac starts off: a bot with
 no desktop lease gets a person's (bot-desktop/lease.json), since Hermes reads no lease as the bot's.
-Other disabled add-ons stay disabled. Board follow-through starts on the first install only.
+Other disabled add-ons stay disabled. Board follow-through and Night shift start on the first install only.
 nollie-mac (a bot asking Nollie Computer to use apps on this Mac) is copied into every bot that is not
 private but is listed, with its MCP server on Nollie's own Python, only in bots whose desktop lease is
 the agent's (This Mac on); turning This Mac off takes both out again at the next start.
+A question a bot asks (Hermes's clarify) waits an hour for an answer, as before Hermes 0.23 lowered it to 90 seconds:
+agent.clarify_timeout is set to 3600 in every bot that has not picked its own (the person's value, or a legacy
+clarify.timeout, always stays), so a question card on the phone does not run out while it is in a pocket.
 Workflow's Hermes helpers stay inside its plugin folder; this installer never writes Hermes source.
 Never touches ~/.hermes, the always-private bots (private, moss), chats, schedules or the Board; a
 Private bot gets only Ask first and the lease, and nothing in it is read but its config.yaml.
@@ -42,9 +45,15 @@ MAC = "nollie-mac"
 MAC_FILES = ("__init__.py", "plugin.yaml", "server.py")
 WORKFLOW_INITIALIZED = "ask-first-initialized"
 MARKER = "nollie-lock.sha256"
+PYTHON_MARKER = "nollie-python.path"
 RECORDER_ONLY = "recorder-only"
 RECORDER_NOTE = "Papertrail is off in this bot. A copy made with --papertrail-bots turns it on.\n"
 SWITCH = "ask-first.json"
+QUESTION_WAIT = 3600
+# Hermes 0.23's default, and what its config step 53 turns the old default of 3600 into.
+HERMES_QUESTION_WAIT = 90
+HERMES_LOWERED_AT = 53
+QUESTION_WAIT_MARK = "question-wait.json"
 LEASE_REASON = "System control is off in the Nollie app"
 
 
@@ -172,6 +181,8 @@ def start_workflow(home):
         state = core.initial_state()
         state["enabled"] = True
         core.atomic_write(root / "state.json", state)
+    # A new setup starts with Night shift on, so the first morning has its card. A setup made before keeps its choice.
+    core.start_night_shift(root)
     return "started"
 
 
@@ -184,7 +195,12 @@ def reader_environment(kit, home, uv, python, lock_entry, stamp, run=None):
     state.mkdir(mode=0o700, parents=True, exist_ok=True)
     venv = state / "venv"
     marker = venv / MARKER
-    if marker.is_file() and not marker.is_symlink() and marker.read_text() == lock_entry["sha256"] + "\n":
+    # Beside the lock's marker (which the app checks byte for byte), the Python the environment was built
+    # with: a newer Nollie Python moves the old one away, and a venv still pointing at it would not start.
+    built_with = venv / PYTHON_MARKER
+    python_text = str(Path(python).absolute()) + "\n"
+    if (marker.is_file() and not marker.is_symlink() and marker.read_text() == lock_entry["sha256"] + "\n"
+            and built_with.is_file() and not built_with.is_symlink() and built_with.read_text() == python_text):
         return "current"
     for leftover in state.glob("venv.new-*"):
         if leftover.is_dir() and not leftover.is_symlink():
@@ -202,6 +218,8 @@ def reader_environment(kit, home, uv, python, lock_entry, stamp, run=None):
             # Diagnostics stay in the process output, which the app never shows.
             raise Refused("the reader's environment did not build: " + (result.stdout or "")[-2000:])
     (fresh / MARKER).write_text(lock_entry["sha256"] + "\n")
+    (fresh / PYTHON_MARKER).write_text(python_text)
+    (fresh / PYTHON_MARKER).chmod(0o600)
     (fresh / MARKER).chmod(0o600)
     previous = state / "venv.previous"
     if venv.exists():
@@ -212,9 +230,10 @@ def reader_environment(kit, home, uv, python, lock_entry, stamp, run=None):
     return "built"
 
 
-def _edit_config(home, stamp, change, create=False):
+def _edit_config(home, stamp, change, create=False, backup=True):
     """Read the bot's config.yaml, let ``change(document)`` edit it, and write it back with a dated backup
-    when it changed. ``change`` returns what to hand back, or None when nothing changed."""
+    when it changed (``backup`` False: a config this run wrote itself). ``change`` returns what to hand back,
+    or None when nothing changed."""
     config = home / "config.yaml"
     if not unlinked(config) or (not config.is_file() and not (create and not config.exists())):
         raise Refused("the setup's config.yaml is missing or linked")
@@ -235,12 +254,12 @@ def _edit_config(home, stamp, change, create=False):
     outcome = change(document)
     if outcome is None:
         return None
-    if original is not None:
-        backup = home / f"config.yaml.bak-nollie-addons-{stamp}"
-        descriptor = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    if original is not None and backup:
+        saved = home / f"config.yaml.bak-nollie-addons-{stamp}"
+        descriptor = os.open(saved, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
         with os.fdopen(descriptor, "wb") as handle:
             handle.write(original)
-        if backup.read_bytes() != original:
+        if saved.read_bytes() != original:
             raise Refused("the config backup did not verify")
     descriptor, temporary = tempfile.mkstemp(prefix=".config-", dir=home)
     with os.fdopen(descriptor, "w") as handle:
@@ -458,6 +477,65 @@ def keep_ask_first_on(home, stamp):
     return added
 
 
+def _read_mark(path):
+    """Nollie's note of the config version it last saw an hour-long question wait at; None when there is none."""
+    if not path.exists():
+        return None
+    try:
+        mark = json.loads(path.read_text())
+        return int(mark["config_version"]) if isinstance(mark, dict) and mark.get("version") == 1 else None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def keep_questions_waiting(home, stamp, backup=True):
+    """agent.clarify_timeout at an hour unless the person picked their own. Unset counts as not picked, and so
+    does 90 once Hermes's own step 53 could have put it there: on a config at version 53 or later that Nollie had
+    not seen yet, or had last seen at an hour before that step. Any other value, and a legacy clarify.timeout,
+    is the person's. Returns True when the config changed."""
+    config = home / "config.yaml"
+    if not unlinked(config) or not config.is_file():
+        return False
+    root = home / WORKFLOW
+    mark = root / QUESTION_WAIT_MARK
+    if not unlinked(mark) or (root.exists() and not root.is_dir()):
+        raise Refused("refusing a linked question wait note")
+    seen = _read_mark(mark)
+    found = {}
+
+    def change(document):
+        version = document.get("_config_version")
+        version = version if isinstance(version, int) and not isinstance(version, bool) else 0
+        found["version"] = version
+        legacy = document.get("clarify")
+        agent = document.get("agent", {})
+        if (isinstance(legacy, dict) and legacy.get("timeout") is not None) or not isinstance(agent, dict):
+            return None
+        value = agent.get("clarify_timeout")
+        lowered = (value == HERMES_QUESTION_WAIT and not isinstance(value, bool) and version >= HERMES_LOWERED_AT
+                   and (seen is None or seen < HERMES_LOWERED_AT))
+        if value is not None and not lowered:
+            found["ours"] = value == QUESTION_WAIT and not isinstance(value, bool)
+            return None
+        agent["clarify_timeout"] = QUESTION_WAIT
+        document["agent"] = agent
+        found["ours"] = True
+        return True
+
+    try:
+        changed = bool(_edit_config(home, f"{stamp}-questions", change, backup=backup))
+    except (Refused, ValueError):
+        return False
+    if found.get("ours") and seen != found["version"]:
+        root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        descriptor, temporary = tempfile.mkstemp(prefix=".question-wait-", dir=root)
+        with os.fdopen(descriptor, "w") as handle:
+            os.fchmod(handle.fileno(), 0o600)
+            json.dump({"version": 1, "config_version": found["version"]}, handle)
+        os.replace(temporary, mark)
+    return changed
+
+
 def ensure_human_lease(home):
     """A bot with no desktop lease gets a person's, so it can't use this Mac until the person turns This Mac on.
     An existing lease is the person's choice and stays. Returns True when one was written."""
@@ -480,6 +558,7 @@ def _ensure_workflow(home, source, stamp, policy, private, profiles=None, python
     for profile, profile_home in profiles:
         initialized = workflow_initialized(profile_home) and not profile_home.name.startswith(f".{profile}.staging-")
         copied = "current"
+        fresh = not os.path.lexists(profile_home / "config.yaml")
         if profile != "default":
             # Every helper keeps a Papertrail (private ones still never record: the add-on loads only Ask
             # first there), so an older copy's recorder-only marker goes with the update.
@@ -491,7 +570,8 @@ def _ensure_workflow(home, source, stamp, policy, private, profiles=None, python
         else:
             added = keep_ask_first_on(profile_home, stamp)
         leased = ensure_human_lease(profile_home)
-        if added or copied != "current" or leased:
+        waiting = keep_questions_waiting(profile_home, stamp, backup=not fresh)
+        if added or copied != "current" or leased or waiting:
             changed.append(profile)
     for profile in _ensure_mac(home, policy, private, profiles, stamp, python):
         if profile not in changed:

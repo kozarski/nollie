@@ -206,6 +206,7 @@ private struct PairingSheet: ViewModifier {
         Binding(
             get: {
                 let waiting = model.pendingDevicePairing != nil || model.pendingLinkOffer != nil
+                    || model.pendingPairingIssue != nil
                 let clear = !model.lock.isLocked && model.signInPrompt.isEmpty && model.needsSignIn == nil
                     && !companionIsShowing
                 return waiting && clear && model.selectedTab == .chats
@@ -214,13 +215,15 @@ private struct PairingSheet: ViewModifier {
                 guard !shown else { return }
                 model.pendingDevicePairing = nil
                 model.pendingLinkOffer = nil
+                model.pendingPairingIssue = nil
             })
     }
 
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: showing) {
-                PhoneDevicePairingView(initialInvitation: model.pendingDevicePairing, initialLinkOffer: model.pendingLinkOffer) { connection in
+                PhoneDevicePairingView(initialInvitation: model.pendingDevicePairing, initialLinkOffer: model.pendingLinkOffer,
+                                       initialIssue: model.pendingPairingIssue) { connection in
                     guard isOnboarding else { return }
                     var progress = OnboardingProgress.parse(onboardingSaved)
                     progress.paired(connection.id)
@@ -234,6 +237,9 @@ private struct PairingSheet: ViewModifier {
             }
             .onChange(of: model.pendingLinkOffer) { _, offer in
                 if offer != nil { model.selectedTab = .chats } else { onEnd() }
+            }
+            .onChange(of: model.pendingPairingIssue) { _, issue in
+                if issue != nil { model.selectedTab = .chats } else { onEnd() }
             }
             .onChange(of: model.devicePairingFlowActive) { _, active in
                 if !active { onEnd() }

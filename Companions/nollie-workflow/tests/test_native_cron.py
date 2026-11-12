@@ -46,10 +46,20 @@ class NativeCronTests(unittest.TestCase):
             result = self.scheduler._prepare_job_prompt(job, "fixture", "Fixture", None, None)
         return result, run, build
 
+    def run_owned(self, job):
+        # Hermes 0.23 runs a fire inside the profile gateway, which binds the fire's execution
+        # before calling run_job. Without that binding run_job hands the fire to the gateway.
+        cron_owner = support.hermes_module("gateway.session_cron")
+        token = cron_owner.bind_execution(object(), "fixture-session", job["id"], "fixture-run")
+        try:
+            return self.scheduler.run_job(job, execution_id="fixture-run")
+        finally:
+            cron_owner._execution.reset(token)
+
     def test_missing_script_field_stops_before_prompt_or_agent(self):
         with patch.object(self.scheduler, "_build_job_prompt") as build, \
                 patch.object(self.scheduler, "_construct_cron_agent") as construct:
-            result = self.scheduler.run_job(dict(self.job, precheck_fail_closed=True))
+            result = self.run_owned(dict(self.job, precheck_fail_closed=True))
         self.assertFalse(result[0])
         self.assertIn("missing", result[3])
         build.assert_not_called()
@@ -58,7 +68,7 @@ class NativeCronTests(unittest.TestCase):
 
     def test_missing_file_uses_real_script_runner_and_stops(self):
         with patch.object(self.scheduler, "_build_job_prompt") as build:
-            result = self.scheduler.run_job(dict(self.job, script="missing-fixture.py", precheck_fail_closed=True))
+            result = self.run_owned(dict(self.job, script="missing-fixture.py", precheck_fail_closed=True))
         self.assertFalse(result[0])
         self.assertIn("failed", result[3])
         build.assert_not_called()

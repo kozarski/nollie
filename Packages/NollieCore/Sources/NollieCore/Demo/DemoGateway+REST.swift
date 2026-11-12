@@ -30,7 +30,32 @@ extension DemoGateway {
         case "/api/hermes/update/check":
             return (200, ["install_method": "git", "current_version": "demo", "behind": 0, "update_available": false,
                           "can_apply": false, "update_command": "", "message": nil, "commits": []])
-        case "/api/skills", "/api/tools/toolsets": return (200, [])
+        case "/api/tools/toolsets": return (200, [])
+        case "/api/skills":
+            let bot = query["profile"] ?? "default"
+            return (200, .array(DemoRoutes.skills.map { skill in
+                var row = skill
+                row["locked"] = .bool(skillLocks[bot, default: []].contains(skill["name"]?.stringValue ?? ""))
+                return .object(row)
+            }))
+        case "/api/skills/lock":
+            let bot = query["profile"] ?? "default"
+            guard method == "PUT", let name = body["name"]?.stringValue,
+                  DemoRoutes.skills.contains(where: { $0["name"]?.stringValue == name }) else { return refuse(404, "Skill not found.") }
+            let locked = body["locked"]?.boolValue == true
+            if locked { skillLocks[bot, default: []].insert(name) } else { _ = skillLocks[bot, default: []].remove(name) }
+            return (200, ["ok": true, "name": .string(name), "locked": .bool(locked)])
+        case "/api/plugins/nollie-workflow/keep-skills":
+            let bot = (method == "PUT" ? body["bot"]?.stringValue : query["bot"]) ?? "default"
+            guard DemoSeed.bots.contains(where: { $0.name == bot }) else { return refuse(404, "No such bot.") }
+            if method == "PUT", let on = body["on"]?.boolValue {
+                if on { keepSkills.insert(bot) } else { keepSkills.remove(bot) }
+                // As the add-on and the app do together: on locks every skill, off unlocks them.
+                skillLocks[bot] = on ? Set(DemoRoutes.skills.compactMap { $0["name"]?.stringValue }) : []
+            }
+            return (200, ["bot": .string(bot), "on": .bool(keepSkills.contains(bot))])
+        case "/api/analytics/usage":
+            return (200, DemoRoutes.usage(bot: query["profile"] ?? "default", days: Int(query["days"] ?? "") ?? 30))
         case "/api/mcp/servers": return (200, ["servers": []])
         case "/api/plugins/nollie-workflow/private-bots": return (200, ["profiles": [], "saved": true])
         case "/api/plugins/nollie-workflow/attention":
@@ -51,7 +76,7 @@ extension DemoGateway {
             return (200, ["bot": body["bot"] ?? "default", "kind": body["kind"] ?? "web", "name": body["name"] ?? nil,
                           "on": body["on"] ?? true])
         case "/api/plugins/nollie-computer/ask-first":
-            let bot = query["profile"] ?? "default"
+            let bot = query["bot"] ?? query["profile"] ?? "default"
             if method == "PUT" { askFirst[bot] = body["enabled"]?.boolValue ?? true }
             return (200, ["profile": .string(bot), "enabled": .bool(askFirst[bot] ?? true)])
         case "/api/sessions": return (200, sessionsList())
@@ -90,7 +115,12 @@ extension DemoGateway {
 
     private func sessionRoute(_ method: String, _ pieces: [String], _ query: [String: String], _ body: JSONValue) -> (Int, JSONValue) {
         let id = pieces[2]
-        guard let at = chatIndex(id) else { return refuse(404, "session not found") }
+        if pieces.count == 4, pieces[3] == "mutation-snapshot", method == "GET" {
+            // As Hermes 0.23 answers it: an unknown id is a snapshot that says so, not a 404.
+            guard let at = chatIndex(id) else { return (200, ["session_id": .string(id), "exists": false, "runtime_revision": 0, "runtime_generation": .null]) }
+            return (200, ["session_id": .string(id), "exists": true, "runtime_revision": .number(Double(chats[at].revision)), "runtime_generation": 0])
+        }
+        guard let at = chatIndex(id) else { return method == "DELETE" ? (200, ["ok": true, "already_absent": true]) : refuse(404, "session not found") }
         if pieces.count == 4, pieces[3] == "messages" {
             let wanted = Int(query["limit"] ?? "") ?? 60
             let rows = Array(chats[at].rows.suffix(wanted))
@@ -103,7 +133,8 @@ extension DemoGateway {
             if let words = body["title"]?.stringValue, !words.isEmpty { chats[at].title = words }
             if let flag = body["pinned"]?.boolValue { chats[at].pinned = flag }
             if let flag = body["archived"]?.boolValue { chats[at].archived = flag }
-            return (200, ["ok": true, "title": .string(chats[at].title)])
+            chats[at].revision += 1
+            return (200, ["ok": true, "title": .string(chats[at].title), "revision": .number(Double(chats[at].revision))])
         case "DELETE":
             chats.remove(at: at)
             return (200, ["ok": true, "deleted": true])
@@ -141,8 +172,21 @@ extension DemoGateway {
         case "pause": job["enabled"] = false; job["state"] = "paused"
         case "resume": job["enabled"] = true; job["state"] = "active"
         case "trigger": job["last_status"] = "ok"
+        case "cancel":
+            // Stop on the run in flight, as Hermes answers it: the run ends, the schedule stays.
+            let live = job["live_execution"] ?? nil
+            guard !live.isNull else {
+                return (200, ["success": true, "cancelled": false, "execution_id": nil, "job_id": .string(ref),
+                              "detail": "No run of this job is in flight, so there is nothing to cancel."])
+            }
+            job["live_execution"] = nil
+            job["last_status"] = "cancelled"
+            schedules[at] = .object(job)
+            return (200, ["success": true, "cancelled": true, "execution_id": live["id"] ?? nil, "status": live["status"] ?? nil,
+                          "pid": 4242, "job_id": .string(ref), "detail": "Cancel requested; the run stops at its next cancel check."])
         default:
-            for (key, value) in body.objectValue ?? [:] { job[key] = value }
+            // The dashboard sends `{"updates": {...}}`; older callers sent the fields bare.
+            for (key, value) in (body["updates"] ?? body).objectValue ?? [:] { job[key] = value }
         }
         schedules[at] = .object(job)
         return (200, .object(job))

@@ -166,6 +166,38 @@ struct RuntimeSupervisorTests {
         #expect(await backend.stopped.count == 2)
         #expect(await supervisor.snapshot().phase == .failed)
     }
+    @Test func aMomentsStallDoesNotRestartHermes() async throws {
+        let backend = FakeRuntimeBackend(plan: plan())
+        let supervisor = NollieRuntimeSupervisor(backend: backend, pollInterval: .milliseconds(1), startupPolls: 5,
+                                               monitorInterval: .milliseconds(1), restartDelays: [.milliseconds(1)],
+                                               unhealthyGrace: .seconds(30))
+        let id = backend.plan.installationID
+        _ = try await supervisor.start(installationID: id, token: token, consent: .init(installationID: id))
+        await backend.stall([4, 5, 6, 9])
+        for _ in 0..<500 {
+            if await backend.healthCalls > 20 { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let result = await supervisor.snapshot()
+        #expect(result.phase == .ready && result.restartCount == 0)
+        #expect(await backend.prepareCount == 1)
+        await supervisor.stop()
+    }
+    @Test func hermesSilentForTheWholeGraceIsRestarted() async throws {
+        let backend = FakeRuntimeBackend(plan: plan())
+        let supervisor = NollieRuntimeSupervisor(backend: backend, pollInterval: .milliseconds(1), startupPolls: 5,
+                                               monitorInterval: .milliseconds(1), restartDelays: [.milliseconds(1)],
+                                               unhealthyGrace: .milliseconds(20))
+        let id = backend.plan.installationID
+        _ = try await supervisor.start(installationID: id, token: token, consent: .init(installationID: id))
+        await backend.stall(Set(3...100_000))
+        for _ in 0..<2000 {
+            if await backend.prepareCount > 1 { break }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        #expect(await backend.prepareCount > 1)
+        await supervisor.stop()
+    }
     @Test func repeatedCrashesStopAtABoundedRestartLimit() async throws {
         let backend = FakeRuntimeBackend(plan: plan(), crashAfterReady: true)
         let supervisor = NollieRuntimeSupervisor(backend: backend, pollInterval: .milliseconds(1), startupPolls: 5,
@@ -231,6 +263,9 @@ private actor FakeRuntimeBackend: NollieRuntimeBackend {
     let healthDelay: Duration
     let crashAfterReady: Bool
     let rejectSecondPreparation: Bool
+    /// Health calls (counted from 1) that throw, as a busy Hermes that misses a check does.
+    var stallOn: Set<Int> = []
+    func stall(_ calls: Set<Int>) { stallOn = calls }
     var healthCalls = 0
     var prepareCount = 0
     var launched: [C.Role] = []
@@ -258,6 +293,7 @@ private actor FakeRuntimeBackend: NollieRuntimeBackend {
     func health(_ child: C.Child, plan: C.Plan, token: String) async throws -> C.Health {
         if healthDelay > .zero { try await Task.sleep(for: healthDelay) }
         healthCalls += 1
+        if stallOn.contains(healthCalls) { throw C.Failure.identityMismatch }
         if crashAfterReady && healthCalls > 2 { return .exited(1) }
         return neverReady ? .starting : .ready(port: child.role == .api ? 23456 : nil)
     }

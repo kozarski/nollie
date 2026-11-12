@@ -237,8 +237,11 @@ struct LocalNetworkAccessTests {
         func next() -> LocalNetworkAccess.Answer { count += 1; return answers.isEmpty ? .undecided : answers.removeFirst() }
     }
 
+    /// Goes with this test's instance of the suite, so nothing is left in the Mac's preferences.
+    private let scratch = ScratchDefaults("localnetwork")
+
     private func access(_ answers: LocalNetworkAccess.Answer...) -> (LocalNetworkAccess, Uses, UserDefaults) {
-        let defaults = UserDefaults(suiteName: "nollie.test.localnetwork.\(UUID().uuidString)")!
+        let defaults = scratch.defaults
         let uses = Uses(answers)
         return (LocalNetworkAccess(defaults: defaults, probe: { _ in uses.next() }), uses, defaults)
     }

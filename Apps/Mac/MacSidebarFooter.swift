@@ -41,8 +41,11 @@ struct MacSidebarFooter: View {
     }
 
     private var connectionNote: String {
+        #if NOLLIE_DIRECT
+        if let note = EngineUpdate.shared.note { return note }
+        #endif
         guard let runtime = model.runtime else { return model.activationError ?? String(localized: "Connecting…") }
-        return runtime.socketState.label
+        return AssistantWait.line(AssistantWait.state(runtime)) ?? runtime.socketState.label
     }
 
     private var dotColour: Color {

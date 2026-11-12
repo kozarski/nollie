@@ -97,15 +97,52 @@ class PointingTests(unittest.TestCase):
         cua, sock, env, space, command = self.calls[0]
         self.assertEqual((cua, sock, env, space), ("/fake/cua", self.mac.home / ".cua/cua.sock",
                                                    {"HOME": str(self.mac.home)}, "local:nollie-work"))
-        self.assertEqual(command, own.relay_script(47610))
+        key = self.key("work")
+        self.assertEqual(command, own.relay_script(47610, "work", key))
         self.assertEqual(computers.record("work")["relay"], 47610)
         status = computers.status("work")
         self.assertEqual((status["state"], status["internet"]), ("ready", "relay"))
 
+    def key(self, profile):
+        path = self.mac.profile_home(profile) / "nollie-computer" / "relay-key"
+        self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(path.parent.stat().st_mode & 0o777, 0o700)
+        key = path.read_text().strip()
+        self.assertRegex(key, r"\A[0-9a-f]{64}\Z")
+        return key
+
+    def test_the_computer_carries_its_helpers_name_and_key_for_papertrail(self):
+        computers = self.make({"state": "on", "port": 47610})
+        computers.change("work", "on", "request-0006")
+        key = self.key("work")
+        self.assertIn(f'http_proxy="http://work:{key}@$nollie_relay:47610"', self.calls[0][4])
+        self.assertIn(f'all_proxy="socks5h://work:{key}@$nollie_relay:47610"', self.calls[0][4])
+
+    def test_a_reset_gives_a_new_key_and_removing_forgets_it(self):
+        computers = self.make({"state": "on", "port": 47610})
+        computers.change("work", "on", "request-0007")
+        first = self.key("work")
+        computers.change("work", "reset", "request-0008")
+        second = self.key("work")
+        self.assertNotEqual(first, second)
+        self.assertIn(second, self.calls[1][4])
+        computers.change("work", "off", "request-0009")
+        computers.change("work", "remove", "request-0010")
+        self.assertFalse((self.mac.profile_home("work") / "nollie-computer" / "relay-key").exists())
+
+    def test_without_a_place_for_the_key_the_computer_still_uses_the_relay_unlabelled(self):
+        computers = self.make({"state": "on", "port": 47610})
+        folder = self.mac.profile_home("work") / "nollie-computer"
+        folder.parent.mkdir(parents=True, exist_ok=True)
+        folder.symlink_to(self.directory.name)
+        computers.change("work", "on", "request-0011")
+        self.assertEqual(self.calls[0][4], own.relay_script(47610))
+        self.assertEqual(computers.record("work")["relay"], 47610)
+
     def test_without_a_relay_file_it_still_points_at_the_usual_port(self):
         computers = self.make(None)
         computers.change("work", "on", "request-0002")
-        self.assertEqual(self.calls[0][4], own.relay_script(own.RELAY_PORT))
+        self.assertEqual(self.calls[0][4], own.relay_script(own.RELAY_PORT, "work", self.key("work")))
         self.assertEqual(computers.status("work")["internet"], "exit_node")
 
     def test_a_computer_that_cannot_be_pointed_keeps_working_and_the_card_stays(self):
@@ -133,6 +170,13 @@ class ScriptTests(unittest.TestCase):
         for bad in (80, 0, 70000, "47610; rm -rf /"):
             with self.assertRaises(ValueError):
                 own.relay_script(bad)
+        key = "ab" * 32
+        self.assertEqual(own.relay_script(47610, "work", key),
+                         own.relay_script(47610).replace("$nollie_relay:47610", f"work:{key}@$nollie_relay:47610"))
+        for profile, bad_key in (("work", None), (None, key), ("Work", key), ("work;x", key), ("work", "AB" * 32),
+                                 ("work", key + "0"), ("work", "x$(id)")):
+            with self.assertRaises(ValueError):
+                own.relay_script(47610, profile, bad_key)
 
     @unittest.skipUnless(shutil.which("bash"), "needs bash")
     def test_the_snippet_sets_proxies_only_while_the_relay_answers(self):
@@ -150,6 +194,8 @@ class ScriptTests(unittest.TestCase):
             port = listener.getsockname()[1]
             snippet = Path(folder) / "relay.sh"
             snippet.write_text(own.relay_snippet(port))
+            labelled = Path(folder) / "labelled.sh"
+            labelled.write_text(own.relay_snippet(port, "work", "cd" * 32))
             show = f'. "{snippet}"; printf "%s|%s|%s|%s" "$http_proxy" "$https_proxy" "$ALL_PROXY" "$NO_PROXY"'
             env = {"PATH": f"{tools}:/usr/bin:/bin", "HOME": folder}
 
@@ -162,6 +208,11 @@ class ScriptTests(unittest.TestCase):
             try:
                 self.assertEqual(run(), f"http://127.0.0.1:{port}|http://127.0.0.1:{port}|socks5h://127.0.0.1:{port}"
                                         "|localhost,127.0.0.1,::1")
+                label = "work:" + "cd" * 32 + "@"
+                shown = subprocess.run(["bash", "--noprofile", "--norc", "-c", show.replace(str(snippet), str(labelled))],
+                                       env=env, capture_output=True, text=True, timeout=10).stdout
+                self.assertEqual(shown, f"http://{label}127.0.0.1:{port}|http://{label}127.0.0.1:{port}"
+                                        f"|socks5h://{label}127.0.0.1:{port}|localhost,127.0.0.1,::1")
             finally:
                 listener.close()
             self.assertEqual(run(), "|||")

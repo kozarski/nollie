@@ -58,7 +58,7 @@ SOFTWARE.
 ---
 
 The Direct Mac edition of Nollie updates itself with Sparkle (https://github.com/sparkle-project/Sparkle,
-version 2.10.0, pinned in Tools/pins.json). Sparkle's code is used as released, without changes (its helper
+version 2.10.1, pinned in Tools/pins.json). Sparkle's code is used as released, without changes (its helper
 services for sandboxed apps are left out, and it is signed with Nollie's own identity). It is not in the App
 Store edition. Its licence, with the notices for the parts it includes:
 

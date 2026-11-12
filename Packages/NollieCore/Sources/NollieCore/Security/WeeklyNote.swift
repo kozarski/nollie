@@ -319,9 +319,43 @@ public struct WeeklyHelperInput: Sendable {
     /// The This Mac switch, when this device can read it.
     public var macOn: Bool?
     public var muted: Bool
+    /// What its models cost this week, when Hermes priced any of it.
+    public var spend: ModelSpend?
 
-    public init(profile: String, name: String, record: WeekRecord?, macOn: Bool? = nil, muted: Bool = false) {
+    public init(profile: String, name: String, record: WeekRecord?, macOn: Bool? = nil, muted: Bool = false,
+                spend: ModelSpend? = nil) {
         self.profile = profile; self.name = name; self.record = record; self.macOn = macOn; self.muted = muted
+        self.spend = spend
+    }
+}
+
+/// A helper's model spending over the last seven days, from Hermes's own counts (`GET /api/analytics/usage?days=7`,
+/// in the helper's scope). Hermes prices each call from its model's list price, or takes the provider's figure where
+/// the provider reports one, so it is said as "about". Nil when nothing was priced: a local model, a subscription,
+/// or a model Hermes has no price for.
+public struct ModelSpend: Equatable, Sendable {
+    public var dollars: Double
+
+    public init?(dollars: Double) {
+        guard dollars.isFinite, dollars > 0 else { return nil }
+        self.dollars = dollars
+    }
+
+    /// The larger of the totals and the sum by model: Hermes adds side calls (pictures, summaries) to the models
+    /// but not to the totals.
+    public init?(_ usage: UsageAnalytics) {
+        let totals = max(usage.totals?.totalEstimatedCost ?? 0, usage.totals?.totalActualCost ?? 0)
+        let byModel = (usage.byModel ?? []).reduce(0) { $0 + max($1.estimatedCost ?? 0, 0) }
+        self.init(dollars: max(totals, byModel))
+    }
+
+    nonisolated static let path = "/api/analytics/usage"
+
+    /// Reads one helper's week of spending. Nil when it can't be read or nothing was priced.
+    public static func load(bot: String, api: HermesAPI) async -> ModelSpend? {
+        guard let usage: UsageAnalytics = try? await api.get(path, query: [URLQueryItem(name: "days", value: "7")], profile: bot)
+        else { return nil }
+        return ModelSpend(usage)
     }
 }
 
@@ -340,6 +374,14 @@ public struct WeeklyNote: Equatable, Sendable {
     public var unread: [String]
     /// What Papertrail can't see, when its filter is off or there is no door.
     public var filter: String?
+    /// What the helpers' models cost this week, when Hermes priced any of it.
+    public var spend: Double? = nil
+    /// The first day Papertrail kept for any helper here: how long this setup has been in use, as far as the
+    /// records go. Nil when nothing was kept.
+    public var recordingSince: Date? = nil
+
+    /// "This week: about $4.20 on models". Nil when nothing was priced.
+    public var spendLine: String? { spend.map(WeeklyWords.weekSpend) }
 
     public struct Helper: Equatable, Sendable, Identifiable {
         public var id: String { profile }
@@ -367,6 +409,8 @@ public struct WeeklyNote: Equatable, Sendable {
             case schedule, board, asked, mac, place
             /// Something the person changed from Nollie, as Papertrail kept it.
             case change
+            /// What its models cost this week.
+            case spend
         }
 
         public var id: String
@@ -436,9 +480,13 @@ public struct WeeklyNote: Equatable, Sendable {
         var helpers: [Helper] = [], quiet: [String] = [], unread: [String] = [], news: [Line] = []
         var filter: String?
         var since: Double?
+        var spend: Double?
+        var recording: Double?
         for input in inputs where !isPrivate(input.profile) && !PrivateBots.carriedOver.contains(PrivateBots.key(input.profile)) {
+            if let dollars = input.spend?.dollars { spend = (spend ?? 0) + dollars }
             guard let record = input.record, record.bot == input.profile else { unread.append(input.name); continue }
             since = since.map { min($0, record.since) } ?? record.since
+            if let first = record.recordingSince { recording = recording.map { min($0, first) } ?? first }
             if filter == nil { filter = WeeklyWords.filter(record.filter) }
             let helper = part(for: input, record: record)
             news += helper.did.filter(\.isNew).map { WeeklyWords.news($0, helper: input.name) }
@@ -451,7 +499,8 @@ public struct WeeklyNote: Equatable, Sendable {
         }
         helpers.sort { ($0.weight, $1.name) > ($1.weight, $0.name) }
         let start = since.map { Date(timeIntervalSince1970: $0) } ?? Calendar.current.date(byAdding: .day, value: -6, to: Calendar.current.startOfDay(for: now))!
-        return WeeklyNote(since: start, until: now, news: news, helpers: helpers, quiet: quiet, unread: unread, filter: filter)
+        return WeeklyNote(since: start, until: now, news: news, helpers: helpers, quiet: quiet, unread: unread, filter: filter,
+                          spend: spend, recordingSince: recording.map { Date(timeIntervalSince1970: $0) })
     }
 
     private static func part(for input: WeeklyHelperInput, record: WeekRecord) -> Helper {
@@ -485,8 +534,11 @@ public struct WeeklyNote: Equatable, Sendable {
                                          comment: "Safety: the weekly note, a connected app the person took away; the app's name"),
                             subject: change.name))
         }
+        if let spend = input.spend {
+            did.append(Line(id: "\(bot)/spend", kind: .spend, symbol: "dollarsign.circle", text: WeeklyWords.spend(spend.dollars)))
+        }
         if input.macOn == true {
-            did.append(Line(id: "\(bot)/mac", kind: .mac, symbol: "macbook", text: String(localized: "Can use your Mac", table: "Core"), actions: [.macOff(bot: bot)]))
+            did.append(Line(id: "\(bot)/mac", kind: .mac, symbol: "laptopcomputer", text: String(localized: "Can use your Mac", table: "Core"), actions: [.macOff(bot: bot)]))
         }
         // What left: each place, most used first, with a tap where one is real.
         var left: [Line] = []
@@ -697,10 +749,31 @@ public enum WeeklyWords {
             said.text = String(localized: "\(helper) asked more than usual", table: "Core")
             said.detail = [times(line.count), line.detail]
                 .compactMap { $0 }.joined(separator: " · ")
-        case .board, .mac, .change:
+        case .board, .mac, .change, .spend:
             break
         }
         return said
+    }
+
+    /// Dollars as people read them, never less than a cent: "$4.20", "under $0.01".
+    static func dollars(_ amount: Double) -> (words: String, underACent: Bool) {
+        let cent = 0.01
+        let style = FloatingPointFormatStyle<Double>.Currency(code: "USD").precision(.fractionLength(2))
+        return amount < cent ? (cent.formatted(style), true) : (amount.formatted(style), false)
+    }
+
+    /// One helper's line: "About $1.20 on models".
+    public static func spend(_ amount: Double) -> String {
+        let (money, small) = dollars(amount)
+        return small ? String(localized: "Under \(money) on models", table: "Core", comment: "What a helper's AI models cost this week, less than a cent")
+            : String(localized: "About \(money) on models", table: "Core", comment: "What a helper's AI models cost this week, estimated")
+    }
+
+    /// The note's line: "This week: about $4.20 on models".
+    public static func weekSpend(_ amount: Double) -> String {
+        let (money, small) = dollars(amount)
+        return small ? String(localized: "This week: under \(money) on models", table: "Core", comment: "What the helpers' AI models cost this week, less than a cent")
+            : String(localized: "This week: about \(money) on models", table: "Core", comment: "What the helpers' AI models cost this week, estimated")
     }
 
     /// What Papertrail can't see, in a few words. Nil when the filter is on or nothing was said.
@@ -736,6 +809,18 @@ public struct WeeklyNoteTiming: Equatable, Sendable {
         let next = calendar.nextDate(after: now, matching: DateComponents(hour: hour, minute: 0, weekday: weekday),
                                      matchingPolicy: .nextTime, direction: .backward) ?? now
         return next
+    }
+
+    /// How old a setup is before its card shows: a weekly note has nothing true to say about a setup made minutes ago.
+    public static let settlingIn: TimeInterval = 3 * 86_400
+
+    /// Whether the note has earned its card: something is in it (a helper did something), and the setup is a few days
+    /// old. The age is the earliest of what Papertrail kept and when this device first read the week; with neither
+    /// known (an older setup that kept nothing) it doesn't hold the card back.
+    public static func worthACard(_ note: WeeklyNote, firstReadHere: Date?, now: Date) -> Bool {
+        guard !note.isQuiet else { return false }
+        guard let start = [note.recordingSince, firstReadHere].compactMap({ $0 }).min() else { return true }
+        return now.timeIntervalSince(start) >= settlingIn
     }
 
     /// The card shows from the note's time until the person puts it away.

@@ -62,6 +62,18 @@ class ManagedAddOnsTests(unittest.TestCase):
             return subprocess.CompletedProcess(command, 0, "", None)
         return run
 
+    def test_the_reader_is_rebuilt_for_a_newer_python(self):
+        # A newer Nollie Python moves the old one away; a reader environment built with it would not start.
+        lock = {"sha256": "a" * 64, "path": "nollie-reader/requirements.txt"}
+        calls = []
+        old, new = "/setup/python/cpython-3.14.8-macos-aarch64-none/bin/python3.14", \
+            "/setup/python/cpython-3.14.10-macos-aarch64-none/bin/python3.14"
+        run = self.fake_run(calls)
+        self.assertEqual(addons.reader_environment(self.kit, self.home, "/fixture/uv", old, lock, "s1", run=run), "built")
+        self.assertEqual(addons.reader_environment(self.kit, self.home, "/fixture/uv", old, lock, "s2", run=run), "current")
+        self.assertEqual(addons.reader_environment(self.kit, self.home, "/fixture/uv", new, lock, "s3", run=run), "built")
+        self.assertIn(new, calls[-3])
+
     def install(self, calls=None):
         calls = [] if calls is None else calls
         with mock.patch.dict(os.environ, {"HERMES_HOME": str(self.home)}), \
@@ -109,7 +121,9 @@ class ManagedAddOnsTests(unittest.TestCase):
         self.assertIn("--require-hashes", install)
         self.assertIn("--no-build", install)
         marker = self.home / "nollie-reader/venv/nollie-lock.sha256"
+        # The app checks this marker byte for byte against the lock's checksum; the Python goes beside it.
         self.assertEqual(marker.read_text(), digest((self.kit / "nollie-reader/requirements.txt").read_bytes()) + "\n")
+        self.assertEqual(marker.with_name("nollie-python.path").read_text(), "/fixture/python3.14\n")
 
     def test_a_second_run_changes_nothing(self):
         self.assertEqual(self.install(), 0)
@@ -139,6 +153,37 @@ class ManagedAddOnsTests(unittest.TestCase):
                              (ROOT / "Companions/nollie-workflow/hermes_support" / name).read_bytes())
         self.assertEqual(list(source.iterdir()), [sentinel])
         self.assertEqual(sentinel.read_text(), "existing source\n")
+
+    def real_kit(self):
+        spec = importlib.util.spec_from_file_location("setup_kit_fixture", ROOT / "Tools/dev/setup-kit.py")
+        kit = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(kit)
+        destination = self.root / "Setup Kit"
+        kit.build(destination)
+        self.kit = destination / "add-ons"
+
+    def test_a_new_setup_starts_with_night_shift_on(self):
+        self.real_kit()
+        self.assertEqual(self.install(), 0)
+        settings = self.home / "nollie-workflow/night-shift.json"
+        self.assertEqual(json.loads(settings.read_text()), {"version": 1, "night_shift": True, "rehearsals": False,
+                                                            "morning_hour": 7, "rehearsals_since": None})
+        self.assertEqual(oct(settings.stat().st_mode & 0o777), "0o600")
+        # A later run, after the person turned it off, keeps their choice.
+        settings.write_text(json.dumps({"version": 1, "night_shift": False, "rehearsals": False, "morning_hour": 7,
+                                        "rehearsals_since": None}))
+        self.assertEqual(self.install(), 0)
+        self.assertFalse(json.loads(settings.read_text())["night_shift"])
+
+    def test_a_setup_made_before_keeps_night_shift_as_it_was(self):
+        # Workflow already set up, Night shift never chosen (no file, which reads as off): it stays that way.
+        self.real_kit()
+        state = self.home / "nollie-workflow"
+        state.mkdir(mode=0o700)
+        (state / "state.json").write_text(json.dumps({"version": 1, "enabled": True, "installed_at": 1, "cursors": {},
+                                                      "outbox": {}, "last_poll_at": None, "last_error": None}))
+        self.assertEqual(self.install(), 0)
+        self.assertFalse((state / "night-shift.json").exists())
 
     def test_a_newer_add_on_replaces_the_old_copy_and_keeps_it(self):
         self.assertEqual(self.install(), 0)
@@ -302,7 +347,7 @@ class ManagedAddOnsTests(unittest.TestCase):
         (staged / "config.yaml").unlink()
         self.assertEqual(addons.ensure_profile_workflow(self.home, "juniper", staged), ["juniper"])
         self.assertEqual(json.loads((staged / "config.yaml").read_text()),
-                         {"plugins": {"enabled": ["nollie-workflow"]}})
+                         {"plugins": {"enabled": ["nollie-workflow"]}, "agent": {"clarify_timeout": 3600}})
         self.assertEqual(list(staged.glob("config.yaml.bak-*")), [])
 
     def test_new_clone_gets_ask_first_even_if_the_source_was_initialized_and_off(self):
@@ -321,7 +366,7 @@ class ManagedAddOnsTests(unittest.TestCase):
         (self.home / "profiles/empty").mkdir()
         self.assertEqual(addons.ensure_workflow(self.home), ["default", "juniper"])
         self.assertEqual(json.loads((juniper / "config.yaml").read_text()),
-                         {"plugins": {"enabled": ["nollie-workflow"]}})
+                         {"plugins": {"enabled": ["nollie-workflow"]}, "agent": {"clarify_timeout": 3600}})
         self.assertEqual((juniper / "profile.yaml").read_text(), 'display_name: Juniper\n')
         self.assertFalse((self.home / "profiles/empty/config.yaml").exists())
 
@@ -365,7 +410,7 @@ class ManagedAddOnsTests(unittest.TestCase):
             target = self.home / "plugins/nollie-mac" / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes((source / name).read_bytes())
-        python = self.installation / "python/cpython-3.14.8-macos-aarch64-none/bin/python3.14"
+        python = self.installation / "python/cpython-3.14.10-macos-aarch64-none/bin/python3.14"
         python.parent.mkdir(parents=True, exist_ok=True)
         python.write_bytes(b"#!fixture\n")
         return python.resolve()
@@ -473,6 +518,60 @@ class ManagedAddOnsTests(unittest.TestCase):
             addons.ensure_workflow(self.home)
         self.assertEqual(self.snapshot(self.home), before)
 
+    # A question card should not run out while the phone is in a pocket: an hour, unless the person picked.
+
+    def question_wait(self, home):
+        return json.loads((home / "config.yaml").read_text()).get("agent", {}).get("clarify_timeout")
+
+    def test_questions_wait_an_hour_in_every_bot_that_has_no_wait_of_its_own(self):
+        self.seed_workflow()
+        scout = self.bot("scout", {"agent": {"max_turns": 40}, "_config_version": 53})
+        mason = self.bot("mason", {"agent": {"clarify_timeout": 300}})
+        juniper = self.bot("juniper", {"clarify": {"timeout": 45}})
+        addons.ensure_workflow(self.home, "first")
+        self.assertEqual(self.question_wait(self.home), 3600)
+        self.assertEqual(json.loads((scout / "config.yaml").read_text())["agent"], {"max_turns": 40, "clarify_timeout": 3600})
+        self.assertEqual(self.question_wait(mason), 300)
+        self.assertIsNone(self.question_wait(juniper))
+        self.assertEqual(json.loads((juniper / "config.yaml").read_text())["clarify"], {"timeout": 45})
+        backup = json.loads((scout / "config.yaml.bak-nollie-addons-first-questions").read_text())
+        self.assertNotIn("clarify_timeout", backup["agent"])
+        self.assertEqual(addons.ensure_workflow(self.home, "second"), [])
+
+    def test_hermes_lowering_its_old_default_is_put_back_but_a_later_choice_stays(self):
+        self.seed_workflow()
+        # Set up on Hermes 0.22: its default of an hour was written in the config.
+        scout = self.bot("scout", {"agent": {"clarify_timeout": 3600}, "_config_version": 50})
+        addons.ensure_workflow(self.home, "first")
+        self.assertEqual(self.question_wait(scout), 3600)
+        # Hermes 0.23's step 53 lowers it to 90 seconds.
+        (scout / "config.yaml").write_text(json.dumps({"agent": {"clarify_timeout": 90}, "_config_version": 53}))
+        addons.ensure_workflow(self.home, "second")
+        self.assertEqual(self.question_wait(scout), 3600)
+        # The person picks 90 seconds themselves afterwards: that stays.
+        (scout / "config.yaml").write_text(json.dumps({"agent": {"clarify_timeout": 90}, "_config_version": 53}))
+        addons.ensure_workflow(self.home, "third")
+        self.assertEqual(self.question_wait(scout), 90)
+
+    def test_ninety_seconds_on_an_older_config_is_the_persons(self):
+        self.seed_workflow()
+        # Before step 53 nothing but the person could have put 90 there.
+        scout = self.bot("scout", {"agent": {"clarify_timeout": 90}, "_config_version": 50})
+        addons.ensure_workflow(self.home, "first")
+        self.assertEqual(self.question_wait(scout), 90)
+        # Upgraded already when Nollie first looks: 90 at version 53 is Hermes's step, so the hour comes back.
+        mason = self.bot("mason", {"agent": {"clarify_timeout": 90}, "_config_version": 53})
+        addons.ensure_workflow(self.home, "second")
+        self.assertEqual(self.question_wait(mason), 3600)
+
+    def test_a_linked_question_wait_note_is_refused(self):
+        self.seed_workflow()
+        scout = self.bot("scout")
+        (scout / "nollie-workflow").mkdir()
+        (scout / "nollie-workflow/question-wait.json").symlink_to(self.root / "elsewhere.json")
+        with self.assertRaises(addons.Refused):
+            addons.keep_questions_waiting(scout, "first")
+
     def test_profile_copy_updates_drop_an_old_marker_and_keep_the_old_copy(self):
         self.seed_workflow()
         scout = self.bot("scout")
@@ -485,7 +584,8 @@ class ManagedAddOnsTests(unittest.TestCase):
         addons.ensure_workflow(self.home, "second")
         self.assertFalse((target / "recorder-only").exists())
         self.assertEqual((scout / "plugin-backups/nollie-workflow-second/plugin.yaml").read_bytes(), original)
-        self.assertEqual(len(list(scout.glob("config.yaml.bak-*"))), 1)
+        self.assertEqual(sorted(path.name for path in scout.glob("config.yaml.bak-*")),
+                         ["config.yaml.bak-nollie-addons-first", "config.yaml.bak-nollie-addons-first-questions"])
 
     def test_linked_profiles_and_configs_are_refused_without_changing_target(self):
         self.seed_workflow()

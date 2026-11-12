@@ -184,10 +184,14 @@ enum LinkDoorFamily {
         case ("GET", ["sessions"]):
             return onlyProfile(query, others: listQueryNames).map { .chats(profile: $0) } ?? .refused
         case (_, let rest) where rest.count == 2 && rest[0] == "sessions" && ["GET", "PATCH", "DELETE"].contains(method):
-            guard validChatID(rest[1]), let profile = onlyProfile(query, others: []) else { return .refused }
+            let others = method == "DELETE" ? mutationQueryNames : []
+            guard validChatID(rest[1]), let profile = onlyProfile(query, others: others) else { return .refused }
             return .chat(.init(id: rest[1], profile: profile))
         case ("GET", let rest) where rest.count == 3 && rest[0] == "sessions" && rest[2] == "messages":
             guard validChatID(rest[1]), let profile = onlyProfile(query, others: messageQueryNames) else { return .refused }
+            return .chat(.init(id: rest[1], profile: profile))
+        case ("GET", let rest) where rest.count == 3 && rest[0] == "sessions" && rest[2] == "mutation-snapshot":
+            guard validChatID(rest[1]), let profile = onlyProfile(query, others: []) else { return .refused }
             return .chat(.init(id: rest[1], profile: profile))
         default:
             return .refused
@@ -196,6 +200,8 @@ enum LinkDoorFamily {
 
     /// Query names the session list may carry besides `profile`; the door answers it, so they are only read.
     static let listQueryNames: Set<String> = ["limit", "offset", "archived", "order", "min_messages"]
+    /// The identity Hermes 0.23 wants on a delete (a request id and the chat's revision and generation).
+    static let mutationQueryNames: Set<String> = ["request_id", "expected_revision", "expected_generation"]
     /// Paging a chat's messages.
     static let messageQueryNames: Set<String> = ["limit", "before", "after", "offset", "inline_images", "order"]
 

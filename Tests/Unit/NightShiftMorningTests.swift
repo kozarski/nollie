@@ -58,12 +58,10 @@ import Testing
 }
 
 @MainActor @Suite struct NightShiftMorningModelTests {
-    private func defaults() -> UserDefaults {
-        let name = "nollie.tests.night-morning." + UUID().uuidString
-        let defaults = UserDefaults(suiteName: name)!
-        defaults.removePersistentDomain(forName: name)
-        return defaults
-    }
+    /// Goes with this test's instance of the suite, so nothing is left in the Mac's preferences.
+    private let scratch = ScratchDefaults("night-morning")
+
+    private func defaults() -> UserDefaults { scratch.defaults }
 
     private func post(_ id: String, at: Date, runs: Int = 2, held: Int = 0) -> ConversationPost {
         ConversationPost(id: id, at: at, kind: .nightShift(.init(from: at.addingTimeInterval(-12 * 3600), to: at,

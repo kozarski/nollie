@@ -156,9 +156,11 @@ struct CronRun: Equatable {
         return latest != before
     }
 
-    /// Whether a run is in progress: the gateway holds a claim on the job, or its latest
-    /// execution is claimed or running, or the job's state says running.
+    /// Whether a run is in progress: the gateway holds a claim on the job, it lists a run in flight
+    /// (`live_execution`, Hermes 0.23), its latest execution is claimed or running, or the job's state says running.
     static func isRunning(_ job: JSONValue) -> Bool {
+        // Hermes 0.23 says outright, checking the run's process is alive, so its word stands alone.
+        if job["live_execution"] != nil { return ScheduleActivity.live(job) != nil }
         let claimed = job["fire_claim"].map { !$0.isNull } ?? false
         let executing = ["claimed", "running"].contains(job["latest_execution"]?["status"]?.stringValue ?? "")
         return claimed || executing || job["state"]?.stringValue == "running"

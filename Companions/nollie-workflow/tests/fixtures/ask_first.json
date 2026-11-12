@@ -2585,6 +2585,264 @@
     "summary": "Ready"
    },
    "kind": null
+  },
+  {
+   "name": "browser_exec: click Buy now (was browser click Buy now)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "# Buying the kettle\njs(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Buy now').click()\")"
+   },
+   "kind": "buy",
+   "button": "Buy now",
+   "contains": [
+    "Press “Buy now” on the browser.",
+    "You're about to press “Buy now”."
+   ]
+  },
+  {
+   "name": "browser_exec: click a spot with no label (was browser click unreadable)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "click_at_xy(640, 410)\nwait_for_load()"
+   },
+   "kind": "unsure",
+   "contains": [
+    "Click at (640, 410)",
+    "Nollie couldn't read a label there"
+   ]
+  },
+  {
+   "name": "browser_exec: click a link (was browser click a link)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "# Next page of results\njs(\"[...document.querySelectorAll('a')].find(b => b.textContent.trim() === 'Next page').click()\")\nwait_for_load()\nprint(page_info())"
+   },
+   "kind": null
+  },
+  {
+   "name": "browser_exec: Return on a page Nollie can't read first (was browser press enter with Send)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "cdp('Input.dispatchKeyEvent', type='keyDown', key='Enter')"
+   },
+   "kind": "unsure",
+   "contains": [
+    "Press Return"
+   ]
+  },
+  {
+   "name": "browser_exec: a page script clicks #buy (was browser console click)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "js(\"document.querySelector('#buy').click()\")"
+   },
+   "kind": "buy"
+  },
+  {
+   "name": "browser_exec: open a checkout page (was browser navigate)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "new_tab('https://shop.example.com/checkout')\nwait_for_load()\nprint(page_info())"
+   },
+   "kind": null
+  },
+  {
+   "name": "browser_exec: the page's own question, answered yes (was review 106)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "cdp('Page.handleJavaScriptDialog', accept=True)"
+   },
+   "held": true,
+   "intended": "delete"
+  },
+  {
+   "name": "browser_exec: the page's own question in a dict (was review 107)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "cdp('Page.handleJavaScriptDialog', **{'accept': True})"
+   },
+   "held": true,
+   "intended": "delete"
+  },
+  {
+   "name": "browser_exec: ControlOrMeta+Enter (was review 108)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "press_key('ControlOrMeta+Enter')"
+   },
+   "kind": "send"
+  },
+  {
+   "name": "browser_exec: Cmd+Return through CDP (was review 108)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "cdp('Input.dispatchKeyEvent', type='keyDown', key='Enter', modifiers=4)"
+   },
+   "kind": "send"
+  },
+  {
+   "name": "browser_exec: Connect sends an invitation (was review 120)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "js(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Connect').click()\")"
+   },
+   "kind": "send",
+   "button": "Connect"
+  },
+  {
+   "name": "browser_exec: Merge pull request posts (was review 121)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "js(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Merge pull request').click()\")"
+   },
+   "kind": "post",
+   "button": "Merge pull request"
+  },
+  {
+   "name": "browser_exec: Kaufen buys (was review 122)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "js(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Kaufen').click()\")"
+   },
+   "kind": "buy",
+   "button": "Kaufen"
+  },
+  {
+   "name": "browser_exec look-alike: read a checkout link's address (was browser_console)",
+   "tool": "browser_exec",
+   "args": {
+    "code": "print(js(\"document.querySelector('a[href*=checkout]').href\"))"
+   },
+   "kind": null
+  },
+  {
+   "name": "browser_exec: open, type and press Place order in one script",
+   "tool": "browser_exec",
+   "args": {
+    "code": "# Ordering paper towels\nnew_tab('https://shop.example.com/cart')\nwait_for_load()\nfill_input('#qty', '2')\njs(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Place order').click()\")\nwait_for_load()\nprint(page_info())"
+   },
+   "kind": "buy",
+   "button": "Place order",
+   "contains": [
+    "Open shop.example.com/cart",
+    "Type “2” into #qty",
+    "Press “Place order”"
+   ]
+  },
+  {
+   "name": "browser_exec: typing a message and pressing Return",
+   "tool": "browser_exec",
+   "args": {
+    "code": "new_tab('https://chat.example.com/')\nfill_input('textarea', 'See you at 6\\n')"
+   },
+   "kind": "unsure",
+   "contains": [
+    "Type “See you at 6” into textarea and press Return"
+   ]
+  },
+  {
+   "name": "browser_exec: a delete button found by its aria-label",
+   "tool": "browser_exec",
+   "args": {
+    "code": "js(\"document.querySelector('[aria-label=\\\"Delete photo\\\"]').click()\")"
+   },
+   "kind": "delete",
+   "button": "Delete photo"
+  },
+  {
+   "name": "browser_exec: a form posted from a page script",
+   "tool": "browser_exec",
+   "args": {
+    "code": "js(\"fetch('/api/comments', {method: 'POST', body: 'hi'})\")"
+   },
+   "kind": "send"
+  },
+  {
+   "name": "browser_exec: Python that posts beside the browser",
+   "tool": "browser_exec",
+   "args": {
+    "code": "import urllib.request\nurllib.request.urlopen('https://x.example/api', data=b'1')"
+   },
+   "kind": "send"
+  },
+  {
+   "name": "browser_exec: Python that deletes a file",
+   "tool": "browser_exec",
+   "args": {
+    "code": "import os\nprint(page_info())\nos.remove('/Users/sam/Documents/notes.md')"
+   },
+   "kind": "delete"
+  },
+  {
+   "name": "browser_exec: a form submitted by a page script",
+   "tool": "browser_exec",
+   "args": {
+    "code": "fill_input('#email', 'sam@example.com')\njs(\"document.querySelector('form').submit()\")"
+   },
+   "kind": "unsure"
+  },
+  {
+   "name": "browser_exec: Continue on a checkout page",
+   "tool": "browser_exec",
+   "args": {
+    "code": "goto_url('https://shop.example.com/checkout')\njs(\"[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Continue').click()\")"
+   },
+   "kind": "buy",
+   "button": "Continue"
+  },
+  {
+   "name": "browser_exec: a script that isn't Python",
+   "tool": "browser_exec",
+   "args": {
+    "code": "new_tab('https://shop.example.com'\nclick('Buy')"
+   },
+   "kind": "unsure",
+   "contains": [
+    "the script isn't Python Nollie can read"
+   ]
+  },
+  {
+   "name": "browser_exec: a helper Nollie doesn't know",
+   "tool": "browser_exec",
+   "args": {
+    "code": "checkout_with_saved_card()"
+   },
+   "kind": "unsure",
+   "contains": [
+    "checkout_with_saved_card"
+   ]
+  },
+  {
+   "name": "browser_exec: a browser command Nollie doesn't know",
+   "tool": "browser_exec",
+   "args": {
+    "code": "cdp('Storage.clearDataForOrigin', origin='https://mail.example.com', storageTypes='all')"
+   },
+   "kind": "unsure"
+  },
+  {
+   "name": "browser_exec: code built while it runs",
+   "tool": "browser_exec",
+   "args": {
+    "code": "exec(open('steps.py').read())"
+   },
+   "kind": "unsure"
+  },
+  {
+   "name": "browser_exec look-alike: read headlines in a loop",
+   "tool": "browser_exec",
+   "args": {
+    "code": "new_tab('https://news.example.com/')\nwait_for_load()\nfor tag in ['h1', 'h2']:\n    print(js(f\"[...document.querySelectorAll('{tag}')].map(e => e.textContent)\"))"
+   },
+   "kind": null
+  },
+  {
+   "name": "browser_exec look-alike: scroll and go back",
+   "tool": "browser_exec",
+   "args": {
+    "code": "js('window.scrollBy(0, 800)')\njs('history.back()')\ncapture_screenshot()"
+   },
+   "kind": null
   }
  ]
 }

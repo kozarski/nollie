@@ -187,6 +187,8 @@ def main():
             state["enabled"] = False
         else:
             state = module.initial_state()
+            # A new setup starts with Night shift on; an update keeps whatever was chosen (or not).
+            module.start_night_shift(root)
         module.atomic_write(root / "state.json", state)
     for name, profile_home in bots:
         print(f"Papertrail copy installed for {name}: {copy_into(source, profile_home, stamp)}")

@@ -2060,6 +2060,36 @@
         }
       }
     },
+    "%@'s own computer connected to %@." : {
+      "extractionState" : "manual",
+      "comment" : "Safety: Papertrail line; keep exact meaning",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der eigene Computer von %1$@ hat sich mit %2$@ verbunden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El propio ordenador de %1$@ se conectó a %2$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Le propre ordinateur de %1$@ s'est connecté à %2$@."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@の専用のコンピュータが%2$@に接続しました。"
+          }
+        }
+      }
+    },
     "%@, %@ and %@" : {
       "extractionState" : "manual",
       "comment" : "Three names in a list",
@@ -3764,7 +3794,7 @@
     },
     "%lld of %lld" : {
       "extractionState" : "manual",
-      "comment" : "A helper's place in a batch: 2 of 3",
+      "comment" : "How far a tool has got: steps done of all steps",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4624,6 +4654,36 @@
         }
       }
     },
+    "%lld so far" : {
+      "extractionState" : "manual",
+      "comment" : "How many steps a tool has done, with no total known",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld bisher"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld hasta ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld pour l'instant"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "これまでに%lld"
+          }
+        }
+      }
+    },
     "%lld stopped" : {
       "extractionState" : "manual",
       "comment" : "How many Board tasks were stopped",
@@ -5260,6 +5320,36 @@
         }
       }
     },
+    "%lld%%" : {
+      "extractionState" : "manual",
+      "comment" : "How far a tool has got, in percent",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld %%"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld %%"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld %%"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld%%"
+          }
+        }
+      }
+    },
     ", " : {
       "extractionState" : "manual",
       "comment" : "Between items of a list: a, b and c",
@@ -5525,6 +5615,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "/%@：代わりにマイクボタンを使ってください。"
+          }
+        }
+      }
+    },
+    "A Board task" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Eine Board-Aufgabe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Una tarea del Tablero"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Une tâche du Tableau"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ボードのタスク"
           }
         }
       }
@@ -5847,6 +5966,126 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ワーカーはタスクを引き渡すときに「レビュー」を依頼します。"
+          }
+        }
+      }
+    },
+    "About %@" : {
+      "extractionState" : "manual",
+      "comment" : "What one call to a connected app's tool costs, in the app's own unit, like 5 credits",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Etwa %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Unos %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Environ %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "約%@"
+          }
+        }
+      }
+    },
+    "About %@ on models" : {
+      "extractionState" : "manual",
+      "comment" : "What a helper's AI models cost this week, estimated",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Etwa %@ für Modelle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Unos %@ en modelos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Environ %@ en modèles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "モデルに約%@"
+          }
+        }
+      }
+    },
+    "About %@ used in this chat" : {
+      "extractionState" : "manual",
+      "comment" : "A connected app's spending in this chat so far",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Etwa %@ in diesem Chat verbraucht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Unos %@ usados en este chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Environ %@ utilisés dans cette discussion"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャットで約%@使用"
+          }
+        }
+      }
+    },
+    "About %@ used in this chat · Limit %@" : {
+      "extractionState" : "manual",
+      "comment" : "A connected app's spending in this chat so far, then the app's limit for one chat",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Etwa %1$@ in diesem Chat verbraucht · Limit %2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Unos %1$@ usados en este chat · Límite %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Environ %1$@ utilisés dans cette discussion · Limite %2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャットで約%1$@使用 · 上限%2$@"
           }
         }
       }
@@ -8937,6 +9176,64 @@
         }
       }
     },
+    "Hermes is still finishing work in this chat elsewhere, so nothing was sent." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes beendet in diesem Chat noch Arbeit an anderer Stelle, daher wurde nichts gesendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes aún está terminando trabajo de este chat en otro sitio, así que no se envió nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes termine encore un travail de cette discussion ailleurs, donc rien n'a été envoyé."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermesが別の場所でこのチャットの作業をまだ終えていないため、何も送信されませんでした。"
+          }
+        }
+      }
+    },
+    "Hermes needs a newer Nollie for this. Update Nollie and try again." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes braucht dafür ein neueres Nollie. Aktualisiere Nollie und versuch es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes necesita un Nollie más nuevo para esto. Actualiza Nollie y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermes a besoin d'une version plus récente de Nollie pour cela. Mettez Nollie à jour et réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hermesでこれを行うには、新しいNollieが必要です。Nollieをアップデートして、もう一度お試しください。"
+          }
+        }
+      }
+    },
     "Installing Cua" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -9139,6 +9436,36 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "疑問符以降はすべて省いてください。ダッシュボードの基本アドレスだけで十分です。"
+          }
+        }
+      }
+    },
+    "Limit %@ in this chat" : {
+      "extractionState" : "manual",
+      "comment" : "A connected app's spending limit for one chat",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Limit %@ in diesem Chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Límite de %@ en este chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Limite de %@ dans cette discussion"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャットの上限%@"
           }
         }
       }
@@ -9821,6 +10148,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "HTTPの応答がありません"
+          }
+        }
+      }
+    },
+    "No answer to Stop" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Keine Antwort auf „Stoppen“"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin respuesta a «Detener»"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pas de réponse à « Arrêter »"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "「停止」に応答がありません"
           }
         }
       }
@@ -12119,6 +12475,35 @@
         }
       }
     },
+    "Schedule" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zeitplan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Programación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Planification"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "スケジュール"
+          }
+        }
+      }
+    },
     "Scheduled" : {
       "extractionState" : "manual",
       "comment" : "A Board status",
@@ -13413,6 +13798,64 @@
         }
       }
     },
+    "The other chat did not confirm this message. It may still arrive, so check before sending it again." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der andere Chat hat diese Nachricht nicht bestätigt. Sie kann noch ankommen, also prüfe nach, bevor du sie erneut sendest."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El otro chat no confirmó este mensaje. Puede que aún llegue, así que compruébalo antes de enviarlo otra vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'autre discussion n'a pas confirmé ce message. Il peut encore arriver, alors vérifiez avant de le renvoyer."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "もう一方のチャットがこのメッセージを確認していません。まだ届く可能性があるため、もう一度送る前に確認してください。"
+          }
+        }
+      }
+    },
+    "The other chat is still busy, so nothing was sent." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der andere Chat ist noch beschäftigt, daher wurde nichts gesendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El otro chat sigue ocupado, así que no se envió nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "L'autre discussion est encore occupée, donc rien n'a été envoyé."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "もう一方のチャットがまだ処理中のため、何も送信されませんでした。"
+          }
+        }
+      }
+    },
     "The proxy in front of the gateway turned the sign-in request away (403). With Nginx Proxy Manager and Block Common Exploits, this build already encodes the request so the rule should not match; otherwise let /auth/ through the proxy." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13761,6 +14204,35 @@
         }
       }
     },
+    "This bot does not allow that change." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieser Bot erlaubt diese Änderung nicht."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este bot no permite ese cambio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce bot n'autorise pas cette modification."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このボットではその変更はできません。"
+          }
+        }
+      }
+    },
     "This card has run out." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13819,6 +14291,35 @@
         }
       }
     },
+    "This chat changed somewhere else. Try again." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieser Chat wurde anderswo geändert. Versuch es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este chat cambió en otro sitio. Vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cette discussion a été modifiée ailleurs. Réessayez."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャットは別の場所で変更されました。もう一度お試しください。"
+          }
+        }
+      }
+    },
     "This chat could not be opened on the gateway: %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13848,6 +14349,35 @@
         }
       }
     },
+    "This chat is busy with a reply. Try again when it is done." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieser Chat ist gerade mit einer Antwort beschäftigt. Versuch es erneut, wenn sie fertig ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este chat está ocupado con una respuesta. Vuelve a intentarlo cuando termine."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cette discussion est occupée par une réponse. Réessayez quand elle sera terminée."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャットは返信中です。終わってからもう一度お試しください。"
+          }
+        }
+      }
+    },
     "This chat is gone from the gateway. It may have been a one-off run, or the gateway restarted without it. Start a new chat to carry on." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13873,6 +14403,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "このチャットはゲートウェイからなくなりました。1回限りの実行だったか、ゲートウェイがこのチャットなしで再起動した可能性があります。続けるには新しいチャットを始めてください。"
+          }
+        }
+      }
+    },
+    "This chat is no longer there." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diesen Chat gibt es nicht mehr."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este chat ya no existe."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cette discussion n'existe plus."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "このチャットはもうありません。"
           }
         }
       }
@@ -14051,35 +14610,6 @@
         }
       }
     },
-    "This is not an Nollie pairing code." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Das ist kein Nollie-Kopplungscode."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ce n'est pas un code de jumelage Nollie."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Este no es un código de enlace de Nollie."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "これはNollieのペアリングコードではありません。"
-          }
-        }
-      }
-    },
     "This isn't a Nollie code. Show the code again on your Mac and scan it." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14105,6 +14635,35 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "これはNollieのコードではありません。Macでもう一度コードを表示して、読み取ってください。"
+          }
+        }
+      }
+    },
+    "This isn't a Nollie pairing code. Make a new code on your Mac and scan it." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Das ist kein Nollie-Kopplungscode. Erstelle auf deinem Mac einen neuen Code und scanne ihn."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este no es un código de enlace de Nollie. Crea un código nuevo en tu Mac y escanéalo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ce n'est pas un code de jumelage Nollie. Créez un nouveau code sur votre Mac et scannez-le."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "これはNollieのペアリングコードではありません。Macで新しいコードを作成してスキャンしてください。"
           }
         }
       }
@@ -14193,6 +14752,66 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "このサインインはもう保存されていません。"
+          }
+        }
+      }
+    },
+    "This week: about %@ on models" : {
+      "extractionState" : "manual",
+      "comment" : "What the helpers' AI models cost this week, estimated",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diese Woche: etwa %@ für Modelle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esta semana: unos %@ en modelos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cette semaine : environ %@ en modèles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "今週：モデルに約%@"
+          }
+        }
+      }
+    },
+    "This week: under %@ on models" : {
+      "extractionState" : "manual",
+      "comment" : "What the helpers' AI models cost this week, less than a cent",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diese Woche: unter %@ für Modelle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esta semana: menos de %@ en modelos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cette semaine : moins de %@ en modèles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "今週：モデルに%@未満"
           }
         }
       }
@@ -14523,6 +15142,36 @@
         }
       }
     },
+    "Under %@ on models" : {
+      "extractionState" : "manual",
+      "comment" : "What a helper's AI models cost this week, less than a cent",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Unter %@ für Modelle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Menos de %@ en modelos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Moins de %@ en modèles"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "モデルに%@未満"
+          }
+        }
+      }
+    },
     "Undo" : {
       "extractionState" : "manual",
       "comment" : "A button",
@@ -14786,6 +15435,36 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "ゲートウェイを待っています…"
+          }
+        }
+      }
+    },
+    "Waiting in line…" : {
+      "extractionState" : "manual",
+      "comment" : "A message waits behind a turn running in this chat elsewhere",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wartet in der Schlange …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esperando turno…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En file d'attente…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "順番待ち…"
           }
         }
       }

@@ -40,8 +40,12 @@ extension ChatListView {
         SessionCache.save(list, connection: runtime.connection.id, profile: scope)
     }
 
+    /// Sends a title or flag change with the identity Hermes 0.23 asks for. `profile` in `fields` names the bot.
     private func updateOnGateway(_ id: String, _ fields: [String: JSONValue]) async throws {
-        let _: JSONValue? = try await runtime?.api.send("PATCH", "/api/sessions/\(id)", json: .object(fields))
+        guard let runtime else { return }
+        var change = fields
+        let bot = change.removeValue(forKey: "profile")?.stringValue
+        try await runtime.api.updateSession(id, profile: bot, fields: change)
     }
 
     private func cachedList(for runtime: GatewayRuntime, scope: String?) -> [StoredSession] {
@@ -148,6 +152,7 @@ extension ChatListView {
 
     func archive(_ list: [StoredSession]) async {
         guard let runtime else { return }
+        var failure: String?
         for session in list where session.archived != true {
             var fields: [String: JSONValue] = ["archived": .bool(true)]
             if session.pinned == true { fields["pinned"] = .bool(false) }
@@ -155,31 +160,43 @@ extension ChatListView {
             do {
                 try await updateOnGateway(session.id, fields)
             } catch {
-                errorText = String(localized: "\u{201C}\(session.displayTitle)\u{201D} did not archive: \(error.localizedDescription)",
-                                   comment: "A chat's title in quotes, then the reason")
+                failure = failure ?? String(localized: "\u{201C}\(session.displayTitle)\u{201D} did not archive: \(error.localizedDescription)",
+                                            comment: "A chat's title in quotes, then the reason")
             }
         }
         await load()
+        if let failure { errorText = failure }
     }
 
     func delete(_ list: [StoredSession]) async {
-        for session in list { await remove(session, reload: false) }
+        var failures: [String] = []
+        for session in list { if let failed = await remove(session) { failures.append(failed) } }
         sessions.removeAll { row in list.contains { $0.id == row.id } }
         await load()
+        if let first = failures.first { errorText = first }
     }
 
     func delete(_ session: StoredSession) async {
-        await remove(session, reload: true)
+        let failed = await remove(session)
+        await load()
+        if let failed { errorText = failed }
     }
 
-    private func remove(_ session: StoredSession, reload: Bool) async {
+    /// Deletes one chat on the gateway. A refusal comes back as words to show, after the list reloads with the
+    /// chat still in it, rather than the chat vanishing and quietly coming back.
+    private func remove(_ session: StoredSession) async -> String? {
         droppedIDs.insert(session.id)
-        guard let runtime else { return }
+        guard let runtime else { return nil }
         if let open = runtime.chatForStored(session.id) { runtime.closeChat(open) }
-        if reload { sessions.removeAll { $0.id == session.id } }
-        let _: JSONValue? = try? await runtime.api.send("DELETE", "/api/sessions/\(session.id)",
-                                                        profile: botName(of: session, runtime), body: EmptyBody())
-        if reload { await load() }
+        sessions.removeAll { $0.id == session.id }
+        do {
+            try await runtime.api.deleteSession(session.id, profile: botName(of: session, runtime))
+            return nil
+        } catch {
+            droppedIDs.remove(session.id)
+            return String(localized: "\u{201C}\(session.displayTitle)\u{201D} was not deleted: \(error.localizedDescription)",
+                          comment: "A chat's title in quotes, then the reason")
+        }
     }
 
     func patch(_ session: StoredSession, _ fields: [String: JSONValue]) async {
@@ -197,7 +214,7 @@ extension ChatListView {
         }
         do {
             try await updateOnGateway(session.id, body)
-        } catch HermesAPIError.http(404, _) {
+        } catch SessionChangeError.gone {
             // The gateway has no such id any more (compression moved it, or another device deleted it).
             // The row was out of date, and the gateway's list is what counts.
             sessions.removeAll { $0.id == session.id }

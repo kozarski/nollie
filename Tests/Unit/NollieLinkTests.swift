@@ -61,6 +61,61 @@ struct NollieLinkTests {
         }
     }
 
+    /// The nollie.app/pair page hands a code to the app as `nollie://pair-link#<payload>`. It is rebuilt into
+    /// the exact https link and read the same way, so nothing passes this way that the link would refuse.
+    @Test func appSchemeFormRebuildsTheSameLink() throws {
+        let made = try offer()
+        let link = made.urlString
+        let fragment = String(link.dropFirst(NollieLinkOffer.prefix.count))
+        let handed = NollieLinkOffer.appPrefix + fragment
+        #expect(handed.hasPrefix("nollie://pair-link#"))
+        #expect(NollieLinkOffer.linkForm(handed) == link)
+        #expect(NollieLinkOffer.linkForm(link) == link)
+        #expect(try NollieLinkOffer.parse(try #require(NollieLinkOffer.linkForm(handed)), now: now) == made)
+        #expect(NollieLinkOffer.isAppLink(try #require(URL(string: handed))))
+        #expect(!NollieLinkOffer.isAppLink(try #require(URL(string: "nollie://pair#e30"))))
+        #expect(!NollieLinkOffer.isAppLink(try #require(URL(string: link))))
+    }
+
+    @Test func appSchemeFormRefusesAnythingButAWellFormedPayload() throws {
+        let link = try offer().urlString
+        let fragment = String(link.dropFirst(NollieLinkOffer.prefix.count))
+        // The wrong shape: never turned into a link at all.
+        let misshapen = [
+            "", "nollie://pair-link", "nollie://pair-link#", "nollie://pair#" + fragment, "nollie://pair-link/#" + fragment,
+            "nollie://pair-link/x#" + fragment, "nollie://pair-link?x=1#" + fragment, "nollie://pair-link?#" + fragment,
+            "nollie://user@pair-link#" + fragment, "nollie://pair-link:80#" + fragment, "Nollie://pair-link#" + fragment,
+            "nollie://PAIR-LINK#" + fragment, "other://pair-link#" + fragment, "nollie://pair-link.evil.test#" + fragment,
+            "nollie:pair-link#" + fragment, "nollie:///pair-link#" + fragment, "nollie://pair-link#%65" + fragment,
+            " nollie://pair-link#" + fragment, "nollie://pair-link#" + String(repeating: "A", count: 2100),
+            "https://nollie.app.evil.test/pair#" + fragment,
+        ]
+        for raw in misshapen { #expect(NollieLinkOffer.linkForm(raw) == nil, "\(raw.prefix(32))") }
+
+        // The right shape around a payload that isn't a code: rebuilt, then refused by the same checks as the link.
+        func encode(_ object: [String: Any]) -> String {
+            NollieLinkOffer.base64URL(try! JSONSerialization.data(withJSONObject: object))
+        }
+        let notCodes = [
+            "bm90LWEtY29kZQ", fragment + "!", fragment + "#x", fragment + "=", String(fragment.dropLast(4)), fragment + "AAAA",
+            fragment.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/") + "+/",
+            encode(["v": 1]), encode(["v": 1, "n": "Studio Mac", "k": NollieLinkOffer.base64URL(pin), "p": 52_345,
+                                      "h": ["8.8.8.8"], "t": "0123456789abcdef", "s": NollieLinkOffer.base64URL(secret),
+                                      "e": Int(now.timeIntervalSince1970) + 60]),
+        ]
+        for inner in notCodes {
+            let raw = NollieLinkOffer.appPrefix + inner
+            if let rebuilt = NollieLinkOffer.linkForm(raw) {
+                #expect(throws: NollieLinkError.invalidOffer) { try NollieLinkOffer.parse(rebuilt, now: now) }
+            }
+        }
+        // A code that has run out says so, whichever way it came.
+        let old = NollieLinkOffer.appPrefix + fragment
+        #expect(throws: NollieLinkError.expired) {
+            try NollieLinkOffer.parse(NollieLinkOffer.linkForm(old) ?? "", now: now.addingTimeInterval(200))
+        }
+    }
+
     @Test func offerExpiresAndRefusesFarFutureCodes() throws {
         #expect(throws: NollieLinkError.expired) { try offer(expires: -61) }
         _ = try offer(expires: -30)  // a phone clock a little ahead of the Mac's still reads it

@@ -209,9 +209,21 @@ struct OnboardingWindowSize: NSViewRepresentable {
             return preferredHeight.isFinite ? min(1200, max(440, preferredHeight)) : 740
         }
 
+        /// The width setup opens at. Debug: `-nollie-demo-onboarding-width <points>` for pictures at other sizes.
+        private var firstWidth: CGFloat {
+            #if DEBUG
+            let args = ProcessInfo.processInfo.arguments
+            if DemoMode.isOn, let i = args.firstIndex(of: "-nollie-demo-onboarding-width"),
+               args.indices.contains(i + 1), let value = Double(args[i + 1]), value.isFinite {
+                return CGFloat(min(1600, max(520, value)))
+            }
+            #endif
+            return 860
+        }
+
         private func resize(_ window: NSWindow, firstPresentation: Bool) {
             let visible = window.screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1200, height: 1000)
-            let width = min(firstPresentation ? 860 : window.frame.width, max(320, visible.width - 48))
+            let width = min(firstPresentation ? firstWidth : window.frame.width, max(320, visible.width - 48))
             let height = min(resolvedHeight, max(320, visible.height - 48))
             let center = firstPresentation ? CGPoint(x: visible.midX, y: visible.midY)
                                           : CGPoint(x: window.frame.midX, y: window.frame.midY)

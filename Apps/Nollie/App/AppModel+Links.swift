@@ -30,10 +30,17 @@ extension AppModel {
 
     // MARK: Links
 
+    /// A universal link (the Camera opening nollie.app/pair, say) arrives as browsing activity rather than
+    /// a URL. It goes the same way as an opened link.
+    func continueBrowsing(_ activity: NSUserActivity) {
+        guard activity.activityType == NSUserActivityTypeBrowsingWeb, let url = activity.webpageURL else { return }
+        open(url)
+    }
+
     /// URL entry point. Understands the chat deep link (id plus optional bot), the chat list link, pairing
     /// links, and Nollie Link codes.
     func open(_ url: URL) {
-        if NollieLinkOffer.isOffer(url.absoluteString) {
+        if NollieLinkOffer.linkForm(url.absoluteString) != nil || NollieLinkOffer.isAppLink(url) {
             acceptLinkOffer(url)
             return
         }
@@ -56,21 +63,29 @@ extension AppModel {
 
     private func acceptLinkOffer(_ url: URL) {
         #if os(iOS)
-        guard !devicePairingFlowActive, pendingDevicePairing == nil, pendingLinkOffer == nil,
-              let offer = try? NollieLinkOffer.parse(url.absoluteString)
-        else { return }
-        pendingLinkOffer = offer
+        acceptPairingLink(url)
         #endif
     }
 
     private func acceptPairing(_ url: URL) {
         #if os(iOS)
-        guard !devicePairingFlowActive, pendingDevicePairing == nil, pendingLinkOffer == nil,
-              let invitation = try? DevicePairingInvitation.parse(url.absoluteString)
-        else { return }
-        pendingDevicePairing = invitation
+        acceptPairingLink(url)
         #endif
     }
+
+    #if os(iOS)
+    /// A code opened as a link goes to the pairing sheet. One that can't be used goes there too, with
+    /// the reason and Scan again, rather than leaving the person on a screen where nothing happened.
+    private func acceptPairingLink(_ url: URL) {
+        guard !devicePairingFlowActive, pendingDevicePairing == nil, pendingLinkOffer == nil, pendingPairingIssue == nil,
+              let read = PairingLink.read(url) else { return }
+        switch read {
+        case .link(let offer): pendingLinkOffer = offer
+        case .invitation(let invitation): pendingDevicePairing = invitation
+        case .unusable(let reason): pendingPairingIssue = reason
+        }
+    }
+    #endif
 
     #if DEBUG
     /// A fake notification for demos: `nollie://demo-notification?session=...&profile=...&row=...`.

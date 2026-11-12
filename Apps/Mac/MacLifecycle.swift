@@ -21,6 +21,8 @@ enum MacAppearance {
 /// Work done once, before any scene exists.
 enum MacLaunch {
     @MainActor static func prepare() {
+        // A unit test run leaves the app's preferences as it found them.
+        TestRunPreferences.keepAsFound()
         NollieLogFiles.start(.app)
         #if DEBUG
         // The demo copy has its own bundle id and keeps credentials in memory only.
@@ -55,6 +57,11 @@ struct MacLifecycle: ViewModifier {
             .onReceive(Self.app.publisher(for: NSApplication.didResignActiveNotification)) { _ in
                 LocalNotifier.isForeground = false
             }
+            // The assistant on this Mac answers again (after an update, at login, or Try again):
+            // a connection still waiting for it tries now.
+            .onReceive(Self.app.publisher(for: .nollieManagedAssistantReady)) { note in
+                Task { await model.nudgeManagedConnection(note.object as? UUID) }
+            }
             .onReceive(Self.system.publisher(for: NSWorkspace.willSleepNotification)) { _ in model.lock.didEnterBackground() }
             .onReceive(Self.system.publisher(for: NSWorkspace.didWakeNotification)) { _ in model.lock.willEnterForeground() }
             .onReceive(Self.system.publisher(for: NSWorkspace.screensDidSleepNotification)) { _ in
@@ -68,12 +75,21 @@ struct MacLifecycle: ViewModifier {
     }
 
     private func startUp() async {
+        GatewayWorkMirror.start(model)
         await model.activateSavedConnection()
         await model.cloudAlerts.refresh()
         await model.refreshCompanionUpdateFlag()
         #if NOLLIE_DIRECT
         // A newer Nollie may carry newer add-ons for the managed setup. They go in without asking.
-        Task.detached(priority: .utility) { await MacHermesSetup.updateAddOnsIfNeeded() }
+        // A newer Nollie may carry a newer Hermes; the engine update brings the add-ons along with it.
+        // Never from a test run: the tests open this app, and they must not touch a real setup on this Mac.
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
+        Task {
+            await EngineUpdate.shared.runIfNeeded()
+            await MacHermesSetup.updateAddOnsIfNeeded()
+            // If something paused Hermes and never brought it back, it starts again here.
+            await EngineUpdate.shared.resumeIfStopped()
+        }
         #endif
     }
 

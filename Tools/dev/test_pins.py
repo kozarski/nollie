@@ -25,7 +25,9 @@ pinslib = load("pinslib", "pinslib.py")
 check = load("check_latest", "check-latest.py")
 kit = load("setup_kit", "setup-kit.py")
 overlay = load("hermes_overlay", "hermes-overlay.py")
-HERMES = Path(os.environ.get("NOLLIE_HERMES_SOURCE", pinslib.ROOT.parent / "hermes-v0.22.2"))
+HERMES_VERSION = next(c["version"] for c in json.loads((pinslib.ROOT / "Tools/pins.json").read_text())["components"]
+                      if c["id"] == "hermes")
+HERMES = Path(os.environ.get("NOLLIE_HERMES_SOURCE", pinslib.ROOT.parent / f"hermes-v{HERMES_VERSION}"))
 
 
 class PinsTests(unittest.TestCase):

@@ -56,10 +56,21 @@ as a page after the crew. An older phone sends no note and an older Watch ignore
 
 ## Still open
 
-- Who is working is what the phone can see: chats open on it, the Board's workers, and a bot's main chat the gateway's
-  record shows mid-turn. A schedule's run, or another chat started on the Mac, does not show until the phone opens it.
+- A chat started on the Mac that is not a bot's main chat still shows only once the phone opens it. Hermes 0.23's
+  `session.active_list` lists every live chat in the gateway, but its rows name no bot (so a private bot's could not be
+  told apart) and carry each chat's opening words, so it is not let through the Link door. A bot's main chat started
+  elsewhere does show, from the gateway's record (`BotsHome.Entry.busy`).
 
 ## Closed since
+
+- **Who is working, from the gateway.** A schedule's run and a Board card being worked now show as that helper at work
+  on every device, wherever they were started (the Mac's scheduler, the Board's dispatcher, another device): "Working on
+  “Morning brief” · 4 min" in the bot's row, the chat list's bar, the Watch's crew page and the Mac's menu bar. Schedules
+  come from Hermes 0.23's `live_execution` on the jobs list (`ScheduleStore`, one read for every bot when Hermes says the
+  schedules changed, else once a minute, every 15 seconds while one runs, nothing in the background); the Board from
+  `/workers/active` (`KanbanActivity.work`). Private bots' runs never show. A schedule's run has its own Stop, in the bar,
+  the Mac's menu and the schedule's page (`ScheduleStopWords`, `POST /api/cron/jobs/{id}/cancel`, allowed through the
+  Link door): that run ends and the schedule stays on.
 
 - **On your Mac, said up front.** Over Nollie Link a phone cannot make or edit a schedule, flip a bot's tools or skills,
   or see its connected apps, by design (`LinkDoorPolicy`). A linked phone now says so instead of offering the control

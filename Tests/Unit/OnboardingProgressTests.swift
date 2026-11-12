@@ -5,6 +5,21 @@ import NollieCore
 
 @MainActor
 struct OnboardingProgressTests {
+    @Test func theComputerStepHasOneWayOnAndItAlwaysWorks() {
+        #expect(OnboardingProgress.Step.computer.continueAlwaysWorks, "Off means go on without it")
+        #expect(!OnboardingProgress.Step.computer.hasLaterPill, "Set up later meant the same as Continue")
+        #expect(!OnboardingProgress.Step.computer.hasSkipPill, "Continue is the one button")
+        #expect(OnboardingProgress.Step.model.hasLaterPill, "The model's Continue waits for one that answers")
+        #expect(!OnboardingProgress.Step.model.continueAlwaysWorks)
+        #expect(OnboardingProgress.Step.permissions.hasLaterPill && OnboardingProgress.Step.permissions.continueAlwaysWorks)
+        #expect(OnboardingProgress.Step.welcome.hasSkipPill && OnboardingProgress.Step.connection.hasSkipPill)
+        // Continue with the switch off goes on, and the step is not marked as put off.
+        var progress = OnboardingProgress(step: .computer, route: .new)
+        progress.advance()
+        #expect(progress.step == .permissions)
+        #expect(!progress.deferred.contains(.computer))
+    }
+
     @Test func existingUsersAreNotSentThroughFirstRunAgain() {
         #expect(!OnboardingProgress.shouldPresent(hasConnections: true, raw: ""))
         #expect(OnboardingProgress.shouldPresent(hasConnections: false, raw: ""))
@@ -233,4 +248,76 @@ struct OnboardingProgressTests {
         #expect(!SetupTrailProgress.shouldCelebrate(wasReady: true, isReady: true, observedWork: true))
     }
 
+
+    @Test func aMacUnder16GBStartsOnAPlanUntilThePersonChooses() throws {
+        let gib: UInt64 = 1 << 30
+        var small = OnboardingPreferences()
+        let changed = small.suggestModelMode(memoryBytes: 8 * gib)
+        #expect(changed)
+        #expect(small.modelMode == .cloud)
+        let again = small.suggestModelMode(memoryBytes: 8 * gib)
+        #expect(!again, "suggesting twice changes nothing")
+
+        var roomy = OnboardingPreferences()
+        let roomyChanged = roomy.suggestModelMode(memoryBytes: 16 * gib)
+        #expect(!roomyChanged)
+        #expect(roomy.modelMode == .local)
+
+        // Memory unknown: nothing is assumed.
+        var unknown = OnboardingPreferences()
+        let unknownChanged = unknown.suggestModelMode(memoryBytes: nil)
+        #expect(!unknownChanged)
+        #expect(unknown.modelMode == .local)
+
+        // Chosen on the model step or in Settings: setup leaves it, on any Mac.
+        var chosen = OnboardingPreferences(modelMode: .local, modelModeChosen: true)
+        let chosenChanged = chosen.suggestModelMode(memoryBytes: 8 * gib)
+        #expect(!chosenChanged)
+        #expect(chosen.modelMode == .local)
+
+        // The choice survives a relaunch; setup progress saved before this reads as not chosen.
+        let restored = try JSONDecoder().decode(OnboardingPreferences.self, from: JSONEncoder().encode(chosen))
+        #expect(restored.modelModeChosen)
+        let older = Data(#"{"assistantName":"Juniper","modelMode":"local"}"#.utf8)
+        #expect(try JSONDecoder().decode(OnboardingPreferences.self, from: older).modelModeChosen == false)
+    }
+
+    @Test func setupReopenedWithoutAPathTakesTheOneItsConnectionBelongsTo() {
+        // Settings' Review setup on a Mac whose saved progress was empty: Back reached the connection step
+        // with no path, showing Start new's card under another heading, and Connect did nothing.
+        var managed = OnboardingProgress(step: .model)
+        managed.settleRoute(managed: true)
+        #expect(managed.route == .new)
+        #expect(managed.previous == .connection)
+        var other = OnboardingProgress(step: .model)
+        other.settleRoute(managed: false)
+        #expect(other.route == .existing)
+        // A path already chosen stays, and before the choice there is nothing to settle.
+        var chosen = OnboardingProgress(step: .connection, route: .importCopy)
+        chosen.settleRoute(managed: true)
+        #expect(chosen.route == .importCopy)
+        var home = OnboardingProgress(step: .home)
+        home.settleRoute(managed: true)
+        #expect(home.route == nil)
+    }
+
+    @Test func settingUpAgainGoesToStartNewsSetupStepAndKeepsTheName() {
+        var progress = OnboardingProgress(step: .ready, route: .existing,
+                                          preferences: OnboardingPreferences(assistantName: "Juniper"),
+                                          connectionID: UUID(), deferred: [.model], completion: .completed)
+        progress.setUpAgain()
+        #expect(progress.route == .new && progress.step == .connection)
+        #expect(progress.connectionID == nil && progress.deferred.isEmpty)
+        #expect(progress.completion == .inProgress)
+        #expect(progress.preferences.assistantName == "Juniper")
+        let raw = OnboardingProgress.settingUpAgain("")
+        #expect(OnboardingProgress.parse(raw).step == .connection)
+        #expect(OnboardingProgress.shouldPresent(hasConnections: true, raw: raw))
+    }
+
+    @Test func aSetupNoLongerOnThisMacHasItsOwnLine() {
+        #expect(AssistantWait.line(.missing) != nil)
+        #expect(AssistantWait.line(.missing) != AssistantWait.line(.unreachable))
+        #expect(AssistantWait.line(.none) == nil)
+    }
 }

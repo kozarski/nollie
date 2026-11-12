@@ -4,7 +4,7 @@ import asyncio
 import atexit
 from pathlib import Path
 
-from fastapi import APIRouter, Body, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, StrictBool
 
@@ -30,8 +30,23 @@ atexit.register(_service.pool.kill)
 NO_STORE = {"Cache-Control": "no-store", "Pragma": "no-cache"}
 
 
+def _bot(limit):
+    """The bot a request is about. Nollie names it `bot`: from Hermes 0.23 a `profile` on a plugin
+    route is taken by Hermes to pick that bot's own plugin host. Older Nollie copies send `profile`."""
+    def read(bot: str | None = Query(None, max_length=limit), profile: str | None = Query(None, max_length=limit)):
+        name = bot or profile
+        if not name:
+            raise HTTPException(422, "Name the bot.", headers=NO_STORE)
+        return name
+    return read
+
+
+_bot_64 = _bot(64)
+_bot_160 = _bot(160)
+
+
 @router.get("/preview")
-async def preview(profile: str = Query(..., max_length=160), session_id: str = Query(..., max_length=160),
+async def preview(profile: str = Depends(_bot_160), session_id: str = Query(..., max_length=160),
                   fresh: bool = Query(False)):
     """fresh=1 skips the short cache, for a caller that wants each next picture."""
     try:
@@ -59,12 +74,12 @@ async def _change(action, profile):
 
 
 @router.post("/take-over")
-async def take_over(profile: str = Query(..., max_length=160)):
+async def take_over(profile: str = Depends(_bot_160)):
     return await _change(_control.take_over, profile)
 
 
 @router.post("/hand-back")
-async def hand_back(profile: str = Query(..., max_length=160)):
+async def hand_back(profile: str = Depends(_bot_160)):
     return await _change(_control.hand_back, profile)
 
 
@@ -79,7 +94,7 @@ async def _answer(work):
 
 
 @router.get("/own-computer")
-async def own_computer(profile: str = Query(..., max_length=64)):
+async def own_computer(profile: str = Depends(_bot_64)):
     """A helper's own computer: the switch, what Cua still needs, and how the computer is."""
     return await _answer(lambda: _computers.status(profile))
 
@@ -104,10 +119,10 @@ async def _ask_first_answer(work):
 
 
 @router.get("/ask-first")
-async def ask_first(profile: str = Query(..., max_length=64)):
+async def ask_first(profile: str = Depends(_bot_64)):
     return await _ask_first_answer(lambda: _ask_first_service.status(profile))
 
 
 @router.put("/ask-first")
-async def change_ask_first(body: AskFirstChange, profile: str = Query(..., max_length=64)):
+async def change_ask_first(body: AskFirstChange, profile: str = Depends(_bot_64)):
     return await _ask_first_answer(lambda: _ask_first_service.change(profile, body.enabled))

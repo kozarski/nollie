@@ -335,7 +335,7 @@ backs up the plugin as before; follow-up state is preserved in
 `nollie-workflow/followups.json` with private file permissions.
 
 Binding also requires the small scheduler overlay described in
-[Hermes compatibility](../hermes-patches/README.md). Hermes v0.22.2 has no hook
+[Hermes compatibility](../hermes-patches/README.md). Hermes v0.23.1 has no hook
 before a scheduled turn starts, and can wake a model when a pre-check script fails.
 The checked overlay makes bound jobs stop when that script is missing or fails.
 The companion checks the loaded capability. Its installer does not change Hermes
@@ -426,7 +426,8 @@ strings and fragments are dropped. If the redactor raises the string becomes
 All in the main home's `nollie-workflow` folder, files 0600 and folders 0700.
 
 - `night-shift.json`: `{"version": 1, "night_shift": false, "rehearsals": false,
-  "morning_hour": 7, "rehearsals_since": null}`. No file means both off. A damaged file
+  "morning_hour": 7, "rehearsals_since": null}`. No file means both off. A new setup (the add-on's first install)
+  gets the file with `night_shift` on; an update never writes it. A damaged file
   means both on with the last good values. `rehearsals_since` is stamped when rehearsals
   turn on, so the service knows to record the schedules that exist then.
 - `receipts/<profile>/<YYYY-MM-DD>.jsonl`: one line per event,
@@ -508,8 +509,8 @@ Default profile only (403 otherwise), `Cache-Control: no-store`:
 
 ### Turn it on
 
-Both features ship off. Night shift is turned on in the app, in Settings › Night shift. By hand, with a backup, on
-the Mac that runs Hermes:
+Night shift starts on in a new setup and rehearsals start off; a setup made before 1.4 keeps what it had. Night
+shift is switched in the app, in Settings › Night shift. By hand, with a backup, on the Mac that runs Hermes:
 
 ```sh
 python3 Companions/nollie-workflow/install.py --recorder

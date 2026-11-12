@@ -237,6 +237,23 @@ class WantsAPersonTests(ReaderTestCase):
         self.assertEqual(blocked["action"], "block")
         self.assertIsNone(glue_guard(tool_name="browser_navigate", args={"url": "https://elsewhere.example.org/"}))
 
+    def test_handoff_blocks_a_browser_script_that_opens_that_site(self):
+        glue_guard = _guard(self.root)
+        self.site.routes["/locked"] = (403, {}, "no")
+        self.reader.read(self.url("/locked"))
+        code = f'# Reading the page\nnew_tab("{self.url("/other")}")\nwait_for_load()\nprint(page_info())'
+        self.assertEqual(glue_guard(tool_name="browser_exec", args={"code": code})["action"], "block")
+        # Anywhere in a longer script, among other addresses.
+        code = ('new_tab("https://elsewhere.example.org/")\n'
+                f'for url in ["https://elsewhere.example.org/a", "{self.url("/x")}"]:\n    goto_url(url)')
+        self.assertEqual(glue_guard(tool_name="browser_exec", args={"code": code})["action"], "block")
+        cdp = {"method": "Page.navigate", "params": {"url": self.url("/y")}}
+        self.assertEqual(glue_guard(tool_name="browser_cdp", args=cdp)["action"], "block")
+        for args in ({"code": 'new_tab("https://elsewhere.example.org/")\nprint(page_info())'},
+                     {"code": "print(page_info())"}, {"code": None}, {}):
+            self.assertIsNone(glue_guard(tool_name="browser_exec", args=args), args)
+        self.assertIsNone(glue_guard(tool_name="browser_cdp", args={"method": "DOM.getDocument"}))
+
 
 def _guard(root):
     # hermes_glue imports Hermes only inside its functions, so the guard is testable alone.
