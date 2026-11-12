@@ -485,7 +485,7 @@ struct NativeSetupChecklistView: View {
             Label("What's installed", systemImage: "info.circle")
                 .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
         }
-        .buttonStyle(.nollieGlass).tint(nil)
+        .buttonStyle(.nollieGlass).buttonBorderShape(.capsule).tint(nil)
         .accessibilityLabel("Installation details")
     }
 
