@@ -192,6 +192,25 @@ struct DemoGatewayTests {
         #expect(jobs.count == 2)
     }
 
+    /// A bot's page asks for these on opening. An empty answer made it say "Couldn't check these".
+    @Test func aBotsMacSwitchesAndPaySwitchAnswerAndAreKept() async throws {
+        let gateway = DemoGateway()
+        let apple = "/api/plugins/nollie-workflow/apple-data/bots"
+        let off = try JSONDecoder().decode(AppleDataSwitches.self, from: await gateway.rest("GET", apple + "?bot=scout", body: nil).body)
+        #expect(off == AppleDataSwitches(bot: "scout", on: []))
+        let turnedOn = await gateway.rest("PUT", apple, body: Data(#"{"bot":"scout","on":["calendar","made-up"]}"#.utf8))
+        #expect(turnedOn.status == 200)
+        let kept = try JSONDecoder().decode(AppleDataSwitches.self, from: await gateway.rest("GET", apple + "?bot=scout", body: nil).body)
+        #expect(kept.isOn(.calendar) && kept.on.count == 1)
+        #expect(await gateway.rest("GET", apple + "?bot=nobody", body: nil).status == 404)
+
+        let pay = "/api/plugins/nollie-workflow/payments/bots"
+        let payOff = try JSONDecoder().decode(PaymentSwitch.self, from: await gateway.rest("GET", pay + "?bot=default", body: nil).body)
+        #expect(payOff == PaymentSwitch(bot: "default", on: false))
+        let payOn = try JSONDecoder().decode(PaymentSwitch.self, from: await gateway.rest("PUT", pay, body: Data(#"{"bot":"default","on":true}"#.utf8)).body)
+        #expect(payOn == PaymentSwitch(bot: "default", on: true))
+    }
+
     @Test func movingACardOnTheBoardIsKeptAndABadMoveIsRefused() async throws {
         let gateway = DemoGateway(pace: InstantClock())
         let body = Data(#"{"status":"review"}"#.utf8)
