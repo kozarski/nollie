@@ -16,7 +16,7 @@ struct AppleDataSection: View {
     /// This Mac keeps the data, so a switch turned on here asks macOS here.
     private var keptHere: Bool {
         #if os(macOS)
-        runtime?.gatewayIsOnThisMac ?? false
+        (runtime?.gatewayIsOnThisMac ?? false) || model.isDemo
         #else
         false
         #endif
@@ -29,7 +29,7 @@ struct AppleDataSection: View {
         .task(id: scope) {
             setting.reset()
             guard let runtime, !model.lock.isLocked else { return }
-            await setting.load(bot: profileName, door: AppleDataModel.door(runtime: runtime, permissions: model.permissions))
+            await setting.load(bot: profileName, door: AppleDataModel.door(runtime: runtime, permissions: model.permissions, demo: model.isDemo))
         }
     }
 
@@ -40,7 +40,7 @@ struct AppleDataSection: View {
                 ForEach(AppleDataArea.allCases) { area in
                     GlassSwitch(.verbatim(area.title), isOn: Binding(get: { setting.isOn(area) }, set: { on in
                         guard let runtime else { return }
-                        let door = AppleDataModel.door(runtime: runtime, permissions: model.permissions)
+                        let door = AppleDataModel.door(runtime: runtime, permissions: model.permissions, demo: model.isDemo)
                         Task { await setting.set(area, on: on, bot: profileName, door: door) }
                     }), id: "profile.appleData.\(area.rawValue)")
                     .disabled(setting.switches == nil || setting.saving.contains(area))
@@ -64,7 +64,7 @@ struct AppleDataSection: View {
             PageNote(.verbatim(error), symbol: "exclamationmark.triangle.fill", tint: .orange, id: "profile.appleData.problem")
             GlassButton("Try again", symbol: "arrow.clockwise", id: "profile.appleData.retry") {
                 guard let runtime else { return }
-                Task { await setting.load(bot: profileName, door: AppleDataModel.door(runtime: runtime, permissions: model.permissions)) }
+                Task { await setting.load(bot: profileName, door: AppleDataModel.door(runtime: runtime, permissions: model.permissions, demo: model.isDemo)) }
             }
         }
     }

@@ -51869,6 +51869,34 @@
         }
       }
     },
+    "No assistant yet?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Noch kein Assistent?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "¿Aún no tienes asistente?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pas encore d'assistant ?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "アシスタントがまだありませんか？"
+          }
+        }
+      }
+    },
     "No assistants yet" : {
       "localizations" : {
         "de" : {

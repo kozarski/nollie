@@ -95,11 +95,13 @@ final class AppleDataModel {
         }
     }
 
-    static func door(runtime: GatewayRuntime, permissions: PermissionCenter) -> Door {
+    /// `demo`: Try a demo on a Mac stands in for an assistant on this Mac, so a switch turned on asks macOS
+    /// here, as it would for real.
+    static func door(runtime: GatewayRuntime, permissions: PermissionCenter, demo: Bool = false) -> Door {
         var door = Door(load: { try await runtime.appleDataSwitches(bot: $0) },
                         save: { try await runtime.saveAppleDataSwitches(bot: $0, on: $1) })
         #if os(macOS)
-        if runtime.gatewayIsOnThisMac {
+        if runtime.gatewayIsOnThisMac || demo {
             door.ask = { await permissions.ask(PermissionKind($0)) }
         }
         #endif

@@ -54,6 +54,21 @@ extension DemoGateway {
                 skillLocks[bot] = on ? Set(DemoRoutes.skills.compactMap { $0["name"]?.stringValue }) : []
             }
             return (200, ["bot": .string(bot), "on": .bool(keepSkills.contains(bot))])
+        case "/api/plugins/nollie-workflow/apple-data/bots":
+            // A bot's page shows these three switches; without an answer it could only say it couldn't check them.
+            let bot = (method == "PUT" ? body["bot"]?.stringValue : query["bot"]) ?? "default"
+            guard DemoSeed.bots.contains(where: { $0.name == bot }) else { return refuse(404, "No such bot.") }
+            if method == "PUT", let on = body["on"]?.arrayValue {
+                appleData[bot] = AppleDataArea.allCases.map(\.rawValue).filter { on.compactMap(\.stringValue).contains($0) }
+            }
+            return (200, ["bot": .string(bot), "on": .array((appleData[bot] ?? []).map { .string($0) })])
+        case "/api/plugins/nollie-workflow/payments/bots":
+            let bot = (method == "PUT" ? body["bot"]?.stringValue : query["bot"]) ?? "default"
+            guard DemoSeed.bots.contains(where: { $0.name == bot }) else { return refuse(404, "No such bot.") }
+            if method == "PUT", let on = body["on"]?.boolValue {
+                if on { payments.insert(bot) } else { payments.remove(bot) }
+            }
+            return (200, ["bot": .string(bot), "on": .bool(payments.contains(bot))])
         case "/api/analytics/usage":
             return (200, DemoRoutes.usage(bot: query["profile"] ?? "default", days: Int(query["days"] ?? "") ?? 30))
         case "/api/mcp/servers": return (200, ["servers": []])

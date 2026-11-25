@@ -206,11 +206,21 @@ struct OnboardingView: View {
         #endif
     }
 
+    /// The Mac App Store edition: it connects to an assistant the person already runs and can't set one
+    /// up, so setup offers Connect existing and the demo, never Start new or Import.
+    private var connectsOnly: Bool {
+        #if os(macOS)
+        !NativeSetupPlan.directAvailable
+        #else
+        false
+        #endif
+    }
+
     /// The connection step's path. On the Mac a setup saved without one shows Start new's card, so it is
     /// Start new all through that step (`settleRoute` saves the right path as soon as setup opens).
     private var connectionRoute: OnboardingProgress.Route? {
         #if os(macOS)
-        progress.route ?? .new
+        progress.route ?? (connectsOnly ? .existing : .new)
         #else
         progress.route
         #endif
@@ -274,7 +284,7 @@ struct OnboardingView: View {
                 let matchingConnection = progress.connectionID.map { id in model.store.connections.contains { $0.id == id } } ?? model.hasConnections
                 #if os(macOS)
                 let saved = model.runtime?.connection ?? model.store.active
-                let managed = saved == nil || saved?.managedInstallationID != nil
+                let managed = !connectsOnly && (saved == nil || saved?.managedInstallationID != nil)
                 #endif
                 update {
                     #if os(iOS)
@@ -597,7 +607,9 @@ struct OnboardingView: View {
         #endif
         switch progress.step {
         case .welcome: return String(localized: "A friendly assistant for everyday life.")
-        case .home: return String(localized: "Start fresh, or use a setup you already have.")
+        case .home:
+            if connectsOnly { return String(localized: "This version connects to an assistant you already run.") }
+            return String(localized: "Start fresh, or use a setup you already have.")
         case .howItWorks: return String(localized: "A few things to know before setup.")
         case .team: return String(localized: "One assistant for everyday help.")
         case .connection:
@@ -646,6 +658,7 @@ struct OnboardingView: View {
             phonePairingStep
             #else
             VStack(spacing: 8) {
+                if !connectsOnly {
                 choice("Start new", detail: "I'll help you set everything up.", symbol: "sparkles", id: "new", primary: true) {
                     update { $0.choose(.new) }
                 }
@@ -660,13 +673,14 @@ struct OnboardingView: View {
                 choice("Import Hermes", detail: "Bring a copy into Nollie.", symbol: "square.and.arrow.down", id: "importCopy") {
                     update { $0.choose(.importCopy) }
                 }
+                }
                 #if os(macOS)
-                let found = localSetup.existingInstallationDetected == true
+                let found = !connectsOnly && localSetup.existingInstallationDetected == true
                 #else
                 let found = false
                 #endif
                 choice("Connect existing", detail: found ? "Existing setup found." : "Use your setup where it is.",
-                       symbol: found ? "checkmark.circle.fill" : "link", id: "existing", found: found) {
+                       symbol: found ? "checkmark.circle.fill" : "link", id: "existing", primary: connectsOnly, found: found) {
                     update { $0.choose(.existing) }
                 }
                 #if os(macOS)
@@ -682,7 +696,7 @@ struct OnboardingView: View {
                     .buttonStyle(.nollieGlass)
                     .accessibilityIdentifier("onboarding.whatIsThis")
                     #if os(macOS)
-                    if localSetup.existingInstallationDetected == nil {
+                    if !connectsOnly, localSetup.existingInstallationDetected == nil {
                         Button { Task { await localSetup.checkThisMac() } } label: {
                             Label("Find my setup", systemImage: "magnifyingglass")
                         }
@@ -848,7 +862,8 @@ struct OnboardingView: View {
                                      isConnecting: managedConnectionRequest != nil, isLocked: model.lock.isLocked,
                                      containedInGlass: true,
                                      previewWorking: workingPreview, compact: compactDesktop,
-                                     connectExisting: { update { $0.route = .existing; $0.step = .connection } })
+                                     connectExisting: { update { $0.route = .existing; $0.step = .connection } },
+                                     tryDemo: { Task { await model.startDemo() } })
             #else
             VStack(alignment: .leading, spacing: 20) {
                 feature("Start on a Mac", "Open Nollie on your Mac and choose Start new.", symbol: "desktopcomputer")
@@ -1051,8 +1066,9 @@ struct OnboardingView: View {
                 #if os(iOS)
                 phoneSecondaryControls
                 #else
-                if [.welcome, .home].contains(progress.step), !isFixture {
-                    // After the main path, never instead of it.
+                if [.welcome, .home].contains(progress.step) || (connectsOnly && progress.step == .connection), !isFixture {
+                    // After the main path, never instead of it. An edition that only connects keeps the demo
+                    // in reach on the connection step too: someone with no assistant yet has no other way on.
                     tryDemoButton
                 }
                 // One pill, the same size on every step that has one, so nothing under the main button moves.
@@ -1310,8 +1326,10 @@ struct OnboardingView: View {
         switch target {
         case .setupOverview:
             detailSheet("Your setup") {
-                feature("Start new", "A fresh home for your assistant on this Mac. You pick its name and model.", symbol: "sparkles")
-                feature("Import Hermes", "Hermes is the engine behind your assistant. Import copies its instructions and settings into Nollie. Your original stays as it is.", symbol: "doc.on.doc")
+                if !connectsOnly {
+                    feature("Start new", "A fresh home for your assistant on this Mac. You pick its name and model.", symbol: "sparkles")
+                    feature("Import Hermes", "Hermes is the engine behind your assistant. Import copies its instructions and settings into Nollie. Your original stays as it is.", symbol: "doc.on.doc")
+                }
                 feature("Connect existing", "Use the Hermes you already run, where it is. Nothing in it changes.", symbol: "link")
             }
         case .stepDetails:

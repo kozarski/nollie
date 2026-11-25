@@ -211,6 +211,7 @@ struct GatewayFormView: View {
             signInSection
             if showsAccessSection { accessSection }
             testSection
+            if offersDemo { demoSection }
         }
         .formStyle(.grouped)
         .inlineTitle(existing == nil ? "Connect manually" : "Edit connection")
@@ -462,6 +463,28 @@ struct GatewayFormView: View {
             if access.isPartiallyConfigured {
                 Text("Fill in both the Client ID and the Client Secret, or neither.").foregroundStyle(.red)
             }
+        }
+    }
+
+    /// The Mac App Store edition only connects. Someone adding their first connection there with no
+    /// assistant to reach would end at a failed test, so the demo is offered right on the form.
+    private var offersDemo: Bool {
+        #if os(macOS)
+        existing == nil && !NativeSetupPlan.directAvailable && !model.hasConnections && !model.isDemo
+        #else
+        false
+        #endif
+    }
+
+    private var demoSection: some View {
+        Section(header: Text("No assistant yet?")) {
+            Button {
+                dismiss()
+                Task { await model.startDemo() }
+            } label: {
+                Label("Try a demo", systemImage: "sparkles")
+            }
+            .testID("gateway.tryDemo")
         }
     }
 

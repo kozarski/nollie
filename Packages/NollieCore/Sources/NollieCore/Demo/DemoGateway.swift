@@ -43,6 +43,9 @@ public actor DemoGateway {
     /// Skills each bot can use but not change (Hermes 0.23's locks), and the bots that keep their skills as they are.
     var skillLocks: [String: Set<String>] = ["scout": ["compare-prices"]]
     var keepSkills: Set<String> = []
+    /// Each bot's Calendar, Reminders and Contacts switches, and the bots that may pay with a saved card. All off to start.
+    var appleData: [String: [String]] = [:]
+    var payments: Set<String> = []
     /// Night shift's switch, on as the demo's morning card supposes.
     var nightShiftOn = true
     var seededAsk = false

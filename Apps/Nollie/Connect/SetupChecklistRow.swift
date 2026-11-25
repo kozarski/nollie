@@ -220,6 +220,8 @@ struct NativeSetupChecklistView: View {
     var compact = false
     /// Where an edition that can't set up a new assistant sends the person instead.
     var connectExisting: (() -> Void)? = nil
+    /// The demo, for someone on that edition with no assistant to connect to yet.
+    var tryDemo: (() -> Void)? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
@@ -320,7 +322,7 @@ struct NativeSetupChecklistView: View {
     }
 
     private var headline: LocalizedStringKey {
-        if !direct { return "Get Nollie from nollie.app." }
+        if !direct { return "Bring your assistant along." }
         if isStoppingService { return "Turning it off." }
         if isReady { return "Your assistant has a home." }
         return isWorking ? "Making room for your assistant." : "Let's get everything ready."
@@ -493,10 +495,18 @@ struct NativeSetupChecklistView: View {
     @ViewBuilder private var otherEditionActions: some View {
         if let connectExisting {
             Button { guard !isPreview else { return }; connectExisting() } label: {
-                primaryLabel(String(localized: "Connect existing instead"))
+                primaryLabel(String(localized: "Connect existing"))
             }
             .buttonStyle(OnboardingPrimaryButtonStyle())
             .accessibilityIdentifier("onboarding.install.connectExisting")
+        }
+        if let tryDemo {
+            Button { guard !isPreview else { return }; tryDemo() } label: {
+                Text("Try a demo")
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.primary).padding(.horizontal, 6)
+            }
+            .buttonStyle(.nollieGlass).buttonBorderShape(.capsule).tint(nil)
+            .accessibilityIdentifier("onboarding.install.tryDemo")
         }
         Link(destination: URL(string: "https://nollie.app")!) { Label("Open nollie.app", systemImage: "globe") }
             .buttonStyle(.nollieGlass)
